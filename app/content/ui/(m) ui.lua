@@ -6,7 +6,7 @@ local color = require("framework.datatypes.color")
 
 
 local meta = {
-	["Name"] = "ui";
+	["Name"] = "(m) ui";
 }
 
 local content = {}

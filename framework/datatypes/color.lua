@@ -91,28 +91,19 @@ local function random()
 	return fromHSV(h, s, v)
 end
 
+-- return an array representing the color
+function color:array()
+	return {self.r, self.g, self.b, self.a}
+end
+
+-- return the color components as a tuple
+function color:components()
+	return self.r, self.g, self.b, self.a
+end
+
 -- copy the color
 function color:clone()
 	return new(self.r, self.g, self.b, self.a)
-end
-
--- set the rgba components.
-function color:set(r, g, b, a)
-	assert(r~=nil and g~=nil and b~=nil, "color:set(r, g, b, a) requires at least 3 arguments to be supplied")
-	if r > 1 or g > 1 or b > 1 then
-		self.r = r / 255
-		self.g = g / 255
-		self.b = b / 255
-	else
-		self.r = r
-		self.g = g
-		self.b = b
-	end
-	self.a = a == nil and self.a or a
-end
-
-function color:getHue()
-
 end
 
 -- darken the color by some amount, where 1 = pitch black and 0 = no change
@@ -129,6 +120,11 @@ function color:lighten(v)
 	self.g = math.min(1, self.g + (1 - self.g) * v)
 	self.b = math.min(1, self.b + (1 - self.b) * v)
 	return self
+end
+
+-- https://www.rapidtables.com/convert/color/rgb-to-hsl.html
+function color:getHSL()
+
 end
 
 -- https://www.rapidtables.com/convert/color/rgb-to-hsv.html
@@ -161,8 +157,7 @@ function color:getHSV()
 	return math.floor(hue + 0.5) % 360, sat, val
 end
 
--- https://www.rapidtables.com/convert/color/rgb-to-hsl.html
-function color:getHSL()
+function color:getHue()
 
 end
 
@@ -189,16 +184,22 @@ function color:shiftHue(deg)
 	self.r = math.min(math.max(rx, 0), 1)
 	self.g = math.min(math.max(gx, 0), 1)
 	self.b = math.min(math.max(bx, 0), 1)
+	return self
 end
 
--- return the color components as a tuple
-function color:components()
-	return self.r, self.g, self.b, self.a
-end
-
--- return an array representing the color
-function color:array()
-	return {self.r, self.g, self.b, self.a}
+-- set the rgba components.
+function color:set(r, g, b, a)
+	assert(r~=nil and g~=nil and b~=nil, "color:set(r, g, b, a) requires at least 3 arguments to be supplied")
+	if r > 1 or g > 1 or b > 1 then
+		self.r = r / 255
+		self.g = g / 255
+		self.b = b / 255
+	else
+		self.r = r
+		self.g = g
+		self.b = b
+	end
+	self.a = a == nil and self.a or a
 end
 
 
