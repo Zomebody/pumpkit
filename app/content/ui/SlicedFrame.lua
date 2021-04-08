@@ -40,9 +40,41 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Property";
+	["ValueType"] = "vector";
+	["Name"] = "BottomRightSlice";
+	["Description"] = "A vector representing the bottom right cutting point used to chop up the image into 9 pieces.";
+	["ReadOnly"] = true;
+})
+
+table.insert(content, {
+	["Type"] = "Property";
+	["ValueType"] = "number";
+	["Name"] = "CornerScale";
+	["Description"] = "When drawing the SlicedImage object, the size of the corners are multiplied by this factor. This can be useful if you want to draw small pixel-art at a larger size.";
+	["ReadOnly"] = false;
+})
+
+table.insert(content, {
+	["Type"] = "Property";
+	["ValueType"] = "table";
+	["Name"] = "ImageSlices";
+	["Description"] = "An array containing 9 Quad Love2d objects that are used to draw the UI element (in reading order).";
+	["ReadOnly"] = true;
+})
+
+table.insert(content, {
+	["Type"] = "Property";
 	["ValueType"] = "Image";
 	["Name"] = "ReferenceImage";
 	["Description"] = "The image that covers the element, used in drawing.";
+	["ReadOnly"] = true;
+})
+
+table.insert(content, {
+	["Type"] = "Property";
+	["ValueType"] = "vector";
+	["Name"] = "TopLeftSlice";
+	["Description"] = "A vector representing the top left cutting point used to chop up the image into 9 pieces.";
 	["ReadOnly"] = true;
 })
 
