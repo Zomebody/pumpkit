@@ -78,11 +78,21 @@ function love.load()
 	-- set events
 	local Scrollables = {{Navigation, 30}, {Body, 50}}
 	for i = 1, #Scrollables do
+		local function getShownChild(Item)
+			for o = 1, #Item.Children do
+				if not Item.Children[o].Hidden then
+					return Item.Children[o]
+				end
+			end
+		end
 		local Obj = Scrollables[i][1]
 		Obj.OnNestedScroll = function(x, y)
 			Obj:shiftContent(0, y * Scrollables[i][2])
+			local ShownChild = getShownChild(Obj)
 			if Obj.ContentOffset.y > 0 then
-				Obj:shiftContent(0, -Obj.ContentOffset.y)
+				Obj:positionContent(0, 0)
+			elseif Obj.ContentOffset.y < -ShownChild.Children[#ShownChild.Children].Position.Offset.y then
+				Obj:positionContent(0, -ShownChild.Children[#ShownChild.Children].Position.Offset.y)
 			end
 		end
 	end
@@ -90,15 +100,6 @@ function love.load()
 	-- create and fill in the top bar
 	TopBar = ui.newFrame(love.graphics.getWidth(), DisplayVars.TopBarThickness, Colors.Background)
 	TopBar.ClipContent = false
-
-	--local dropDowns = {love.filesystem.getDirectoryItems("app.content")}
-	--for o = 1, #dropDowns do
-	--local directoryChildren = love.filesystem.getDirectoryItems("app/content/classes")
-	--print(#directoryChildren)
-	--local Box = createDropdown(DisplayVars, directoryChildren)
-	--Box:reposition(0, 0, 0, TopBar.Size.y)
-	--TopBar:addChild(Box)
-	--end
 
 	local tabs = love.filesystem.getDirectoryItems("app/content")
 	table.sort(tabs)
@@ -185,68 +186,6 @@ function love.load()
 		end
 
 	end
-
-	--[[
-	for i = 1, #docFiles do
-		local data = require("app.content.classes." .. docFiles[i]:sub(1, docFiles[i]:find("%.") - 1))
-		-- create containers
-		local NavContainer = ui.newFrame(DisplayVars.NavigationWidth, 0, Colors.Transparent)
-		NavContainer.ClipContent = false
-		NavContainer:hide()
-		Navigation:addChild(NavContainer)
-		local BodyContainer = ui.newFrame(DisplayVars.BodyWidth, 0, Colors.Transparent)
-		BodyContainer.ClipContent = false
-		BodyContainer:hide()
-		Body:addChild(BodyContainer)
-
-		local dataTarget = data
-		local superClass = nil
-		repeat
-			addToPage(BodyContainer, NavContainer, dataTarget, DisplayVars, superClass)
-			local stop = true
-			if dataTarget.Meta.SuperClass ~= nil then
-				for k = 1, #docFiles do
-					if docFiles[k]:sub(1, docFiles[k]:find("%.") - 1) == dataTarget.Meta.SuperClass then
-						stop = false
-						superClass = dataTarget.Meta.SuperClass
-						dataTarget = require("app.content.classes." .. dataTarget.Meta.SuperClass)
-						break
-					end
-				end
-			end
-		until stop
-
-
-		local Button = ui.newFrame(999, DisplayVars.TopBarThickness, Colors.Transparent)
-		Button.ColorHover = Colors.ButtonHover
-		Button.ColorHold = Colors.ButtonHold
-		Button:setText(defaultFont, data.Meta.Name, DisplayVars.TextSize)
-		Button:resize(Button.TextBlock:getSize() + 20, Button.Size.y)
-		Button.TextBlock:alignX("center")
-		Button.TextBlock:alignY("center")
-		Button.OnFullPress = function(x, y, button)
-			if button == 1 then
-				Navigation:positionContent(0, 0)
-				Body:positionContent(0, 0)
-				if shownNavigation ~= nil then
-					shownNavigation:hide()
-				end
-				if shownBody ~= nil then
-					shownBody:hide()
-				end
-				NavContainer:show()
-				shownNavigation = NavContainer
-				BodyContainer:show()
-				shownBody = BodyContainer
-			end
-		end
-		if prevButton ~= nil then
-			Button:putNextTo(prevButton, "right")
-		end
-		prevButton = Button
-		TopBar:addChild(Button)
-	end
-	]]
 
 	-- add topbar last so it always appears on top
 	ui:addChild(TopBar)
