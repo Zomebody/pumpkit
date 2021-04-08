@@ -44,17 +44,17 @@ local module = {
 	["Size"] = vector(love.graphics.getDimensions()); -- TODO: use getSafeArea() to ignore the mobile inset
 }
 
-local ui_base = {}
-ui_base.__index = ui_base
+local UIBase = {}
+UIBase.__index = UIBase
 
-local frame_base = setmetatable({}, ui_base)
-frame_base.__index = frame_base
+local Frame = setmetatable({}, UIBase)
+Frame.__index = Frame
 
-local image_base = setmetatable({}, ui_base)
-image_base.__index = image_base
+local ImageFrame = setmetatable({}, UIBase)
+ImageFrame.__index = ImageFrame
 
-local slicedimage_base = setmetatable({}, ui_base)
-slicedimage_base.__index = slicedimage_base
+local SlicedFrame = setmetatable({}, UIBase)
+SlicedFrame.__index = SlicedFrame
 
 
 
@@ -263,10 +263,10 @@ end
 
 
 
-----------------------------------------------------[[ == UI_BASE METHODS == ]]----------------------------------------------------
+----------------------------------------------------[[ == UIBASE METHODS == ]]----------------------------------------------------
 
 -- removes the old parent from Obj and sets its new parent to self.
-function ui_base:addChild(Obj)
+function UIBase:addChild(Obj)
 	-- remove old parent of object
 	if Obj.Parent ~= nil then
 		local Parent = Obj.Parent
@@ -285,19 +285,19 @@ function ui_base:addChild(Obj)
 end
 
 -- hides the UI element
-function ui_base:hide()
+function UIBase:hide()
 	self.Hidden = true
 	module.Changed = true
 end
 
 -- hides the UI element
-function ui_base:show()
+function UIBase:show()
 	self.Hidden = false
 	module.Changed = true
 end
 
 -- return the UI element being drawn at location (x, y)
-function ui_base:at(x, y)
+function UIBase:at(x, y)
 	local Obj = nil
 	local scissorX, scissorY, scissorW, scissorH = love.graphics.getScissor()
 	local pX = scissorX == nil and 0 or scissorX
@@ -329,7 +329,7 @@ function ui_base:at(x, y)
 end
 
 -- resize the UI element to (w, h)
-function ui_base:resize(w, h)
+function UIBase:resize(w, h)
 	self.Size:set(w, h)
 	if self.TextBlock ~= nil then
 		self.TextBlock:setWidth(w - 2 * self.PaddingX)
@@ -346,7 +346,7 @@ function ui_base:resize(w, h)
 end
 
 -- reposition the UI element to another location
-function ui_base:reposition(sx, sy, ox, oy)
+function UIBase:reposition(sx, sy, ox, oy)
 	if vector.isVector(sx) then
 		self.Position.Scale:set(sx)
 		self.Position.Offset:set(sy)
@@ -360,7 +360,7 @@ end
 
 -- reposition the UI element to be placed to one of the sides of the given UI element (Parents should be the same to make this work)
 -- side: "left" / "right" / "top" / "above" / "bottom" / "under"
-function ui_base:putNextTo(Obj, side, offset)
+function UIBase:putNextTo(Obj, side, offset)
 	offset = offset == nil and 0 or offset
 	if side == "left" then
 		self:reposition(Obj.Position.Scale, Obj.Position.Offset + vector(-self.Size.x - offset, 0))
@@ -374,7 +374,7 @@ function ui_base:putNextTo(Obj, side, offset)
 end
 
 -- increase the offset of a UI element by offsetX and offsetY
-function ui_base:shift(offsetX, offsetY)
+function UIBase:shift(offsetX, offsetY)
 	if vector.isVector(offsetX) then
 		self:reposition(self.Position.Scale, self.Position.Offset + offsetX)
 	else
@@ -383,7 +383,7 @@ function ui_base:shift(offsetX, offsetY)
 end
 
 -- increase the ContentOffset of a UI element by offsetX and offsetY
-function ui_base:shiftContent(offsetX, offsetY)
+function UIBase:shiftContent(offsetX, offsetY)
 	if vector.isVector(offsetX) then
 		self.ContentOffset:set(self.ContentOffset.x + offsetX.x, self.ContentOffset.y + offsetX.y)
 	else
@@ -394,7 +394,7 @@ function ui_base:shiftContent(offsetX, offsetY)
 end
 
 -- set the ContentOffset of a UI element to offsetX, offsetY
-function ui_base:positionContent(offsetX, offsetY)
+function UIBase:positionContent(offsetX, offsetY)
 	if vector.isVector(offsetX) then
 		self.ContentOffset:set(offsetX.x, offsetX.y)
 	else
@@ -405,7 +405,7 @@ function ui_base:positionContent(offsetX, offsetY)
 end
 
 -- horizontally align the element to a side, valid options: "left" / "center" / "right"
-function ui_base:alignX(side)
+function UIBase:alignX(side)
 	self.Position.Offset.x = 0
 	if side == "left" then
 		self.Position.Scale.x = 0
@@ -422,7 +422,7 @@ function ui_base:alignX(side)
 end
 
 -- vertically align the element to a side, valid options: "bottom" / "center" / "top"
-function ui_base:alignY(side)
+function UIBase:alignY(side)
 	self.Position.Offset.y = 0
 	if side == "top" then
 		self.Position.Scale.y = 0
@@ -439,7 +439,7 @@ function ui_base:alignY(side)
 end
 
 -- update the style of the component
-function ui_base:setBorder(col, width)
+function UIBase:setBorder(col, width)
 	if type(col) == "number" then
 		self.BorderWidth = math.floor(col + 0.5)
 	else
@@ -450,7 +450,7 @@ end
 
 
 -- create an invisible border of a certain thickness in pixels, used to offset inner elements and text
-function ui_base:setPadding(sizeX, sizeY)
+function UIBase:setPadding(sizeX, sizeY)
 	self.PaddingX = sizeX
 	if sizeY == nil then
 		self.PaddingY = sizeX
@@ -465,7 +465,7 @@ function ui_base:setPadding(sizeX, sizeY)
 end
 
 
-function ui_base:getPixelPadding()
+function UIBase:getPixelPadding()
 	local px = (self.PaddingX < 1) and (self.PaddingX * 0.5 * self.Size.x) or (self.PaddingX)
 	local py = (self.PaddingY < 1) and (self.PaddingY * 0.5 * self.Size.y) or (self.PaddingY)
 	return px, py
@@ -473,7 +473,7 @@ end
 
 
 -- adds a TextBlock to the UI and sets its content. If no arguments provided, removes the text. If no font size provided, text is scaled to fit the frame
-function ui_base:setText(fontname, textData, size, scaleHeight)
+function UIBase:setText(fontname, textData, size, scaleHeight)
 	if fontname == nil then
 		self.TextBlock = nil
 	elseif size == nil then -- scale text to fit box
@@ -494,7 +494,7 @@ function ui_base:setText(fontname, textData, size, scaleHeight)
 	end
 end
 
-function ui_base:fitText()
+function UIBase:fitText()
 	if self.TextBlock ~= nil then
 		self.TextBlock:fitText(self.Size.x - 2 * self.PaddingX, self.Size.y - 2 * self.PaddingY)
 	end
@@ -502,10 +502,10 @@ end
 
 
 
-----------------------------------------------------[[ == FRAME_BASE METHODS == ]]----------------------------------------------------
+----------------------------------------------------[[ == FRAME METHODS == ]]----------------------------------------------------
 
 -- draw the frame on screen
-function frame_base:draw()
+function Frame:draw()
 	if self.Hidden then return end
 
 	local scissorX, scissorY, scissorW, scissorH = love.graphics.getScissor()
@@ -552,14 +552,14 @@ end
 
 
 
-----------------------------------------------------[[ == IMAGE_BASE METHODS == ]]----------------------------------------------------
+----------------------------------------------------[[ == IMAGEFRAME METHODS == ]]----------------------------------------------------
 
-function image_base:setReference(img)
+function ImageFrame:setReference(img)
 	self.ReferenceImage = img
 end
 
 
-function image_base:draw()
+function ImageFrame:draw()
 	if self.Hidden then return end
 
 	local imgWidth, imgHeight = self.ReferenceImage:getDimensions()
@@ -613,9 +613,9 @@ end
 
 
 
-----------------------------------------------------[[ == SLICEDIMAGE_BASE METHODS == ]]----------------------------------------------------
+----------------------------------------------------[[ == SLICEDFRAME METHODS == ]]----------------------------------------------------
 
-function slicedimage_base:setReference(img)
+function SlicedFrame:setReference(img)
 	local oldReference = self.ReferenceImage
 	self.ReferenceImage = img
 
@@ -627,7 +627,7 @@ end
 
 
 -- sets the top left and top right corner used to chop the image into 9 quads that are used for the drawing operation
-function slicedimage_base:setSlice(topLeft, bottomRight)
+function SlicedFrame:setSlice(topLeft, bottomRight)
 	if bottomRight == nil then
 		bottomRight = vector(self.ReferenceImage:getDimensions()) - topLeft
 	end
@@ -649,7 +649,7 @@ end
 
 
 -- draws the sliced image at its location in the UI. Called internally
-function slicedimage_base:draw()
+function SlicedFrame:draw()
 	if self.Hidden then return end
 
 	local imgWidth, imgHeight = self.ReferenceImage:getDimensions()
@@ -727,7 +727,7 @@ end
 
 ----------------------------------------------------[[ == OBJECT CREATION == ]]----------------------------------------------------
 
--- the base properties of each ui_base
+-- the base properties of each UIBase
 local function newBase(w, h, col)
 	col = col == nil and color(1, 1, 1) or color(col)
 	module.TotalCreated = module.TotalCreated + 1
@@ -773,7 +773,7 @@ end
 -- create new Frame object
 local function newFrame(w, h, col)
 	local Obj = newBase(w, h, col)
-	setmetatable(Obj, frame_base)
+	setmetatable(Obj, Frame)
 	return Obj
 end
 
@@ -781,7 +781,7 @@ end
 local function newImageFrame(img, w, h, col)
 	local Obj = newBase(w or img:getPixelWidth(), h or img:getPixelHeight(), col)
 	Obj["ReferenceImage"] = img
-	setmetatable(Obj, image_base)
+	setmetatable(Obj, ImageFrame)
 	return Obj
 end
 
@@ -813,7 +813,7 @@ local function newSlicedFrame(img, topLeft, bottomRight, w, h, col, corScale)
 	}
 
 	-- return
-	setmetatable(Obj, slicedimage_base)
+	setmetatable(Obj, SlicedFrame)
 	return Obj
 end
 
