@@ -3,6 +3,7 @@ local ui = require("framework.ui")
 --local inputreader = require("framework/inputreader")
 local color = require("framework.datatypes.color")
 local vector = require("framework.datatypes.vector")
+local tween = require("framework.datatypes.tween")
 --local content = require("app/content/ui_base").Content
 
 local addToPage = require("app.append_page")
@@ -58,6 +59,7 @@ function love.load()
 	DisplayVars = love.graphics.getWidth() > 720 and Vars.Default or Vars.SmallScreen
 	Vars.SmallScreen.BodyWidth = ww - Vars.SmallScreen.NavigationWidth
 
+	tween:initialize()
 	ui:initialize()
 
 	-- create main body

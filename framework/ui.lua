@@ -553,6 +553,13 @@ function UIBase:getPixelPadding()
 end
 
 
+function UIBase:setCenter(x, y)
+	self.Center:set(x)
+	updateAbsolutePosition(self)
+	module.Changed = true
+end
+
+
 -- adds a TextBlock to the UI and sets its content. If no arguments provided, removes the text. If no font size provided, text is scaled to fit the frame
 function UIBase:setText(fontname, textData, size, scaleHeight)
 	if fontname == nil then
