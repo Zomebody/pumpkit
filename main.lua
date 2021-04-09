@@ -75,6 +75,18 @@ function love.load()
 	Container:addChild(Navigation)
 	Container:addChild(Body)
 
+	local function hasScrollEvents(Obj)
+		if Obj ~= nil and Obj ~= Body then
+			return Obj.OnScroll ~= nil or Obj.OnNestedScroll ~= nil
+		end
+		return false
+	end
+	local function hasPressEvents(Obj)
+		if Obj ~= nil then
+			return Obj.OnPressStart ~= nil or Obj.OnPressEnd ~= nil or Obj.OnFullPress ~= nil
+		end
+		return false
+	end
 	-- set events
 	local Scrollables = {{Navigation, 30}, {Body, 50}}
 	for i = 1, #Scrollables do
@@ -87,12 +99,31 @@ function love.load()
 		end
 		local Obj = Scrollables[i][1]
 		Obj.OnNestedScroll = function(x, y)
+			if i == 2 and hasScrollEvents(ui.MouseFocus) then
+				return
+			end
 			Obj:shiftContent(0, y * Scrollables[i][2])
 			local ShownChild = getShownChild(Obj)
-			if Obj.ContentOffset.y > 0 then
-				Obj:positionContent(0, 0)
-			elseif Obj.ContentOffset.y < -ShownChild.Children[#ShownChild.Children].Position.Offset.y then
-				Obj:positionContent(0, -ShownChild.Children[#ShownChild.Children].Position.Offset.y)
+			if ShownChild ~= nil then
+				if Obj.ContentOffset.y > 0 then
+					Obj:positionContent(0, 0)
+				elseif Obj.ContentOffset.y < -ShownChild.Children[#ShownChild.Children].Position.Offset.y then
+					Obj:positionContent(0, -ShownChild.Children[#ShownChild.Children].Position.Offset.y)
+				end
+			end
+		end
+		Obj.OnNestedDrag = function(dx, dy)
+			if i == 2 and hasPressEvents(ui.DragTarget) then
+				return
+			end
+			Obj:shiftContent(0, dy)
+			local ShownChild = getShownChild(Obj)
+			if ShownChild ~= nil then
+				if Obj.ContentOffset.y > 0 then
+					Obj:positionContent(0, 0)
+				elseif Obj.ContentOffset.y < -ShownChild.Children[#ShownChild.Children].Position.Offset.y then
+					Obj:positionContent(0, -ShownChild.Children[#ShownChild.Children].Position.Offset.y)
+				end
 			end
 		end
 	end
@@ -204,7 +235,7 @@ end
 
 function love.draw()
 	ui:render()
-	love.graphics.print(tostring(love.timer.getFPS()) .. ", " .. tostring(wx) .. ", " .. tostring(wy) .. ", " .. tostring(ww) .. ", " .. tostring(wh), 10, wy + wh - 30)
+	love.graphics.print(tostring(love.timer.getFPS()) .. ", drag active: " .. tostring(ui.DragActive) .. ", dragged ID: " .. tostring(ui.DragTarget ~= nil and ui.DragTarget.Id or nil), 10, wy + wh - 30)
 end
 
 

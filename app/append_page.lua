@@ -247,7 +247,7 @@ local function create_doc(BodyRef, NavigationRef, data, DisplayVars, superClass)
 			end
 			Button:setText(defaultFont, {TextColor:array(), Item.Name}, DisplayVars.TextSize, true)
 			Button.OnFullPress = function(x, y, button)
-				if button == 1 then
+				if button == 1 and not ui.DragActive then
 					BodyRef.Parent:positionContent(0, -JumpToObject.Position.Offset.y)
 				end
 			end

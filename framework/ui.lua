@@ -132,15 +132,15 @@ function module:initialize()
 			self.DragActive = true
 			local Target = self.DragTarget
 			if Target.OnDrag ~= nil then
-				Target.OnDrag(self.PressedButton, dx, dy, dx - self.DragStart.x, dy - self.DragStart.y)
+				Target.OnDrag(dx, dy, self.PressedButton, dx - self.DragStart.x, dy - self.DragStart.y)
 			end
 			if Target.OnNestedDrag ~= nil then
-				Target.OnNestedDrag(self.PressedButton, dx, dy, dx - self.DragStart.x, dy - self.DragStart.y)
+				Target.OnNestedDrag(dx, dy, self.PressedButton, dx - self.DragStart.x, dy - self.DragStart.y)
 			end
 			while Target.Parent ~= nil and Target.Parent ~= module do
 				Target = Target.Parent
 				if Target.OnNestedDrag ~= nil then
-					Target.OnNestedDrag(self.PressedButton, dx, dy, dx - self.DragStart.x, dy - self.DragStart.y)
+					Target.OnNestedDrag(dx, dy, self.PressedButton, dx - self.DragStart.x, dy - self.DragStart.y)
 				end
 			end
 		end
