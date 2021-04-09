@@ -1,9 +1,6 @@
 --[[
 	TODO:
-	- drag event for touch devices
-	- rename ui_base, frame_base, image_base, slicedimage_base to: Frame, ImageFrame, SlicedFrame
-	- remove text-based properties and methods from ui_base and put them into a new object TextFrame
-	- UI should have methods to set its colors, which will then be used in a shader to draw the UI with different colors
+	- document OnDrag(x, y, button, dx, dy), OnDragEnd(dx, dy), OnNestedDrag(x, y, button, dx, dy), OnNestedDragEnd(dx, dy), :isDescendantOf(Obj), ui.DragActive, ui.DragStart, ui.DragTarget, ui.PressedButton
 
 	TODO object types:
 	- StateButton (button which, when clicked, proceeds to the next state, and can wrap back to the initial state)
@@ -132,15 +129,15 @@ function module:initialize()
 			self.DragActive = true
 			local Target = self.DragTarget
 			if Target.OnDrag ~= nil then
-				Target.OnDrag(dx, dy, self.PressedButton, dx - self.DragStart.x, dy - self.DragStart.y)
+				Target.OnDrag(dx, dy, self.PressedButton, x - self.DragStart.x, y - self.DragStart.y)
 			end
 			if Target.OnNestedDrag ~= nil then
-				Target.OnNestedDrag(dx, dy, self.PressedButton, dx - self.DragStart.x, dy - self.DragStart.y)
+				Target.OnNestedDrag(dx, dy, self.PressedButton, x - self.DragStart.x, y - self.DragStart.y)
 			end
 			while Target.Parent ~= nil and Target.Parent ~= module do
 				Target = Target.Parent
 				if Target.OnNestedDrag ~= nil then
-					Target.OnNestedDrag(dx, dy, self.PressedButton, dx - self.DragStart.x, dy - self.DragStart.y)
+					Target.OnNestedDrag(dx, dy, self.PressedButton, x - self.DragStart.x, y - self.DragStart.y)
 				end
 			end
 		end

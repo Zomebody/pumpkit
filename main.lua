@@ -82,8 +82,8 @@ function love.load()
 		return false
 	end
 	local function hasPressEvents(Obj)
-		if Obj ~= nil then
-			return Obj.OnPressStart ~= nil or Obj.OnPressEnd ~= nil or Obj.OnFullPress ~= nil
+		if Obj ~= nil and Obj ~= Body then
+			return Obj.OnPressStart ~= nil or Obj.OnPressEnd ~= nil or Obj.OnFullPress ~= nil or Obj.OnDrag ~= nil or Obj.OnNestedDrag
 		end
 		return false
 	end

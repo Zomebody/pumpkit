@@ -336,6 +336,13 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Method";
+	["Name"] = "isDescendantOf";
+	["Arguments"] = {"Object"};
+	["Description"] = "Returns true if the current UI element is a descendant (child or indirect child) of the given object.";
+})
+
+table.insert(content, {
+	["Type"] = "Method";
 	["Name"] = "positionContent";
 	["Arguments"] = {"x", "y"};
 	["Description"] = "Sets the ContentOffset property to the specified x and y coordinates.";
@@ -496,6 +503,39 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Callback";
+	["Name"] = "OnDrag";
+	["Arguments"] = {"dx", "dy", "button", "offX", "offY"};
+	["Description"] = "Called when you drag an element. A drag is when you first press the element and then move the cursor while keeping the press active. A drag may go outside the box of the element and it will still count as an active press. dx and dy are numbers indicating the relative movement in the current frame. button is the mouse button (1 for touch drags). offX and offY are an offset in pixels relative to the starting point of the drag.";
+	["CodeMarkup"] = "<k>local</k> Draggable = ui.<f>newFrame</f>(<n>80</n>, <n>80</n>, <f>color</f>(<n>1</n>, <n>1</n>, <n>1</n>))\n<k>local</k> x, y = <n>0</n>, <n>0</n>\nDraggable.OnPressStart = <f>function</f>()\n\tx <k>=</k> Draggable.Position.Offset.x\n\ty <k>=</k> Draggable.Position.Offset.y\n<k>end</k>\nDraggable.OnDrag = <f>function</f>(<a>dx</a>, <a>dy</a>, <a>button</a>, <a>offX</a>, <a>offY</a>)\n\t<k>if</k> button <k>==</k> <n>1</n> <k>then</k>\n\t\t<k>local</k> clampedX = math.<f>min</f>(<n>220</n>, math.<f>max</f>(<n>0</n>, x <k>+</k> offX))\n\t\t<k>local</k> clampedY = math.<f>min</f>(<n>220</n>, math.<f>max</f>(<n>0</n>, y <k>+</k> offY))\n\t\tDraggable:<f>reposition</f>(<n>0</n>, <n>0</n>, clampedX, clampedY)\n\t<k>end</k>\n<k>end</k>";
+	["Demo"] = function() -- function that creates and returns an element to be placed right below the code example
+		local Container = ui.newFrame(300, 180, color(0, 0, 0))
+		local Draggable = ui.newFrame(80, 80, color(1, 1, 1))
+		local x, y = 0, 0
+		Draggable.OnPressStart = function()
+			x = Draggable.Position.Offset.x
+			y = Draggable.Position.Offset.y
+		end
+		Draggable.OnDrag = function(dx, dy, button, offX, offY)
+			if button == 1 then
+				local clampedX = math.min(220, math.max(0, x + offX))
+				local clampedY = math.min(100, math.max(0, y + offY))
+				Draggable:reposition(0, 0, clampedX, clampedY)
+			end
+		end
+		Container:addChild(Draggable)
+		return Container
+	end;
+})
+
+table.insert(content, {
+	["Type"] = "Callback";
+	["Name"] = "OnDragEnd";
+	["Arguments"] = {"offX", "offY"};
+	["Description"] = "Called when you stop dragging the element. offX and offY are an offset in pixels relative to the starting point of the drag.";
+})
+
+table.insert(content, {
+	["Type"] = "Callback";
 	["Name"] = "OnFullPress";
 	["Arguments"] = {"x", "y", "button", "istouch", "presses"};
 	["Description"] = "TODO: implement mobile touch support.\n\nCalled when you hold down and release your cursor on the element without leaving its bounding box in the process. x and y are the absolute cursor location on the screen. 'button' is the identifier of the mouse button, if applicable. istouch is a boolean indicating if the press was a touch event. The presses argument is the number of recent presses, which can be used to check for double-clicks.";
@@ -548,6 +588,20 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Callback";
+	["Name"] = "OnNestedDrag";
+	["Arguments"] = {"dx", "dy", "button", "offX", "offY"};
+	["Description"] = "Called when you drag an element, or any of its descendants. A drag is when you first press the element and then move the cursor while keeping the press active. A drag may go outside the box of the element and it will still count as an active press. dx and dy are numbers indicating the relative movement in the current frame. button is the mouse button (1 for touch drags). offX and offY are an offset in pixels relative to the starting point of the drag.";
+})
+
+table.insert(content, {
+	["Type"] = "Callback";
+	["Name"] = "OnNestedDragEnd";
+	["Arguments"] = {"offX", "offY"};
+	["Description"] = "Called when you stop dragging the element, or any of its descendants. offX and offY are an offset in pixels relative to the starting point of the drag.";
+})
+
+table.insert(content, {
+	["Type"] = "Callback";
 	["Name"] = "OnNestedScroll";
 	["Arguments"] = {"x", "y"};
 	["Description"] = "Called when the scroll wheel is moved when the mouse is focused on the element or one of its descendants. x and y are values indicating the direction of the scroll action. In most cases only the y-value is not zero.";
@@ -570,7 +624,7 @@ table.insert(content, {
 	["Type"] = "Callback";
 	["Name"] = "OnPressEnd";
 	["Arguments"] = {"x", "y", "button", "istouch", "presses"};
-	["Description"] = "TODO: Support mobile touch.\n\nCalled when you release a press while being focused on the element. x and y are the absolute cursor location on the screen. 'button' is the identifier of the mouse button, if applicable. istouch is a boolean indicating if the press was a touch event. The presses argument is the number of recent presses, which can be used to check for double-clicks.";
+	["Description"] = "Called when you release a press while being focused on the element. x and y are the absolute cursor location on the screen. 'button' is the identifier of the mouse button, if applicable. istouch is a boolean indicating if the press was a touch event. The presses argument is the number of recent presses, which can be used to check for double-clicks.";
 	["CodeMarkup"] = "<k>local</k> Frame = ui.<f>newFrame</f>(<n>80</n>, <n>40</n>, <f>color</f>(<n>0</n>, <n>0</n>, <n>0</n>))\n<k>local</k> counter = <n>0</n>\nFrame.OnPressEnd = <f>function</f>()\n\tcounter = counter + <n>1</n>\n\tFrame:<f>setText</f>(<s>\"Roundabout.ttf\"</s>, <f>tostring</f>(counter), <n>18</n>)\n<k>end</k>";
 	["Demo"] = function() -- function that creates and returns an element to be placed right below the code example
 		local Frame = ui.newFrame(80, 40, color(0, 0, 0))
@@ -587,7 +641,7 @@ table.insert(content, {
 	["Type"] = "Callback";
 	["Name"] = "OnPressStart";
 	["Arguments"] = {"x", "y", "button", "istouch", "presses"};
-	["Description"] = "TODO: Support mobile touch.\n\nCalled when you initiate a press while being focused on the element. x and y are the absolute cursor location on the screen. 'button' is the identifier of the mouse button, if applicable. istouch is a boolean indicating if the press was a touch event. The presses argument is the number of recent presses, which can be used to check for double-clicks.";
+	["Description"] = "Called when you initiate a press while being focused on the element. x and y are the absolute cursor location on the screen. 'button' is the identifier of the mouse button, if applicable. istouch is a boolean indicating if the press was a touch event. The presses argument is the number of recent presses, which can be used to check for double-clicks.";
 	["CodeMarkup"] = "<k>local</k> Frame = ui.<f>newFrame</f>(<n>80</n>, <n>40</n>, <f>color</f>(<n>0</n>, <n>0</n>, <n>0</n>))\n<k>local</k> counter = <n>0</n>\nFrame.OnPressStart = <f>function</f>()\n\tcounter = counter + <n>1</n>\n\tFrame:<f>setText</f>(<s>\"Roundabout.ttf\"</s>, <f>tostring</f>(counter), <n>18</n>)\n<k>end</k>";
 	["Demo"] = function() -- function that creates and returns an element to be placed right below the code example
 		local Frame = ui.newFrame(80, 40, color(0, 0, 0))
