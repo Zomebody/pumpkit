@@ -36,7 +36,12 @@ local module = {
 	["MouseFocus"] = nil; -- current element the mouse is hovering over
 	-- TODO: replace PressedElement with an 'ActivePresses' table, where each index corresponds to a mouse button and the value is a reference to the element being held down.
 	["PressedElement"] = nil; -- the element that is currently being pressed / held down
-	["NumMouseFocusChanged"] = 0; -- total number of times the mouse focus changed. Used to determine if a full press on an element happened
+	["PressedButton"] = nil;
+	["DragActive"] = false; -- whether or not DragTarget is experiencing a drag
+	["DragStart"] = vector();
+	["DragTarget"] = nil; -- the element that is currently being dragged
+	--["NestedDragTargets"] = {}; -- an array of elements that are experiencing a drag event. The first index is a regular OnDrag, all other elements are OnNestedDrag elements
+	--["ActiveInputId"] = nil; -- id of the 'thing' that is pressing, so 1 = left mouse, 2 = right mouse, light userdata = touch, 'A' would be gamepad A
 	["TotalCreated"] = 0; -- total number of UI elements that have been created
 	["Changed"] = false; -- internal boolean to determine at the end of each frame if some element was added, removed, hidden, unhidden or changed position or size, so MouseFocus can be updated
 
@@ -105,11 +110,12 @@ function module:initialize()
 
 	-- Monkey Patching love.mousemoved (at start)
 	local mousemoved = love.mousemoved or function() end -- define new mousemoved function if it doesn't exist yet
-	love.mousemoved = function(x, y)
+	love.mousemoved = function(x, y, dx, dy, istouch)
 		local oldFocus = self.MouseFocus
 		self.MouseFocus = self:at(x, y)
-		if oldFocus ~= self.MouseFocus then
-			self.NumMouseFocusChanged = self.NumMouseFocusChanged + 1
+
+		-- find and trigger hover events if focus changed
+		if oldFocus ~= self.MouseFocus then -- focus changed, check for new focus
 			if oldFocus ~= nil then
 				self.PressedElement = nil
 				if oldFocus.OnHoverEnd ~= nil then
@@ -120,6 +126,25 @@ function module:initialize()
 				self.MouseFocus.OnHoverStart()
 			end
 		end
+
+		-- use delta movement to call (nested) drag events
+		if self.DragTarget ~= nil then
+			self.DragActive = true
+			local Target = self.DragTarget
+			if Target.OnDrag ~= nil then
+				Target.OnDrag(self.PressedButton, dx, dy, dx - self.DragStart.x, dy - self.DragStart.y)
+			end
+			if Target.OnNestedDrag ~= nil then
+				Target.OnNestedDrag(self.PressedButton, dx, dy, dx - self.DragStart.x, dy - self.DragStart.y)
+			end
+			while Target.Parent ~= nil and Target.Parent ~= module do
+				Target = Target.Parent
+				if Target.OnNestedDrag ~= nil then
+					Target.OnNestedDrag(self.PressedButton, dx, dy, dx - self.DragStart.x, dy - self.DragStart.y)
+				end
+			end
+		end
+
 		mousemoved(x, y)
 	end
 
@@ -132,7 +157,7 @@ function module:initialize()
 			local oldFocus = self.MouseFocus
 			self.MouseFocus = self:at(love.mouse.getPosition())
 			if oldFocus ~= self.MouseFocus then
-				self.NumMouseFocusChanged = self.NumMouseFocusChanged + 1
+				--self.IsFullPress = false
 				if oldFocus ~= nil then
 					self.PressedElement = nil
 					if oldFocus.OnHoverEnd ~= nil then
@@ -147,7 +172,7 @@ function module:initialize()
 	end
 
 	-- Monkey Patching love.resize (at start)
-	local resize = love.resize or function() end -- define new resize function is it doesn't exist yet
+	local resize = love.resize or function() end -- define new resize function if it doesn't exist yet
 	love.resize = function(w, h)
 		self.Changed = true
 		local screenW, screenH = self.Size.x, self.Size.y
@@ -162,38 +187,85 @@ function module:initialize()
 		resize(w, h)
 	end
 
-	local oldMouseFocusId = {}
 	-- Monkey Patching mouse pressed and mouse released
 	local mousepressed = love.mousepressed or function() end
 	love.mousepressed = function(x, y, button, istouch, presses)
 		mousepressed(x, y, button, istouch, presses)
-		oldMouseFocusId[button] = self.NumMouseFocusChanged
+		
+		-- stop current drag
+		if self.DragTarget ~= nil then
+			local Target = self.DragTarget
+			if Target.OnDragEnd ~= nil then
+				Target.OnDragEnd(x - self.DragStart.x, y - self.DragStart.y)
+			end
+			if Target.OnNestedDragEnd ~= nil then
+				Target.OnNestedDragEnd(x - self.DragStart.x, y - self.DragStart.y)
+			end
+			while Target.Parent ~= nil and Target.Parent ~= module do
+				Target = Target.Parent
+				if Target.OnNestedDragEnd ~= nil then
+					Target.OnNestedDragEnd(x - self.DragStart.x, y - self.DragStart.y)
+				end
+			end
+		end
+
 		if self.MouseFocus ~= nil then
+			self.PressedElement = self.MouseFocus
+			self.PressedButton = button
+
+			self.DragStart:set(x, y)
+			self.DragTarget = self.PressedElement
+
 			if self.MouseFocus.OnPressStart ~= nil then
 				self.MouseFocus.OnPressStart(x, y, button, istouch, presses)
 			end
-			self.PressedElement = self.MouseFocus
 		end
 	end
+
+
 
 	local mousereleased = love.mousereleased or function() end
 	love.mousereleased = function(x, y, button, istouch, presses)
 		mousereleased(x, y, button, istouch, presses)
 		if self.MouseFocus ~= nil then
-			self.PressedElement = nil
+			--local oldPressed = self.PressedElement
+			--self.PressedElement = nil
 			if self.MouseFocus.OnPressEnd ~= nil then
 				self.MouseFocus.OnPressEnd(x, y, button, istouch, presses)
 			end
-			if oldMouseFocusId[button] == self.NumMouseFocusChanged and self.MouseFocus.OnFullPress ~= nil then
+			if self.MouseFocus == self.PressedElement and self.MouseFocus.OnFullPress ~= nil then
 				self.MouseFocus.OnFullPress(x, y, button, istouch, presses)
 			end
 		end
+
+		-- stop current drag
+		if self.DragTarget ~= nil then
+			local Target = self.DragTarget
+			if Target.OnDragEnd ~= nil then
+				Target.OnDragEnd(x - self.DragStart.x, y - self.DragStart.y)
+			end
+			if Target.OnNestedDragEnd ~= nil then
+				Target.OnNestedDragEnd(x - self.DragStart.x, y - self.DragStart.y)
+			end
+			while Target.Parent ~= nil and Target.Parent ~= module do
+				Target = Target.Parent
+				if Target.OnNestedDragEnd ~= nil then
+					Target.OnNestedDragEnd(x - self.DragStart.x, y - self.DragStart.y)
+				end
+			end
+		end
+
+		-- reset values after the fact so they can be used in the press callbacks, e.g. when programming a scrollable frame and you want to know is a FullPress is valid, or part of a drag
+		self.PressedButton = nil
+		self.PressedElement = nil
+		self.DragTarget = nil
+		self.DragActive = false
 	end
 
 	-- Monkey Patching mouse pressed and mouse released
-	love.touchpressed = function(x, y, button, istouch, presses)
-
-	end
+	--love.touchpressed = function(x, y, button, istouch, presses)
+	--
+	--end
 
 	-- Monkey patching mousescroll
 	local wheelmoved = love.wheelmoved or function() end
@@ -282,6 +354,18 @@ function UIBase:addChild(Obj)
 	self.Children[#self.Children + 1] = Obj
 	updateAbsolutePosition(Obj)
 	module.Changed = true
+end
+
+-- return true if the given Object is an (indirect) parent of the UI element
+function UIBase:isDescendantOf(Obj)
+	local Target = self
+	while Target.Parent ~= nil do
+		Target = Target.Parent
+		if Target == Obj then
+			return true
+		end
+	end
+	return false
 end
 
 -- hides the UI element
@@ -759,9 +843,13 @@ local function newBase(w, h, col)
 		["TextBlock"] = nil;
 
 		-- events
+		["OnDrag"] = nil; -- triggered when you move the input across the pressed element
+		["OnDragEnd"] = nil; -- triggered when you stop dragging an object, by releasing or changing the input button
 		["OnFullPress"] = nil; -- tap/click started and ended in the same element with no interruption
 		["OnHoverEnd"] = nil; -- triggered when cursor left the element
 		["OnHoverStart"] = nil; -- triggered when cursor enters the element
+		["OnNestedDrag"] = nil; -- same as OnDrag, but it also works on descendants
+		["OnNestedDragEnd"] = nil; -- same as OnDragEnd, but it also works on descendants
 		["OnNestedScroll"] = nil; -- triggered when you scroll the mouse wheel over an element, or one of its descendants
 		["OnPressEnd"] = nil; -- tap/click ended in the element
 		["OnPressStart"] = nil; -- tap/click started in the element
