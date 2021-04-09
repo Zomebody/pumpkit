@@ -73,7 +73,7 @@ table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "new";
 	["Arguments"] = {"r", "g", "b", "a"};
-	["Description"] = "Constructs a color from red, green and blue components and an alpha value, all between 0 and 1. If r is a string instead, it is interpreted as a Hex value.\n\nIf the module itself is called, this method will be called instead.";
+	["Description"] = "Constructs a color from red, green and blue components and an alpha value, all optional and between 0 and 1. If r is a string instead, it is interpreted as a Hex value.\n\nIf the module itself is called, this method will be called instead.";
 })
 
 table.insert(content, {
@@ -87,7 +87,18 @@ table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "random";
 	["Arguments"] = {};
-	["Description"] = "Creates a color with random r, g and b values. The hue is completely random, but the value and saturation are slightly biased towards 1.";
+	["Description"] = "Creates a color with random r, g and b values. The hue is completely random, but the value and saturation are slightly biased towards 1.\n\nThe following colors are all randomly generated during the start-up of this program.";
+	["Demo"] = function()
+		local Container = ui.newFrame(500, 200)
+		for x = 0, 9 do
+			for y = 0, 3 do
+				local ColorFrame = ui.newFrame(50, 50, color.random())
+				ColorFrame:reposition(0, 0, x * 50, y * 50)
+				Container:addChild(ColorFrame)
+			end
+		end
+		return Container
+	end
 })
 
 return {
