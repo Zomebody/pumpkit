@@ -29,6 +29,9 @@ local textblock = require("framework.datatypes.textblock")
 
 ----------------------------------------------------[[ == BASE OBJECTS == ]]----------------------------------------------------
 
+local speedHistoryX = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+local speedHistoryY = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+
 local module = {
 	["MouseFocus"] = nil; -- current element the mouse is hovering over
 	-- TODO: replace PressedElement with an 'ActivePresses' table, where each index corresponds to a mouse button and the value is a reference to the element being held down.
@@ -37,6 +40,7 @@ local module = {
 	["DragActive"] = false; -- whether or not DragTarget is experiencing a drag
 	["DragStart"] = vector();
 	["DragTarget"] = nil; -- the element that is currently being dragged
+	--["CursorSpeed"] = vector(); -- the current delta drag in the current frame
 	--["NestedDragTargets"] = {}; -- an array of elements that are experiencing a drag event. The first index is a regular OnDrag, all other elements are OnNestedDrag elements
 	--["ActiveInputId"] = nil; -- id of the 'thing' that is pressing, so 1 = left mouse, 2 = right mouse, light userdata = touch, 'A' would be gamepad A
 	["TotalCreated"] = 0; -- total number of UI elements that have been created
@@ -99,8 +103,8 @@ end
 
 -- connects love2d events to UI element events
 function module:initialize()
-	if not module.Initialized then
-		module.Initialized = true
+	if not self.Initialized then
+		self.Initialized = true
 	else
 		return
 	end
@@ -127,6 +131,7 @@ function module:initialize()
 		-- use delta movement to call (nested) drag events
 		if self.DragTarget ~= nil then
 			self.DragActive = true
+			--self.DragSpeed:set(dx / love.timer.getDelta(), dy / love.timer.getDelta())
 			local Target = self.DragTarget
 			if Target.OnDrag ~= nil then
 				Target.OnDrag(dx, dy, self.PressedButton, x - self.DragStart.x, y - self.DragStart.y)
@@ -147,8 +152,30 @@ function module:initialize()
 
 	-- Monkey Patching love.update (at end)
 	local update = love.update or function() end -- define new update function if it doesn't exist yet
+	local prevX = love.mouse.getX()
+	local prevY = love.mouse.getY()
 	love.update = function()
 		update()
+
+		-- update speed history table and recalculate cursor speed
+		local newX, newY = love.mouse.getPosition()
+		table.remove(speedHistoryX, 1)
+		speedHistoryX[#speedHistoryX + 1] = newX - prevX
+		table.remove(speedHistoryY, 1)
+		speedHistoryY[#speedHistoryY + 1] = newY - prevY
+		prevX = newX
+		prevY = newY
+		--[[
+		sumX = 0
+		sumY = 0
+		for i = 1, historySize do
+			sumX = sumX + speedHistoryX[i]
+			sumY = sumY + speedHistoryY[i]
+		end
+		self.CursorSpeed:set((sumX / historySize) / love.timer.getDelta(), (sumY / historySize) / love.timer.getDelta())
+		print(self.CursorSpeed)
+		]]
+
 		if self.Changed then
 			self.Changed = false
 			local oldFocus = self.MouseFocus
@@ -190,7 +217,7 @@ function module:initialize()
 		mousepressed(x, y, button, istouch, presses)
 		
 		-- stop current drag
-		if self.DragTarget ~= nil then
+		if self.DragTarget ~= nil and self.DragActive then
 			local Target = self.DragTarget
 			if Target.OnDragEnd ~= nil then
 				Target.OnDragEnd(x - self.DragStart.x, y - self.DragStart.y)
@@ -204,6 +231,7 @@ function module:initialize()
 					Target.OnNestedDragEnd(x - self.DragStart.x, y - self.DragStart.y)
 				end
 			end
+			--self.DragSpeed:set(0, 0)
 		end
 
 		if self.MouseFocus ~= nil then
@@ -213,8 +241,18 @@ function module:initialize()
 			self.DragStart:set(x, y)
 			self.DragTarget = self.PressedElement
 
-			if self.MouseFocus.OnPressStart ~= nil then
-				self.MouseFocus.OnPressStart(x, y, button, istouch, presses)
+			local Target = self.MouseFocus
+			if Target.OnPressStart ~= nil then
+				Target.OnPressStart(x, y, button, istouch, presses)
+			end
+			if Target.OnNestedPressStart ~= nil then
+				Target.OnNestedPressStart(x, y, button, istouch, presses)
+			end
+			while Target.Parent ~= nil and Target.Parent ~= module do
+				Target = Target.Parent
+				if Target.OnNestedPressStart ~= nil then
+					Target.OnNestedPressStart(x, y, button, istouch, presses)
+				end
 			end
 		end
 	end
@@ -227,8 +265,18 @@ function module:initialize()
 		if self.MouseFocus ~= nil then
 			--local oldPressed = self.PressedElement
 			--self.PressedElement = nil
-			if self.MouseFocus.OnPressEnd ~= nil then
-				self.MouseFocus.OnPressEnd(x, y, button, istouch, presses)
+			local Target = self.MouseFocus
+			if Target.OnPressEnd ~= nil then
+				Target.OnPressEnd(x, y, button, istouch, presses)
+			end
+			if Target.OnNestedPressEnd ~= nil then
+				Target.OnNestedPressEnd(x, y, button, istouch, presses)
+			end
+			while Target.Parent ~= nil and Target.Parent ~= module do
+				Target = Target.Parent
+				if Target.OnNestedPressEnd ~= nil then
+					Target.OnNestedPressEnd(x, y, button, istouch, presses)
+				end
 			end
 			if self.MouseFocus == self.PressedElement and self.MouseFocus.OnFullPress ~= nil then
 				self.MouseFocus.OnFullPress(x, y, button, istouch, presses)
@@ -236,7 +284,7 @@ function module:initialize()
 		end
 
 		-- stop current drag
-		if self.DragTarget ~= nil then
+		if self.DragTarget ~= nil and self.DragActive then
 			local Target = self.DragTarget
 			if Target.OnDragEnd ~= nil then
 				Target.OnDragEnd(x - self.DragStart.x, y - self.DragStart.y)
@@ -257,6 +305,7 @@ function module:initialize()
 		self.PressedElement = nil
 		self.DragTarget = nil
 		self.DragActive = false
+		--self.DragSpeed:set(0, 0)
 	end
 
 	-- Monkey Patching mouse pressed and mouse released
@@ -304,6 +353,20 @@ function module:addChild(Obj)
 	self.Children[#self.Children + 1] = Obj
 	updateAbsolutePosition(Obj)
 	self.Changed = true
+end
+
+-- return the cursor speed from the last X frames (limit of 30 frames)
+function module:getCursorSpeed(frameCount)
+	frameCount = frameCount == nil and 20 or math.min(30, frameCount)
+	if frameCount == 0 then frameCount = 1 end
+	local sumX = 0
+	local sumY = 0
+	local size = #speedHistoryX
+	for i = size - frameCount + 1, size do
+		sumX = sumX + speedHistoryX[i]
+		sumY = sumY + speedHistoryY[i]
+	end
+	return vector((sumX / size) / love.timer.getDelta(), (sumY / size) / love.timer.getDelta())
 end
 
 -- draw all UI on screen
@@ -854,6 +917,8 @@ local function newBase(w, h, col)
 		["OnHoverStart"] = nil; -- triggered when cursor enters the element
 		["OnNestedDrag"] = nil; -- same as OnDrag, but it also works on descendants
 		["OnNestedDragEnd"] = nil; -- same as OnDragEnd, but it also works on descendants
+		["OnNestedPressStart"] = nil;
+		["OnNestedPressEnd"] = nil;
 		["OnNestedScroll"] = nil; -- triggered when you scroll the mouse wheel over an element, or one of its descendants
 		["OnPressEnd"] = nil; -- tap/click ended in the element
 		["OnPressStart"] = nil; -- tap/click started in the element

@@ -66,7 +66,7 @@ function tween:getValue(key)
 end
 
 
--- if the tween is playing, cancel is and call its OnStop callback
+-- if the tween is playing, cancel it and call its OnStop callback
 function tween:cancel()
 	self:stop(false)
 end
@@ -74,33 +74,36 @@ end
 
 -- if the tween is playing, stop the tween, but don't reset its properties
 function tween:pause()
-	if not self.Playing then
+	if not self.State == "playing" then
 		return false
 	end
-	self.Playing = false
+	self.State = "paused"
 	return true
 end
 
 
 -- play the tween without resetting the properties
 function tween:resume()
-	if self.Playing then
-		return false
+	if self.State == "idle" then
+		self:play()
+		return true
+	elseif self.State == "paused" then
+		self.State = "playing"
+		return true
 	end
-	self.Playing = true
-	return true
+	return false
 end
 
 
 -- tweenType = "sine", "circle", "linear", "quadratic"/"quad"/"squared, "cubed", "sqrt"/"root", "dampen"/"back", "recoil"
 -- you can combine two tweens with a space in between to combine the two
 function tween:play(reversed, inversed)
-	if self.Playing then
+	if self.State ~= "idle" then
 		return false
 	end
 	self.Reversed = reversed == true and true or false
 	self.Inversed = inversed == true and true or false
-	self.Playing = true
+	self.State = "playing"
 	module.Active[#module.Active + 1] = self
 	return true
 end
@@ -108,11 +111,20 @@ end
 
 -- fully stop the tween. Even if it's paused. Reset values and remove from the list.
 function tween:stop(complete)
-	if not (self.Playing or self.Progress > 0) then
+	complete = complete == nil and false or complete
+	if self.State == "idle" then
 		return false
 	end
-	self.Playing = false
+	self.State = "idle"
 	self.TimePlayed = 0
+
+	-- remove tween from active tweens
+	for i = 1, #module.Active do
+		if module.Active[i] == self then
+			table.remove(module.Active, i)
+			break
+		end
+	end
 
 	-- call OnStop callback
 	if self.OnStop ~= nil then
@@ -124,7 +136,7 @@ end
 
 
 function tween:update(dt)
-	if self.Playing then
+	if self.State == "playing" then
 		-- update time played
 		self.TimePlayed = self.TimePlayed + dt
 		if self.TimePlayed > self.Duration then
@@ -164,6 +176,10 @@ function tween:update(dt)
 	return false
 end
 
+function tween:__tostring()
+	return "tween: (" .. tostring(self.TweenType) .. ", " .. tostring(self.Duration) .. ")"
+end
+
 
 
 ----------------------------------------------------[[ == MODULE METHODS == ]]----------------------------------------------------
@@ -191,11 +207,10 @@ function module:update()
 		local stopped = module.Active[i]:update(dt)
 		if not stopped then
 			i = i + 1
-		else
-			table.remove(module.Active, i)
+		--else
+		--	table.remove(module.Active, i)
 		end
 	end
-	--module:removeInactive()
 end
 
 
@@ -204,7 +219,7 @@ end
 
 -- create a new tween object and set its metatable and return it
 -- valueTable is key/value dictionary. If the key is a method, the method is called with the tweened variable instead
-function new(Target, tweenType, duration, valueTable)
+local function new(Target, tweenType, duration, valueTable)
 	local t = {
 		["Target"] = Target;
 		["TimePlayed"] = 0;
@@ -213,7 +228,7 @@ function new(Target, tweenType, duration, valueTable)
 		["TweenType"] = tweenType;
 		["Reversed"] = false; -- play from end value to start value (mirror on x-axis)
 		["Inversed"] = false; -- inverse the interpolation constant (mirror on y-axis)
-		["Playing"] = false;
+		["State"] = "idle"; -- "idle" / "playing" / "paused"
 		["Values"] = {
 			["Start"] = {};
 			["Current"] = {};

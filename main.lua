@@ -99,6 +99,7 @@ function love.load()
 				end
 			end
 		end
+		local scrollTween = nil
 		local Obj = Scrollables[i][1]
 		Obj.OnNestedScroll = function(x, y)
 			if i == 2 and hasScrollEvents(ui.MouseFocus) then
@@ -126,6 +127,34 @@ function love.load()
 				elseif Obj.ContentOffset.y < -ShownChild.Children[#ShownChild.Children].Position.Offset.y then
 					Obj:positionContent(0, -ShownChild.Children[#ShownChild.Children].Position.Offset.y)
 				end
+			end
+		end
+		Obj.OnNestedDragEnd = function()
+			if i == 2 and hasPressEvents(ui.DragTarget) then
+				return
+			end
+			local CursorSpeed = ui:getCursorSpeed(15)
+			print(CursorSpeed)
+			if CursorSpeed.y ~= 0 then
+				local ValueObject = {["Value"] = CursorSpeed.y * love.timer.getDelta()}
+				local ShownChild = getShownChild(Obj)
+				local sign = ValueObject.Value / math.abs(ValueObject.Value)
+				scrollTween = tween(ValueObject, "linear", math.sqrt(sign * ValueObject.Value / 30), {["Value"] = 0})
+				scrollTween:play()
+				scrollTween.OnUpdate = function()
+					Obj:shiftContent(0, math.ceil(ValueObject.Value))
+					if Obj.ContentOffset.y > 0 then
+						Obj:positionContent(0, 0)
+					elseif Obj.ContentOffset.y < -ShownChild.Children[#ShownChild.Children].Position.Offset.y then
+						Obj:positionContent(0, -ShownChild.Children[#ShownChild.Children].Position.Offset.y)
+					end
+				end
+			end
+		end
+		Obj.OnNestedPressStart = function()
+			if scrollTween ~= nil then
+				scrollTween:stop()
+				scrollTween = nil
 			end
 		end
 	end
@@ -201,21 +230,21 @@ function love.load()
 
 			-- link the right button in the dropdown to open the page and close the previous page
 			DropdownBox.Children[k].OnFullPress = function(x, y, button)
-			if button == 1 then
-				Navigation:positionContent(0, 0)
-				Body:positionContent(0, 0)
-				if shownNavigation ~= nil then
-					shownNavigation:hide()
+				if button == 1 then
+					Navigation:positionContent(0, 0)
+					Body:positionContent(0, 0)
+					if shownNavigation ~= nil then
+						shownNavigation:hide()
+					end
+					if shownBody ~= nil then
+						shownBody:hide()
+					end
+					NavContainer:show()
+					shownNavigation = NavContainer
+					BodyContainer:show()
+					shownBody = BodyContainer
 				end
-				if shownBody ~= nil then
-					shownBody:hide()
-				end
-				NavContainer:show()
-				shownNavigation = NavContainer
-				BodyContainer:show()
-				shownBody = BodyContainer
 			end
-		end
 		end
 
 	end
