@@ -366,7 +366,7 @@ function module:getCursorSpeed(frameCount)
 		sumX = sumX + speedHistoryX[i]
 		sumY = sumY + speedHistoryY[i]
 	end
-	return vector((sumX / size) / love.timer.getDelta(), (sumY / size) / love.timer.getDelta())
+	return vector((sumX / frameCount) / love.timer.getDelta(), (sumY / frameCount) / love.timer.getDelta())
 end
 
 -- draw all UI on screen

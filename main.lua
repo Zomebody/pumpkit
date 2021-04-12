@@ -133,16 +133,19 @@ function love.load()
 			if i == 2 and hasPressEvents(ui.DragTarget) then
 				return
 			end
-			local CursorSpeed = ui:getCursorSpeed(15)
+			--local frames = math.ceil(love.timer.getFPS() / 20)
+			--print("frames: " .. frames)
+			local CursorSpeed = ui:getCursorSpeed(6)
 			print(CursorSpeed)
 			if CursorSpeed.y ~= 0 then
 				local ValueObject = {["Value"] = CursorSpeed.y * love.timer.getDelta()}
+				print(ValueObject.Value)
 				local ShownChild = getShownChild(Obj)
 				local sign = ValueObject.Value / math.abs(ValueObject.Value)
 				scrollTween = tween(ValueObject, "linear", math.sqrt(sign * ValueObject.Value / 30), {["Value"] = 0})
 				scrollTween:play()
 				scrollTween.OnUpdate = function()
-					Obj:shiftContent(0, math.ceil(ValueObject.Value))
+					Obj:shiftContent(0, ValueObject.Value)
 					if Obj.ContentOffset.y > 0 then
 						Obj:positionContent(0, 0)
 					elseif Obj.ContentOffset.y < -ShownChild.Children[#ShownChild.Children].Position.Offset.y then
