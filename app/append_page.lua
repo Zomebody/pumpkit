@@ -146,9 +146,10 @@ local function create_doc(BodyRef, NavigationRef, data, DisplayVars, superClass)
 					end
 					table.insert(titleText, Colors.MonokaiText:array())
 					table.insert(titleText, ")")
-				elseif Item.Type == "Method" then
+				elseif Item.Type == "Method" or Item.Type == "Constructor" then
+					local dot = Item.Type == "Method" and ":" or "."
 					titleText[1] = Colors.MonokaiFunction:array()
-					table.insert(titleText, 1, data.Meta.Name .. ":")
+					table.insert(titleText, 1, data.Meta.Name .. dot)
 					table.insert(titleText, 1, Colors.MonokaiText:array())
 					table.insert(titleText, Colors.MonokaiText:array())
 					table.insert(titleText, "(")

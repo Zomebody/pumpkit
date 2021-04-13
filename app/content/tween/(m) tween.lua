@@ -61,10 +61,10 @@ table.insert(content, {
 })
 
 table.insert(content, {
-	["Type"] = "Method";
+	["Type"] = "Constructor";
 	["Name"] = "new";
 	["Arguments"] = {"Object", "tweenType", "duration", "Dictionary"};
-	["Description"] = "Constructs a tween. Object is the object whose properties should be tweened. tweenType is a string representing the type of tween ('back', 'bounce', 'circle', 'cube', 'linear', 'recoil', 'quad', 'shake', 'sine', 'sqrt'). The duration parameter is how long the tween takes from start to finish. Dictionary is a dictionary where each key is the property in the target Object and its value is the new value the property should transition towards.\n\nIf the module itself is called, this method will be called instead.";
+	["Description"] = "Constructs a tween. Object is the object whose properties should be tweened. tweenType is a string representing the type of tween ('back', 'bounce', 'circle', 'cube', 'linear', 'recoil', 'quad', 'shake', 'sine', 'sqrt'). The duration parameter is how long the tween takes from start to finish. Dictionary is a dictionary where each key is the property in the target Object and its value is the new value the property should transition towards.\n\nIf the tween module itself is called, this method will be called instead.";
 })
 
 table.insert(content, {

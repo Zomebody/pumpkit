@@ -49,42 +49,42 @@ table.insert(content, {
 })
 
 table.insert(content, {
-	["Type"] = "Method";
+	["Type"] = "Constructor";
 	["Name"] = "fromHex";
 	["Arguments"] = {"hex"};
 	["Description"] = "Constructs a color from a HEX string. The pound sign at the start is optional.";
 })
 
 table.insert(content, {
-	["Type"] = "Method";
+	["Type"] = "Constructor";
 	["Name"] = "fromHSV";
 	["Arguments"] = {"h", "s", "v"};
 	["Description"] = "Constructs a color from HSV values.";
 })
 
 table.insert(content, {
-	["Type"] = "Method";
+	["Type"] = "Constructor";
 	["Name"] = "fromRGB";
 	["Arguments"] = {"r", "g", "b"};
 	["Description"] = "Constructs a color from RGB values, where r, g and b are numbers in the range 0 to 255.";
 })
 
 table.insert(content, {
-	["Type"] = "Method";
+	["Type"] = "Constructor";
 	["Name"] = "new";
 	["Arguments"] = {"r", "g", "b", "a"};
 	["Description"] = "Constructs a color from red, green and blue components and an alpha value, all optional and between 0 and 1. If r is a string instead, it is interpreted as a Hex value.\n\nIf the module itself is called, this method will be called instead.";
 })
 
 table.insert(content, {
-	["Type"] = "Method";
+	["Type"] = "Constructor";
 	["Name"] = "isColor";
 	["Arguments"] = {"Object"};
 	["Description"] = "Checks if the given object is a color instance. Returns true if so.";
 })
 
 table.insert(content, {
-	["Type"] = "Method";
+	["Type"] = "Constructor";
 	["Name"] = "random";
 	["Arguments"] = {};
 	["Description"] = "Creates a color with random r, g and b values. The hue is completely random, but the value and saturation are slightly biased towards 1.\n\nThe following colors are all randomly generated during the start-up of this program.";

@@ -13,7 +13,7 @@ local defaultFont = "LieraSansMedium.ttf"
 
 local Vars = {
 	["Default"] = {
-		["NavigationWidth"] = 200;
+		["NavigationWidth"] = 210;
 		["BodyWidth"] = 700;
 		["DividerThickness"] = 6;
 		["TopBarThickness"] = 42;
@@ -269,7 +269,7 @@ end
 
 function love.draw()
 	ui:render()
-	love.graphics.print(tostring(love.timer.getFPS()) .. ", drag active: " .. tostring(ui.DragActive) .. ", dragged ID: " .. tostring(ui.DragTarget ~= nil and ui.DragTarget.Id or nil), 10, wy + wh - 30)
+	--love.graphics.print(tostring(love.timer.getFPS()) .. ", drag active: " .. tostring(ui.DragActive) .. ", dragged ID: " .. tostring(ui.DragTarget ~= nil and ui.DragTarget.Id or nil), 10, wy + wh - 30)
 end
 
 

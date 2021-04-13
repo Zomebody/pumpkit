@@ -67,9 +67,11 @@ end
 
 
 -- if the tween is playing, cancel it and call its OnStop callback
+--[[
 function tween:cancel()
 	self:stop(false)
 end
+]]
 
 
 -- if the tween is playing, stop the tween, but don't reset its properties

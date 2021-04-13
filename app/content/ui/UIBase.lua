@@ -602,6 +602,44 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Callback";
+	["Name"] = "OnNestedPressEnd";
+	["Arguments"] = {"x", "y", "button", "istouch", "presses"};
+	["Description"] = "Similar to OnPressEnd. This is triggered when you release a press on an element, or any of its descendants.";
+	["CodeMarkup"] = "<k>local</k> Frame = ui.<f>newFrame</f>(<n>80</n>, <n>40</n>, <f>color</f>(<n>0</n>, <n>0</n>, <n>0</n>))\n<k>local</k> SubFrame = ui.<f>newFrame</f>(<n>80</n>, <n>40</n>, <f>color</f>(<n>0</n>, <n>0</n>, <n>0</n>, <n>0</n>))\n<k>local</k> counter = <n>0</n>\nFrame.OnNestedPressEnd = <f>function</f>()\n\tcounter = counter + <n>1</n>\n\tFrame:<f>setText</f>(<s>\"Roundabout.ttf\"</s>, <f>tostring</f>(counter), <n>18</n>)\n<k>end</k>\nFrame:<f>addChild</f>(SubFrame)<c> -- Frame is covered, but press still works</c>";
+	["Demo"] = function() -- function that creates and returns an element to be placed right below the code example
+		local Frame = ui.newFrame(80, 40, color(0, 0, 0))
+		local SubFrame = ui.newFrame(80, 40, color(0, 0, 0, 0))
+		local counter = 0
+		Frame.OnNestedPressEnd = function()
+			counter = counter + 1
+			Frame:setText("Roundabout.ttf", tostring(counter), 18)
+		end
+		Frame:addChild(SubFrame)
+		return Frame
+	end;
+})
+
+table.insert(content, {
+	["Type"] = "Callback";
+	["Name"] = "OnNestedPressStart";
+	["Arguments"] = {"x", "y", "button", "istouch", "presses"};
+	["Description"] = "Similar to OnPressStart. This is triggered when you start a press on an element, or any of its descendants. This can be useful to program scrolling frames with drag functionality.";
+	["CodeMarkup"] = "<k>local</k> Frame = ui.<f>newFrame</f>(<n>80</n>, <n>40</n>, <f>color</f>(<n>0</n>, <n>0</n>, <n>0</n>))\n<k>local</k> SubFrame = ui.<f>newFrame</f>(<n>80</n>, <n>40</n>, <f>color</f>(<n>0</n>, <n>0</n>, <n>0</n>, <n>0</n>))\n<k>local</k> counter = <n>0</n>\nFrame.OnNestedPressStart = <f>function</f>()\n\tcounter = counter + <n>1</n>\n\tFrame:<f>setText</f>(<s>\"Roundabout.ttf\"</s>, <f>tostring</f>(counter), <n>18</n>)\n<k>end</k>\nFrame:<f>addChild</f>(SubFrame)<c> -- Frame is covered, but press still works</c>";
+	["Demo"] = function() -- function that creates and returns an element to be placed right below the code example
+		local Frame = ui.newFrame(80, 40, color(0, 0, 0))
+		local SubFrame = ui.newFrame(80, 40, color(0, 0, 0, 0))
+		local counter = 0
+		Frame.OnNestedPressStart = function()
+			counter = counter + 1
+			Frame:setText("Roundabout.ttf", tostring(counter), 18)
+		end
+		Frame:addChild(SubFrame)
+		return Frame
+	end;
+})
+
+table.insert(content, {
+	["Type"] = "Callback";
 	["Name"] = "OnNestedScroll";
 	["Arguments"] = {"x", "y"};
 	["Description"] = "Called when the scroll wheel is moved when the mouse is focused on the element or one of its descendants. x and y are values indicating the direction of the scroll action. In most cases only the y-value is not zero.";

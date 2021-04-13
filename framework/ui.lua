@@ -21,6 +21,8 @@
 ]]
 ----------------------------------------------------[[ == IMPORTS == ]]----------------------------------------------------
 
+local path = ... -- path is now a string representing the path to the current directory
+print(path) -- framework.ui
 local vector = require("framework.datatypes.vector")
 local color = require("framework.datatypes.color")
 local textblock = require("framework.datatypes.textblock")
@@ -91,7 +93,7 @@ local function updateAbsolutePosition(Obj, wX, wY, wWidth, wHeight)
 	-- calculate and apply absolute position. Then update children
 	local absX = wX + contentOffsetX + Obj.Position.Offset.x + math.floor(Obj.Position.Scale.x * wWidth) - math.floor(Obj.Size.x * Obj.Center.x)
 	local absY = wY + contentOffsetY + Obj.Position.Offset.y + math.floor(Obj.Position.Scale.y * wHeight) - math.floor(Obj.Size.y * Obj.Center.y)
-	Obj.AbsolutePosition:set(absX, absY)
+	Obj.AbsolutePosition:set(math.floor(absX), math.floor(absY))
 	for i = 1, #Obj.Children do
 		updateAbsolutePosition(Obj.Children[i], absX, absY, Obj.Size.x, Obj.Size.y)
 	end
