@@ -216,8 +216,8 @@ function module:initialize()
 	-- Monkey Patching mouse pressed and mouse released
 	local mousepressed = love.mousepressed or function() end
 	love.mousepressed = function(x, y, button, istouch, presses)
-		mousepressed(x, y, button, istouch, presses)
-		
+		mousepressed(x, y, button, istouch, presses, self.MouseFocus ~= nil)
+
 		-- stop current drag
 		if self.DragTarget ~= nil and self.DragActive then
 			local Target = self.DragTarget
@@ -263,7 +263,8 @@ function module:initialize()
 
 	local mousereleased = love.mousereleased or function() end
 	love.mousereleased = function(x, y, button, istouch, presses)
-		mousereleased(x, y, button, istouch, presses)
+		mousereleased(x, y, button, istouch, presses, self.MouseFocus ~= nil)
+
 		if self.MouseFocus ~= nil then
 			--local oldPressed = self.PressedElement
 			--self.PressedElement = nil
@@ -318,7 +319,7 @@ function module:initialize()
 	-- Monkey patching mousescroll
 	local wheelmoved = love.wheelmoved or function() end
 	love.wheelmoved = function(x, y)
-		wheelmoved(x, y)
+		wheelmoved(x, y, self.MouseFocus ~= nil)
 		if self.MouseFocus ~= nil then
 			if self.MouseFocus.OnScroll ~= nil then
 				self.MouseFocus.OnScroll(x, y)

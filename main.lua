@@ -256,6 +256,18 @@ function love.load()
 	ui:addChild(TopBar)
 end
 
+function love.mousepressed(x, y, button, istouch, presses, inputOnUI)
+	--print(inputOnUI)
+end
+
+function love.mousereleased(x, y, button, istouch, presses, inputOnUI)
+	--print(inputOnUI)
+end
+
+function love.wheelmoved(x, y, inputOnUI)
+	print(inputOnUI)
+end
+
 function love.resize(w, h)
 	TopBar:resize(w, DisplayVars.TopBarThickness)
 	Container:resize(Container.Size.x, h)
