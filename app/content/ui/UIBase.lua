@@ -430,6 +430,13 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Method";
+	["Name"] = "setCenter";
+	["Arguments"] = {"x", "y"};
+	["Description"] = "Sets the center of the element. The center property is similar to Roblox's AnchorPoint property. X and y are numbers between 0 and 1. X can also be a vector.";
+})
+
+table.insert(content, {
+	["Type"] = "Method";
 	["Name"] = "setPadding";
 	["Arguments"] = {"x", "y"};
 	["Description"] = "Sets the horizontal and vertical padding of an element. If the second argument is missing, the first argument replaces it. Horizontal and vertical padding applies on both of their edges. Padding will apply to the element's childrens' Position property and it will apply to the element's TextBlock to offset text from the sides.";

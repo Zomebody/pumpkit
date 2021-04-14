@@ -87,9 +87,29 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Property";
-	["ValueType"] = "number";
-	["Name"] = "NumMouseFocusChanged";
-	["Description"] = "An integer which is increased by one anytime the MouseFocus changes during a frame. This property is used internally to check if a full mouse press is valid, by comparing the number at the start and end of a press. TODO: This property should be moved into a local variable so it cannot be read either.";
+	["ValueType"] = "boolean";
+	["Name"] = "DragActive";
+	["Description"] = "A boolean indicating if an element is currently undergoing a drag. An element does not need to have drag-related callbacks for a drag to become active. DragActive is set to false after the mouserelease event is triggered, to it can be used within the mouserelease function to check if a drag was active prior.";
+	["ReadOnly"] = true;
+	["CodeMarkup"] = nil;
+	["Demo"] = nil;
+})
+
+table.insert(content, {
+	["Type"] = "Property";
+	["ValueType"] = "vector";
+	["Name"] = "DragStart";
+	["Description"] = "A vector describing the x and y location of the cursor where it was on screen when the drag first started.";
+	["ReadOnly"] = true;
+	["CodeMarkup"] = nil;
+	["Demo"] = nil;
+})
+
+table.insert(content, {
+	["Type"] = "Property";
+	["ValueType"] = "Object";
+	["Name"] = "DragTarget";
+	["Description"] = "A reference to the UI element that is currently experiencing a drag. An element does not need to have any drag-related callbacks for it to become a drag target.";
 	["ReadOnly"] = true;
 	["CodeMarkup"] = nil;
 	["Demo"] = nil;
@@ -100,6 +120,16 @@ table.insert(content, {
 	["ValueType"] = "Object";
 	["Name"] = "MouseFocus";
 	["Description"] = "Either nil or a reference to a UI object that the mouse is currently targeting. An element needs to not be Hidden to appear as the MouseFocus. This property is used internally to trigger events on UI objects and to color elements.";
+	["ReadOnly"] = true;
+	["CodeMarkup"] = nil;
+	["Demo"] = nil;
+})
+
+table.insert(content, {
+	["Type"] = "Property";
+	["ValueType"] = "string";
+	["Name"] = "PressedButton";
+	["Description"] = "A variable used internally for drag events to keep track of which button is pressed. This should not be used.";
 	["ReadOnly"] = true;
 	["CodeMarkup"] = nil;
 	["Demo"] = nil;
@@ -160,6 +190,13 @@ table.insert(content, {
 	["Name"] = "initialize";
 	["Arguments"] = {};
 	["Description"] = "This method can only be called once. It will initialize the UI module by hooking into other Love2D functions and adding additional behavior there to make the system run. This method should be called right when the program first loads. After that, the system will be initialized and run forever.";
+})
+
+table.insert(content, {
+	["Type"] = "Method";
+	["Name"] = "getCursorSpeed";
+	["Arguments"] = {"frameCount = 20"};
+	["Description"] = "Returns a vector of the average speed of the cursor (in pixels per second) during the last few frames. If no argument is passed, the average speed of the last 20 is used. The maximum is 30.";
 })
 
 table.insert(content, {

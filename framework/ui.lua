@@ -1,24 +1,4 @@
---[[
-	TODO:
-	- document OnDrag(x, y, button, dx, dy), OnDragEnd(dx, dy), OnNestedDrag(x, y, button, dx, dy), OnNestedDragEnd(dx, dy), :isDescendantOf(Obj), ui.DragActive, ui.DragStart, ui.DragTarget, ui.PressedButton
 
-	TODO object types:
-	- StateButton (button which, when clicked, proceeds to the next state, and can wrap back to the initial state)
-	- ScrollableFrame (frame that changes ContentOffset when you scroll up/down while over the frame)
-	- Slider (frame with another frame inside that can be dragged)
-
-	TODO (other file):
-	- animation(img, framewidth, fduration)
-	- Animation.Width
-	- Animation.Height
-	- Animation.FrameDuration
-	- Animation.StartTime
-	- Animation:start()
-	- Animation:pause()
-	- Animation:stop()
-	- Animation:getFrame()
-	- Animation:changeFrameDuration()
-]]
 ----------------------------------------------------[[ == IMPORTS == ]]----------------------------------------------------
 
 local path = ... -- path is now a string representing the path to the current directory
@@ -36,15 +16,11 @@ local speedHistoryY = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
 
 local module = {
 	["MouseFocus"] = nil; -- current element the mouse is hovering over
-	-- TODO: replace PressedElement with an 'ActivePresses' table, where each index corresponds to a mouse button and the value is a reference to the element being held down.
 	["PressedElement"] = nil; -- the element that is currently being pressed / held down
 	["PressedButton"] = nil;
 	["DragActive"] = false; -- whether or not DragTarget is experiencing a drag
 	["DragStart"] = vector();
 	["DragTarget"] = nil; -- the element that is currently being dragged
-	--["CursorSpeed"] = vector(); -- the current delta drag in the current frame
-	--["NestedDragTargets"] = {}; -- an array of elements that are experiencing a drag event. The first index is a regular OnDrag, all other elements are OnNestedDrag elements
-	--["ActiveInputId"] = nil; -- id of the 'thing' that is pressing, so 1 = left mouse, 2 = right mouse, light userdata = touch, 'A' would be gamepad A
 	["TotalCreated"] = 0; -- total number of UI elements that have been created
 	["Changed"] = false; -- internal boolean to determine at the end of each frame if some element was added, removed, hidden, unhidden or changed position or size, so MouseFocus can be updated
 
@@ -620,7 +596,7 @@ end
 
 
 function UIBase:setCenter(x, y)
-	self.Center:set(x)
+	self.Center:set(x, y)
 	updateAbsolutePosition(self)
 	module.Changed = true
 end
