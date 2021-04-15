@@ -4,6 +4,7 @@ local ui = require("framework.ui")
 local color = require("framework.datatypes.color")
 local vector = require("framework.datatypes.vector")
 local tween = require("framework.datatypes.tween")
+local animation = require("framework.datatypes.animation")
 --local content = require("app/content/ui_base").Content
 
 local addToPage = require("app.append_page")
@@ -60,6 +61,7 @@ function love.load()
 	Vars.SmallScreen.BodyWidth = ww - Vars.SmallScreen.NavigationWidth
 
 	tween:initialize()
+	animation:initialize()
 	ui:initialize()
 
 	-- create main body
@@ -136,10 +138,8 @@ function love.load()
 			local frames = math.ceil(love.timer.getFPS() / 20)
 			--print("frames: " .. frames)
 			local CursorSpeed = ui:getCursorSpeed(frames)
-			print(CursorSpeed)
 			if CursorSpeed.y ~= 0 then
 				local ValueObject = {["Value"] = CursorSpeed.y * love.timer.getDelta()}
-				print(ValueObject.Value)
 				local ShownChild = getShownChild(Obj)
 				local sign = ValueObject.Value / math.abs(ValueObject.Value)
 				scrollTween = tween(ValueObject, "linear", math.sqrt(sign * ValueObject.Value / 30), {["Value"] = 0})
@@ -265,7 +265,7 @@ function love.mousereleased(x, y, button, istouch, presses, inputOnUI)
 end
 
 function love.wheelmoved(x, y, inputOnUI)
-	print(inputOnUI)
+	--print(inputOnUI)
 end
 
 function love.resize(w, h)

@@ -1,6 +1,6 @@
 
 
-local vector = require("vector")
+local vector = require("framework.datatypes.vector")
 
 local module = {
 	["Active"] = {}
@@ -112,7 +112,7 @@ function animation:update(dt)
 		local stopAnimation = false
 		if self.TimePlayed > (self.FrameCount * self.FrameDuration) then
 			if self.Looped then
-				self.TimePlayed = self.TimePlayed - (self.FrameCount * self.FrameDuration)
+				self.TimePlayed = self.TimePlayed % (self.FrameCount * self.FrameDuration)
 			else
 				self.TimePlayed = self.FrameCount * self.FrameDuration
 				stopAnimation = true

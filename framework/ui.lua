@@ -40,6 +40,9 @@ ImageFrame.__index = ImageFrame
 local SlicedFrame = setmetatable({}, UIBase)
 SlicedFrame.__index = SlicedFrame
 
+local AnimatedFrame = setmetatable({}, UIBase)
+AnimatedFrame.__index = AnimatedFrame
+
 
 
 ----------------------------------------------------[[ == HELPER FUNCTIONS == ]]----------------------------------------------------
@@ -854,6 +857,68 @@ end
 
 
 
+----------------------------------------------------[[ == IMAGEFRAME METHODS == ]]----------------------------------------------------
+
+function AnimatedFrame:setReference(anim)
+	self.ReferenceImage = anim -- is a pointer
+end
+
+
+function AnimatedFrame:draw()
+	if self.Hidden then return end
+
+	local imgWidth, imgHeight = self.ReferenceAnimation:getSize()
+	local scissorX, scissorY, scissorW, scissorH = love.graphics.getScissor()
+	local img, quad = self.ReferenceAnimation:getSprite()
+
+	if self.ClipContent == true then
+		love.graphics.intersectScissor(self.AbsolutePosition.x, self.AbsolutePosition.y, self.Size.x, self.Size.y)
+	end
+
+
+	local gw, gh = love.graphics.getDimensions()
+	-- bounds check to reduce GPU load. Don't need to draw out of bounds!
+	if not (self.AbsolutePosition.x > gw or self.AbsolutePosition.x + self.Size.x < 0 or self.AbsolutePosition.y > gh or self.AbsolutePosition.x + self.Size.x < 0) then
+		local r, g, b, a = self.Color.r, self.Color.g, self.Color.b, self.Color.a
+		if module.PressedElement == self then
+			r, g, b, a = self.ColorHold.r, self.ColorHold.g, self.ColorHold.b, self.ColorHold.a
+		elseif module.MouseFocus == self then
+			r, g, b, a = self.ColorHover.r, self.ColorHover.g, self.ColorHover.b, self.ColorHover.a
+		end
+		love.graphics.setColor(r, g, b, a*self.Opacity)
+		-- temporarily adjust scissor to cut off border space, then reset the scissor
+		local curSX, curSY, curSW, curSH = love.graphics.getScissor()
+		love.graphics.setScissor(curSX + self.BorderWidth, curSY + self.BorderWidth, curSW - 2*self.BorderWidth, curSH - 2*self.BorderWidth)
+		love.graphics.draw(img, quad, self.AbsolutePosition.x, self.AbsolutePosition.y, 0, self.Size.x / imgWidth, self.Size.y / imgHeight)
+		love.graphics.setScissor(curSX, curSY, curSW, curSH)
+		-- draw border
+		if self.BorderWidth > 0 then
+			love.graphics.setColor(self.BorderColor.r, self.BorderColor.g, self.BorderColor.b, self.BorderColor.a*self.Opacity)
+			love.graphics.setLineWidth(self.BorderWidth)
+			love.graphics.rectangle("line", self.AbsolutePosition.x + self.BorderWidth / 2, self.AbsolutePosition.y + self.BorderWidth / 2, self.Size.x - self.BorderWidth, self.Size.y - self.BorderWidth)
+		end
+		-- draw text on top
+		if self.TextBlock ~= nil then
+			-- TODO: should this if-statement be moved into TextBlock as a method?
+			love.graphics.setColor(self.TextBlock.Color:components())
+			if self.TextBlock.AlignmentY == "top" then
+				love.graphics.draw(self.TextBlock.Text, self.AbsolutePosition.x + self.PaddingX, self.AbsolutePosition.y + self.PaddingY)
+			elseif self.TextBlock.AlignmentY == "center" then
+				love.graphics.draw(self.TextBlock.Text, self.AbsolutePosition.x + self.PaddingX, self.AbsolutePosition.y + math.floor(self.Size.y / 2 - self.TextBlock.Text:getHeight() / 2))
+			else -- bottom
+				love.graphics.draw(self.TextBlock.Text, self.AbsolutePosition.x + self.PaddingX, self.AbsolutePosition.y + self.Size.y - self.PaddingY - self.TextBlock.Text:getHeight())
+			end
+		end
+	end
+
+	for i = 1, #self.Children do
+		self.Children[i]:draw()
+	end
+	love.graphics.setScissor(scissorX, scissorY, scissorW, scissorH)
+end
+
+
+
 ----------------------------------------------------[[ == OBJECT CREATION == ]]----------------------------------------------------
 
 -- the base properties of each UIBase
@@ -920,6 +985,15 @@ local function newImageFrame(img, w, h, col)
 	return Obj
 end
 
+-- create new AnimatedFrame object
+local function newAnimatedFrame(anim, w, h, col)
+	local Obj = newBase(w or anim.FrameWidth, h or anim.FrameHeight, col)
+	--Obj["ReferenceImage"] = img
+	Obj["ReferenceAnimation"] = anim
+	setmetatable(Obj, AnimatedFrame)
+	return Obj
+end
+
 -- create new SlicedFrame object
 local function newSlicedFrame(img, topLeft, bottomRight, w, h, col, corScale)
 	-- create and initialize main object
@@ -960,6 +1034,7 @@ end
 module.newFrame = newFrame
 module.newImageFrame = newImageFrame
 module.newSlicedFrame = newSlicedFrame
+module.newAnimatedFrame = newAnimatedFrame
 --return setmetatable(module, {__call = function(_, ...) return new(...) end})
 return module
 
