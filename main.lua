@@ -135,7 +135,7 @@ function love.load()
 			end
 			local frames = math.ceil(love.timer.getFPS() / 20)
 			--print("frames: " .. frames)
-			--local CursorSpeed = ui:getCursorSpeed(6)
+			local CursorSpeed = ui:getCursorSpeed(frames)
 			print(CursorSpeed)
 			if CursorSpeed.y ~= 0 then
 				local ValueObject = {["Value"] = CursorSpeed.y * love.timer.getDelta()}
