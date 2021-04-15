@@ -132,7 +132,7 @@ function color:getHSV()
 	local cmin = math.min(math.min(self.r, self.g), self.b)
 	local cmax = math.max(math.max(self.r, self.g), self.b)
 
-	if cmin == cmax then return 0 end
+	if cmin == cmax then return 0, 0, cmin end
 
 	local hue = 0
 	if cmax == self.r then
