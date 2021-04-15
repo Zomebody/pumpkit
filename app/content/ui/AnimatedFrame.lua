@@ -17,7 +17,7 @@ table.insert(content, {
 	["Type"] = "Header";
 	["Name"] = meta.Name;
 	["Note"] = "Extends " .. meta.SuperClass;
-	["Description"] = "An interface element that plays an animation. When drawn, the animation is stretched to perfectly fit within the element.";
+	["Description"] = "An interface element that plays an animation. When drawn, the animation is stretched to perfectly fit within the element. The animation that is used in the constructor is taken as a reference, so any changes made to the animation are automatically reflected when the animation frame is drawn!";
 	["CodeMarkup"] = "<k>local</k> img = love.graphics.<f>newImage</f>(<s>\"test_images/animation.png\"</s>)\n<k>local</k> Anim = <f>animation</f>(img, <n>150</n>, <n>nil</n>, <n>nil</n>, <n>20</n>, <b>true</b>)\n<k>local</k> animated_frame = ui.<f>newAnimatedFrame</f>(Anim)\nAnim:<f>play</f>()";
 	["Demo"] = function() -- function that creates and returns an element to be placed right below the code example
 		local img = love.graphics.newImage("test_images/animation.png")

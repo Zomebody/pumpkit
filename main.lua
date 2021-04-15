@@ -117,39 +117,43 @@ function love.load()
 				end
 			end
 		end
-		Obj.OnNestedDrag = function(dx, dy)
-			if i == 2 and hasPressEvents(ui.DragTarget) then
-				return
-			end
-			Obj:shiftContent(0, dy)
-			local ShownChild = getShownChild(Obj)
-			if ShownChild ~= nil then
-				if Obj.ContentOffset.y > 0 then
-					Obj:positionContent(0, 0)
-				elseif Obj.ContentOffset.y < -ShownChild.Children[#ShownChild.Children].Position.Offset.y then
-					Obj:positionContent(0, -ShownChild.Children[#ShownChild.Children].Position.Offset.y)
+		Obj.OnNestedDrag = function(dx, dy, button)
+			if button == 1 then
+				if i == 2 and hasPressEvents(ui.DragTarget) then
+					return
 				end
-			end
-		end
-		Obj.OnNestedDragEnd = function()
-			if i == 2 and hasPressEvents(ui.DragTarget) then
-				return
-			end
-			local frames = math.ceil(love.timer.getFPS() / 20)
-			--print("frames: " .. frames)
-			local CursorSpeed = ui:getCursorSpeed(frames)
-			if CursorSpeed.y ~= 0 then
-				local ValueObject = {["Value"] = CursorSpeed.y * love.timer.getDelta()}
+				Obj:shiftContent(0, dy)
 				local ShownChild = getShownChild(Obj)
-				local sign = ValueObject.Value / math.abs(ValueObject.Value)
-				scrollTween = tween(ValueObject, "linear", math.sqrt(sign * ValueObject.Value / 30), {["Value"] = 0})
-				scrollTween:play()
-				scrollTween.OnUpdate = function()
-					Obj:shiftContent(0, ValueObject.Value)
+				if ShownChild ~= nil then
 					if Obj.ContentOffset.y > 0 then
 						Obj:positionContent(0, 0)
 					elseif Obj.ContentOffset.y < -ShownChild.Children[#ShownChild.Children].Position.Offset.y then
 						Obj:positionContent(0, -ShownChild.Children[#ShownChild.Children].Position.Offset.y)
+					end
+				end
+			end
+		end
+		Obj.OnNestedDragEnd = function(_, _, button)
+			if button == 1 then
+				if i == 2 and hasPressEvents(ui.DragTarget) then
+					return
+				end
+				local frames = math.ceil(love.timer.getFPS() / 20)
+				--print("frames: " .. frames)
+				local CursorSpeed = ui:getCursorSpeed(frames)
+				if CursorSpeed.y ~= 0 then
+					local ValueObject = {["Value"] = CursorSpeed.y * love.timer.getDelta()}
+					local ShownChild = getShownChild(Obj)
+					local sign = ValueObject.Value / math.abs(ValueObject.Value)
+					scrollTween = tween(ValueObject, "linear", math.sqrt(sign * ValueObject.Value / 30), {["Value"] = 0})
+					scrollTween:play()
+					scrollTween.OnUpdate = function()
+						Obj:shiftContent(0, ValueObject.Value)
+						if Obj.ContentOffset.y > 0 then
+							Obj:positionContent(0, 0)
+						elseif Obj.ContentOffset.y < -ShownChild.Children[#ShownChild.Children].Position.Offset.y then
+							Obj:positionContent(0, -ShownChild.Children[#ShownChild.Children].Position.Offset.y)
+						end
 					end
 				end
 			end

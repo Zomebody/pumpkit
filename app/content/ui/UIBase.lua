@@ -537,8 +537,8 @@ table.insert(content, {
 table.insert(content, {
 	["Type"] = "Callback";
 	["Name"] = "OnDragEnd";
-	["Arguments"] = {"offX", "offY"};
-	["Description"] = "Called when you stop dragging the element. offX and offY are an offset in pixels relative to the starting point of the drag.";
+	["Arguments"] = {"offX", "offY", "button"};
+	["Description"] = "Called when you stop dragging the element. offX and offY are an offset in pixels relative to the starting point of the drag. button is the mouse button id (1 for touch drags).";
 })
 
 table.insert(content, {
@@ -597,14 +597,14 @@ table.insert(content, {
 	["Type"] = "Callback";
 	["Name"] = "OnNestedDrag";
 	["Arguments"] = {"dx", "dy", "button", "offX", "offY"};
-	["Description"] = "Called when you drag an element, or any of its descendants. A drag is when you first press the element and then move the cursor while keeping the press active. A drag may go outside the box of the element and it will still count as an active press. dx and dy are numbers indicating the relative movement in the current frame. button is the mouse button (1 for touch drags). offX and offY are an offset in pixels relative to the starting point of the drag.";
+	["Description"] = "Called when you drag an element, or any of its descendants. A drag is when you first press the element and then move the cursor while keeping the press active. A drag may go outside the box of the element and it will still count as an active press. dx and dy are numbers indicating the relative movement in the current frame. button is the mouse button id (1 for touch drags). offX and offY are an offset in pixels relative to the starting point of the drag.";
 })
 
 table.insert(content, {
 	["Type"] = "Callback";
 	["Name"] = "OnNestedDragEnd";
-	["Arguments"] = {"offX", "offY"};
-	["Description"] = "Called when you stop dragging the element, or any of its descendants. offX and offY are an offset in pixels relative to the starting point of the drag.";
+	["Arguments"] = {"offX", "offY", "button"};
+	["Description"] = "Called when you stop dragging the element, or any of its descendants. offX and offY are an offset in pixels relative to the starting point of the drag. button is the mouse button id (1 for touch drags).";
 })
 
 table.insert(content, {

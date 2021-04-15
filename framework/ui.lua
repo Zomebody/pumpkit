@@ -195,15 +195,15 @@ function module:initialize()
 		if self.DragTarget ~= nil and self.DragActive then
 			local Target = self.DragTarget
 			if Target.OnDragEnd ~= nil then
-				Target.OnDragEnd(x - self.DragStart.x, y - self.DragStart.y)
+				Target.OnDragEnd(x - self.DragStart.x, y - self.DragStart.y, button)
 			end
 			if Target.OnNestedDragEnd ~= nil then
-				Target.OnNestedDragEnd(x - self.DragStart.x, y - self.DragStart.y)
+				Target.OnNestedDragEnd(x - self.DragStart.x, y - self.DragStart.y, button)
 			end
 			while Target.Parent ~= nil and Target.Parent ~= module do
 				Target = Target.Parent
 				if Target.OnNestedDragEnd ~= nil then
-					Target.OnNestedDragEnd(x - self.DragStart.x, y - self.DragStart.y)
+					Target.OnNestedDragEnd(x - self.DragStart.x, y - self.DragStart.y, button)
 				end
 			end
 			--self.DragSpeed:set(0, 0)
@@ -268,15 +268,15 @@ function module:initialize()
 		if self.DragTarget ~= nil and self.DragActive then
 			local Target = self.DragTarget
 			if Target.OnDragEnd ~= nil then
-				Target.OnDragEnd(x - self.DragStart.x, y - self.DragStart.y)
+				Target.OnDragEnd(x - self.DragStart.x, y - self.DragStart.y, button)
 			end
 			if Target.OnNestedDragEnd ~= nil then
-				Target.OnNestedDragEnd(x - self.DragStart.x, y - self.DragStart.y)
+				Target.OnNestedDragEnd(x - self.DragStart.x, y - self.DragStart.y, button)
 			end
 			while Target.Parent ~= nil and Target.Parent ~= module do
 				Target = Target.Parent
 				if Target.OnNestedDragEnd ~= nil then
-					Target.OnNestedDragEnd(x - self.DragStart.x, y - self.DragStart.y)
+					Target.OnNestedDragEnd(x - self.DragStart.x, y - self.DragStart.y, button)
 				end
 			end
 		end
