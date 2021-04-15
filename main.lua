@@ -133,9 +133,9 @@ function love.load()
 			if i == 2 and hasPressEvents(ui.DragTarget) then
 				return
 			end
-			--local frames = math.ceil(love.timer.getFPS() / 20)
+			local frames = math.ceil(love.timer.getFPS() / 20)
 			--print("frames: " .. frames)
-			local CursorSpeed = ui:getCursorSpeed(6)
+			--local CursorSpeed = ui:getCursorSpeed(6)
 			print(CursorSpeed)
 			if CursorSpeed.y ~= 0 then
 				local ValueObject = {["Value"] = CursorSpeed.y * love.timer.getDelta()}

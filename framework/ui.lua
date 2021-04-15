@@ -132,27 +132,21 @@ function module:initialize()
 	local update = love.update or function() end -- define new update function if it doesn't exist yet
 	local prevX = love.mouse.getX()
 	local prevY = love.mouse.getY()
+	local skipSpeedUpdate = false
 	love.update = function()
 		update()
 
 		-- update speed history table and recalculate cursor speed
 		local newX, newY = love.mouse.getPosition()
-		table.remove(speedHistoryX, 1)
-		speedHistoryX[#speedHistoryX + 1] = newX - prevX
-		table.remove(speedHistoryY, 1)
-		speedHistoryY[#speedHistoryY + 1] = newY - prevY
+		if not skipSpeedUpdate then
+			table.remove(speedHistoryX, 1)
+			speedHistoryX[#speedHistoryX + 1] = newX - prevX
+			table.remove(speedHistoryY, 1)
+			speedHistoryY[#speedHistoryY + 1] = newY - prevY
+		end
 		prevX = newX
 		prevY = newY
-		--[[
-		sumX = 0
-		sumY = 0
-		for i = 1, historySize do
-			sumX = sumX + speedHistoryX[i]
-			sumY = sumY + speedHistoryY[i]
-		end
-		self.CursorSpeed:set((sumX / historySize) / love.timer.getDelta(), (sumY / historySize) / love.timer.getDelta())
-		print(self.CursorSpeed)
-		]]
+		skipSpeedUpdate = false
 
 		if self.Changed then
 			self.Changed = false
@@ -233,6 +227,11 @@ function module:initialize()
 				end
 			end
 		end
+
+		-- on mobile, the cursor 'jumps' from the previous location to the next location
+		-- so the cursor speed becomes insanely high on mobile if you press elsewhere on the screen
+		-- so when you start a press, skip the next speed update to prevent these peaks, at the cost of a very slight inaccuracy
+		skipSpeedUpdate = true
 	end
 
 

@@ -27,7 +27,7 @@ table.insert(content, {
 	["Type"] = "Property";
 	["ValueType"] = "vector";
 	["Name"] = "AbsolutePosition";
-	["Description"] = "The exact location of the object on screen, in pixels. This property is updated whenever any method or event is called that manipulates positions or sizes.";
+	["Description"] = "The exact location of the object on screen, in pixels. This property is updated whenever any method or event is called that manipulates positions or sizes. The computed values will be rounded down to prevent blurriness in the resulting draw calls.";
 	["ReadOnly"] = true;
 	["CodeMarkup"] = nil;
 	["Demo"] = nil;
