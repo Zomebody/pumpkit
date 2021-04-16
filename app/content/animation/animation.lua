@@ -16,6 +16,16 @@ table.insert(content, {
 	["Type"] = "IntroHeader";
 	["Name"] = "The animation data type";
 	["Description"] = "An object representing a single animation.";
+	["Demo"] = function()
+		local Driller = love.graphics.newImage("test_images/drillanim.png")
+		Driller:setFilter("nearest", "nearest")
+		local Animation = animation(Driller, 16, 16, nil, 16, true)
+		-- Alternative
+		-- local Animation = animation(Driller, 24, 24, {5, 1, 6, 1, 7, 1, 8, 1, 9, 1, 10, 1}, 10, true)
+		local AnimFrame = ui.newAnimatedFrame(Animation, 98, 98)
+		Animation:play()
+		return AnimFrame
+	end;
 })
 
 table.insert(content, {
