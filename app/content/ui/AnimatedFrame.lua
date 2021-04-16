@@ -36,7 +36,7 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Property";
-	["ValueType"] = "Image";
+	["ValueType"] = "Animation";
 	["Name"] = "ReferenceAnimation";
 	["Description"] = "The animation that is displayed within the frame.";
 	["ReadOnly"] = true;

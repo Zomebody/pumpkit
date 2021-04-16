@@ -47,13 +47,17 @@ AnimatedFrame.__index = AnimatedFrame
 
 ----------------------------------------------------[[ == HELPER FUNCTIONS == ]]----------------------------------------------------
 
+local contentOffsetX = 0
+local contentOffsetY = 0
+local OP = nil -- Obj.Parent
 local function updateAbsolutePosition(Obj, wX, wY, wWidth, wHeight)
 	-- set value depending on if this is a top-level element, or if there is a parent
-	if Obj.Parent ~= nil and Obj.Parent ~= module then
-		wX = (wX == nil and Obj.Parent.AbsolutePosition.x or wX) + Obj.Parent.PaddingX
-		wY = (wY == nil and Obj.Parent.AbsolutePosition.y or wY) + Obj.Parent.PaddingY
-		wWidth = (wWidth == nil and Obj.Parent.Size.x or wWidth) - 2 * Obj.Parent.PaddingX
-		wHeight = (wHeight == nil and Obj.Parent.Size.y or wHeight) - 2 * Obj.Parent.PaddingY
+	OP = Obj.Parent
+	if OP and OP ~= module then
+		wX = (wX == nil and OP.AbsolutePosition.x or wX) + OP.PaddingX
+		wY = (wY == nil and OP.AbsolutePosition.y or wY) + OP.PaddingY
+		wWidth = (wWidth == nil and OP.Size.x or wWidth) - 2 * OP.PaddingX
+		wHeight = (wHeight == nil and OP.Size.y or wHeight) - 2 * OP.PaddingY
 	else
 		wX = wX == nil and 0 or wX
 		wY = wY == nil and 0 or wY
@@ -62,11 +66,11 @@ local function updateAbsolutePosition(Obj, wX, wY, wWidth, wHeight)
 	end
 
 	-- apply content offset from all ancestors
-	local contentOffsetX = 0
-	local contentOffsetY = 0
-	if Obj.Parent ~= nil and Obj.Parent ~= module then
-		contentOffsetX = Obj.Parent.ContentOffset.x
-		contentOffsetY = Obj.Parent.ContentOffset.y
+	contentOffsetX = 0
+	contentOffsetY = 0
+	if OP ~= nil and Obj.Parent ~= module then
+		contentOffsetX = OP.ContentOffset.x
+		contentOffsetY = OP.ContentOffset.y
 	end
 
 	-- calculate and apply absolute position. Then update children

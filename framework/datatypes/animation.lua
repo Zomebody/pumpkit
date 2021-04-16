@@ -10,6 +10,11 @@ local animation = {}
 animation.__index = animation
 
 
+function module.isAnimation(Obj)
+	return getmetatable(Obj) == animation
+end
+
+
 function module:update()
 	local dt = love.timer.getDelta()
 	local i = 1
@@ -154,14 +159,14 @@ function animation:getSize()
 end
 
 function animation:__tostring()
-	return "{" .. self.State .. ", " .. tostring(self.CurrentFrame) .. "/" .. tostring(self.FrameCount) .. ", " .. tostring(self.Looped) .. "}"
+	return "{" .. self.State .. ", " .. tostring(self.CurrentFrame) .. "/" .. tostring(self.FrameCount) .. ", " .. tostring(self.FrameWidth) .. "x" .. tostring(self.FrameHeight) .. ", " .. tostring(self.Looped) .. "}"
 end
 
 
 
 
 
-function new(refImg, width, height, coordinates, playSpeed, looped)
+local function new(refImg, width, height, coordinates, playSpeed, looped)
 	local Obj = {
 		-- properties
 		["State"] = "idle"; -- idle, paused, playing
