@@ -15,14 +15,14 @@ local speedHistoryX = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
 local speedHistoryY = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 
 local module = {
-	["MouseFocus"] = nil; -- current element the mouse is hovering over
+	["CursorFocus"] = nil; -- current element the mouse is hovering over
 	["PressedElement"] = nil; -- the element that is currently being pressed / held down
 	["PressedButton"] = nil;
 	["DragActive"] = false; -- whether or not DragTarget is experiencing a drag
 	["DragStart"] = vector();
 	["DragTarget"] = nil; -- the element that is currently being dragged
 	["TotalCreated"] = 0; -- total number of UI elements that have been created
-	["Changed"] = false; -- internal boolean to determine at the end of each frame if some element was added, removed, hidden, unhidden or changed position or size, so MouseFocus can be updated
+	["Changed"] = false; -- internal boolean to determine at the end of each frame if some element was added, removed, hidden, unhidden or changed position or size, so CursorFocus can be updated
 
 	["Children"] = {};
 	["Size"] = vector(love.graphics.getDimensions()); -- TODO: use getSafeArea() to ignore the mobile inset
@@ -97,19 +97,19 @@ function module:initialize()
 	-- Monkey Patching love.mousemoved (at start)
 	local mousemoved = love.mousemoved or function() end -- define new mousemoved function if it doesn't exist yet
 	love.mousemoved = function(x, y, dx, dy, istouch)
-		local oldFocus = self.MouseFocus
-		self.MouseFocus = self:at(x, y)
+		local oldFocus = self.CursorFocus
+		self.CursorFocus = self:at(x, y)
 
 		-- find and trigger hover events if focus changed
-		if oldFocus ~= self.MouseFocus then -- focus changed, check for new focus
+		if oldFocus ~= self.CursorFocus then -- focus changed, check for new focus
 			if oldFocus ~= nil then
 				self.PressedElement = nil
 				if oldFocus.OnHoverEnd ~= nil then
 					oldFocus.OnHoverEnd()
 				end
 			end
-			if self.MouseFocus ~= nil and self.MouseFocus.OnHoverStart ~= nil then
-				self.MouseFocus.OnHoverStart()
+			if self.CursorFocus ~= nil and self.CursorFocus.OnHoverStart ~= nil then
+				self.CursorFocus.OnHoverStart()
 			end
 		end
 
@@ -157,9 +157,9 @@ function module:initialize()
 
 		if self.Changed then
 			self.Changed = false
-			local oldFocus = self.MouseFocus
-			self.MouseFocus = self:at(love.mouse.getPosition())
-			if oldFocus ~= self.MouseFocus then
+			local oldFocus = self.CursorFocus
+			self.CursorFocus = self:at(love.mouse.getPosition())
+			if oldFocus ~= self.CursorFocus then
 				--self.IsFullPress = false
 				if oldFocus ~= nil then
 					self.PressedElement = nil
@@ -167,8 +167,8 @@ function module:initialize()
 						oldFocus.OnHoverEnd()
 					end
 				end
-				if self.MouseFocus ~= nil and self.MouseFocus.OnHoverStart ~= nil then
-					self.MouseFocus.OnHoverStart()
+				if self.CursorFocus ~= nil and self.CursorFocus.OnHoverStart ~= nil then
+					self.CursorFocus.OnHoverStart()
 				end
 			end
 		end
@@ -193,7 +193,7 @@ function module:initialize()
 	-- Monkey Patching mouse pressed and mouse released
 	local mousepressed = love.mousepressed or function() end
 	love.mousepressed = function(x, y, button, istouch, presses)
-		mousepressed(x, y, button, istouch, presses, self.MouseFocus ~= nil)
+		mousepressed(x, y, button, istouch, presses, self.CursorFocus ~= nil)
 
 		-- stop current drag
 		if self.DragTarget ~= nil and self.DragActive then
@@ -213,14 +213,14 @@ function module:initialize()
 			--self.DragSpeed:set(0, 0)
 		end
 
-		if self.MouseFocus ~= nil then
-			self.PressedElement = self.MouseFocus
+		if self.CursorFocus ~= nil then
+			self.PressedElement = self.CursorFocus
 			self.PressedButton = button
 
 			self.DragStart:set(x, y)
 			self.DragTarget = self.PressedElement
 
-			local Target = self.MouseFocus
+			local Target = self.CursorFocus
 			if Target.OnPressStart ~= nil then
 				Target.OnPressStart(x, y, button, istouch, presses)
 			end
@@ -245,12 +245,12 @@ function module:initialize()
 
 	local mousereleased = love.mousereleased or function() end
 	love.mousereleased = function(x, y, button, istouch, presses)
-		mousereleased(x, y, button, istouch, presses, self.MouseFocus ~= nil)
+		mousereleased(x, y, button, istouch, presses, self.CursorFocus ~= nil)
 
-		if self.MouseFocus ~= nil then
+		if self.CursorFocus ~= nil then
 			--local oldPressed = self.PressedElement
 			--self.PressedElement = nil
-			local Target = self.MouseFocus
+			local Target = self.CursorFocus
 			if Target.OnPressEnd ~= nil then
 				Target.OnPressEnd(x, y, button, istouch, presses)
 			end
@@ -263,8 +263,8 @@ function module:initialize()
 					Target.OnNestedPressEnd(x, y, button, istouch, presses)
 				end
 			end
-			if self.MouseFocus == self.PressedElement and self.MouseFocus.OnFullPress ~= nil then
-				self.MouseFocus.OnFullPress(x, y, button, istouch, presses)
+			if self.CursorFocus == self.PressedElement and self.CursorFocus.OnFullPress ~= nil then
+				self.CursorFocus.OnFullPress(x, y, button, istouch, presses)
 			end
 		end
 
@@ -301,14 +301,14 @@ function module:initialize()
 	-- Monkey patching mousescroll
 	local wheelmoved = love.wheelmoved or function() end
 	love.wheelmoved = function(x, y)
-		wheelmoved(x, y, self.MouseFocus ~= nil)
-		if self.MouseFocus ~= nil then
-			if self.MouseFocus.OnScroll ~= nil then
-				self.MouseFocus.OnScroll(x, y)
+		wheelmoved(x, y, self.CursorFocus ~= nil)
+		if self.CursorFocus ~= nil then
+			if self.CursorFocus.OnScroll ~= nil then
+				self.CursorFocus.OnScroll(x, y)
 			end
-			local Target = self.MouseFocus
-			if self.MouseFocus.OnNestedScroll ~= nil then
-				self.MouseFocus.OnNestedScroll(x, y)
+			local Target = self.CursorFocus
+			if self.CursorFocus.OnNestedScroll ~= nil then
+				self.CursorFocus.OnNestedScroll(x, y)
 			end
 			while Target.Parent ~= nil and Target.Parent ~= module do
 				Target = Target.Parent
@@ -656,7 +656,7 @@ function Frame:draw()
 		local r, g, b, a = self.Color.r, self.Color.g, self.Color.b, self.Color.a
 		if module.PressedElement == self then
 			r, g, b, a = self.ColorHold.r, self.ColorHold.g, self.ColorHold.b, self.ColorHold.a
-		elseif module.MouseFocus == self then
+		elseif module.CursorFocus == self then
 			r, g, b, a = self.ColorHover.r, self.ColorHover.g, self.ColorHover.b, self.ColorHover.a
 		end
 		if self.BorderWidth > 0 then
@@ -712,7 +712,7 @@ function ImageFrame:draw()
 		local r, g, b, a = self.Color.r, self.Color.g, self.Color.b, self.Color.a
 		if module.PressedElement == self then
 			r, g, b, a = self.ColorHold.r, self.ColorHold.g, self.ColorHold.b, self.ColorHold.a
-		elseif module.MouseFocus == self then
+		elseif module.CursorFocus == self then
 			r, g, b, a = self.ColorHover.r, self.ColorHover.g, self.ColorHover.b, self.ColorHover.a
 		end
 		love.graphics.setColor(r, g, b, a*self.Opacity)
@@ -801,7 +801,7 @@ function SlicedFrame:draw()
 		local r, g, b, a = self.Color.r, self.Color.g, self.Color.b, self.Color.a
 		if module.PressedElement == self then
 			r, g, b, a = self.ColorHold.r, self.ColorHold.g, self.ColorHold.b, self.ColorHold.a
-		elseif module.MouseFocus == self then
+		elseif module.CursorFocus == self then
 			r, g, b, a = self.ColorHover.r, self.ColorHover.g, self.ColorHover.b, self.ColorHover.a
 		end
 		love.graphics.setColor(r, g, b, a*self.Opacity)
@@ -886,7 +886,7 @@ function AnimatedFrame:draw()
 		local r, g, b, a = self.Color.r, self.Color.g, self.Color.b, self.Color.a
 		if module.PressedElement == self then
 			r, g, b, a = self.ColorHold.r, self.ColorHold.g, self.ColorHold.b, self.ColorHold.a
-		elseif module.MouseFocus == self then
+		elseif module.CursorFocus == self then
 			r, g, b, a = self.ColorHover.r, self.ColorHover.g, self.ColorHover.b, self.ColorHover.a
 		end
 		love.graphics.setColor(r, g, b, a*self.Opacity)

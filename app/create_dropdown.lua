@@ -26,7 +26,7 @@ function createDropdown(Vars, LinkedButton, strings)
 			Button:putNextTo(Container.Children[#Container.Children], "under")
 		end
 		Button.OnHoverEnd = function()
-			if ui.MouseFocus == nil or (ui.MouseFocus.Parent ~= Button.Parent and ui.MouseFocus ~= LinkedButton) then
+			if ui.CursorFocus == nil or (ui.CursorFocus.Parent ~= Button.Parent and ui.CursorFocus ~= LinkedButton) then
 				Container.Hidden = true
 			end
 		end
@@ -47,7 +47,7 @@ function createDropdown(Vars, LinkedButton, strings)
 		end
 	end
 	LinkedButton.OnHoverEnd = function()
-		if not (ui.MouseFocus == Container or (ui.MouseFocus ~= nil and ui.MouseFocus.Parent == Container)) then
+		if not (ui.CursorFocus == Container or (ui.CursorFocus ~= nil and ui.CursorFocus.Parent == Container)) then
 			Container.Hidden = true
 		end
 	end

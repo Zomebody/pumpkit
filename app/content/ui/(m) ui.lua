@@ -69,7 +69,7 @@ table.insert(content, {
 	["Type"] = "Property";
 	["ValueType"] = "boolean";
 	["Name"] = "Changed";
-	["Description"] = "A boolean indicating whether or not the visual layout of the UI hierarchy has changed during this frame. This boolean is set to true when the ContentOffset, Size, Position, PaddingX, PaddingY or Hidden property changes on any object, or when an object is reparented. This boolean is used internally to check if MouseFocus should be recalculated at the end of the ui update cycle.";
+	["Description"] = "A boolean indicating whether or not the visual layout of the UI hierarchy has changed during this frame. This boolean is set to true when the ContentOffset, Size, Position, PaddingX, PaddingY or Hidden property changes on any object, or when an object is reparented. This boolean is used internally to check if CursorFocus should be recalculated at the end of the ui update cycle.";
 	["ReadOnly"] = true;
 	["CodeMarkup"] = nil;
 	["Demo"] = nil;
@@ -118,8 +118,8 @@ table.insert(content, {
 table.insert(content, {
 	["Type"] = "Property";
 	["ValueType"] = "Object";
-	["Name"] = "MouseFocus";
-	["Description"] = "Either nil or a reference to a UI object that the mouse is currently targeting. An element needs to not be Hidden to appear as the MouseFocus. This property is used internally to trigger events on UI objects and to color elements.";
+	["Name"] = "CursorFocus";
+	["Description"] = "Either nil or a reference to a UI object that the mouse is currently targeting. An element that is hidden cannot become the CursorFocus. This property is used internally to trigger events on UI objects and to color elements.";
 	["ReadOnly"] = true;
 	["CodeMarkup"] = nil;
 	["Demo"] = nil;
@@ -127,7 +127,7 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Property";
-	["ValueType"] = "string";
+	["ValueType"] = "number";
 	["Name"] = "PressedButton";
 	["Description"] = "A variable used internally for drag events to keep track of which button is pressed. This should not be used.";
 	["ReadOnly"] = true;
@@ -182,7 +182,7 @@ table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "at";
 	["Arguments"] = {"x", "y"};
-	["Description"] = "This method will return for the given x and y coordinate which element is being drawn at that location on the screen. This method is also used internally to set the MouseFocus property.";
+	["Description"] = "This method will return for the given x and y coordinate which element is being drawn at that location on the screen. This method is also used internally to set the CursorFocus property.";
 })
 
 table.insert(content, {

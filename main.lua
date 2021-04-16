@@ -104,7 +104,7 @@ function love.load()
 		local scrollTween = nil
 		local Obj = Scrollables[i][1]
 		Obj.OnNestedScroll = function(x, y)
-			if i == 2 and hasScrollEvents(ui.MouseFocus) then
+			if i == 2 and hasScrollEvents(ui.CursorFocus) then
 				return
 			end
 			Obj:shiftContent(0, y * Scrollables[i][2])
