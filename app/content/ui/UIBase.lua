@@ -117,8 +117,8 @@ table.insert(content, {
 table.insert(content, {
 	["Type"] = "Property";
 	["ValueType"] = "color";
-	["Name"] = "ColorHold";
-	["Description"] = "The background color of the UIBase when the element is currently being held down by a mouse click.";
+	["Name"] = "ColorFocus";
+	["Description"] = "The background color of the UIBase when the mouse is hovering over the element. This can be used to indicate that you may click on the element, like buttons.";
 	["ReadOnly"] = false;
 	["CodeMarkup"] = nil;
 	["Demo"] = nil;
@@ -127,8 +127,8 @@ table.insert(content, {
 table.insert(content, {
 	["Type"] = "Property";
 	["ValueType"] = "color";
-	["Name"] = "ColorHover";
-	["Description"] = "The background color of the UIBase when the mouse is hovering over the element. This can be used to indicate that you may click on the element, like buttons.";
+	["Name"] = "ColorHold";
+	["Description"] = "The background color of the UIBase when the element is currently being held down by a mouse click.";
 	["ReadOnly"] = false;
 	["CodeMarkup"] = nil;
 	["Demo"] = nil;

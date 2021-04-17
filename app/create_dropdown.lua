@@ -21,7 +21,7 @@ function createDropdown(Vars, LinkedButton, strings)
 		if textWidth > maxWidth then
 			maxWidth = textWidth
 		end
-		Button.ColorHover = Colors.ButtonHover
+		Button.ColorFocus = Colors.ButtonHover
 		Button.ColorHold = Colors.ButtonHold
 		if #Container.Children > 0 then
 			Button:putNextTo(Container.Children[#Container.Children], "under")

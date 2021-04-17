@@ -661,7 +661,7 @@ function Frame:draw()
 		if module.PressedElement == self then
 			r, g, b, a = self.ColorHold.r, self.ColorHold.g, self.ColorHold.b, self.ColorHold.a
 		elseif module.CursorFocus == self then
-			r, g, b, a = self.ColorHover.r, self.ColorHover.g, self.ColorHover.b, self.ColorHover.a
+			r, g, b, a = self.ColorFocus.r, self.ColorFocus.g, self.ColorFocus.b, self.ColorFocus.a
 		end
 		if self.BorderWidth > 0 then
 			love.graphics.setColor(self.BorderColor.r, self.BorderColor.g, self.BorderColor.b, self.BorderColor.a*self.Opacity)
@@ -717,7 +717,7 @@ function ImageFrame:draw()
 		if module.PressedElement == self then
 			r, g, b, a = self.ColorHold.r, self.ColorHold.g, self.ColorHold.b, self.ColorHold.a
 		elseif module.CursorFocus == self then
-			r, g, b, a = self.ColorHover.r, self.ColorHover.g, self.ColorHover.b, self.ColorHover.a
+			r, g, b, a = self.ColorFocus.r, self.ColorFocus.g, self.ColorFocus.b, self.ColorFocus.a
 		end
 		love.graphics.setColor(r, g, b, a*self.Opacity)
 		-- temporarily adjust scissor to cut off border space, then reset the scissor
@@ -806,7 +806,7 @@ function SlicedFrame:draw()
 		if module.PressedElement == self then
 			r, g, b, a = self.ColorHold.r, self.ColorHold.g, self.ColorHold.b, self.ColorHold.a
 		elseif module.CursorFocus == self then
-			r, g, b, a = self.ColorHover.r, self.ColorHover.g, self.ColorHover.b, self.ColorHover.a
+			r, g, b, a = self.ColorFocus.r, self.ColorFocus.g, self.ColorFocus.b, self.ColorFocus.a
 		end
 		love.graphics.setColor(r, g, b, a*self.Opacity)
 		-- temporarily adjust scissor to cut off border space, then reset the scissor
@@ -891,7 +891,7 @@ function AnimatedFrame:draw()
 		if module.PressedElement == self then
 			r, g, b, a = self.ColorHold.r, self.ColorHold.g, self.ColorHold.b, self.ColorHold.a
 		elseif module.CursorFocus == self then
-			r, g, b, a = self.ColorHover.r, self.ColorHover.g, self.ColorHover.b, self.ColorHover.a
+			r, g, b, a = self.ColorFocus.r, self.ColorFocus.g, self.ColorFocus.b, self.ColorFocus.a
 		end
 		love.graphics.setColor(r, g, b, a*self.Opacity)
 		-- temporarily adjust scissor to cut off border space, then reset the scissor
@@ -945,7 +945,7 @@ local function newBase(w, h, col)
 		["ContentOffset"] = vector();
 		["Color"] = col; -- color of the frame. For images, this adjusts the image color
 		["ColorHold"] = col:clone(); -- color when the element is being held down
-		["ColorHover"] = col:clone(); -- color when the element is being hovered over by the cursor
+		["ColorFocus"] = col:clone(); -- color when the element is being hovered over by the cursor
 		["FitTextOnResize"] = false;
 		["Hidden"] = false;
 		["Id"] = module.TotalCreated;

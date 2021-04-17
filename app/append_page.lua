@@ -80,7 +80,7 @@ local function create_doc(BodyRef, NavigationRef, data, DisplayVars, superClass)
 		Button:resize(Button.Size.x, Button.Size.y + 4)
 		Button.TextBlock:alignY("bottom")
 		Button:putNextTo(NavigationRef.Children[#NavigationRef.Children], "below")
-		Button.ColorHover = Colors.ButtonHover
+		Button.ColorFocus = Colors.ButtonHover
 		Button.ColorHold = Colors.ButtonHold
 		NavigationRef:addChild(Button)
 	end
@@ -211,7 +211,7 @@ local function create_doc(BodyRef, NavigationRef, data, DisplayVars, superClass)
 				BodyRef:addChild(CodeFrame)
 				local CopyIcon = love.graphics.newImage("test_images/copy_icon.png")
 				local CopyButton = ui.newImageFrame(CopyIcon, CopyIcon:getWidth(), CopyIcon:getHeight(), Colors.TextTableHeader)
-				CopyButton.ColorHover = color(CopyButton.Color):darken(0.25)
+				CopyButton.ColorFocus = color(CopyButton.Color):darken(0.25)
 				CopyButton.ColorHold = color(CopyButton.Color):darken(0.6)
 				CopyButton:alignX("right")
 				CopyButton:alignY("center")
@@ -260,7 +260,7 @@ local function create_doc(BodyRef, NavigationRef, data, DisplayVars, superClass)
 			if #NavigationRef.Children > 0 then
 				Button:putNextTo(NavigationRef.Children[#NavigationRef.Children], "below")
 			end
-			Button.ColorHover = Colors.ButtonHover
+			Button.ColorFocus = Colors.ButtonHover
 			Button.ColorHold = Colors.ButtonHold
 			NavigationRef:addChild(Button)
 		end

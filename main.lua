@@ -179,7 +179,7 @@ function love.load()
 	for i = 1, #tabs do
 		-- create the tab button in the navigation bar at the top
 		local Button = ui.newFrame(999, DisplayVars.TopBarThickness, Colors.Transparent)
-		Button.ColorHover = Colors.ButtonHover
+		Button.ColorFocus = Colors.ButtonHover
 		Button.ColorHold = Colors.ButtonHold
 		Button:setText(defaultFont, tabs[i], DisplayVars.TextSize)
 		Button:resize(Button.TextBlock:getSize() + 20, Button.Size.y)
