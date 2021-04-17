@@ -1,14 +1,4 @@
 
---[[
-tween.new(Target, tweenType, duration, valueTable)
-object:play()
-object:pause()
-object:stop()
--- internal
-object:update()
-
-]]
-
 
 ----------------------------------------------------[[ == VARIABLES & IMPORTS == ]]----------------------------------------------------
 

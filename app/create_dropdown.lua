@@ -1,8 +1,9 @@
 
-local ui = require("framework.ui")
-local color = require("framework.datatypes.color")
-local vector = require("framework.datatypes.vector")
-local Colors = require("app.color_palette")
+local getpath = require("framework.getpath")
+local ui = require(getpath("", "framework/modules/ui"))
+local color = require(getpath("", "framework/datatypes/color"))
+local vector = require(getpath("", "framework/datatypes/vector"))
+local Colors = require(getpath("", "app/color_palette"))
 
 local defaultFont = "LieraSansMedium.ttf"
 

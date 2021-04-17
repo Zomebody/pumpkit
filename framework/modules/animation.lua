@@ -1,6 +1,7 @@
 
 
-local vector = require("framework.datatypes.vector")
+local getpath = require("framework.getpath")
+local vector = require(getpath(..., "../datatypes/vector"))
 
 local module = {
 	["Active"] = {}

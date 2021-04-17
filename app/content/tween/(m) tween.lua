@@ -1,9 +1,10 @@
 
 
-local ui = require("framework.ui")
-local vector = require("framework.datatypes.vector")
-local color = require("framework.datatypes.color")
-local tween = require("framework.datatypes.tween")
+local getpath = require("framework.getpath")
+local ui = require(getpath("framework/modules/ui"))
+local vector = require(getpath("framework/datatypes/vector"))
+local color = require(getpath("framework/datatypes/color"))
+local tween = require(getpath("framework/modules/tween"))
 
 
 local meta = {

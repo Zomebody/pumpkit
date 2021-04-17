@@ -1,5 +1,6 @@
 
-local color = require("framework.datatypes.color")
+local getpath = require("framework.getpath")
+local color = require(getpath("", "framework.datatypes.color"))
 
 local Colors = {
 	["BackgroundDark"] = color.fromHex("#141d24");

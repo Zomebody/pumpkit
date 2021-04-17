@@ -1,14 +1,14 @@
 
-local ui = require("framework.ui")
---local inputreader = require("framework/inputreader")
-local color = require("framework.datatypes.color")
-local vector = require("framework.datatypes.vector")
-local tween = require("framework.datatypes.tween")
-local animation = require("framework.datatypes.animation")
---local content = require("app/content/ui_base").Content
+local getpath = require("framework.getpath")
 
-local addToPage = require("app.append_page")
-local createDropdown = require("app.create_dropdown")
+local ui = require(getpath(..., "framework/modules/ui"))
+local color = require(getpath(..., "framework/datatypes/color"))
+local vector = require(getpath(..., "framework/datatypes/vector"))
+local tween = require(getpath(..., "framework/modules/tween"))
+local animation = require(getpath(..., "framework/modules/animation"))
+
+local addToPage = require(getpath(..., "app/append_page"))
+local createDropdown = require(getpath(..., "app/create_dropdown"))
 
 local defaultFont = "LieraSansMedium.ttf"
 

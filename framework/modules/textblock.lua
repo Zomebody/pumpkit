@@ -1,9 +1,9 @@
 
 ----------------------------------------------------[[ == IMPORTS == ]]----------------------------------------------------
 
---local fontDirectory = "framework/fonts/"
-local font = require("framework.datatypes.font")
-local color = require("framework.datatypes.color")
+local getpath = require("framework.getpath")
+local font = require(getpath(..., "font"))
+local color = require(getpath(..., "../datatypes/color"))
 
 
 
