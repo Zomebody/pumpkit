@@ -7,9 +7,6 @@ local getpath = require("framework.getpath")
 local vector = require(getpath(..., "../datatypes/vector"))
 local color = require(getpath(..., "../datatypes/color"))
 local textblock = require(getpath(..., "textblock"))
---local vector = require("framework.datatypes.vector")
---local color = require("framework.datatypes.color")
---local textblock = require("framework.datatypes.textblock")
 
 
 
@@ -19,17 +16,17 @@ local speedHistoryX = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
 local speedHistoryY = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 
 local module = {
+	["Changed"] = false; -- internal boolean to determine at the end of each frame if some element was added, removed, hidden, unhidden or changed position or size, so CursorFocus can be updated
+	["Children"] = {};
 	["CursorFocus"] = nil; -- current element the mouse is hovering over
-	["PressedElement"] = nil; -- the element that is currently being pressed / held down
-	["PressedButton"] = nil;
 	["DragActive"] = false; -- whether or not DragTarget is experiencing a drag
 	["DragStart"] = vector();
 	["DragTarget"] = nil; -- the element that is currently being dragged
-	["TotalCreated"] = 0; -- total number of UI elements that have been created
-	["Changed"] = false; -- internal boolean to determine at the end of each frame if some element was added, removed, hidden, unhidden or changed position or size, so CursorFocus can be updated
-
-	["Children"] = {};
+	["PressedButton"] = nil;
+	["PressedElement"] = nil; -- the element that is currently being pressed / held down
 	["Size"] = vector(love.graphics.getDimensions()); -- TODO: use getSafeArea() to ignore the mobile inset
+	["TotalCreated"] = 0; -- total number of UI elements that have been created
+	["Visible"] = true; -- if set to false, ui won't be drawn, events can still technically take place (e.g. gamepad events once support is added)
 }
 
 local UIBase = {}
@@ -358,18 +355,33 @@ function module:getCursorSpeed(frameCount)
 	return vector((sumX / frameCount) / love.timer.getDelta(), (sumY / frameCount) / love.timer.getDelta())
 end
 
+-- hides the UI
+function module:hide()
+	if self.Visible then
+		self.Visible = false
+		self.Changed = true
+		return true
+	end
+	return false
+end
+
 -- draw all UI on screen
 function module:render()
-	love.graphics.setColor(1, 1, 1, 1)
-	for i = 1, #self.Children do
-		self.Children[i]:draw()
+	if self.Visible then
+		love.graphics.setColor(1, 1, 1, 1)
+		for i = 1, #self.Children do
+			self.Children[i]:draw()
+		end
+		love.graphics.setScissor()
+		love.graphics.setColor(1, 1, 1, 1)
 	end
-	love.graphics.setScissor()
-	love.graphics.setColor(1, 1, 1, 1)
 end
 
 -- returns the UI element being drawn at location (x, y)
 function module:at(x, y)
+	if not self.Visible then
+		return nil
+	end
 	local Obj = nil
 	for i = 1, #self.Children do
 		if not self.Children[i].Hidden then
@@ -380,6 +392,16 @@ function module:at(x, y)
 		end
 	end
 	return Obj
+end
+
+-- shows the UI
+function module:show()
+	if not self.Visible then
+		self.Visible = true
+		self.Changed = true
+		return true
+	end
+	return false
 end
 
 

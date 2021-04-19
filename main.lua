@@ -272,6 +272,16 @@ function love.wheelmoved(x, y, inputOnUI)
 	--print(inputOnUI)
 end
 
+function love.keypressed(key)
+	if key == "e" then
+		if ui.Visible then
+			ui:hide()
+		else
+			ui:show()
+		end
+	end
+end
+
 function love.resize(w, h)
 	TopBar:resize(w, DisplayVars.TopBarThickness)
 	Container:resize(Container.Size.x, h)
