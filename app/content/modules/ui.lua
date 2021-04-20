@@ -7,7 +7,7 @@ local color = require(getpath("framework/datatypes/color"))
 
 
 local meta = {
-	["Name"] = "(m) ui";
+	["Name"] = "ui";
 }
 
 local content = {}
@@ -167,6 +167,16 @@ table.insert(content, {
 })
 
 table.insert(content, {
+	["Type"] = "Property";
+	["ValueType"] = "vector";
+	["Name"] = "Visible";
+	["Description"] = "If true, UI is rendered. If false, no UI is rendered. This property can be used to disable UI during cutscenes or to add a 'screenshot mode'.";
+	["ReadOnly"] = true;
+	["CodeMarkup"] = nil;
+	["Demo"] = nil;
+})
+
+table.insert(content, {
 	["Type"] = "Header";
 	["Name"] = "Methods";
 	["Description"] = "";
@@ -202,9 +212,23 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Method";
+	["Name"] = "hide";
+	["Arguments"] = {};
+	["Description"] = "If the Visible property is set to true, this will set the property to false. Any highlighted element will lose its focus.";
+})
+
+table.insert(content, {
+	["Type"] = "Method";
 	["Name"] = "render";
 	["Arguments"] = {};
 	["Description"] = "This method will render all UI on the screen by recursively called :draw() on all of the UI root's children. TODO: Right now you have to call this method every frame, but you should add a method to toggle a property to render the UI which will then be used to automatically determine every frame if the UI should be drawn.";
+})
+
+table.insert(content, {
+	["Type"] = "Method";
+	["Name"] = "show";
+	["Arguments"] = {};
+	["Description"] = "If the Visible property is set to false, this will set the property back to true so the UI can be drawn again.";
 })
 
 table.insert(content, {

@@ -8,7 +8,7 @@ local tween = require(getpath("framework/modules/tween"))
 
 
 local meta = {
-	["Name"] = "(m) tween";
+	["Name"] = "tween";
 }
 
 local content = {}

@@ -7,7 +7,7 @@ local color = require(getpath("framework/datatypes/color"))
 
 
 local meta = {
-	["Name"] = "tween";
+	["Name"] = "Tween";
 }
 
 local content = {}

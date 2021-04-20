@@ -8,7 +8,7 @@ local animation = require(getpath("framework/modules/animation"))
 
 
 local meta = {
-	["Name"] = "animation";
+	["Name"] = "Animation";
 }
 
 local content = {}
