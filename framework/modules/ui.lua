@@ -656,10 +656,27 @@ function UIBase:setText(fontname, textData, size, scaleHeight)
 	end
 end
 
+
+-- resize the text to fit perfectly within the box
 function UIBase:fitText()
 	if self.TextBlock ~= nil then
 		self.TextBlock:fitText(self.Size.x - 2 * self.PaddingX, self.Size.y - 2 * self.PaddingY)
 	end
+end
+
+
+-- put the UI element on top by moving it to the last index in the parent's Children array
+function UIBase:toFront() -- TODO: test and document this!
+	if self.Parent ~= nil and self.Parent.Children ~= nil then
+		local Items = self.Parent.Children
+		for i = 1, #Items do
+			if Items[i] == self then
+				table.insert(Items, table.remove(Items, i))
+				return true
+			end
+		end
+	end
+	return false
 end
 
 

@@ -197,7 +197,7 @@ function vector:norm()
 	return self
 end
 
--- limit the vector to a certain amount
+-- limit the vector to a certain magnitude
 function vector:limit(max)
 	assert(type(max) == 'number', "limit: wrong argument type (expected <number>)")
 	local mSq = self:magSq()
