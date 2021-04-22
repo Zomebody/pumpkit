@@ -503,6 +503,33 @@ table.insert(content, {
 })
 
 table.insert(content, {
+	["Type"] = "Method";
+	["Name"] = "toFront";
+	["Arguments"] = {};
+	["Description"] = "Moves the child to the last index of its parent's Children table. This makes it appear on top of all other siblings.";
+	["CodeMarkup"] = "";
+	["Demo"] = function()
+		local Container = ui.newFrame(300, 150, color(0, 0, 0))
+		Container:setPadding(10, 10)
+		local frameLeft = ui.newFrame(160, 130, color(0.7, 0.5, 0.3))
+		frameLeft:alignX("left")
+		frameLeft:setPadding(10, 10)
+		frameLeft:setText("Roundabout.ttf", "Click me!", 18)
+		frameLeft.TextBlock:alignX("left")
+		frameLeft.OnPressStart = function() frameLeft:toFront() end
+		local frameRight = ui.newFrame(160, 130, color(0.3, 0.5, 0.7))
+		frameRight:alignX("right")
+		frameRight:setPadding(10, 10)
+		frameRight:setText("Roundabout.ttf", "Click me!", 18)
+		frameRight.TextBlock:alignX("right")
+		frameRight.OnPressStart = function() frameRight:toFront() end
+		Container:addChild(frameLeft)
+		Container:addChild(frameRight)
+		return Container
+	end;
+})
+
+table.insert(content, {
 	["Type"] = "Header";
 	["Name"] = "Callbacks";
 	["Description"] = "";
