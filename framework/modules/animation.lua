@@ -112,7 +112,10 @@ end
 function animation:update(dt)
 	if self.State == "playing" then
 		local prevFrame = self.CurrentFrame
+		local prevFramesPlayed = self.TimePlayed / self.FrameDuration
+		if prevFramesPlayed % 1 == 0 then prevFramesPlayed = prevFramesPlayed + 1 end -- +1 is here to prevent an edge case where if you get a whole number, OnFrameReached would trigger this frame AND next frame
 		self.TimePlayed = self.TimePlayed + dt
+		local newFramesPlayed = self.TimePlayed / self.FrameDuration
 
 		-- check if the end of the animation has been reached
 		local stopAnimation = false
@@ -123,18 +126,27 @@ function animation:update(dt)
 				self.TimePlayed = self.FrameCount * self.FrameDuration
 				stopAnimation = true
 			end
-			-- trigger end reached callback
-			if self.OnEndReached ~= nil then
+		end
+
+		local curFrame = math.ceil(math.min(self.FrameCount, self.TimePlayed / self.FrameDuration)) -- clamp in case TimePlayed == FrameCount * FrameDuration
+		self.CurrentFrame = curFrame
+		self.Quad:setViewport(self.FrameCoordinates[self.CurrentFrame].x, self.FrameCoordinates[self.CurrentFrame].y, self.FrameWidth, self.FrameHeight)
+		
+		-- loop through all of the animation's frames that have been reached during this frame (in order), so if you skipped a frame, you'll still call its OnFrameReached! (if marked)
+		--print(prevFramesPlayed, newFramesPlayed)
+		for i = math.ceil(prevFramesPlayed + 1), math.floor(newFramesPlayed + 1) do
+			local frame = (i - 1) % self.FrameCount + 1
+			if frame == 1 and self.OnEndReached ~= nil then
 				self.OnEndReached()
+			end
+			if self.MarkedFrames[frame] ~= nil and self.OnFrameReached ~= nil and (not (frame == 1 and self.Looped == false and self.TimePlayed == (self.FrameCount * self.FrameDuration))) then
+				self.OnFrameReached(self.MarkedFrames[frame])
 			end
 		end
 
-		local curFrame = math.ceil(self.TimePlayed / self.FrameDuration)
-		self.CurrentFrame = curFrame
-		self.Quad:setViewport(self.FrameCoordinates[self.CurrentFrame].x, self.FrameCoordinates[self.CurrentFrame].y, self.FrameWidth, self.FrameHeight)
-		if curFrame ~= prevFrame and self.MarkedFrames[curFrame] ~= nil and self.OnFrameReached ~= nil then
-			self.OnFrameReached(self.MarkedFrames[curFrame])
-		end
+		--if curFrame ~= prevFrame and self.MarkedFrames[curFrame] ~= nil and self.OnFrameReached ~= nil then
+		--	self.OnFrameReached(self.MarkedFrames[curFrame])
+		--end
 
 		if stopAnimation then
 			self:stop()
