@@ -253,7 +253,6 @@ function love.load()
 				end
 			end
 		end
-
 	end
 
 	-- add topbar last so it always appears on top

@@ -12,11 +12,11 @@ end
 
 local function new(a, b)
 	local Obj = {
-		["Min"] = math.min(a, b);
-		["Max"] = math.max(a, b);
-		["Size"] = nil;
+		["min"] = math.min(a, b);
+		["max"] = math.max(a, b);
+		["size"] = nil;
 	}
-	Obj.Size = Obj.Max - Obj.Min
+	Obj.size = Obj.max - Obj.min
 	return setmetatable(Obj, range)
 end
 
@@ -24,7 +24,7 @@ end
 -- returns true if the given range intersects this range
 function range:intersects(r)
 	if module.isRange(r) then
-		return (self.Min <= r.Max and self.Max >= r.Min)
+		return (self.min <= r.max and self.max >= r.min)
 	end
 	return false
 end
@@ -34,92 +34,92 @@ end
 function range:intersection(r)
 	if module.isRange(r) then
 		if self:intersects(r) then
-			return new(math.max(self.Min, r.Min), math.min(self.Max, r.Max))
+			return new(math.max(self.min, r.min), math.min(self.max, r.max))
 		end
 	end
 	return nil
 end
 
 function range:clamp(x)
-	if x > self.Max then
-		x = self.Max
-	elseif x < self.Min then
-		x = self.Min
+	if x > self.max then
+		x = self.max
+	elseif x < self.min then
+		x = self.min
 	end
 	return x
 end
 
 function range:contains(x)
-	return self.Min >= x and self.Max <= x
+	return self.min >= x and self.max <= x
 end
 
 function range:clone()
-	return new(self.Min, self.Max)
+	return new(self.min, self.max)
 end
 
 
 local a = (2 * math.atan(2)) / math.pi
 
 function range:randomInt(mode)
-	assert(self.Min % 1 == 0 and self.Max % 1 == 0, "method function:randomInt() cannot produce an output for non-integer ranges")
+	assert(self.min % 1 == 0 and self.max % 1 == 0, "method function:randomInt() cannot produce an output for non-integer ranges")
 	if mode == nil or mode == "default" then
-		return love.math.random(self.Min, self.Max)
+		return love.math.random(self.min, self.max)
 	elseif mode == "concentrated" then
 		local x = love.math.random()
-		local step = 1 / self.Size
-		return self.Min + math.ceil((0.25 * math.tan(math.pi * a * (x - 0.5)) + 0.5) * self.Size)
-		--return self.Min + math.ceil(((x < 0.5) and math.sqrt(math.sqrt(2 * x)) / 2 or -math.sqrt(math.sqrt(2 - 2 * x)) / 2 + 1) * self.Size)
+		local step = 1 / self.size
+		return self.min + math.ceil((0.25 * math.tan(math.pi * a * (x - 0.5)) + 0.5) * self.size)
+		--return self.min + math.ceil(((x < 0.5) and math.sqrt(math.sqrt(2 * x)) / 2 or -math.sqrt(math.sqrt(2 - 2 * x)) / 2 + 1) * self.size)
 	end
 end
 
 -- returns a random decimal number between the range's min and max
 function range:randomDecimal(mode)
 	if mode == nil or mode == "default" then
-		return self.Min + love.math.random() * (self.Size)
+		return self.min + love.math.random() * (self.size)
 	elseif mode == "concentrated" then
 		local x = love.math.random()
-		return self.Min + (0.25 * math.tan(math.pi * a * (x - 0.5)) + 0.5) * self.Size
-		--return self.Min + ((x < 0.5) and math.sqrt(math.sqrt(2 * x)) / 2 or -math.sqrt(math.sqrt(2 - 2 * x)) / 2 + 1) * self.Size
+		return self.min + (0.25 * math.tan(math.pi * a * (x - 0.5)) + 0.5) * self.size
+		--return self.min + ((x < 0.5) and math.sqrt(math.sqrt(2 * x)) / 2 or -math.sqrt(math.sqrt(2 - 2 * x)) / 2 + 1) * self.size
 	end
 end
 
 function range:__tostring()
-	return "[" .. tostring(self.Min) .. ", " .. tostring(self.Max) .. "]"
+	return "[" .. tostring(self.min) .. ", " .. tostring(self.max) .. "]"
 end
 
 function range:__add(v)
 	if module.isRange(v) then
-		return new(self.Min + v.Min, self.Max + v.Max)
+		return new(self.min + v.min, self.max + v.max)
 	else
-		return new(self.Min + v, self.Max + v)
+		return new(self.min + v, self.max + v)
 	end
 end
 
 function range:__sub(v)
 	if module.isRange(v) then
-		return new(self.Min - v.Min, self.Max - v.Max)
+		return new(self.min - v.min, self.max - v.max)
 	else
-		return new(self.Min - v, self.Max - v)
+		return new(self.min - v, self.max - v)
 	end
 end
 
 function range:__unm()
-	return new(-self.Max, -self.Min)
+	return new(-self.max, -self.min)
 end
 
 function range:__mul(v)
 	if module.isRange(v) then
-		return new(self.Min * v.Min, self.Max * v.Max)
+		return new(self.min * v.min, self.max * v.max)
 	else
-		return new(self.Min * v, self.Max * v)
+		return new(self.min * v, self.max * v)
 	end
 end
 
 function range:__div(v)
 	if module.isRange(v) then
-		return new(self.Min / v.Min, self.Max / v.Max)
+		return new(self.min / v.min, self.max / v.max)
 	else
-		return new(self.Min / v, self.Max / v)
+		return new(self.min / v, self.max / v)
 	end
 end
 

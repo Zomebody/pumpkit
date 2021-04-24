@@ -212,7 +212,7 @@ function vector:clamp(min, max)
 	assert(isVector(min) and isVector(max), "clamp: wrong argument type (expected <vector> and <vector>)")
 	local x = math.min( math.max( self.x, min.x ), max.x )
 	local y = math.min( math.max( self.y, min.y ), max.y )
-	self:set(x,y)
+	self:set(x, y)
 	return self
 end
 
