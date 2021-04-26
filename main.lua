@@ -217,27 +217,31 @@ function love.load()
 			BodyContainer:hide()
 			Body:addChild(BodyContainer)
 
-			-- fill the page with data
-			local dataTarget = data
-			local superClass = nil
-			repeat
-				addToPage(BodyContainer, NavContainer, dataTarget, DisplayVars, superClass)
-				local stop = true
-				if dataTarget.Meta.SuperClass ~= nil then
-					for l = 1, #tabFiles do
-						if tabFiles[l] == dataTarget.Meta.SuperClass then
-							stop = false
-							superClass = dataTarget.Meta.SuperClass
-							dataTarget = require("app.content." .. tabs[i] .. "." .. dataTarget.Meta.SuperClass)
-							break
-						end
-					end
-				end
-			until stop
-
 			-- link the right button in the dropdown to open the page and close the previous page
+			local bodyInitialized = false
 			DropdownBox.Children[k].OnFullPress = function(x, y, button)
 				if button == 1 then
+					-- check if page has been initialized yet
+					if not bodyInitialized then
+						-- fill the page with data
+						local dataTarget = data
+						local superClass = nil
+						repeat
+							addToPage(BodyContainer, NavContainer, dataTarget, DisplayVars, superClass)
+							local stop = true
+							if dataTarget.Meta.SuperClass ~= nil then
+								for l = 1, #tabFiles do
+									if tabFiles[l] == dataTarget.Meta.SuperClass then
+										stop = false
+										superClass = dataTarget.Meta.SuperClass
+										dataTarget = require("app.content." .. tabs[i] .. "." .. dataTarget.Meta.SuperClass)
+										break
+									end
+								end
+							end
+						until stop
+						bodyInitialized = true
+					end
 					Navigation:positionContent(0, 0)
 					Body:positionContent(0, 0)
 					if shownNavigation ~= nil then
