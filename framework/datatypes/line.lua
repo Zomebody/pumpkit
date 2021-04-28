@@ -21,6 +21,7 @@ function line:replace(l)
 	self.from.y = l.from.y
 	self.to.x = l.to.x
 	self.to.y = l.to.y
+	self.normal = (self.to - self.from):rotate(math.pi / 2):norm()
 	return self
 end
 
@@ -215,13 +216,18 @@ end
 
 
 -- makes a new line
-local function new(from, to)
-	local newFrom = (from == nil) and (vector.new()) or (from:clone())
-	local newTo = (to == nil) and (to.new()) or (to:clone())
+local function new(from, to, x2, y2)
+	if type(from) == "number" then
+		from = vector(from, to)
+		to = vector(x2, y2)
+	else
+		from = (from == nil) and (vector.new()) or (from:clone())
+		to = (to == nil) and (vector.new()) or (to:clone())
+	end
 	local Obj = {
-		["from"] = newFrom;
-		["to"] = newTo;
-		["normal"] = (newTo - newFrom):rotate(math.pi / 2):norm()
+		["from"] = from;
+		["to"] = to;
+		["normal"] = (to - from):rotate(math.pi / 2):norm()
 	}
 	return setmetatable(Obj, line)
 end
