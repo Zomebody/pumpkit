@@ -7,6 +7,8 @@ local module = {}
 local line = {}
 line.__index = line
 
+local new
+
 
 -- check if an object is a line
 local function isLine(t)
@@ -148,7 +150,7 @@ function line:intersectCircle(v, r)
 		elseif t2 >= 0 and t2 <= 1 then -- hit the circle from inside
 			return self.from + d * t2, -1
 		end
-		-- if neither of above, the line segment either fall short, is past the circle, or is fully inside the circle
+		-- if neither of above, the line segment either falls short, is past the circle, or is fully inside the circle
 	end
 	return nil
 end
@@ -159,7 +161,7 @@ function line:intersects(arg1, arg2)
 	if isLine(arg1) then
 		return self:intersect(arg1) ~= nil
 	else
-		return self:intersectCicle(arg1, arg2) ~= nil
+		return self:intersectCircle(arg1, arg2) ~= nil
 	end
 end
 
@@ -216,7 +218,7 @@ end
 
 
 -- makes a new line
-local function new(from, to, x2, y2)
+new = function(from, to, x2, y2)
 	if type(from) == "number" then
 		from = vector(from, to)
 		to = vector(x2, y2)
