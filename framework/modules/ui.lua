@@ -10,10 +10,16 @@ local textblock = require(getpath(..., "textblock"))
 
 
 
-----------------------------------------------------[[ == BASE OBJECTS == ]]----------------------------------------------------
+----------------------------------------------------[[ == LOCAL VARIABLES == ]]----------------------------------------------------
 
 local speedHistoryX = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 local speedHistoryY = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+
+local markedObjects = {} -- stores marked objects in the form ["name"] = {Obj1, Obj2, ...}
+
+
+
+----------------------------------------------------[[ == BASE OBJECTS == ]]----------------------------------------------------
 
 local module = {
 	["Changed"] = false; -- internal boolean to determine at the end of each frame if some element was added, removed, hidden, unhidden or changed position or size, so CursorFocus can be updated
@@ -394,7 +400,7 @@ function module:at(x, y)
 	return Obj
 end
 
--- shows the UI
+-- shows the UI (enables it to be drawn)
 function module:show()
 	if not self.Visible then
 		self.Visible = true
@@ -402,6 +408,15 @@ function module:show()
 		return true
 	end
 	return false
+end
+
+
+-- returns a tuple of objects marked with the given name
+function module:find(name)
+	if markedObjects[name] ~= nil then
+		return table.unpack(markedObjects[name])
+	end
+	return nil
 end
 
 
@@ -677,6 +692,38 @@ function UIBase:toFront() -- TODO: test and document this!
 		end
 	end
 	return false
+end
+
+
+-- mark the object. If no argument is provided, the object will be unmarked
+function UIBase:mark(name)
+	if name ~= nil then
+		if markedObjects[name] ~= nil then
+			local found = false
+			for i = 1, #markedObjects[name] do
+				if markedObjects[name][i] == self then
+					found = true
+					break
+				end
+			end
+			if not found then
+				table.insert(markedObjects[name], self)
+			end
+		else
+			markedObjects[name] = {self}
+		end
+	elseif markedObjects[name] ~= nil then
+		local found = false
+		for i = 1, #markedObjects[name] do
+			if markedObjects[name][i] == self then
+				found = true
+				break
+			end
+		end
+		if found and #markedObjects[name] == 0 then
+			markedObjects[name] = nil
+		end
+	end
 end
 
 
