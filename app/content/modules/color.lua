@@ -16,7 +16,7 @@ table.insert(content, {
 	["Type"] = "IntroHeader";
 	["Name"] = "The color Module";
 	["Description"] = "A module used to construct color data types.";
-	["CodeMarkup"] = "<c>-- Colors displayed from left to right</c>\n<k>local</k> orange = <f>color</f>(<n>1</n>, <n>0.5</n>, <n>0</n>)\n<k>local</k> blue = color.<f>fromHex</f>(<s>\"#007bff\"</s>)\n<k>local</k> purple = <f>color</f>(blue):<f>shiftHue</f>(<n>60</n>)\n<k>local</k> babyBlue = blue:<f>clone</f>():<f>lighten</f>(<n>0.6</n>)";
+	["CodeMarkup"] = "<c>-- Colors displayed from left to right</c>\n<k>local</k> orange <k>=</k> <f>color</f>(<n>1</n>, <n>0.5</n>, <n>0</n>)\n<k>local</k> blue <k>=</k> color.<f>fromHex</f>(<s>\"#007bff\"</s>)\n<k>local</k> purple <k>=</k> <f>color</f>(blue):<f>shiftHue</f>(<n>60</n>)\n<k>local</k> babyBlue <k>=</k> blue:<f>clone</f>():<f>lighten</f>(<n>0.6</n>)";
 	["Demo"] = function()
 		local Container = ui.newFrame(500, 100, color(1, 1, 1))
 		Container.Opacity = 0

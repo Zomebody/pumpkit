@@ -74,7 +74,7 @@ table.insert(content, {
 	["Name"] = "closestTo";
 	["Arguments"] = {"vector"};
 	["Description"] = "Returns a position on the line that is closest to the given vector.";
-	["CodeMarkup"] = "<k>local</k> l = <f>line</f>(<n>20</n>, <n>20</n>, <n>130</n>, <n>80</n>)\n<k>local</k> p = <f>vector</f>(<n>40</n>, <n>70</n>)\n<k>local</k> c = l:<f>closestTo</f>(p)\nlove.graphics.<f>line</f>(l:<f>unpack</f>())\nlove.graphics.<f>setColor</f>(<n>1</n>, <n>0</n>, <n>0</n>)\nlove.graphics.<f>circle</f>(<s>\"fill\"</s>, p.x, p.y, <n>6</n>)\nlove.graphics.<f>setColor</f>(<n>0</n>, <n>0.5</n>, <n>1</n>)\nlove.graphics.<f>circle</f>(<s>\"fill\"</s>, c.x, c.y, <n>6</n>)";
+	["CodeMarkup"] = "<k>local</k> l <k>=</k> <f>line</f>(<n>20</n>, <n>20</n>, <n>130</n>, <n>80</n>)\n<k>local</k> p <k>=</k> <f>vector</f>(<n>40</n>, <n>70</n>)\n<k>local</k> c <k>=</k> l:<f>closestTo</f>(p)\nlove.graphics.<f>line</f>(l:<f>unpack</f>())\nlove.graphics.<f>setColor</f>(<n>1</n>, <n>0</n>, <n>0</n>)\nlove.graphics.<f>circle</f>(<s>\"fill\"</s>, p.x, p.y, <n>6</n>)\nlove.graphics.<f>setColor</f>(<n>0</n>, <n>0.5</n>, <n>1</n>)\nlove.graphics.<f>circle</f>(<s>\"fill\"</s>, c.x, c.y, <n>6</n>)";
 	["Demo"] = function()
 		local Canvas = love.graphics.newCanvas(150, 90)
 		Canvas:renderTo(
@@ -124,7 +124,7 @@ table.insert(content, {
 	["Name"] = "getTwoParallels";
 	["Arguments"] = {"distance"};
 	["Description"] = "Returns two new line objects that are parallel to the current line, but exactly 'distance' units away from the line. This method can be useful for creating capsule colliders out of lines.";
-	["CodeMarkup"] = "<k>local</k> l = <f>line</f>(<n>30</n>, <n>40</n>, <n>130</n>, <n>80</n>)\n<k>local</k> l1, l2 = l:<f>getTwoParallels</f>(<n>30</n>)\nlove.graphics.<f>line</f>(l:<f>unpack</f>())\nlove.graphics.<f>setColor</f>(<n>1</n>, <n>0</n>, <n>0</n>)\nlove.graphics.<f>line</f>(l1:<f>unpack</f>())\nlove.graphics.<f>line</f>(l2:<f>unpack</f>())";
+	["CodeMarkup"] = "<k>local</k> l <k>=</k> <f>line</f>(<n>30</n>, <n>40</n>, <n>130</n>, <n>80</n>)\n<k>local</k> l1, l2 <k>=</k> l:<f>getTwoParallels</f>(<n>30</n>)\nlove.graphics.<f>line</f>(l:<f>unpack</f>())\nlove.graphics.<f>setColor</f>(<n>1</n>, <n>0</n>, <n>0</n>)\nlove.graphics.<f>line</f>(l1:<f>unpack</f>())\nlove.graphics.<f>line</f>(l2:<f>unpack</f>())";
 	["Demo"] = function()
 		local Canvas = love.graphics.newCanvas(160, 120)
 		Canvas:renderTo(
@@ -157,7 +157,7 @@ table.insert(content, {
 	["Name"] = "intersect";
 	["Arguments"] = {"line"};
 	["Description"] = "If the current line overlaps the given line, this returns the location of intersection. Otherwise it returns nil.";
-	["CodeMarkup"] = "<k>local</k> l1 = <f>line</f>(<n>20</n>, <n>50</n>, <n>110</n>, <n>75</n>)\n<k>local</k> l2 = <f>line</f>(<n>35</n>, <n>100</n>, <n>130</n>, <n>25</n>)\n<k>local</k> hit = l1:<f>intersect</f>(l2)\nlove.graphics.<f>line</f>(l1:<f>unpack</f>())\nlove.graphics.<f>line</f>(l2:<f>unpack</f>())\nlove.graphics.<f>setColor</f>(<n>1</n>, <n>0</n>, <n>0</n>)\nlove.graphics.<f>circle</f>(<s>\"fill\"</s>, hit.x, hit.y, <n>6</n>)";
+	["CodeMarkup"] = "<k>local</k> l1 <k>=</k> <f>line</f>(<n>20</n>, <n>50</n>, <n>110</n>, <n>75</n>)\n<k>local</k> l2 <k>=</k> <f>line</f>(<n>35</n>, <n>100</n>, <n>130</n>, <n>25</n>)\n<k>local</k> hit <k>=</k> l1:<f>intersect</f>(l2)\nlove.graphics.<f>line</f>(l1:<f>unpack</f>())\nlove.graphics.<f>line</f>(l2:<f>unpack</f>())\nlove.graphics.<f>setColor</f>(<n>1</n>, <n>0</n>, <n>0</n>)\nlove.graphics.<f>circle</f>(<s>\"fill\"</s>, hit.x, hit.y, <n>6</n>)";
 	["Demo"] = function()
 		local Canvas = love.graphics.newCanvas(160, 120)
 		Canvas:renderTo(

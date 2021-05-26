@@ -18,7 +18,7 @@ table.insert(content, {
 	["Name"] = meta.Name;
 	["Note"] = "Extends " .. meta.SuperClass;
 	["Description"] = "An interface element that contains an image. When drawn, the image is stretched to perfectly fit within the element.";
-	["CodeMarkup"] = "<k>local</k> img = love.graphics.<f>newImage</f>(<n>...</n>)\n<k>local</k> image_frame = ui.<f>newImageFrame</f>(img, <n>200</n>, <n>200</n>)";
+	["CodeMarkup"] = "<k>local</k> img <k>=</k> love.graphics.<f>newImage</f>(<n>...</n>)\n<k>local</k> image_frame <k>=</k> ui.<f>newImageFrame</f>(img, <n>200</n>, <n>200</n>)";
 	["Demo"] = function() -- function that creates and returns an element to be placed right below the code example
 		local img = love.graphics.newImage("test_images/Twitch_PFP.png")
 		local image_frame = ui.newImageFrame(img, 200, 200)

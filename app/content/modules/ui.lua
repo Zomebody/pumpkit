@@ -198,6 +198,13 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Method";
+	["Name"] = "find";
+	["Arguments"] = {"name"};
+	["Description"] = "Returns an array of objects that have been marked with the given name. If no results are found, the array is empty.";
+})
+
+table.insert(content, {
+	["Type"] = "Method";
 	["Name"] = "initialize";
 	["Arguments"] = {};
 	["Description"] = "This method can only be called once. It will initialize the UI module by hooking into other Love2D functions and adding additional behavior there to make the system run. This method should be called right when the program first loads. After that, the system will be initialized and run forever.";

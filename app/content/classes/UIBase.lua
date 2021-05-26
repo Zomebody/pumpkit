@@ -284,7 +284,7 @@ table.insert(content, {
 	["Name"] = "alignX";
 	["Arguments"] = {"side"};
 	["Description"] = "Aligns the element on the horizontal axis. Side can be either \"left\", \"right\" or \"center\". This will set the Position and Center property.";
-	["CodeMarkup"] = "<k>local</k> Elem = ui.<f>newFrame</f>(<n>40</n>, <n>40</n>, <f>color</f>(<n>1</n>, <n>1</n>, <n>1</n>))\nContainer:<f>addChild</f>(Elem)\nElem:<f>alignX</f>(<s>\"right\"</s>)";
+	["CodeMarkup"] = "<k>local</k> Elem <k>=</k> ui.<f>newFrame</f>(<n>40</n>, <n>40</n>, <f>color</f>(<n>1</n>, <n>1</n>, <n>1</n>))\nContainer:<f>addChild</f>(Elem)\nElem:<f>alignX</f>(<s>\"right\"</s>)";
 	["Demo"] = function()
 		local Container = ui.newFrame(200, 60, color(0, 0, 0))
 		local Elem = ui.newFrame(40, 40, color(1, 1, 1))
@@ -299,7 +299,7 @@ table.insert(content, {
 	["Name"] = "alignY";
 	["Arguments"] = {"side"};
 	["Description"] = "Aligns the element on the vertical axis. Side can be either \"top\", \"bottom\" or \"center\". This will set the Position and Center property.";
-	["CodeMarkup"] = "<k>local</k> Elem = ui.<f>newFrame</f>(<n>40</n>, <n>40</n>, <f>color</f>(<n>1</n>, <n>1</n>, <n>1</n>))\nContainer:<f>addChild</f>(Elem)\nElem:<f>alignY</f>(<s>\"bottom\"</s>)";
+	["CodeMarkup"] = "<k>local</k> Elem <k>=</k> ui.<f>newFrame</f>(<n>40</n>, <n>40</n>, <f>color</f>(<n>1</n>, <n>1</n>, <n>1</n>))\nContainer:<f>addChild</f>(Elem)\nElem:<f>alignY</f>(<s>\"bottom\"</s>)";
 	["Demo"] = function()
 		local Container = ui.newFrame(200, 60, color(0, 0, 0))
 		local Elem = ui.newFrame(40, 40, color(1, 1, 1))
@@ -321,7 +321,7 @@ table.insert(content, {
 	["Name"] = "fitText";
 	["Arguments"] = {};
 	["Description"] = "If :setText() has been called sometime prior, this will resize the text such that it perfectly fits within the element's box, while respecting any padding. This can be useful when creating speech bubbles. NOTE: This method is expensive and should not be called many times per frame!";
-	["CodeMarkup"] = "<k>local</k> Frame = ui.<f>newFrame</f>(<n>250</n>, <n>80</n>, <f>color</f>(<n>0</n>, <n>0</n>, <n>0</n>))\nFrame:<f>setPadding</f>(<n>4</n>)\nFrame:<f>setText</f>(<s>\"Roundabout.ttf\"</s>, <s>\"Hello World\"</s>, <n>8</n>)\nFrame:<f>fitText</f>()";
+	["CodeMarkup"] = "<k>local</k> Frame <k>=</k> ui.<f>newFrame</f>(<n>250</n>, <n>80</n>, <f>color</f>(<n>0</n>, <n>0</n>, <n>0</n>))\nFrame:<f>setPadding</f>(<n>4</n>)\nFrame:<f>setText</f>(<s>\"Roundabout.ttf\"</s>, <s>\"Hello World\"</s>, <n>8</n>)\nFrame:<f>fitText</f>()";
 	["Demo"] = function()
 		local Frame = ui.newFrame(250, 80, color(0, 0, 0))
 		Frame:setPadding(4)
@@ -432,7 +432,7 @@ table.insert(content, {
 	["Name"] = "resize";
 	["Arguments"] = {"x", "y"};
 	["Description"] = "Resizes the element. This also updates the AbsolutePosition of the element and its children.";
-	["CodeMarkup"] = "<k>local</k> Frame1 = ui.<f>newFrame</f>(<n>100</n>, <n>100</n>, <f>color</f>(<n>0</n>, <n>0</n>, <n>0</n>))\nFrame1:<f>setText</f>(<s>\"Roundabout.ttf\"</s>, <s>\"Frame 1\"</s>, <n>18</n>)\n<k>local</k> Frame2 = ui.<f>newFrame</f>(<n>100</n>, <n>100</n>, <f>color</f>(<n>0</n>, <n>0</n>, <n>0</n>))\nFrame2:<f>setText</f>(<s>\"Roundabout.ttf\"</s>, <s>\"Frame 2\"</s>, <n>18</n>)\nFrame2:<f>resize</f>(<n>130</n>, <n>80</n>)";
+	["CodeMarkup"] = "<k>local</k> Frame1 <k>=</k> ui.<f>newFrame</f>(<n>100</n>, <n>100</n>, <f>color</f>(<n>0</n>, <n>0</n>, <n>0</n>))\nFrame1:<f>setText</f>(<s>\"Roundabout.ttf\"</s>, <s>\"Frame 1\"</s>, <n>18</n>)\n<k>local</k> Frame2 <k>=</k> ui.<f>newFrame</f>(<n>100</n>, <n>100</n>, <f>color</f>(<n>0</n>, <n>0</n>, <n>0</n>))\nFrame2:<f>setText</f>(<s>\"Roundabout.ttf\"</s>, <s>\"Frame 2\"</s>, <n>18</n>)\nFrame2:<f>resize</f>(<n>130</n>, <n>80</n>)";
 	["Demo"] = function() -- function that creates and returns an element to be placed right below the code example
 		local Container = ui.newFrame(300, 100)
 		Container.Opacity = 0
@@ -453,7 +453,7 @@ table.insert(content, {
 	["Name"] = "setBorder";
 	["Arguments"] = {"color", "width"};
 	["Description"] = "Sets the color and the width of the element's border. If color is a number instead, that will be used as the new width.";
-	["CodeMarkup"] = "<k>local</k> Frame1 = ui.<f>newFrame</f>(<n>100</n>, <n>100</n>, <f>color</f>(<n>1</n>, <n>1</n>, <n>1</n>))\nFrame1:<f>setBorder</f>(<f>color</f>(<n>0.4</n>, <n>0.4</n>, <n>1</n>), <n>5</n>)\n<k>local</k> Frame2 = ui.<f>newFrame</f>(<n>100</n>, <n>100</n>, <f>color</f>(<n>1</n>, <n>1</n>, <n>1</n>))\nFrame2:<f>setBorder</f>(<n>10</n>)";
+	["CodeMarkup"] = "<k>local</k> Frame1 <k>=</k> ui.<f>newFrame</f>(<n>100</n>, <n>100</n>, <f>color</f>(<n>1</n>, <n>1</n>, <n>1</n>))\nFrame1:<f>setBorder</f>(<f>color</f>(<n>0.4</n>, <n>0.4</n>, <n>1</n>), <n>5</n>)\n<k>local</k> Frame2 <k>=</k> ui.<f>newFrame</f>(<n>100</n>, <n>100</n>, <f>color</f>(<n>1</n>, <n>1</n>, <n>1</n>))\nFrame2:<f>setBorder</f>(<n>10</n>)";
 	["Demo"] = function()
 		local Container = ui.newFrame(300, 100)
 		Container.Opacity = 0
@@ -480,7 +480,7 @@ table.insert(content, {
 	["Name"] = "setPadding";
 	["Arguments"] = {"x", "y"};
 	["Description"] = "Sets the horizontal and vertical padding of an element. If the second argument is missing, the first argument replaces it. Horizontal and vertical padding applies on both of their edges. Padding will apply to the element's childrens' Position property and it will apply to the element's TextBlock to offset text from the sides.";
-	["CodeMarkup"] = "<k>local</k> Container = ui.<f>newFrame</f>(<n>300</n>, <n>100</n>, <f>color</f>(<n>0</n>, <n>0</n>, <n>0</n>))\nContainer:<f>setPadding</f>(<n>20</n>, <n>10</n>)\nContainer:<f>setText</f>(<s>\"Roundabout.ttf\"</s>, <s>\"Hello World\"</s>, <n>18</n>)\n<k>local</k> Child = ui.<f>newFrame</f>(<n>60</n>, <n>60</n>, <f>color</f>(<n>1</n>, <n>1</n>, <n>1</n>))\nChild:<f>alignX</f>(<s>\"right\"</s>)\nChild:<f>alignY</f>(<s>\"bottom\"</s>)\nContainer:<f>addChild</f>(Child)";
+	["CodeMarkup"] = "<k>local</k> Container <k>=</k> ui.<f>newFrame</f>(<n>300</n>, <n>100</n>, <f>color</f>(<n>0</n>, <n>0</n>, <n>0</n>))\nContainer:<f>setPadding</f>(<n>20</n>, <n>10</n>)\nContainer:<f>setText</f>(<s>\"Roundabout.ttf\"</s>, <s>\"Hello World\"</s>, <n>18</n>)\n<k>local</k> Child <k>=</k> ui.<f>newFrame</f>(<n>60</n>, <n>60</n>, <f>color</f>(<n>1</n>, <n>1</n>, <n>1</n>))\nChild:<f>alignX</f>(<s>\"right\"</s>)\nChild:<f>alignY</f>(<s>\"bottom\"</s>)\nContainer:<f>addChild</f>(Child)";
 	["Demo"] = function()
 		local Container = ui.newFrame(300, 100, color(0, 0, 0))
 		Container:setPadding(20, 10)
@@ -498,7 +498,7 @@ table.insert(content, {
 	["Name"] = "setText";
 	["Arguments"] = {"fontname", "textData", "fontsize", "scaleHeight"};
 	["Description"] = "Sets the text inside the element. This will set the TextBlock property, which is another instance type. fontname must be a font that exists in the list of fonts. textData is either a string or a table with colored text data (see Love2D documentation of printf()). fontsize is the size of the font. scaleHeight is a boolean that, when enabled, will set the element's height such that the text perfectly fits vertically. This will take padding into consideration as well.";
-	["CodeMarkup"] = "<k>local</k> Frame = ui.<f>newFrame</f>(<n>300</n>, <n>100</n>, <f>color</f>(<n>0</n>, <n>0</n>, <n>0</n>))\nFrame:<f>setText</f>(<s>\"Roundabout.ttf\"</s>, <s>\"The quick brown fox jumps over the lazy dog\"</s>, <n>32</n>, <b>true</b>)";
+	["CodeMarkup"] = "<k>local</k> Frame <k>=</k> ui.<f>newFrame</f>(<n>300</n>, <n>100</n>, <f>color</f>(<n>0</n>, <n>0</n>, <n>0</n>))\nFrame:<f>setText</f>(<s>\"Roundabout.ttf\"</s>, <s>\"The quick brown fox jumps over the lazy dog\"</s>, <n>32</n>, <b>true</b>)";
 	["Demo"] = function()
 		local Frame = ui.newFrame(300, 100, color(0, 0, 0))
 		Frame:setText("Roundabout.ttf", "The quick brown fox jumps over the lazy dog", 32, true)
@@ -518,7 +518,7 @@ table.insert(content, {
 	["Name"] = "shiftContent";
 	["Arguments"] = {"offsetX", "offsetY"};
 	["Description"] = "Changes the ContentOffset property by the specified amount on the x-axis and y-axis. This can be used to program scrollable elements.";
-	["CodeMarkup"] = "<k>local</k> Container = ui.<f>newFrame</f>(<n>250</n>, <n>100</n>, <f>color</f>(<n>0</n>, <n>0</n>, <n>0</n>))\n<k>local</k> Child = ui.<f>newFrame</f>(<n>100</n>, <n>100</n>, <f>color</f>(<n>1</n>, <n>1</n>, <n>1</n>))\nChild.OnFullPress = <f>function</f>()\n\t<k>if</k> Container.ContentOffset.x <k><</k> <n>150</n> <k>then</k>\n\t\tContainer:<f>shiftContent</f>(<n>25</n>, <n>0</n>)\n\t<k>else</k>\n\t\tContainer:<f>shiftContent</f>(<n>-150</n>, <n>0</n>)\n\t<k>end</k>\n<k>end</k>\nContainer:<f>addChild</f>(Child)";
+	["CodeMarkup"] = "<k>local</k> Container <k>=</k> ui.<f>newFrame</f>(<n>250</n>, <n>100</n>, <f>color</f>(<n>0</n>, <n>0</n>, <n>0</n>))\n<k>local</k> Child <k>=</k> ui.<f>newFrame</f>(<n>100</n>, <n>100</n>, <f>color</f>(<n>1</n>, <n>1</n>, <n>1</n>))\nChild.OnFullPress <k>=</k> <f>function</f>()\n\t<k>if</k> Container.ContentOffset.x <k><</k> <n>150</n> <k>then</k>\n\t\tContainer:<f>shiftContent</f>(<n>25</n>, <n>0</n>)\n\t<k>else</k>\n\t\tContainer:<f>shiftContent</f>(<n>-150</n>, <n>0</n>)\n\t<k>end</k>\n<k>end</k>\nContainer:<f>addChild</f>(Child)";
 	["Demo"] = function()
 		local Container = ui.newFrame(250, 100, color(0, 0, 0))
 		local Child = ui.newFrame(100, 100, color(1, 1, 1))
@@ -580,7 +580,7 @@ table.insert(content, {
 	["Name"] = "OnDrag";
 	["Arguments"] = {"dx", "dy", "button", "offX", "offY"};
 	["Description"] = "Called when you drag an element. A drag is when you first press the element and then move the cursor while keeping the press active. A drag may go outside the box of the element and it will still count as an active press. dx and dy are numbers indicating the relative movement in the current frame. button is the mouse button (1 for touch drags). offX and offY are an offset in pixels relative to the starting point of the drag.";
-	["CodeMarkup"] = "<k>local</k> Draggable = ui.<f>newFrame</f>(<n>80</n>, <n>80</n>, <f>color</f>(<n>1</n>, <n>1</n>, <n>1</n>))\n<k>local</k> x, y = <n>0</n>, <n>0</n>\nDraggable.OnPressStart = <f>function</f>()\n\tx <k>=</k> Draggable.Position.Offset.x\n\ty <k>=</k> Draggable.Position.Offset.y\n<k>end</k>\nDraggable.OnDrag = <f>function</f>(<a>dx</a>, <a>dy</a>, <a>button</a>, <a>offX</a>, <a>offY</a>)\n\t<k>if</k> button <k>==</k> <n>1</n> <k>then</k>\n\t\t<k>local</k> clampedX = math.<f>min</f>(<n>220</n>, math.<f>max</f>(<n>0</n>, x <k>+</k> offX))\n\t\t<k>local</k> clampedY = math.<f>min</f>(<n>220</n>, math.<f>max</f>(<n>0</n>, y <k>+</k> offY))\n\t\tDraggable:<f>reposition</f>(<n>0</n>, <n>0</n>, clampedX, clampedY)\n\t<k>end</k>\n<k>end</k>";
+	["CodeMarkup"] = "<k>local</k> Draggable <k>=</k> ui.<f>newFrame</f>(<n>80</n>, <n>80</n>, <f>color</f>(<n>1</n>, <n>1</n>, <n>1</n>))\n<k>local</k> x, y <k>=</k> <n>0</n>, <n>0</n>\nDraggable.OnPressStart = <f>function</f>()\n\tx <k>=</k> Draggable.Position.Offset.x\n\ty <k>=</k> Draggable.Position.Offset.y\n<k>end</k>\nDraggable.OnDrag <k>=</k> <f>function</f>(<a>dx</a>, <a>dy</a>, <a>button</a>, <a>offX</a>, <a>offY</a>)\n\t<k>if</k> button <k>==</k> <n>1</n> <k>then</k>\n\t\t<k>local</k> clampedX = math.<f>min</f>(<n>220</n>, math.<f>max</f>(<n>0</n>, x <k>+</k> offX))\n\t\t<k>local</k> clampedY = math.<f>min</f>(<n>220</n>, math.<f>max</f>(<n>0</n>, y <k>+</k> offY))\n\t\tDraggable:<f>reposition</f>(<n>0</n>, <n>0</n>, clampedX, clampedY)\n\t<k>end</k>\n<k>end</k>";
 	["Demo"] = function() -- function that creates and returns an element to be placed right below the code example
 		local Container = ui.newFrame(300, 180, color(0, 0, 0))
 		local Draggable = ui.newFrame(80, 80, color(1, 1, 1))
@@ -613,7 +613,7 @@ table.insert(content, {
 	["Name"] = "OnFullPress";
 	["Arguments"] = {"x", "y", "button", "istouch", "presses"};
 	["Description"] = "TODO: implement mobile touch support.\n\nCalled when you hold down and release your cursor on the element without leaving its bounding box in the process. x and y are the absolute cursor location on the screen. 'button' is the identifier of the mouse button, if applicable. istouch is a boolean indicating if the press was a touch event. The presses argument is the number of recent presses, which can be used to check for double-clicks.";
-	["CodeMarkup"] = "<k>local</k> Frame = ui.<f>newFrame</f>(<n>80</n>, <n>40</n>, <f>color</f>(<n>0</n>, <n>0</n>, <n>0</n>))\n<k>local</k> counter = <n>0</n>\nFrame.OnFullPress = <f>function</f>()\n\tcounter = counter + <n>1</n>\n\tFrame:<f>setText</f>(<s>\"Roundabout.ttf\"</s>, <f>tostring</f>(counter), <n>18</n>)\n<k>end</k>";
+	["CodeMarkup"] = "<k>local</k> Frame <k>=</k> ui.<f>newFrame</f>(<n>80</n>, <n>40</n>, <f>color</f>(<n>0</n>, <n>0</n>, <n>0</n>))\n<k>local</k> counter <k>=</k> <n>0</n>\nFrame.OnFullPress <k>=</k> <f>function</f>()\n\tcounter <k>=</k> counter <k>+</k> <n>1</n>\n\tFrame:<f>setText</f>(<s>\"Roundabout.ttf\"</s>, <f>tostring</f>(counter), <n>18</n>)\n<k>end</k>";
 	["Demo"] = function() -- function that creates and returns an element to be placed right below the code example
 		local Frame = ui.newFrame(80, 40, color(0, 0, 0))
 		local counter = 0
@@ -630,7 +630,7 @@ table.insert(content, {
 	["Name"] = "OnHoverEnd";
 	["Arguments"] = {};
 	["Description"] = "Called when the mouse leaves the bounding box of the UI element.";
-	["CodeMarkup"] = "<k>local</k> Frame = ui.<f>newFrame</f>(<n>80</n>, <n>40</n>, <f>color</f>(<n>0</n>, <n>0</n>, <n>0</n>))\n<k>local</k> counter = <n>0</n>\nFrame.OnHoverEnd = <f>function</f>()\n\tcounter = counter + <n>1</n>\n\tFrame:<f>setText</f>(<s>\"Roundabout.ttf\"</s>, <f>tostring</f>(counter), <n>18</n>)\n<k>end</k>";
+	["CodeMarkup"] = "<k>local</k> Frame <k>=</k> ui.<f>newFrame</f>(<n>80</n>, <n>40</n>, <f>color</f>(<n>0</n>, <n>0</n>, <n>0</n>))\n<k>local</k> counter <k>=</k> <n>0</n>\nFrame.OnHoverEnd <k>=</k> <f>function</f>()\n\tcounter <k>=</k> counter <k>+</k> <n>1</n>\n\tFrame:<f>setText</f>(<s>\"Roundabout.ttf\"</s>, <f>tostring</f>(counter), <n>18</n>)\n<k>end</k>";
 	["Demo"] = function() -- function that creates and returns an element to be placed right below the code example
 		local Frame = ui.newFrame(80, 40, color(0, 0, 0))
 		local counter = 0
@@ -647,7 +647,7 @@ table.insert(content, {
 	["Name"] = "OnHoverStart";
 	["Arguments"] = {};
 	["Description"] = "Called when the mouse enters the bounding box of the UI element.";
-	["CodeMarkup"] = "<k>local</k> Frame = ui.<f>newFrame</f>(<n>80</n>, <n>40</n>, <f>color</f>(<n>0</n>, <n>0</n>, <n>0</n>))\n<k>local</k> counter = <n>0</n>\nFrame.OnHoverStart = <f>function</f>()\n\tcounter = counter + <n>1</n>\n\tFrame:<f>setText</f>(<s>\"Roundabout.ttf\"</s>, <f>tostring</f>(counter), <n>18</n>)\n<k>end</k>";
+	["CodeMarkup"] = "<k>local</k> Frame <k>=</k> ui.<f>newFrame</f>(<n>80</n>, <n>40</n>, <f>color</f>(<n>0</n>, <n>0</n>, <n>0</n>))\n<k>local</k> counter <k>=</k> <n>0</n>\nFrame.OnHoverStart <k>=</k> <f>function</f>()\n\tcounter <k>=</k> counter <k>+</k> <n>1</n>\n\tFrame:<f>setText</f>(<s>\"Roundabout.ttf\"</s>, <f>tostring</f>(counter), <n>18</n>)\n<k>end</k>";
 	["Demo"] = function() -- function that creates and returns an element to be placed right below the code example
 		local Frame = ui.newFrame(80, 40, color(0, 0, 0))
 		local counter = 0
@@ -679,7 +679,7 @@ table.insert(content, {
 	["Name"] = "OnNestedPressEnd";
 	["Arguments"] = {"x", "y", "button", "istouch", "presses"};
 	["Description"] = "Similar to OnPressEnd. This is triggered when you release a press on an element, or any of its descendants.";
-	["CodeMarkup"] = "<k>local</k> Frame = ui.<f>newFrame</f>(<n>80</n>, <n>40</n>, <f>color</f>(<n>0</n>, <n>0</n>, <n>0</n>))\n<k>local</k> SubFrame = ui.<f>newFrame</f>(<n>80</n>, <n>40</n>, <f>color</f>(<n>0</n>, <n>0</n>, <n>0</n>, <n>0</n>))\n<k>local</k> counter = <n>0</n>\nFrame.OnNestedPressEnd = <f>function</f>()\n\tcounter = counter + <n>1</n>\n\tFrame:<f>setText</f>(<s>\"Roundabout.ttf\"</s>, <f>tostring</f>(counter), <n>18</n>)\n<k>end</k>\nFrame:<f>addChild</f>(SubFrame)<c> -- Frame is covered, but press still works</c>";
+	["CodeMarkup"] = "<k>local</k> Frame <k>=</k> ui.<f>newFrame</f>(<n>80</n>, <n>40</n>, <f>color</f>(<n>0</n>, <n>0</n>, <n>0</n>))\n<k>local</k> SubFrame <k>=</k> ui.<f>newFrame</f>(<n>80</n>, <n>40</n>, <f>color</f>(<n>0</n>, <n>0</n>, <n>0</n>, <n>0</n>))\n<k>local</k> counter <k>=</k> <n>0</n>\nFrame.OnNestedPressEnd <k>=</k> <f>function</f>()\n\tcounter <k>=</k> counter <k>+</k> <n>1</n>\n\tFrame:<f>setText</f>(<s>\"Roundabout.ttf\"</s>, <f>tostring</f>(counter), <n>18</n>)\n<k>end</k>\nFrame:<f>addChild</f>(SubFrame)<c> -- Frame is covered, but press still works</c>";
 	["Demo"] = function() -- function that creates and returns an element to be placed right below the code example
 		local Frame = ui.newFrame(80, 40, color(0, 0, 0))
 		local SubFrame = ui.newFrame(80, 40, color(0, 0, 0, 0))
@@ -698,7 +698,7 @@ table.insert(content, {
 	["Name"] = "OnNestedPressStart";
 	["Arguments"] = {"x", "y", "button", "istouch", "presses"};
 	["Description"] = "Similar to OnPressStart. This is triggered when you start a press on an element, or any of its descendants. This can be useful to program scrolling frames with drag functionality.";
-	["CodeMarkup"] = "<k>local</k> Frame = ui.<f>newFrame</f>(<n>80</n>, <n>40</n>, <f>color</f>(<n>0</n>, <n>0</n>, <n>0</n>))\n<k>local</k> SubFrame = ui.<f>newFrame</f>(<n>80</n>, <n>40</n>, <f>color</f>(<n>0</n>, <n>0</n>, <n>0</n>, <n>0</n>))\n<k>local</k> counter = <n>0</n>\nFrame.OnNestedPressStart = <f>function</f>()\n\tcounter = counter + <n>1</n>\n\tFrame:<f>setText</f>(<s>\"Roundabout.ttf\"</s>, <f>tostring</f>(counter), <n>18</n>)\n<k>end</k>\nFrame:<f>addChild</f>(SubFrame)<c> -- Frame is covered, but press still works</c>";
+	["CodeMarkup"] = "<k>local</k> Frame <k>=</k> ui.<f>newFrame</f>(<n>80</n>, <n>40</n>, <f>color</f>(<n>0</n>, <n>0</n>, <n>0</n>))\n<k>local</k> SubFrame <k>=</k> ui.<f>newFrame</f>(<n>80</n>, <n>40</n>, <f>color</f>(<n>0</n>, <n>0</n>, <n>0</n>, <n>0</n>))\n<k>local</k> counter <k>=</k> <n>0</n>\nFrame.OnNestedPressStart <k>=</k> <f>function</f>()\n\tcounter <k>=</k> counter <k>+</k> <n>1</n>\n\tFrame:<f>setText</f>(<s>\"Roundabout.ttf\"</s>, <f>tostring</f>(counter), <n>18</n>)\n<k>end</k>\nFrame:<f>addChild</f>(SubFrame)<c> -- Frame is covered, but press still works</c>";
 	["Demo"] = function() -- function that creates and returns an element to be placed right below the code example
 		local Frame = ui.newFrame(80, 40, color(0, 0, 0))
 		local SubFrame = ui.newFrame(80, 40, color(0, 0, 0, 0))
@@ -717,7 +717,7 @@ table.insert(content, {
 	["Name"] = "OnNestedScroll";
 	["Arguments"] = {"x", "y"};
 	["Description"] = "Called when the scroll wheel is moved when the mouse is focused on the element or one of its descendants. x and y are values indicating the direction of the scroll action. In most cases only the y-value is not zero.";
-	["CodeMarkup"] = "<k>local</k> Frame = ui.<f>newFrame</f>(<n>80</n>, <n>40</n>, <f>color</f>(<n>0</n>, <n>0</n>, <n>0</n>))\n<k>local</k> FrameCover = ui.<f>newFrame</f>(<n>80</n>, <n>40</n>, <f>color</f>(<n>1</n>, <n>1</n>, <n>1</n>, <n>0</n>))\nFrame:<f>addChild</f>(FrameCover) <c>-- cover the Frame's OnScroll callback</c>\n<k>local</k> counter = <n>0</n>\nFrame.OnNestedScroll = <f>function</f>()\n\tcounter = counter + <n>1</n>\n\tFrame:<f>setText</f>(<s>\"Roundabout.ttf\"</s>, <f>tostring</f>(counter), <n>18</n>)\n<k>end</k>";
+	["CodeMarkup"] = "<k>local</k> Frame <k>=</k> ui.<f>newFrame</f>(<n>80</n>, <n>40</n>, <f>color</f>(<n>0</n>, <n>0</n>, <n>0</n>))\n<k>local</k> FrameCover <k>=</k> ui.<f>newFrame</f>(<n>80</n>, <n>40</n>, <f>color</f>(<n>1</n>, <n>1</n>, <n>1</n>, <n>0</n>))\nFrame:<f>addChild</f>(FrameCover) <c>-- cover the Frame's OnScroll callback</c>\n<k>local</k> counter <k>=</k> <n>0</n>\nFrame.OnNestedScroll <k>=</k> <f>function</f>()\n\tcounter <k>=</k> counter <k>+</k> <n>1</n>\n\tFrame:<f>setText</f>(<s>\"Roundabout.ttf\"</s>, <f>tostring</f>(counter), <n>18</n>)\n<k>end</k>";
 	["Demo"] = function() -- function that creates and returns an element to be placed right below the code example
 		local Frame = ui.newFrame(80, 40, color(0, 0, 0))
 		local FrameCover = ui.newFrame(80, 40, color(1, 1, 1, 0))
@@ -737,7 +737,7 @@ table.insert(content, {
 	["Name"] = "OnPressEnd";
 	["Arguments"] = {"x", "y", "button", "istouch", "presses"};
 	["Description"] = "Called when you release a press while being focused on the element. x and y are the absolute cursor location on the screen. 'button' is the identifier of the mouse button, if applicable. istouch is a boolean indicating if the press was a touch event. The presses argument is the number of recent presses, which can be used to check for double-clicks.";
-	["CodeMarkup"] = "<k>local</k> Frame = ui.<f>newFrame</f>(<n>80</n>, <n>40</n>, <f>color</f>(<n>0</n>, <n>0</n>, <n>0</n>))\n<k>local</k> counter = <n>0</n>\nFrame.OnPressEnd = <f>function</f>()\n\tcounter = counter + <n>1</n>\n\tFrame:<f>setText</f>(<s>\"Roundabout.ttf\"</s>, <f>tostring</f>(counter), <n>18</n>)\n<k>end</k>";
+	["CodeMarkup"] = "<k>local</k> Frame <k>=</k> ui.<f>newFrame</f>(<n>80</n>, <n>40</n>, <f>color</f>(<n>0</n>, <n>0</n>, <n>0</n>))\n<k>local</k> counter <k>=</k> <n>0</n>\nFrame.OnPressEnd <k>=</k> <f>function</f>()\n\tcounter <k>=</k> counter <k>+</k> <n>1</n>\n\tFrame:<f>setText</f>(<s>\"Roundabout.ttf\"</s>, <f>tostring</f>(counter), <n>18</n>)\n<k>end</k>";
 	["Demo"] = function() -- function that creates and returns an element to be placed right below the code example
 		local Frame = ui.newFrame(80, 40, color(0, 0, 0))
 		local counter = 0
@@ -754,7 +754,7 @@ table.insert(content, {
 	["Name"] = "OnPressStart";
 	["Arguments"] = {"x", "y", "button", "istouch", "presses"};
 	["Description"] = "Called when you initiate a press while being focused on the element. x and y are the absolute cursor location on the screen. 'button' is the identifier of the mouse button, if applicable. istouch is a boolean indicating if the press was a touch event. The presses argument is the number of recent presses, which can be used to check for double-clicks.";
-	["CodeMarkup"] = "<k>local</k> Frame = ui.<f>newFrame</f>(<n>80</n>, <n>40</n>, <f>color</f>(<n>0</n>, <n>0</n>, <n>0</n>))\n<k>local</k> counter = <n>0</n>\nFrame.OnPressStart = <f>function</f>()\n\tcounter = counter + <n>1</n>\n\tFrame:<f>setText</f>(<s>\"Roundabout.ttf\"</s>, <f>tostring</f>(counter), <n>18</n>)\n<k>end</k>";
+	["CodeMarkup"] = "<k>local</k> Frame <k>=</k> ui.<f>newFrame</f>(<n>80</n>, <n>40</n>, <f>color</f>(<n>0</n>, <n>0</n>, <n>0</n>))\n<k>local</k> counter <k>=</k> <n>0</n>\nFrame.OnPressStart <k>=</k> <f>function</f>()\n\tcounter <k>=</k> counter <k>+</k> <n>1</n>\n\tFrame:<f>setText</f>(<s>\"Roundabout.ttf\"</s>, <f>tostring</f>(counter), <n>18</n>)\n<k>end</k>";
 	["Demo"] = function() -- function that creates and returns an element to be placed right below the code example
 		local Frame = ui.newFrame(80, 40, color(0, 0, 0))
 		local counter = 0
@@ -771,7 +771,7 @@ table.insert(content, {
 	["Name"] = "OnScroll";
 	["Arguments"] = {"x", "y"};
 	["Description"] = "Called when the mouse wheel scrolls when hovering over the element. x and y are values indicating the direction of the scroll action. In most cases only the y-value is not zero.";
-	["CodeMarkup"] = "<k>local</k> Frame = ui.<f>newFrame</f>(<n>80</n>, <n>40</n>, <f>color</f>(<n>0</n>, <n>0</n>, <n>0</n>))\n<k>local</k> counter = <n>0</n>\nFrame.OnScroll = <f>function</f>()\n\tcounter = counter + <n>1</n>\n\tFrame:<f>setText</f>(<s>\"Roundabout.ttf\"</s>, <f>tostring</f>(counter), <n>18</n>)\n<k>end</k>";
+	["CodeMarkup"] = "<k>local</k> Frame <k>=</k> ui.<f>newFrame</f>(<n>80</n>, <n>40</n>, <f>color</f>(<n>0</n>, <n>0</n>, <n>0</n>))\n<k>local</k> counter <k>=</k> <n>0</n>\nFrame.OnScroll <k>=</k> <f>function</f>()\n\tcounter <k>=</k> counter <k>+</k> <n>1</n>\n\tFrame:<f>setText</f>(<s>\"Roundabout.ttf\"</s>, <f>tostring</f>(counter), <n>18</n>)\n<k>end</k>";
 	["Demo"] = function() -- function that creates and returns an element to be placed right below the code example
 		local Frame = ui.newFrame(80, 40, color(0, 0, 0))
 		local counter = 0
