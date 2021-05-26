@@ -414,7 +414,7 @@ end
 -- returns a tuple of objects marked with the given name
 function module:find(name)
 	if markedObjects[name] ~= nil then
-		return table.unpack(markedObjects[name])
+		return {unpack(markedObjects[name])}
 	end
 	return nil
 end
@@ -695,10 +695,26 @@ function UIBase:toFront() -- TODO: test and document this!
 end
 
 
--- mark the object. If no argument is provided, the object will be unmarked
+-- mark the object. If no argument is provided, the object will be unmarked. If the object already has a name/mark, remove the old one
 function UIBase:mark(name)
-	if name ~= nil then
-		if markedObjects[name] ~= nil then
+	assert((type(name) == "string" or name == nil), "method UIBase:mark(name) expects 'name' to be of type 'string' or 'nil', but given is: " .. type(name))
+	if name ~= nil and self.Name ~= name then -- trying to give the object a new name
+		-- check if the object already has a name so the old one can be removed
+		if self.Name ~= nil then -- object already has a name, so remove the old name
+			for i = 1, #markedObjects[self.Name] do -- find the entry in the list
+				if markedObjects[self.Name][i] == self then
+					table.remove(markedObjects[self.Name], i) -- entry found, remove it
+					if #markedObjects[self.Name] == 0 then -- if the list is now empty, remove the list
+						markedObjects[self.Name] = nil
+					end
+					break
+				end
+			end
+		end
+		-- give the UI object the new name
+		self.Name = name
+		-- add the new name to the dictionary of marked objects
+		if markedObjects[name] ~= nil then -- check if the dictionary already has an entry for the new name
 			local found = false
 			for i = 1, #markedObjects[name] do
 				if markedObjects[name][i] == self then
@@ -712,17 +728,17 @@ function UIBase:mark(name)
 		else
 			markedObjects[name] = {self}
 		end
-	elseif markedObjects[name] ~= nil then
-		local found = false
-		for i = 1, #markedObjects[name] do
-			if markedObjects[name][i] == self then
-				found = true
+	elseif name == nil and self.Name ~= nil then -- trying to unmark the object while it already has a name
+		for i = 1, #markedObjects[self.Name] do
+			if markedObjects[self.Name][i] == self then
+				table.remove(markedObjects[self.Name], i)
+				if #markedObjects[self.Name] == 0 then
+					markedObjects[self.Name] = nil
+				end
 				break
 			end
 		end
-		if found and #markedObjects[name] == 0 then
-			markedObjects[name] = nil
-		end
+		self.Name = nil
 	end
 end
 
@@ -1035,6 +1051,7 @@ local function newBase(w, h, col)
 		["FitTextOnResize"] = false;
 		["Hidden"] = false;
 		["Id"] = module.TotalCreated;
+		["Name"] = nil; -- either nil or a string. This is a string if Obj:mark(name) is called to give it a name. This property is used for look-ups in the marked objects dictionary
 		["Opacity"] = 1; -- if 0, this object is not drawn (but children are!) TODO: fix children not being drawn
 		["PaddingX"] = 0; -- an invisible border that creates a smaller inner-window to contain children and text. If 0 < padding < 1, then it's interpreted as a percentage / ratio
 		["PaddingY"] = 0;

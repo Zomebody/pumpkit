@@ -187,6 +187,16 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Property";
+	["ValueType"] = "string";
+	["Name"] = "Name";
+	["Description"] = "The name assigned to this object by the :mark() method. If the object is unmarked, the property will be nil instead.";
+	["ReadOnly"] = true;
+	["CodeMarkup"] = nil;
+	["Demo"] = nil;
+})
+
+table.insert(content, {
+	["Type"] = "Property";
 	["ValueType"] = "number";
 	["Name"] = "Opacity";
 	["Description"] = "A number between 0 and 1 that determines if the object is see-through. The same effect can also be achieved by editing the alpha channel of the Color property.";
@@ -344,10 +354,39 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Method";
+	["Name"] = "mark";
+	["Arguments"] = {"name"};
+	["Description"] = "Mark the object with a name so it can be found with ui:find(). If no argument is provided, the object is unmarked. An object can only be marked with one name at a time.";
+	["CodeMarkup"] = "<k>local</k> FrameCyan1 <k>=</k> ui.<f>newFrame</f>(<n>60</n>, <n>60</n>, <f>color</f>(<n>0</n>, <n>0.5</n>, <n>1</n>))\n<k>local</k> FrameCyan2 <k>=</k> ui.<f>newFrame</f>(<n>60</n>, <n>60</n>, <f>color</f>(<n>0</n>, <n>0.5</n>, <n>1</n>))\nFrameCyan1:<f>mark</f>(<s>\"cyan\"</s>)\nFrameCyan2:<f>mark</f>(<s>\"cyan\"</s>)\n<k>local</k> ButtonRed <k>=</k> ui.<f>newFrame</f>(<n>60</n>, <n>60</n>, <f>color</f>(<n>0.8</n>, <n>0.2</n>, <n>0.2</n>))\nFrameCyan2:<f>putNextTo</f>(FrameCyan1, <s>\"right\"</s>, <n>20</n>)\nButtonRed:<f>putNextTo</f>(FrameCyan2, <s>\"right\"</s>, <n>20</n>)\nButtonRed:<f>setText</f>(<s>\"Roundabout.ttf\"</s>, <s>\"Click to find cyan\"</s>, <n>18</n>)\nButtonRed.OnFullPress <k>=</k> <f>function</f>()\n\t<k>local</k> Objects <k>=</k> ui:<f>find</f>(<s>\"cyan\"</s>)\n\t<k>for</k> i <k>=</k> 1, #Objects <k>do</k>\n\t\tObjects[i]:<f>setText</f>(<s>\"Roundabout.ttf\"</s>, <s>\"I am cyan!\"</s>, <n>18</n>)\n\t<k>end</k>\n<k>end</k>";
+	["Demo"] = function()
+		local Container = ui.newFrame(400, 100, color(0, 0, 0))
+		local FrameCyan1 = ui.newFrame(60, 60, color(0, 0.5, 1))
+		local FrameCyan2 = ui.newFrame(60, 60, color(0, 0.5, 1))
+		FrameCyan1:mark("cyan")
+		FrameCyan2:mark("cyan")
+		local ButtonRed = ui.newFrame(60, 60, color(0.8, 0.2, 0.2))
+		Container:addChild(FrameCyan1)
+		Container:addChild(FrameCyan2)
+		Container:addChild(ButtonRed)
+		FrameCyan2:putNextTo(FrameCyan1, "right", 20)
+		ButtonRed:putNextTo(FrameCyan2, "right", 20)
+		ButtonRed:setText("Roundabout.ttf", "Click to find cyan", 18)
+		ButtonRed.OnFullPress = function()
+			local Objects = ui:find("cyan")
+			for i = 1, #Objects do
+				Objects[i]:setText("Roundabout.ttf", "I am cyan!", 18)
+			end
+		end
+		return Container
+	end
+})
+
+table.insert(content, {
+	["Type"] = "Method";
 	["Name"] = "positionContent";
 	["Arguments"] = {"x", "y"};
 	["Description"] = "Sets the ContentOffset property to the specified x and y coordinates.";
-	["CodeMarkup"] = "<k>local</k> Container = ui.<f>newFrame</f>(<n>250</n>, <n>100</n>, <f>color</f>(<n>0</n>, <n>0</n>, <n>0</n>))\n<k>local</k> Child = ui.<f>newFrame</f>(<n>100</n>, <n>100</n>, <f>color</f>(<n>1</n>, <n>1</n>, <n>1</n>))\nChild.OnFullPress = <f>function</f>()\n\t<k>if</k> Container.ContentOffset.x <k>==</k> <n>0</n> <k>then</k>\n\t\tContainer:<f>positionContent</f>(<n>150</n>, <n>0</n>)\n\t<k>else</k>\n\t\tContainer:<f>positionContent</f>(<n>0</n>, <n>0</n>)\n\t<k>end</k>\n<k>end</k>\nContainer:<f>addChild</f>(Child)";
+	["CodeMarkup"] = "<k>local</k> Container <k>=</k> ui.<f>newFrame</f>(<n>250</n>, <n>100</n>, <f>color</f>(<n>0</n>, <n>0</n>, <n>0</n>))\n<k>local</k> Child <k>=</k> ui.<f>newFrame</f>(<n>100</n>, <n>100</n>, <f>color</f>(<n>1</n>, <n>1</n>, <n>1</n>))\nChild.OnFullPress <k>=</k> <f>function</f>()\n\t<k>if</k> Container.ContentOffset.x <k>==</k> <n>0</n> <k>then</k>\n\t\tContainer:<f>positionContent</f>(<n>150</n>, <n>0</n>)\n\t<k>else</k>\n\t\tContainer:<f>positionContent</f>(<n>0</n>, <n>0</n>)\n\t<k>end</k>\n<k>end</k>\nContainer:<f>addChild</f>(Child)";
 	["Demo"] = function()
 		local Container = ui.newFrame(250, 100, color(0, 0, 0))
 		local Child = ui.newFrame(100, 100, color(1, 1, 1))
@@ -368,7 +407,7 @@ table.insert(content, {
 	["Name"] = "putNextTo";
 	["Arguments"] = {"Object", "side", "offset"};
 	["Description"] = "Moves the element to be positioned next to 'Object'. 'side' is a string determining on which of the four sides the object should be placed. The value can be either 'top'/'above', 'bottom'/'under'/'below', 'left' or 'right'. The offset value determines a distance in pixels between the two elements.";
-	["CodeMarkup"] = "<k>local</k> Frame1 = ui.<f>newFrame</f>(<n>100</n>, <n>100</n>, <f>color</f>(<n>0</n>, <n>0</n>, <n>0</n>))\n<k>local</k> Frame2 = ui.<f>newFrame</f>(<n>100</n>, <n>200</n>, <f>color</f>(<n>0</n>, <n>0</n>, <n>0</n>))\nFrame2:<f>putNextTo</f>(Frame1, <s>\"right\"</s>, <n>20</n>) <c>-- put Frame2 20 pixels to the right of Frame1</c>";
+	["CodeMarkup"] = "<k>local</k> Frame1 <k>=</k> ui.<f>newFrame</f>(<n>100</n>, <n>100</n>, <f>color</f>(<n>0</n>, <n>0</n>, <n>0</n>))\n<k>local</k> Frame2 <k>=</k> ui.<f>newFrame</f>(<n>100</n>, <n>200</n>, <f>color</f>(<n>0</n>, <n>0</n>, <n>0</n>))\nFrame2:<f>putNextTo</f>(Frame1, <s>\"right\"</s>, <n>20</n>) <c>-- put Frame2 20 pixels to the right of Frame1</c>";
 	["Demo"] = function() -- function that creates and returns an element to be placed right below the code example
 		local Container = ui.newFrame(300, 100)
 		Container.Opacity = 0
