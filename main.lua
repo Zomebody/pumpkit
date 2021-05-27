@@ -67,6 +67,10 @@ function love.load()
 	animation:initialize()
 	ui:initialize()
 
+	initializeApp()
+end
+
+function initializeApp()
 	print("start garbage: " .. collectgarbage("count"))
 
 	-- create main body
@@ -209,9 +213,6 @@ function love.load()
 
 		-- for each item in the dropdown, load the page and link the right button to open the page
 		for k = 1, #tabFiles do
-			--if true then
-			--	break
-			--end
 			-- load the page data
 			local data = require("app.content." .. tabs[i] .. "." .. tabFiles[k])
 
@@ -320,6 +321,8 @@ function love.keypressed(key)
 		end
 		print(printObject(font.history, "History"))
 		print(printObject(font.semaphores, "Semaphores"))
+	elseif key == "r" and TopBar == nil then
+		initializeApp()
 	end
 end
 
