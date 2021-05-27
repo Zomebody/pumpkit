@@ -7,6 +7,9 @@ local vector = require(getpath(..., "framework/datatypes/vector"))
 local tween = require(getpath(..., "framework/modules/tween"))
 local animation = require(getpath(..., "framework/modules/animation"))
 
+	local font = require(getpath(..., "framework/modules/font"))
+	local printObject = require(getpath(..., "framework/objectPrinter"))
+
 local addToPage = require(getpath(..., "app/append_page"))
 local createDropdown = require(getpath(..., "app/create_dropdown"))
 
@@ -63,6 +66,8 @@ function love.load()
 	tween:initialize()
 	animation:initialize()
 	ui:initialize()
+
+	print("start garbage: " .. collectgarbage("count"))
 
 	-- create main body
 	love.graphics.setBackgroundColor(Colors.BackgroundDark:components())
@@ -204,6 +209,9 @@ function love.load()
 
 		-- for each item in the dropdown, load the page and link the right button to open the page
 		for k = 1, #tabFiles do
+			--if true then
+			--	break
+			--end
 			-- load the page data
 			local data = require("app.content." .. tabs[i] .. "." .. tabFiles[k])
 
@@ -275,13 +283,43 @@ function love.wheelmoved(x, y, inputOnUI)
 	--print(inputOnUI)
 end
 
+-- debug keys
 function love.keypressed(key)
 	if key == "e" then
+		print("garbage count: " .. collectgarbage("count"))
 		if ui.Visible then
 			ui:hide()
 		else
 			ui:show()
 		end
+	elseif key == "d" then
+		print("garbage count: " .. collectgarbage("count"))
+		print("NO. ui children: " .. #ui.Children)
+		for i = 1, #ui.Children do
+			print(ui.Children[i], ui.Children[i].Parent)
+		end
+		print(printObject(font.history, "History"))
+		print(printObject(font.semaphores, "Semaphores"))
+	elseif key == "q" and TopBar ~= nil then
+		print(#ui.Children)
+		print(collectgarbage("count"))
+		ui:remove(TopBar)
+		ui:remove(Container)
+		TopBar = nil
+		Container = nil
+		Navigation = nil
+		Body = nil
+		shownNavigation = nil
+		shownBody = nil
+		print("garbage count: " .. collectgarbage("count"))
+		print(collectgarbage("collect"))
+		print("garbage count: " .. collectgarbage("count"))
+		print("NO. ui children: " .. #ui.Children)
+		for i = 1, #ui.Children do
+			print(ui.Children[i], ui.Children[i].Parent)
+		end
+		print(printObject(font.history, "History"))
+		print(printObject(font.semaphores, "Semaphores"))
 	end
 end
 

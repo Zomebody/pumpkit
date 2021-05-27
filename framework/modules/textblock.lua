@@ -95,6 +95,7 @@ end
 
 -- resize the text to fit within the given width and height
 function textblock:fitText(w, h)
+	self:clearFont()
 	self.Text:setf(self.ColoredText, w, self.AlignmentX)
 	local startTime = love.timer.getTime()
 	local loops = 0
@@ -125,8 +126,9 @@ function textblock:fitText(w, h)
 			curTry = (curTry + floor) / 2
 		end
 	until curTry % 1 ~= 0
-	self.Text:setFont(font.new(self.FontFile, lastFit))
+	
 	self.FontSize = lastFit
+	self.Text:setFont(font.new(self.FontFile, lastFit))
 	--print("loops: " .. tostring(loops) .. ", time taken: " .. tostring(love.timer.getTime() - startTime))
 	return lastFit
 end
@@ -136,6 +138,7 @@ end
 function textblock:setFont(name)
 	if love.filesystem.getInfo(fontDirectory .. name) then
 		self.FontFile = name
+		self:clearFont()
 		self.Font = font.new(name, self.FontSize)--love.graphics.newFont(fontDirectory .. name, self.FontSize)
 		self.Text:setFont(self.Font)
 	end
@@ -147,6 +150,7 @@ function textblock:setTextSize(size)
 	size = math.floor(size + 0.5)
 	if self.FontSize ~= size then
 		self.FontSize = size
+		self:clearFont()
 		self.Font = font.new(self.FontFile, self.FontSize)--love.graphics.newFont(fontDirectory .. self.FontFile, self.FontSize)
 		self.Text:setFont(self.Font)
 	end
@@ -157,6 +161,13 @@ end
 function textblock:setWidth(w)
 	self.Width = w
 	self.Text:setf(self.ColoredText, self.Width, self.AlignmentX)
+end
+
+-- called when the object that uses the textblock is being removed
+-- TODO: DOCUMENT THIS METHOD
+function textblock:clearFont()
+	self.Font = nil
+	font:dereference(self.FontFile, self.FontSize)
 end
 
 

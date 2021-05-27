@@ -347,6 +347,33 @@ function module:addChild(Obj)
 	self.Changed = true
 end
 
+-- remove the given object from the ui hierarchy by unparenting it. The object should go out of scope and be garbagecollected (if it is not referenced elsewhere)
+-- TODO: unmark all descendants to remove their references from the markedObjects dictionary
+-- TODO: if a font is only used in the object or its descendants, delete the font
+function module:remove(Obj)
+	for i = 1, #Obj.Children do
+		Obj.Children[i]:remove()
+		Obj.Children[i] = nil
+	end
+	-- unmark the object to remove all references in markedObjects
+	Obj:mark()
+	-- remove any fonts from memory
+	if Obj.TextBlock ~= nil then
+		Obj.TextBlock:clearFont()
+		Obj.TextBlock.Text:release()
+		Obj.TextBlock.Text = nil
+	end
+	if Obj.Parent == self then
+		for i = 1, #self.Children do
+			if self.Children[i] == Obj then
+				table.remove(self.Children, i)
+				break
+			end
+		end
+	end
+	Obj.Parent = nil
+end
+
 -- return the cursor speed from the last X frames (limit of 30 frames)
 function module:getCursorSpeed(frameCount)
 	frameCount = frameCount == nil and 20 or math.min(30, frameCount)
@@ -440,6 +467,24 @@ function UIBase:addChild(Obj)
 	self.Children[#self.Children + 1] = Obj
 	updateAbsolutePosition(Obj)
 	module.Changed = true
+end
+
+-- remove the object by removing its children and unmarking the object
+-- TODO: DOCUMENT THIS METHOD
+function UIBase:remove()
+	for i = 1, #self.Children do
+		self.Children[i]:remove()
+		self.Children[i] = nil
+	end
+	-- unmark the object to remove all references in markedObjects
+	self:mark()
+	-- remove any fonts from memory
+	if self.TextBlock ~= nil then
+		self.TextBlock:clearFont()
+		self.TextBlock.Text:release()
+		self.TextBlock.Text = nil
+	end
+	self.Parent = nil
 end
 
 -- return true if the given Object is an (indirect) parent of the UI element
