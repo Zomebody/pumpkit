@@ -912,6 +912,27 @@ function SlicedFrame:setReference(img)
 	self:setSlice(vector(self.TopLeftSlice), self.BottomRightSlice + vector(newW - oldW, newH - oldH))
 end
 
+--[[
+function SlicedFrame:remove()
+	for i = 1, #self.Children do
+		self.Children[i]:remove()
+		self.Children[i] = nil
+	end
+	-- unmark the object to remove all references in markedObjects
+	self:mark()
+	-- stop the referenced animation to remove it from the animation.Active array, so it can get dereferenced
+	for i = 1, #self.ImageSlices do
+
+	end
+	-- remove any fonts from memory
+	if self.TextBlock ~= nil then
+		self.TextBlock:clearFont()
+		self.TextBlock.Text:release()
+		self.TextBlock.Text = nil
+	end
+	self.Parent = nil
+end
+]]
 
 -- sets the top left and top right corner used to chop the image into 9 quads that are used for the drawing operation
 function SlicedFrame:setSlice(topLeft, bottomRight)
@@ -1015,7 +1036,31 @@ end
 ----------------------------------------------------[[ == IMAGEFRAME METHODS == ]]----------------------------------------------------
 
 function AnimatedFrame:setReference(anim)
-	self.ReferenceImage = anim -- is a pointer
+	self.ReferenceAnimation = anim -- is a pointer
+end
+
+
+-- remove the object by removing its children and unmarking the object
+-- TODO: DOCUMENT THIS METHOD
+
+function AnimatedFrame:remove()
+	for i = 1, #self.Children do
+		self.Children[i]:remove()
+		self.Children[i] = nil
+	end
+	-- unmark the object to remove all references in markedObjects
+	self:mark()
+	-- stop the referenced animation to remove it from the animation.Active array, so it can get dereferenced
+	-- WARNING: IF ONE ANIMATION REFERENCE IS SHARED ACROSS ANIMATED FRAMES, REMOVING ONE OF THEM WILL STOP THE OTHER ANIMATED FRAMES!
+	-- TODO: FIX THE ABOVE ISSUE
+	self.ReferenceAnimation:stop()
+	-- remove any fonts from memory
+	if self.TextBlock ~= nil then
+		self.TextBlock:clearFont()
+		self.TextBlock.Text:release()
+		self.TextBlock.Text = nil
+	end
+	self.Parent = nil
 end
 
 

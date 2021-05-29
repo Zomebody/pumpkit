@@ -73,7 +73,7 @@ function buildString(Item, key, depth)
 		else -- table of objects
 			output = output .. depthString .. key .. " = {" .. "\n"
 			for k, v in pairs(Item) do
-				BuildString(v, k, depth + 1)
+				buildString(v, k, depth + 1)
 			end
 			output = output .. depthString .. "}" .. ";\n"
 		end

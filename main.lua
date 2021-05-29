@@ -42,6 +42,8 @@ local Vars = {
 	}
 }
 
+local garbage = 0
+
 local DisplayVars = nil
 
 local TopBar = nil
@@ -287,23 +289,24 @@ end
 -- debug keys
 function love.keypressed(key)
 	if key == "e" then
-		print("garbage count: " .. collectgarbage("count"))
+		--print("garbage count: " .. collectgarbage("count"))
 		if ui.Visible then
 			ui:hide()
 		else
 			ui:show()
 		end
 	elseif key == "d" then
-		print("garbage count: " .. collectgarbage("count"))
-		print("NO. ui children: " .. #ui.Children)
+		--print("garbage count: " .. collectgarbage("count"))
+		--print("NO. ui children: " .. #ui.Children)
 		for i = 1, #ui.Children do
 			print(ui.Children[i], ui.Children[i].Parent)
 		end
-		print(printObject(font.history, "History"))
-		print(printObject(font.semaphores, "Semaphores"))
+		--print(printObject(font.history, "History"))
+		--print(printObject(font.semaphores, "Semaphores"))
 	elseif key == "q" and TopBar ~= nil then
-		print(#ui.Children)
-		print(collectgarbage("count"))
+		--print(#ui.Children)
+		--print("active animations: " .. #animation.Active)
+		--print(collectgarbage("count"))
 		ui:remove(TopBar)
 		ui:remove(Container)
 		TopBar = nil
@@ -312,15 +315,16 @@ function love.keypressed(key)
 		Body = nil
 		shownNavigation = nil
 		shownBody = nil
-		print("garbage count: " .. collectgarbage("count"))
-		print(collectgarbage("collect"))
-		print("garbage count: " .. collectgarbage("count"))
-		print("NO. ui children: " .. #ui.Children)
+		--print("garbage count: " .. collectgarbage("count"))
+		collectgarbage("collect")
+		garbage = collectgarbage("count")
+		--print("garbage count: " .. collectgarbage("count"))
+		--print("NO. ui children: " .. #ui.Children)
 		for i = 1, #ui.Children do
 			print(ui.Children[i], ui.Children[i].Parent)
 		end
-		print(printObject(font.history, "History"))
-		print(printObject(font.semaphores, "Semaphores"))
+		--print(printObject(font.history, "History"))
+		--print(printObject(font.semaphores, "Semaphores"))
 	elseif key == "r" and TopBar == nil then
 		initializeApp()
 	end
@@ -341,6 +345,7 @@ function love.draw()
 	ui:render()
 	--love.graphics.print(tostring(love.timer.getFPS()) .. ", drag active: " .. tostring(ui.DragActive) .. ", dragged ID: " .. tostring(ui.DragTarget ~= nil and ui.DragTarget.Id or nil), 10, wy + wh - 30)
 	love.graphics.print(tostring(love.timer.getFPS()), 10, wy + wh - 30)
+	love.graphics.print(garbage, 10, wy + wh - 50)
 end
 
 
