@@ -266,6 +266,41 @@ table.insert(content, {
 })
 
 table.insert(content, {
+	["Type"] = "Property";
+	["ValueType"] = "boolean";
+	["Name"] = "VisualOnly";
+	["Description"] = "A boolean indicating if the object can be returned by the :at() method. This will also prevent any of the object's cursor-related functions from triggering, which is all events so far.";
+	["ReadOnly"] = false;
+	["CodeMarkup"] = nil;
+	["Demo"] = function()
+		local Container = ui.newFrame(240, 100, color(0, 0, 0))
+		local Clickable = ui.newFrame(150, 70, color(0, 0.7, 1))
+		Clickable.ColorFocus:darken(0.2)
+		Clickable.ColorHold:darken(0.3)
+		Clickable:setText("Roundabout.ttf", "Clickable", 16)
+		Clickable:setPadding(5)
+		Clickable.OnFullPress = function()
+			if Clickable.Position.Scale.x == 1 then
+				Clickable:alignX("left")
+			else
+				Clickable:alignX("right")
+			end
+		end
+		Clickable.OnScroll = Clickable.OnFullPress
+		Clickable.OnDrag = Clickable.OnFullPress
+		local Clickthrough = ui.newFrame(150, 70, color(0.7, 0.3, 0, 0.8))
+		Clickthrough.VisualOnly = true
+		Clickthrough:setText("Roundabout.ttf", "VisualOnly", 16)
+		Clickthrough:setPadding(5)
+		Clickthrough:alignX("right")
+		Clickthrough:alignY("bottom")
+		Container:addChild(Clickable)
+		Container:addChild(Clickthrough)
+		return Container
+	end;
+})
+
+table.insert(content, {
 	["Type"] = "Header";
 	["Name"] = "Methods";
 	["Description"] = "";
@@ -313,7 +348,7 @@ table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "at";
 	["Arguments"] = {"x", "y"};
-	["Description"] = "Recursively finds and returns the element that is displayed at the absolute x and y coordinates.";
+	["Description"] = "Recursively finds and returns the element that is displayed at the absolute x and y coordinates. Objects whose Clickthrough property is set to true will be ignored.";
 })
 
 table.insert(content, {

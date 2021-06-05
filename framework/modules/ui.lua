@@ -525,8 +525,8 @@ function UIBase:at(x, y)
 		end
 		love.graphics.intersectScissor(self.AbsolutePosition.x, self.AbsolutePosition.y, self.Size.x, self.Size.y)
 	end
-	-- in bounds and within the UI element
-	if x >= pX and x <= pX + w and y >= pY and y <= pY + h then
+	-- in bounds and within the UI element and not VisualOnly
+	if (not self.VisualOnly) and x >= pX and x <= pX + w and y >= pY and y <= pY + h then
 		if x >= self.AbsolutePosition.x and x <= self.AbsolutePosition.x + self.Size.x and y >= self.AbsolutePosition.y and y <= self.AbsolutePosition.y + self.Size.y then
 			Obj = self
 		end
@@ -1152,6 +1152,7 @@ local function newBase(w, h, col)
 		};
 		["Size"] = vector(w, h);
 		["TextBlock"] = nil;
+		["VisualOnly"] = false; -- if true, no events are registered and the object can never be focused, so :at() will ignore the object
 
 		-- events
 		["OnDrag"] = nil; -- triggered when you move the input across the pressed element
