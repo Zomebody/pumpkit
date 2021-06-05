@@ -422,6 +422,13 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Method";
+	["Name"] = "remove";
+	["Arguments"] = {};
+	["Description"] = "Removes the object from memory by unparenting it, unmarking it, cleaning up the textblock and removing all of its children recursively. In the case of an AnimatedFrame, the reference image is stopped as well to dereference the animation if it is not being used elsewhere.";
+})
+
+table.insert(content, {
+	["Type"] = "Method";
 	["Name"] = "reposition";
 	["Arguments"] = {"sx", "sy", "ox", "oy"};
 	["Description"] = "Sets the Position property and updates the AbsolutePosition of the elements and its descendants. sx and sy are the scale, ox and oy are the offset. Alternatively, two vectors can be passed for sx and sy instead.";
