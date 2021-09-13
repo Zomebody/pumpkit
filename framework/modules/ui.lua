@@ -370,6 +370,13 @@ function module:remove(Obj)
 				break
 			end
 		end
+	else
+		for i = 1, #Obj.Parent.Children do
+			if Obj.Parent.Children[i] == Obj then
+				table.remove(Obj.Parent.Children, i)
+				break
+			end
+		end
 	end
 	Obj.Parent = nil
 end
@@ -483,6 +490,23 @@ function UIBase:remove()
 		self.TextBlock:clearFont()
 		self.TextBlock.Text:release()
 		self.TextBlock.Text = nil
+	end
+	if self.Parent ~= nil then
+		if self.Parent == module then
+			for i = 1, #module.Children do
+				if module.Children[i] == Obj then
+					table.remove(module.Children, i)
+					break
+				end
+			end
+		else
+			for i = 1, #self.Parent.Children do
+				if self.Parent.Children[i] == self then
+					table.remove(self.Parent.Children, i)
+					break
+				end
+			end
+		end
 	end
 	self.Parent = nil
 end
@@ -1059,6 +1083,23 @@ function AnimatedFrame:remove()
 		self.TextBlock:clearFont()
 		self.TextBlock.Text:release()
 		self.TextBlock.Text = nil
+	end
+	if self.Parent ~= nil then
+		if self.Parent == module then
+			for i = 1, #module.Children do
+				if module.Children[i] == Obj then
+					table.remove(module.Children, i)
+					break
+				end
+			end
+		else
+			for i = 1, #self.Parent.Children do
+				if self.Parent.Children[i] == self then
+					table.remove(self.Parent.Children, i)
+					break
+				end
+			end
+		end
 	end
 	self.Parent = nil
 end
