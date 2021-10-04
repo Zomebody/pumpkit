@@ -22,6 +22,7 @@ local markedObjects = {} -- stores marked objects in the form ["name"] = {Obj1, 
 ----------------------------------------------------[[ == BASE OBJECTS == ]]----------------------------------------------------
 
 local module = {
+	["AutoRendering"] = false;
 	["Changed"] = false; -- internal boolean to determine at the end of each frame if some element was added, removed, hidden, unhidden or changed position or size, so CursorFocus can be updated
 	["Children"] = {};
 	["CursorFocus"] = nil; -- current element the mouse is hovering over
@@ -94,7 +95,8 @@ end
 ----------------------------------------------------[[ == MODULE INITIALIZATION == ]]----------------------------------------------------
 
 -- connects love2d events to UI element events
-function module:initialize()
+function module:initialize(autoRender)
+	if autoRender == nil then autoRender = true end
 	if not self.Initialized then
 		self.Initialized = true
 	else
@@ -325,6 +327,18 @@ function module:initialize()
 			end
 		end
 	end
+
+	-- Monkey Patching love.draw if auto-render is enabled
+	if autoRender == true then
+		self.AutoRendering = true
+		local draw = love.draw or function() end
+		love.draw = function()
+			draw()
+			self:render()
+		end
+	else
+		self.AutoRendering = false
+	end
 end
 
 
@@ -408,12 +422,13 @@ end
 -- draw all UI on screen
 function module:render()
 	if self.Visible then
+		local r, g, b, a = love.graphics.getColor()
 		love.graphics.setColor(1, 1, 1, 1)
 		for i = 1, #self.Children do
 			self.Children[i]:draw()
 		end
 		love.graphics.setScissor()
-		love.graphics.setColor(1, 1, 1, 1)
+		love.graphics.setColor(r, g, b, a)
 	end
 end
 
