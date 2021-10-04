@@ -342,7 +342,6 @@ function love.update()
 end
 
 function love.draw()
-	ui:render()
 	--love.graphics.print(tostring(love.timer.getFPS()) .. ", drag active: " .. tostring(ui.DragActive) .. ", dragged ID: " .. tostring(ui.DragTarget ~= nil and ui.DragTarget.Id or nil), 10, wy + wh - 30)
 	love.graphics.print(tostring(love.timer.getFPS()), 10, wy + wh - 30)
 	love.graphics.print(garbage, 10, wy + wh - 50)
