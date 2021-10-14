@@ -83,12 +83,78 @@ local function fromHSV(h, s, v)
 	return new(r, g, b)
 end
 
+-- https://www.rapidtables.com/convert/color/hsl-to-rgb.html
+function fromHSL(h, s, l)
+	h = h % 360
+	local c = (1 - math.abs(2 * l - 1)) * s
+	local x = c * (1 - math.abs((h / 60) % 2 - 1))
+	local m = l - c/2
+	local r, g, b = 0, 0, 0
+	if 0 <= h and h < 60 then
+		r, g, b = c, x, 0
+	elseif 60 <= h and h < 120 then
+		r, g, b = x, c, 0
+	elseif 120 <= h and h < 180 then
+		r, g, b = 0, c, x
+	elseif 180 <= h and h < 240 then
+		r, g, b = 0, x, c
+	elseif 240 <= h and h < 300 then
+		r, g, b = x, 0, c
+	else
+		r, g, b = c, 0, x
+	end
+	return new(r + m, g + m, b + m)
+end
+
 -- generates a color with a random hue, saturation and value. Saturation and value are skewed to be higher values than lower (to prioritize bright saturated colors)
 local function random()
 	local h = love.math.random() * 360
 	local s = math.sqrt(love.math.random())
 	local v = math.sqrt(love.math.random())
 	return fromHSV(h, s, v)
+end
+
+-- option 1: interpolate(to, x), where 'to' is a color object and 'x' is how far along the interpolation is
+-- option 2: interpolate(from, to, x), where 'from' is a starting color, 'to' is a destination color and 'x' is how far along you are
+-- option 1 is good for a single interpolation step, option 2 is good for tweens and re-using the same color in interpolations
+local function interpolate(from, to, x)
+	local h1, s1, l1 = from:getHSL()
+	local h2, s2, l2 = to:getHSL()
+	if math.abs(h2 - h1) <= 180 then
+		local h = h1 + (h2 - h1) * x
+		local s = s1 + (s2 - s1) * x
+		local l = l1 + (l2 - l1) * x
+		return fromHSL(h, s, l)
+	else -- interpolate hue towards 0 and then wrap around and go down from 360 (or other way around)
+		local amount1 = (h1 >= 180) and (360 - h1) or h1
+		local amount2 = (h2 >= 180) and (360 - h2) or h2
+		local frac1 = amount1 / (amount1 + amount2) -- fraction of time spent shifting from h1 towards 360 or 0
+		local frac2 = amount2 / (amount1 + amount2) -- fraction of time spent shifting from 360 or 0 towards h2
+
+		local h
+		local s
+		if x <= frac1 then -- shift from h1 towards 360 or 0
+			x = x / frac1 -- new x for this sub-interpolation
+			-- calculate new h
+			if h1 > h2 then -- shift from h1 to 360
+				h = h1 + (360 - h1) * x
+			else -- shift from h1 to 0
+				h = h1 * (1 - x)
+			end
+		else -- shift from 360 or 0 to h2
+			x = (x - frac1) / frac2 -- new x for this sub-interpolation
+			-- calculate new h
+			if h1 > h2 then -- shift from 0 to h2
+				h = h2 * x
+			else -- shift from 360 to h2
+				h = 360 + (h2 - 360) * x
+			end
+		end
+
+		local s = s1 + (s2 - s1) * x
+		local l = l1 + (l2 - l1) * x
+		return fromHSL(h, s, l)
+	end
 end
 
 -- return an array representing the color
@@ -124,7 +190,41 @@ end
 
 -- https://www.rapidtables.com/convert/color/rgb-to-hsl.html
 function color:getHSL()
+	--[[
+	local h, s, v = self:getHSV()
+	local l = (2 - s) * v / 2
 
+	if l ~= 0 then
+		if l == 1 then
+			s = 0
+		elseif l < 0.5 then
+			s = s * v / (l * 2)
+		else
+			s = s * v / (2 - l * 2)
+		end
+	end
+
+	return h, s, l
+	]]
+	local cmax = math.max(self.r, self.g, self.b)
+	local cmin = math.min(self.r, self.g, self.b)
+	local d = cmax - cmin
+	local h = 0
+	if cmax == self.r then
+		h = 60 * (((self.g - self.b) / d) % 6)
+	elseif cmax == self.g then
+		h = 60 * (((self.b - self.r) / d) + 2)
+	elseif cmax == self.b then
+		h = 60 * (((self.r - self.g) / d) + 4)
+	elseif d == 0 then
+		h = 0
+	end
+	local l = (cmax + cmin) / 2
+	local s = 0
+	if d ~= 0 then
+		s = d / (1 - math.abs(2 * l - 1))
+	end
+	return h, s, l
 end
 
 -- https://www.rapidtables.com/convert/color/rgb-to-hsv.html
@@ -155,10 +255,6 @@ function color:getHSV()
 	local val = cmax
 
 	return math.floor(hue + 0.5) % 360, sat, val
-end
-
-function color:getHue()
-
 end
 
 -- butterfly image response
@@ -212,9 +308,11 @@ end
 module.new = new
 module.fromRGB = fromRGB
 module.fromHSV = fromHSV
+module.fromHSL = fromHSL
 module.fromHex = fromHex
 module.random = random
 module.isColor = isColor
+module.interpolate = interpolate
 return setmetatable(module, {__call = function(_, ...) return new(...) end})
 
 
