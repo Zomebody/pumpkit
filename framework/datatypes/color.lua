@@ -120,41 +120,11 @@ end
 local function interpolate(from, to, x)
 	local h1, s1, l1 = from:getHSL()
 	local h2, s2, l2 = to:getHSL()
-	if math.abs(h2 - h1) <= 180 then
-		local h = h1 + (h2 - h1) * x
-		local s = s1 + (s2 - s1) * x
-		local l = l1 + (l2 - l1) * x
-		return fromHSL(h, s, l)
-	else -- interpolate hue towards 0 and then wrap around and go down from 360 (or other way around)
-		local amount1 = (h1 >= 180) and (360 - h1) or h1
-		local amount2 = (h2 >= 180) and (360 - h2) or h2
-		local frac1 = amount1 / (amount1 + amount2) -- fraction of time spent shifting from h1 towards 360 or 0
-		local frac2 = amount2 / (amount1 + amount2) -- fraction of time spent shifting from 360 or 0 towards h2
-
-		local h
-		local s
-		if x <= frac1 then -- shift from h1 towards 360 or 0
-			x = x / frac1 -- new x for this sub-interpolation
-			-- calculate new h
-			if h1 > h2 then -- shift from h1 to 360
-				h = h1 + (360 - h1) * x
-			else -- shift from h1 to 0
-				h = h1 * (1 - x)
-			end
-		else -- shift from 360 or 0 to h2
-			x = (x - frac1) / frac2 -- new x for this sub-interpolation
-			-- calculate new h
-			if h1 > h2 then -- shift from 0 to h2
-				h = h2 * x
-			else -- shift from 360 to h2
-				h = 360 + (h2 - 360) * x
-			end
-		end
-
-		local s = s1 + (s2 - s1) * x
-		local l = l1 + (l2 - l1) * x
-		return fromHSL(h, s, l)
-	end
+	--https://stackoverflow.com/questions/2708476/rotation-interpolation
+	h = (((((h2 - h1) % 360) + 540) % 360) - 180) * x;
+	local s = s1 + (s2 - s1) * x
+	local l = l1 + (l2 - l1) * x
+    return fromHSL(h, s, l)
 end
 
 -- return an array representing the color
