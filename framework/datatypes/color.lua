@@ -87,7 +87,7 @@ end
 function fromHSL(h, s, l)
 	h = h % 360
 	local c = (1 - math.abs(2 * l - 1)) * s
-	local x = c * (1 - math.abs((h / 60) % 2 - 1))
+	local x = c * (1 - math.abs(((h / 60) % 2) - 1))
 	local m = l - c/2
 	local r, g, b = 0, 0, 0
 	if 0 <= h and h < 60 then
@@ -100,7 +100,7 @@ function fromHSL(h, s, l)
 		r, g, b = 0, x, c
 	elseif 240 <= h and h < 300 then
 		r, g, b = x, 0, c
-	else
+	elseif 300 <= h and h <= 360 then
 		r, g, b = c, 0, x
 	end
 	return new(r + m, g + m, b + m)
@@ -114,17 +114,17 @@ local function random()
 	return fromHSV(h, s, v)
 end
 
--- option 1: interpolate(to, x), where 'to' is a color object and 'x' is how far along the interpolation is
--- option 2: interpolate(from, to, x), where 'from' is a starting color, 'to' is a destination color and 'x' is how far along you are
--- option 1 is good for a single interpolation step, option 2 is good for tweens and re-using the same color in interpolations
+-- interpolate(from, to, x), where 'from' is a starting color, 'to' is a destination color and 'x' is how far along you are
 local function interpolate(from, to, x)
-	local h1, s1, l1 = from:getHSL()
+    local h1, s1, l1 = from:getHSL()
 	local h2, s2, l2 = to:getHSL()
-	--https://stackoverflow.com/questions/2708476/rotation-interpolation
-	h = (((((h2 - h1) % 360) + 540) % 360) - 180) * x;
+
+	local da = (h2 - h1) % 360
+	local v = 2 * da % 360 - da
+	local h = h1 + v * x
 	local s = s1 + (s2 - s1) * x
 	local l = l1 + (l2 - l1) * x
-    return fromHSL(h, s, l)
+	return fromHSL(h, s, l)
 end
 
 -- return an array representing the color
@@ -180,20 +180,24 @@ function color:getHSL()
 	local cmin = math.min(self.r, self.g, self.b)
 	local d = cmax - cmin
 	local h = 0
-	if cmax == self.r then
+	if d == 0 then
+		h = 0
+	elseif cmax == self.r then
 		h = 60 * (((self.g - self.b) / d) % 6)
 	elseif cmax == self.g then
 		h = 60 * (((self.b - self.r) / d) + 2)
 	elseif cmax == self.b then
 		h = 60 * (((self.r - self.g) / d) + 4)
-	elseif d == 0 then
-		h = 0
 	end
 	local l = (cmax + cmin) / 2
 	local s = 0
 	if d ~= 0 then
 		s = d / (1 - math.abs(2 * l - 1))
 	end
+	--local s = 0
+	--if cmax ~= 0 then
+	--	s = (cmax - cmin) / cmax
+	--end
 	return h, s, l
 end
 
