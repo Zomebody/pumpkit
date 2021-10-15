@@ -101,7 +101,7 @@ table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "getHSL";
 	["Arguments"] = {};
-	["Description"] = "TODO: implement this method.";
+	["Description"] = "Returns the h, s and l components of the color.";
 })
 
 table.insert(content, {

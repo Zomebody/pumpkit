@@ -206,8 +206,8 @@ table.insert(content, {
 table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "initialize";
-	["Arguments"] = {};
-	["Description"] = "This method can only be called once. It will initialize the UI module by hooking into other Love2D functions and adding additional behavior there to make the system run. This method should be called right when the program first loads. After that, the system will be initialized and run forever.";
+	["Arguments"] = {"autoRender = true"};
+	["Description"] = "This method can only be called once. It will initialize the UI module by hooking into other Love2D functions and adding additional behavior there to make the system run. This method should be called right when the program first loads. After that, the system will be initialized and run forever.\r\rIf autoRender is set to true, ui:render() will automatically be called at the end of each love.draw call.";
 })
 
 table.insert(content, {
@@ -228,7 +228,7 @@ table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "render";
 	["Arguments"] = {};
-	["Description"] = "This method will render all UI on the screen by recursively called :draw() on all of the UI root's children. TODO: Right now you have to call this method every frame, but you should add a method to toggle a property to render the UI which will then be used to automatically determine every frame if the UI should be drawn.";
+	["Description"] = "This method will render all UI on the screen by recursively calling :draw() on all of the UI root's children.";
 })
 
 table.insert(content, {

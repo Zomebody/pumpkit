@@ -58,9 +58,16 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Constructor";
+	["Name"] = "fromHSL";
+	["Arguments"] = {"h", "s", "l"};
+	["Description"] = "Constructs a color from HSL values, where the hue is in the range 0-360 and the others in the range 0-1";
+})
+
+table.insert(content, {
+	["Type"] = "Constructor";
 	["Name"] = "fromHSV";
 	["Arguments"] = {"h", "s", "v"};
-	["Description"] = "Constructs a color from HSV values.";
+	["Description"] = "Constructs a color from HSV values, where the hue is in the range 0-360 and the others in the range 0-1.";
 })
 
 table.insert(content, {
@@ -79,6 +86,46 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Constructor";
+	["Name"] = "interpolate";
+	["Arguments"] = {"color", "color", "x"};
+	["Description"] = "Returns a color that is in between the two given colors, interpolated using HSL values. 'x' is the location (between 0 and 1), where 0 is the first color, 1 is the second color and 0.5 is in the middle.";
+	["Demo"] = function()
+		local Container = ui.newFrame(500, 120)
+		local c1 = color(1, 0.5, 0.5)
+		local c2 = color(0, 1, 0.75)
+		local imgData = love.image.newImageData(500, 90)
+		imgData:mapPixel(
+			function(x, y, r, g, b, a)
+				local v = x/500
+				local interColor = color.interpolate(c1, c2, v)
+				return interColor.r, interColor.g, interColor.b
+			end
+		)
+		local TextLabel1 = ui.newFrame(250, 30, color(0, 0, 0, 0))
+		TextLabel1:setPadding(4)
+		TextLabel1:setText("Roundabout.ttf", {{0, 0, 0}, tostring(c1)}, 16)
+		TextLabel1.TextBlock:alignX("left")
+		TextLabel1.TextBlock:alignY("center")
+		local TextLabel2 = ui.newFrame(250, 30, color(0, 0, 0, 0))
+		TextLabel2:setPadding(4)
+		TextLabel2:setText("Roundabout.ttf", {{0, 0, 0}, tostring(c2)}, 16)
+		TextLabel2.TextBlock:alignX("right")
+		TextLabel2.TextBlock:alignY("center")
+		TextLabel2:alignX("right")
+
+		local img = love.graphics.newImage(imgData)
+		local ColorFrame = ui.newImageFrame(img)
+		ColorFrame:alignY("bottom")
+		Container:addChild(ColorFrame)
+		Container:addChild(TextLabel1)
+		Container:addChild(TextLabel2)
+		local label1
+		return Container
+	end
+})
+
+table.insert(content, {
+	["Type"] = "Function";
 	["Name"] = "isColor";
 	["Arguments"] = {"Object"};
 	["Description"] = "Checks if the given object is a color instance. Returns true if so.";
