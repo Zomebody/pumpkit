@@ -119,6 +119,7 @@ local function interpolate(from, to, x)
     local h1, s1, l1 = from:getHSL()
 	local h2, s2, l2 = to:getHSL()
 
+	--https://gist.github.com/shaunlebron/8832585
 	local da = (h2 - h1) % 360
 	local v = 2 * da % 360 - da
 	local h = h1 + v * x
