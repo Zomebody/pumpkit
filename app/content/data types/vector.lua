@@ -1,10 +1,4 @@
 
-
-local getpath = require("framework.getpath")
-local ui = require(getpath("framework/modules/ui"))
-local vector = require(getpath("framework/datatypes/vector"))
-
-
 local meta = {
 	["Name"] = "vector";
 }

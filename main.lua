@@ -1,14 +1,5 @@
 
-local getpath = require("framework.getpath")
-
-local ui = require(getpath(..., "framework/modules/ui"))
-local color = require(getpath(..., "framework/datatypes/color"))
-local vector = require(getpath(..., "framework/datatypes/vector"))
-local tween = require(getpath(..., "framework/modules/tween"))
-local animation = require(getpath(..., "framework/modules/animation"))
-
-	local font = require(getpath(..., "framework/modules/font"))
-	local printObject = require(getpath(..., "framework/objectPrinter"))
+require("framework.loader")()
 
 local addToPage = require(getpath(..., "app/append_page"))
 local createDropdown = require(getpath(..., "app/create_dropdown"))
@@ -54,7 +45,7 @@ local Body = nil
 local shownBody = nil
 local shownNavigation = nil
 
-local Colors = require("app/color_palette")
+local Colors = require("app.color_palette")
 
 local wx, wy, ww, wh = love.window.getSafeArea()
 

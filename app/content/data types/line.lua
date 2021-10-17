@@ -1,12 +1,4 @@
 
-
-local getpath = require("framework.getpath")
-local ui = require(getpath("framework/modules/ui"))
-local vector = require(getpath("framework/datatypes/vector"))
-local color = require(getpath("framework/datatypes/color"))
-local line = require(getpath("framework/datatypes/line"))
-
-
 local meta = {
 	["Name"] = "line";
 }
@@ -139,6 +131,7 @@ table.insert(content, {
 				love.graphics.setColor(1, 0, 0)
 				love.graphics.line(l1:unpack())
 				love.graphics.line(l2:unpack())
+				love.graphics.setColor(1, 1, 1)
 			end
 		)
 		return ui.newImageFrame(Canvas)
@@ -173,6 +166,7 @@ table.insert(content, {
 				love.graphics.line(l2:unpack())
 				love.graphics.setColor(1, 0, 0)
 				love.graphics.circle("fill", hit.x, hit.y, 6)
+				love.graphics.setColor(1, 1, 1)
 			end
 		)
 		return ui.newImageFrame(Canvas)
@@ -216,6 +210,7 @@ table.insert(content, {
 				if hit3 ~= nil then
 					love.graphics.circle("fill", hit3.x, hit3.y, 6)
 				end
+				love.graphics.setColor(1, 1, 1)
 			end
 		)
 		return ui.newImageFrame(Canvas)

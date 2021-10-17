@@ -1,11 +1,4 @@
 
-
-local getpath = require("framework.getpath")
-local ui = require(getpath("framework/modules/ui"))
-local vector = require(getpath("framework/datatypes/vector"))
-local color = require(getpath("framework/datatypes/color"))
-
-
 local meta = {
 	["Name"] = "color";
 }
@@ -103,12 +96,12 @@ table.insert(content, {
 		)
 		local TextLabel1 = ui.newFrame(250, 30, color(0, 0, 0, 0))
 		TextLabel1:setPadding(4)
-		TextLabel1:setText("Roundabout.ttf", {{0, 0, 0}, tostring(c1)}, 16)
+		TextLabel1:setText("LieraSansMedium.ttf", {{0, 0, 0}, tostring(c1)}, 16)
 		TextLabel1.TextBlock:alignX("left")
 		TextLabel1.TextBlock:alignY("center")
 		local TextLabel2 = ui.newFrame(250, 30, color(0, 0, 0, 0))
 		TextLabel2:setPadding(4)
-		TextLabel2:setText("Roundabout.ttf", {{0, 0, 0}, tostring(c2)}, 16)
+		TextLabel2:setText("LieraSansMedium.ttf", {{0, 0, 0}, tostring(c2)}, 16)
 		TextLabel2.TextBlock:alignX("right")
 		TextLabel2.TextBlock:alignY("center")
 		TextLabel2:alignX("right")
