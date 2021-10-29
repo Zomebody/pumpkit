@@ -14,3 +14,4 @@ Code mark-up:
 - No built-in support for non-rectangular UI elements
 - No built-in support for dynamic resizing depending on screen resolution
 - No built-in support for creating clickable text
+- No built-in components
