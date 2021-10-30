@@ -494,10 +494,14 @@ end
 -- remove the object by removing its children and unmarking the object
 -- TODO: DOCUMENT THIS METHOD
 function UIBase:remove()
-	for i = #self.Children, 1, -1 do
-		self.Children[i]:remove()
-		self.Children[i] = nil
+	local children = {}
+	for i = 1, #self.Children do
+		children[i] = self.Children[i]
 	end
+	for i = 1, #children do
+		children[i]:remove()
+	end
+	self.Children = {}
 	-- unmark the object to remove all references in markedObjects
 	self:mark()
 	-- remove any fonts from memory
