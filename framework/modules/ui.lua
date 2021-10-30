@@ -494,7 +494,7 @@ end
 -- remove the object by removing its children and unmarking the object
 -- TODO: DOCUMENT THIS METHOD
 function UIBase:remove()
-	for i = 1, #self.Children do
+	for i = #self.Children, 1, -1 do
 		self.Children[i]:remove()
 		self.Children[i] = nil
 	end

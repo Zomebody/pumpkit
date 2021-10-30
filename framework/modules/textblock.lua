@@ -80,7 +80,7 @@ function textblock:setText(textData)
 	end
 	self.RawText = raw or "";
 	self.ColoredText = textData
-	self.Text:setf(self.ColoredText, self.Width, side)
+	self.Text:setf(self.ColoredText, self.Width, self.AlignmentX)
 end
 
 -- returns the raw or colored text of the textblock
