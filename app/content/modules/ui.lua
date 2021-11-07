@@ -83,7 +83,7 @@ table.insert(content, {
 	["Type"] = "Property";
 	["ValueType"] = "boolean";
 	["Name"] = "DragActive";
-	["Description"] = "A boolean indicating if an element is currently undergoing a drag. An element does not need to have drag-related callbacks for a drag to become active. DragActive is set to false after the mouserelease event is triggered, to it can be used within the mouserelease function to check if a drag was active prior.";
+	["Description"] = "A boolean indicating if an element is currently undergoing a drag. An element does not need to have drag-related callbacks for a drag to become active. DragActive is set to false after the mouserelease event is triggered, so it can be used within the mouserelease function to check if a drag was active prior.";
 	["ReadOnly"] = true;
 	["CodeMarkup"] = nil;
 	["Demo"] = nil;

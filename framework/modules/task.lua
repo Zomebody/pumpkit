@@ -52,6 +52,7 @@ end
 -- returns a task object with its own functions. f is the function, r is the number of repeats, w is the time between each repeat
 local function new(f, r, w)
 	local t = {
+		["Active"] = false;
 		["Function"] = f;
 		["Repeats"] = r or 1;
 		["TimesRan"] = 0;
@@ -68,6 +69,7 @@ local function spawn(f, d, r, w)
 	local t = new(f, r, w)
 	t.LastRun = love.timer.getTime() - w + d
 	t:resume()
+	return t
 end
 
 
@@ -75,14 +77,17 @@ end
 ----------------------------------------------------[[ == TASK METHODS == ]]----------------------------------------------------
 
 function task:resume()
-	module.Active[#module.Active + 1] = self
+	if not self.Active then
+		module.Active[#module.Active + 1] = self
+	end
 end
 
 
-function task:remove()
+function task:stop()
 	for i = 1, #module.Active do
 		if module.Active[i] == self then
 			table.remove(module.Active, i)
+			self.Active = false
 			break
 		end
 	end

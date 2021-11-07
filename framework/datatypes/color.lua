@@ -159,24 +159,27 @@ function color:lighten(v)
 	return self
 end
 
+
+function color:getHue()
+	local cmax = math.max(self.r, self.g, self.b)
+	local cmin = math.min(self.r, self.g, self.b)
+	local d = cmax - cmin
+	local h = 0
+	if d == 0 then
+		h = 0
+	elseif cmax == self.r then
+		h = 60 * (((self.g - self.b) / d) % 6)
+	elseif cmax == self.g then
+		h = 60 * (((self.b - self.r) / d) + 2)
+	elseif cmax == self.b then
+		h = 60 * (((self.r - self.g) / d) + 4)
+	end
+	return h
+end
+
+
 -- https://www.rapidtables.com/convert/color/rgb-to-hsl.html
 function color:getHSL()
-	--[[
-	local h, s, v = self:getHSV()
-	local l = (2 - s) * v / 2
-
-	if l ~= 0 then
-		if l == 1 then
-			s = 0
-		elseif l < 0.5 then
-			s = s * v / (l * 2)
-		else
-			s = s * v / (2 - l * 2)
-		end
-	end
-
-	return h, s, l
-	]]
 	local cmax = math.max(self.r, self.g, self.b)
 	local cmin = math.min(self.r, self.g, self.b)
 	local d = cmax - cmin
@@ -195,10 +198,6 @@ function color:getHSL()
 	if d ~= 0 then
 		s = d / (1 - math.abs(2 * l - 1))
 	end
-	--local s = 0
-	--if cmax ~= 0 then
-	--	s = (cmax - cmin) / cmax
-	--end
 	return h, s, l
 end
 

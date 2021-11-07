@@ -768,8 +768,24 @@ function UIBase:fitText()
 end
 
 
+-- put the UI element to the back by moving it to the first index in the parent's Children array
+function UIBase:toBack() -- TODO: test and document this!
+	if self.Parent ~= nil and self.Parent.Children ~= nil then
+		local Items = self.Parent.Children
+		for i = 1, #Items do
+			if Items[i] == self then
+				table.remove(Items, i)
+				table.insert(Items, 1, self)
+				return true
+			end
+		end
+	end
+	return false
+end
+
+
 -- put the UI element on top by moving it to the last index in the parent's Children array
-function UIBase:toFront() -- TODO: test and document this!
+function UIBase:toFront()
 	if self.Parent ~= nil and self.Parent.Children ~= nil then
 		local Items = self.Parent.Children
 		for i = 1, #Items do
