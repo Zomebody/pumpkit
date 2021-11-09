@@ -15,6 +15,9 @@ table.insert(content, {
 	["Demo"] = function() -- function that creates and returns an element to be placed right below the code example
 		local img = love.graphics.newImage("test_images/Twitch_PFP.png")
 		local image_frame = ui.newImageFrame(img, 200, 200)
+		image_frame.BorderColor = color(0, 0, 0)
+		--image_frame.Rotation = 10
+		--image_frame.BorderWidth = 2
 		return image_frame;
 	end;
 })

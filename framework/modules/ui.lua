@@ -847,9 +847,27 @@ function UIBase:mark(name)
 end
 
 
+-- only for internal use!
+function UIBase:drawText()
+	-- draw text on top
+	if self.TextBlock ~= nil then
+		love.graphics.setColor(self.TextBlock.Color:components())
+		if self.TextBlock.AlignmentY == "top" then
+			love.graphics.draw(self.TextBlock.Text, -self.Size.x / 2 + self.PaddingX, -self.Size.y / 2 + self.PaddingY)
+		elseif self.TextBlock.AlignmentY == "center" then
+			love.graphics.draw(self.TextBlock.Text, -self.Size.x / 2 + self.PaddingX, -self.Size.y / 2 + math.floor(self.Size.y / 2 - self.TextBlock.Text:getHeight() / 2))
+		else -- bottom
+			love.graphics.draw(self.TextBlock.Text, -self.Size.x / 2 + self.PaddingX, self.Size.y / 2 - self.PaddingY - self.TextBlock.Text:getHeight())
+		end
+	end
+end
+
+
 
 ----------------------------------------------------[[ == FRAME METHODS == ]]----------------------------------------------------
 
+-- THIS FUNCTION NOW USES COORDINATE TRANSLATIONS TO SUPPORT ROTATION
+-- TODO: CHECK IF THE BORDER CALCULATION IS CORRECT!!
 -- draw the frame on screen
 function Frame:draw()
 	if self.Hidden then return end
@@ -869,25 +887,23 @@ function Frame:draw()
 		elseif module.CursorFocus == self then
 			r, g, b, a = self.ColorFocus.r, self.ColorFocus.g, self.ColorFocus.b, self.ColorFocus.a
 		end
+
+		love.graphics.push() -- push current graphics coordinate state
+		love.graphics.translate(self.AbsolutePosition.x + self.Size.x / 2, self.AbsolutePosition.y + self.Size.y / 2)
+		love.graphics.rotate(math.rad(self.Rotation))
+
 		if self.BorderWidth > 0 then
 			love.graphics.setColor(self.BorderColor.r, self.BorderColor.g, self.BorderColor.b, self.BorderColor.a*self.Opacity)
 			love.graphics.setLineWidth(self.BorderWidth)
-			love.graphics.rectangle("line", self.AbsolutePosition.x + self.BorderWidth / 2, self.AbsolutePosition.y + self.BorderWidth / 2, self.Size.x - self.BorderWidth, self.Size.y - self.BorderWidth)
+			love.graphics.rectangle("line", -(self.Size.x - self.BorderWidth) / 2, -(self.Size.y - self.BorderWidth) / 2, self.Size.x - self.BorderWidth, self.Size.y - self.BorderWidth)
 		end
 		love.graphics.setColor(r, g, b, a*self.Opacity)
-		love.graphics.rectangle("fill", self.AbsolutePosition.x + self.BorderWidth, self.AbsolutePosition.y + self.BorderWidth, self.Size.x - self.BorderWidth*2, self.Size.y - self.BorderWidth*2)
+		--love.graphics.rectangle("fill", self.AbsolutePosition.x + self.BorderWidth, self.AbsolutePosition.y + self.BorderWidth, self.Size.x - self.BorderWidth*2, self.Size.y - self.BorderWidth*2)
+		love.graphics.rectangle("fill", -self.Size.x / 2 + self.BorderWidth, -self.Size.y / 2 + self.BorderWidth, self.Size.x - self.BorderWidth*2, self.Size.y - self.BorderWidth*2)
 		-- draw text on top
-		if self.TextBlock ~= nil then
-			-- TODO: should this if-statement be moved into TextBlock as a method?
-			love.graphics.setColor(self.TextBlock.Color:components())
-			if self.TextBlock.AlignmentY == "top" then
-				love.graphics.draw(self.TextBlock.Text, self.AbsolutePosition.x + self.PaddingX, self.AbsolutePosition.y + self.PaddingY)
-			elseif self.TextBlock.AlignmentY == "center" then
-				love.graphics.draw(self.TextBlock.Text, self.AbsolutePosition.x + self.PaddingX, self.AbsolutePosition.y + math.floor(self.Size.y / 2 - self.TextBlock.Text:getHeight() / 2))
-			else -- bottom
-				love.graphics.draw(self.TextBlock.Text, self.AbsolutePosition.x + self.PaddingX, self.AbsolutePosition.y + self.Size.y - self.PaddingY - self.TextBlock.Text:getHeight())
-			end
-		end
+		self:drawText()
+
+		love.graphics.pop() -- revert to previous graphics coordinate state
 	end
 
 	for i = 1, #self.Children do
@@ -904,7 +920,7 @@ function ImageFrame:setReference(img)
 	self.ReferenceImage = img
 end
 
-
+-- THIS FUNCTION NOW USES COORDINATE TRANSLATIONS TO SUPPORT ROTATION
 function ImageFrame:draw()
 	if self.Hidden then return end
 
@@ -925,30 +941,24 @@ function ImageFrame:draw()
 		elseif module.CursorFocus == self then
 			r, g, b, a = self.ColorFocus.r, self.ColorFocus.g, self.ColorFocus.b, self.ColorFocus.a
 		end
+
+		love.graphics.push() -- push current graphics coordinate state
+		love.graphics.translate(self.AbsolutePosition.x + self.Size.x / 2, self.AbsolutePosition.y + self.Size.y / 2)
+		love.graphics.rotate(math.rad(self.Rotation))
+
 		love.graphics.setColor(r, g, b, a*self.Opacity)
-		-- temporarily adjust scissor to cut off border space, then reset the scissor
-		local curSX, curSY, curSW, curSH = love.graphics.getScissor()
-		love.graphics.setScissor(curSX + self.BorderWidth, curSY + self.BorderWidth, curSW - 2*self.BorderWidth, curSH - 2*self.BorderWidth)
-		love.graphics.draw(self.ReferenceImage, self.AbsolutePosition.x, self.AbsolutePosition.y, 0, self.Size.x / imgWidth, self.Size.y / imgHeight)
-		love.graphics.setScissor(curSX, curSY, curSW, curSH)
+		love.graphics.draw(self.ReferenceImage, -self.Size.x / 2 + self.BorderWidth, -self.Size.y / 2 + self.BorderWidth, 0, (self.Size.x - self.BorderWidth * 2) / imgWidth, (self.Size.y - self.BorderWidth * 2) / imgHeight)
+		
 		-- draw border
 		if self.BorderWidth > 0 then
 			love.graphics.setColor(self.BorderColor.r, self.BorderColor.g, self.BorderColor.b, self.BorderColor.a*self.Opacity)
 			love.graphics.setLineWidth(self.BorderWidth)
-			love.graphics.rectangle("line", self.AbsolutePosition.x + self.BorderWidth / 2, self.AbsolutePosition.y + self.BorderWidth / 2, self.Size.x - self.BorderWidth, self.Size.y - self.BorderWidth)
+			love.graphics.rectangle("line", -(self.Size.x - self.BorderWidth) / 2, -(self.Size.y - self.BorderWidth) / 2, self.Size.x - self.BorderWidth, self.Size.y - self.BorderWidth)
 		end
 		-- draw text on top
-		if self.TextBlock ~= nil then
-			-- TODO: should this if-statement be moved into TextBlock as a method?
-			love.graphics.setColor(self.TextBlock.Color:components())
-			if self.TextBlock.AlignmentY == "top" then
-				love.graphics.draw(self.TextBlock.Text, self.AbsolutePosition.x + self.PaddingX, self.AbsolutePosition.y + self.PaddingY)
-			elseif self.TextBlock.AlignmentY == "center" then
-				love.graphics.draw(self.TextBlock.Text, self.AbsolutePosition.x + self.PaddingX, self.AbsolutePosition.y + math.floor(self.Size.y / 2 - self.TextBlock.Text:getHeight() / 2))
-			else -- bottom
-				love.graphics.draw(self.TextBlock.Text, self.AbsolutePosition.x + self.PaddingX, self.AbsolutePosition.y + self.Size.y - self.PaddingY - self.TextBlock.Text:getHeight())
-			end
-		end
+		self:drawText()
+
+		love.graphics.pop() -- revert to previous graphics coordinate state
 	end
 
 	for i = 1, #self.Children do
@@ -971,27 +981,6 @@ function SlicedFrame:setReference(img)
 	self:setSlice(vector(self.TopLeftSlice), self.BottomRightSlice + vector(newW - oldW, newH - oldH))
 end
 
---[[
-function SlicedFrame:remove()
-	for i = 1, #self.Children do
-		self.Children[i]:remove()
-		self.Children[i] = nil
-	end
-	-- unmark the object to remove all references in markedObjects
-	self:mark()
-	-- stop the referenced animation to remove it from the animation.Active array, so it can get dereferenced
-	for i = 1, #self.ImageSlices do
-
-	end
-	-- remove any fonts from memory
-	if self.TextBlock ~= nil then
-		self.TextBlock:clearFont()
-		self.TextBlock.Text:release()
-		self.TextBlock.Text = nil
-	end
-	self.Parent = nil
-end
-]]
 
 -- sets the top left and top right corner used to chop the image into 9 quads that are used for the drawing operation
 function SlicedFrame:setSlice(topLeft, bottomRight)
@@ -1015,6 +1004,7 @@ function SlicedFrame:setSlice(topLeft, bottomRight)
 end
 
 
+-- TODO: ADD COORDINATE TRANSLATION TO SUPPORT ROTATION PROPERTY
 -- draws the sliced image at its location in the UI. Called internally
 function SlicedFrame:draw()
 	if self.Hidden then return end
@@ -1035,53 +1025,45 @@ function SlicedFrame:draw()
 		elseif module.CursorFocus == self then
 			r, g, b, a = self.ColorFocus.r, self.ColorFocus.g, self.ColorFocus.b, self.ColorFocus.a
 		end
+
+		love.graphics.push() -- push current graphics coordinate state
+		love.graphics.translate(self.AbsolutePosition.x + self.Size.x / 2, self.AbsolutePosition.y + self.Size.y / 2)
+		love.graphics.rotate(math.rad(self.Rotation))
+
 		love.graphics.setColor(r, g, b, a*self.Opacity)
-		-- temporarily adjust scissor to cut off border space, then reset the scissor
-		local curSX, curSY, curSW, curSH = love.graphics.getScissor()
-		love.graphics.setScissor(curSX + self.BorderWidth, curSY + self.BorderWidth, curSW - 2*self.BorderWidth, curSH - 2*self.BorderWidth)
-		
 
 		local x2 = self.TopLeftSlice.x * self.CornerScale
 		local x3 = self.Size.x - (imgWidth - self.BottomRightSlice.x) * self.CornerScale
 		local y2 = self.TopLeftSlice.y * self.CornerScale
 		local y3 = self.Size.y - (imgHeight - self.BottomRightSlice.y) * self.CornerScale
-		local stretchXMultiplier = (self.Size.x - self.TopLeftSlice.x * self.CornerScale - (imgWidth - self.BottomRightSlice.x) * self.CornerScale) / (self.BottomRightSlice.x - self.TopLeftSlice.x)
-		local stretchYMultiplier = (self.Size.y - self.TopLeftSlice.y * self.CornerScale - (imgHeight - self.BottomRightSlice.y) * self.CornerScale) / (self.BottomRightSlice.y - self.TopLeftSlice.y)
+
+		local stretchXMultiplier = (self.Size.x - self.BorderWidth * 2 - self.TopLeftSlice.x * self.CornerScale - (imgWidth - self.BottomRightSlice.x) * self.CornerScale) / (self.BottomRightSlice.x - self.TopLeftSlice.x)
+		local stretchYMultiplier = (self.Size.y - self.BorderWidth * 2 - self.TopLeftSlice.y * self.CornerScale - (imgHeight - self.BottomRightSlice.y) * self.CornerScale) / (self.BottomRightSlice.y - self.TopLeftSlice.y)
 
 		-- in reading order, top row
-		love.graphics.draw(self.ReferenceImage, self.ImageSlices[1], self.AbsolutePosition.x, self.AbsolutePosition.y, 0, self.CornerScale, self.CornerScale)
-		love.graphics.draw(self.ReferenceImage, self.ImageSlices[2], self.AbsolutePosition.x + x2, self.AbsolutePosition.y, 0, stretchXMultiplier, self.CornerScale)
-		love.graphics.draw(self.ReferenceImage, self.ImageSlices[3], self.AbsolutePosition.x + x3, self.AbsolutePosition.y, 0, self.CornerScale, self.CornerScale)
+		love.graphics.draw(self.ReferenceImage, self.ImageSlices[1], -self.Size.x / 2 + self.BorderWidth, -self.Size.y / 2 + self.BorderWidth, 0, self.CornerScale, self.CornerScale)
+		love.graphics.draw(self.ReferenceImage, self.ImageSlices[2], -self.Size.x / 2 + self.BorderWidth + x2, -self.Size.y / 2 + self.BorderWidth, 0, stretchXMultiplier, self.CornerScale)
+		love.graphics.draw(self.ReferenceImage, self.ImageSlices[3], -self.Size.x / 2 - self.BorderWidth + x3, -self.Size.y / 2 + self.BorderWidth, 0, self.CornerScale, self.CornerScale)
 		-- middle row
-		love.graphics.draw(self.ReferenceImage, self.ImageSlices[4], self.AbsolutePosition.x, self.AbsolutePosition.y + y2, 0, self.CornerScale, stretchYMultiplier)
-		love.graphics.draw(self.ReferenceImage, self.ImageSlices[5], self.AbsolutePosition.x + x2, self.AbsolutePosition.y + y2, 0, stretchXMultiplier, stretchYMultiplier)
-		love.graphics.draw(self.ReferenceImage, self.ImageSlices[6], self.AbsolutePosition.x + x3, self.AbsolutePosition.y + y2, 0, self.CornerScale, stretchYMultiplier)
+		love.graphics.draw(self.ReferenceImage, self.ImageSlices[4], -self.Size.x / 2 + self.BorderWidth, -self.Size.y / 2 + self.BorderWidth + y2, 0, self.CornerScale, stretchYMultiplier)
+		love.graphics.draw(self.ReferenceImage, self.ImageSlices[5], -self.Size.x / 2 + self.BorderWidth + x2, -self.Size.y / 2 + self.BorderWidth + y2, 0, stretchXMultiplier, stretchYMultiplier)
+		love.graphics.draw(self.ReferenceImage, self.ImageSlices[6], -self.Size.x / 2 - self.BorderWidth + x3, -self.Size.y / 2 + self.BorderWidth + y2, 0, self.CornerScale, stretchYMultiplier)
 		-- bottom row
-		love.graphics.draw(self.ReferenceImage, self.ImageSlices[7], self.AbsolutePosition.x, self.AbsolutePosition.y + y3, 0, self.CornerScale, self.CornerScale)
-		love.graphics.draw(self.ReferenceImage, self.ImageSlices[8], self.AbsolutePosition.x + x2, self.AbsolutePosition.y + y3, 0, stretchXMultiplier, self.CornerScale)
-		love.graphics.draw(self.ReferenceImage, self.ImageSlices[9], self.AbsolutePosition.x + x3, self.AbsolutePosition.y + y3, 0, self.CornerScale, self.CornerScale)
+		love.graphics.draw(self.ReferenceImage, self.ImageSlices[7], -self.Size.x / 2 + self.BorderWidth, -self.Size.y / 2 - self.BorderWidth + y3, 0, self.CornerScale, self.CornerScale)
+		love.graphics.draw(self.ReferenceImage, self.ImageSlices[8], -self.Size.x / 2 + self.BorderWidth + x2, -self.Size.y / 2 - self.BorderWidth + y3, 0, stretchXMultiplier, self.CornerScale)
+		love.graphics.draw(self.ReferenceImage, self.ImageSlices[9], -self.Size.x / 2 - self.BorderWidth + x3, -self.Size.y / 2 - self.BorderWidth + y3, 0, self.CornerScale, self.CornerScale)
 
-
-		love.graphics.setScissor(curSX, curSY, curSW, curSH)
 		-- draw border
 		if self.BorderWidth > 0 then
 			love.graphics.setColor(self.BorderColor.r, self.BorderColor.g, self.BorderColor.b, self.BorderColor.a*self.Opacity)
 			love.graphics.setLineWidth(self.BorderWidth)
-			love.graphics.rectangle("line", self.AbsolutePosition.x + self.BorderWidth / 2, self.AbsolutePosition.y + self.BorderWidth / 2, self.Size.x - self.BorderWidth, self.Size.y - self.BorderWidth)
+			--love.graphics.rectangle("line", self.AbsolutePosition.x + self.BorderWidth / 2, self.AbsolutePosition.y + self.BorderWidth / 2, self.Size.x - self.BorderWidth, self.Size.y - self.BorderWidth)
+			love.graphics.rectangle("line", -(self.Size.x - self.BorderWidth) / 2, -(self.Size.y - self.BorderWidth) / 2, self.Size.x - self.BorderWidth, self.Size.y - self.BorderWidth)
 		end
-
 		-- draw text on top
-		if self.TextBlock ~= nil then
-			-- TODO: should this if-statement be moved into TextBlock as a method?
-			love.graphics.setColor(self.TextBlock.Color:components())
-			if self.TextBlock.AlignmentY == "top" then
-				love.graphics.draw(self.TextBlock.Text, self.AbsolutePosition.x + self.PaddingX, self.AbsolutePosition.y + self.PaddingY)
-			elseif self.TextBlock.AlignmentY == "center" then
-				love.graphics.draw(self.TextBlock.Text, self.AbsolutePosition.x + self.PaddingX, self.AbsolutePosition.y + math.floor(self.Size.y / 2 - self.TextBlock.Text:getHeight() / 2))
-			else -- bottom
-				love.graphics.draw(self.TextBlock.Text, self.AbsolutePosition.x + self.PaddingX, self.AbsolutePosition.y + self.Size.y - self.PaddingY - self.TextBlock.Text:getHeight())
-			end
-		end
+		self:drawText()
+
+		love.graphics.pop() -- revert to previous graphics coordinate state
 	end
 
 	for i = 1, #self.Children do
@@ -1140,6 +1122,7 @@ function AnimatedFrame:remove()
 end
 
 
+-- THIS FUNCTION NOW USES COORDINATE TRANSLATIONS TO SUPPORT ROTATION
 function AnimatedFrame:draw()
 	if self.Hidden then return end
 
@@ -1161,30 +1144,24 @@ function AnimatedFrame:draw()
 		elseif module.CursorFocus == self then
 			r, g, b, a = self.ColorFocus.r, self.ColorFocus.g, self.ColorFocus.b, self.ColorFocus.a
 		end
+
+		love.graphics.push() -- push current graphics coordinate state
+		love.graphics.translate(self.AbsolutePosition.x + self.Size.x / 2, self.AbsolutePosition.y + self.Size.y / 2)
+		love.graphics.rotate(math.rad(self.Rotation))
+
 		love.graphics.setColor(r, g, b, a*self.Opacity)
-		-- temporarily adjust scissor to cut off border space, then reset the scissor
-		local curSX, curSY, curSW, curSH = love.graphics.getScissor()
-		love.graphics.setScissor(curSX + self.BorderWidth, curSY + self.BorderWidth, curSW - 2*self.BorderWidth, curSH - 2*self.BorderWidth)
-		love.graphics.draw(img, quad, self.AbsolutePosition.x, self.AbsolutePosition.y, 0, self.Size.x / imgWidth, self.Size.y / imgHeight)
-		love.graphics.setScissor(curSX, curSY, curSW, curSH)
+		love.graphics.draw(img, quad, -(self.Size.x - self.BorderWidth) / 2, -(self.Size.y - self.BorderWidth) / 2, 0, (self.Size.x - self.BorderWidth) / imgWidth, (self.Size.y - self.BorderWidth) / imgHeight)
+		
 		-- draw border
 		if self.BorderWidth > 0 then
 			love.graphics.setColor(self.BorderColor.r, self.BorderColor.g, self.BorderColor.b, self.BorderColor.a*self.Opacity)
 			love.graphics.setLineWidth(self.BorderWidth)
-			love.graphics.rectangle("line", self.AbsolutePosition.x + self.BorderWidth / 2, self.AbsolutePosition.y + self.BorderWidth / 2, self.Size.x - self.BorderWidth, self.Size.y - self.BorderWidth)
+			love.graphics.rectangle("line", -(self.Size.x - self.BorderWidth) / 2, -(self.Size.y - self.BorderWidth) / 2, self.Size.x - self.BorderWidth, self.Size.y - self.BorderWidth)
 		end
 		-- draw text on top
-		if self.TextBlock ~= nil then
-			-- TODO: should this if-statement be moved into TextBlock as a method?
-			love.graphics.setColor(self.TextBlock.Color:components())
-			if self.TextBlock.AlignmentY == "top" then
-				love.graphics.draw(self.TextBlock.Text, self.AbsolutePosition.x + self.PaddingX, self.AbsolutePosition.y + self.PaddingY)
-			elseif self.TextBlock.AlignmentY == "center" then
-				love.graphics.draw(self.TextBlock.Text, self.AbsolutePosition.x + self.PaddingX, self.AbsolutePosition.y + math.floor(self.Size.y / 2 - self.TextBlock.Text:getHeight() / 2))
-			else -- bottom
-				love.graphics.draw(self.TextBlock.Text, self.AbsolutePosition.x + self.PaddingX, self.AbsolutePosition.y + self.Size.y - self.PaddingY - self.TextBlock.Text:getHeight())
-			end
-		end
+		self:drawText()
+
+		love.graphics.pop() -- revert to previous graphics coordinate state
 	end
 
 	for i = 1, #self.Children do
@@ -1226,6 +1203,7 @@ local function newBase(w, h, col)
 			["Scale"] = vector(0, 0);
 			["Offset"] = vector(0, 0);
 		};
+		["Rotation"] = 0;
 		["Size"] = vector(w, h);
 		["TextBlock"] = nil;
 		["VisualOnly"] = false; -- if true, no events are registered and the object can never be focused, so :at() will ignore the object
@@ -1266,7 +1244,6 @@ end
 -- create new AnimatedFrame object
 local function newAnimatedFrame(anim, w, h, col)
 	local Obj = newBase(w or anim.FrameWidth, h or anim.FrameHeight, col)
-	--Obj["ReferenceImage"] = img
 	Obj["ReferenceAnimation"] = anim
 	setmetatable(Obj, AnimatedFrame)
 	return Obj

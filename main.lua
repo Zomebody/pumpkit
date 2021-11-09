@@ -146,6 +146,7 @@ function initializeApp()
 				if CursorSpeed.y ~= 0 then
 					local ValueObject = {["Value"] = CursorSpeed.y * love.timer.getDelta()}
 					local ShownChild = getShownChild(Obj)
+					if ShownChild == nil then return end
 					local sign = ValueObject.Value / math.abs(ValueObject.Value)
 					scrollTween = tween(ValueObject, "linear", math.sqrt(sign * ValueObject.Value / 30), {["Value"] = 0})
 					scrollTween:play()

@@ -240,6 +240,16 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Property";
+	["ValueType"] = "number";
+	["Name"] = "Rotation";
+	["Description"] = "How many degrees to rotate the object clockwise around its middle point.\n\nLimitations:\n\t- Visuals do not apply to children; They treat their parent as if there is no rotation.\n\t- Rotation does not change the hitbox of any click events.";
+	["ReadOnly"] = false;
+	["CodeMarkup"] = nil;
+	["Demo"] = nil;
+})
+
+table.insert(content, {
+	["Type"] = "Property";
 	["ValueType"] = "vector";
 	["Name"] = "Size";
 	["Description"] = "A vector indicating the size of the element in pixels. Setting the size can be done with the :resize(x,y) method.";

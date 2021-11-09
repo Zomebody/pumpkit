@@ -16,6 +16,9 @@ table.insert(content, {
 		local img = love.graphics.newImage("test_images/slice10105050.png")
 		img:setFilter("nearest", "nearest")
 		local SlicedFrame = ui.newSlicedFrame(img, vector(10, 10), vector(50, 50), 200, 100, color(1, 1, 1), 3)
+		SlicedFrame.BorderColor = color(0, 0, 0, 1)
+		SlicedFrame.Rotation = 30
+		SlicedFrame.BorderWidth = 4
 		local ImageFrame = ui.newImageFrame(img, 200, 100)
 		local Container = ui.newFrame(ImageFrame.Size.x * 2 + 30, ImageFrame.Size.y)
 		Container.Opacity = 0
