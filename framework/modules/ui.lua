@@ -370,7 +370,8 @@ function module:remove(Obj)
 		Obj.Children[i] = nil
 	end
 	-- unmark the object to remove all references in markedObjects
-	Obj:mark()
+	--Obj:mark()
+	Obj:clearTags()
 	-- remove any fonts from memory
 	if Obj.TextBlock ~= nil then
 		Obj.TextBlock:clearFont()
@@ -460,10 +461,10 @@ function module:show()
 end
 
 
--- returns a tuple of objects marked with the given name
-function module:find(name)
-	if markedObjects[name] ~= nil then
-		return {unpack(markedObjects[name])}
+-- returns a table of objects marked with the given tag
+function module:find(tag)
+	if markedObjects[tag] ~= nil then
+		return {unpack(markedObjects[tag])}
 	end
 	return nil
 end
@@ -503,7 +504,8 @@ function UIBase:remove()
 	end
 	self.Children = {}
 	-- unmark the object to remove all references in markedObjects
-	self:mark()
+	--self:mark()
+	self:clearTags()
 	-- remove any fonts from memory
 	if self.TextBlock ~= nil then
 		self.TextBlock:clearFont()
@@ -800,6 +802,7 @@ end
 
 
 -- mark the object. If no argument is provided, the object will be unmarked. If the object already has a name/mark, remove the old one
+--[[
 function UIBase:mark(name)
 	assert((type(name) == "string" or name == nil), "method UIBase:mark(name) expects 'name' to be of type 'string' or 'nil', but given is: " .. type(name))
 	if name ~= nil and self.Name ~= name then -- trying to give the object a new name
@@ -845,9 +848,102 @@ function UIBase:mark(name)
 		self.Name = nil
 	end
 end
+]]
+
+-- log2(n) insert search to support large numbers of tagged objects!
+local function findOrderedUIInsertLocation(tbl, Obj)
+	local l, r = 1, #tbl
+	while l ~= r do
+		local index = math.floor((l + r) / 2)
+		if tbl[index].Id < Obj.Id then
+			l = math.min(r, index + 1)
+		else
+			r = math.max(l, index - 1)
+		end
+	end
+	return (Obj.Id > tbl[l].Id) and (l + 1) or (l)
+end
 
 
--- only for internal use!
+local function findObjectIndexInOrderedArray(tbl, Obj)
+	local l, r = 1, #tbl
+	while l ~= r do
+		local index = math.floor((l + r) / 2)
+		if tbl[index] == Obj then
+			return index
+		else
+			if tbl[index].Id < Obj.Id then
+				l = math.min(r, index + 1)
+			else
+				r = math.max(l, index - 1)
+			end
+		end
+	end
+	return l
+end
+
+
+function UIBase:addTag(tag)
+	assert(type(tag) == "string", "UIBase:addTag(tag) expects argument 'tag' to be of type 'string'.")
+	-- check if the object already has the tag
+	for i = 1, #self.Tags do
+		if self.Tags[i] == tag then return end -- object alreadt has that tag
+	end
+
+	-- add tag to object
+	self.Tags[#self.Tags + 1] = tag
+
+	-- insert object to list of objects with that tag
+	if markedObjects[tag] == nil then
+		markedObjects[tag] = {self}
+	else
+		local i = findOrderedUIInsertLocation(markedObjects[tag], self)
+		table.insert(markedObjects[tag], i, self)
+	end
+end
+
+
+function UIBase:clearTags()
+	for i = 1, #self.Tags do
+		self:removeTag(self.Tags[1]) -- self.Tags[1] because table.remove() in UIBase:removeTag() will shift other items to the first spot anyway
+	end
+end
+
+
+function UIBase:removeTag(tag)
+	-- check if the tag exists in the object, if so, remove it
+	local removed = nil
+	for i = 1, #self.Tags do
+		if self.Tags[i] == tag then
+			removed = table.remove(self.Tags, i)
+			break
+		end
+	end
+
+	-- if the tag has been removed from the object, also remove it from the markedObjects list
+	if removed ~= nil then
+		local index = findObjectIndexInOrderedArray(markedObjects[tag], self)
+		table.remove(markedObjects[tag], index)
+	end
+
+	-- remove the list if it is empty
+	if #markedObjects[tag] == 0 then
+		markedObjects[tag] = nil
+	end
+end
+
+
+function UIBase:hasTag(tag)
+	for i = 1, #self.Tags do
+		if self.Tags[i] == tag then
+			return true
+		end
+	end
+	return false
+end
+
+
+-- only for internal use! This relies on there being a currently active coordinate space transformation!
 function UIBase:drawText()
 	-- draw text on top
 	if self.TextBlock ~= nil then
@@ -1090,7 +1186,8 @@ function AnimatedFrame:remove()
 		self.Children[i] = nil
 	end
 	-- unmark the object to remove all references in markedObjects
-	self:mark()
+	--self:mark()
+	self:clearTags()
 	-- stop the referenced animation to remove it from the animation.Active array, so it can get dereferenced
 	-- WARNING: IF ONE ANIMATION REFERENCE IS SHARED ACROSS ANIMATED FRAMES, REMOVING ONE OF THEM WILL STOP THE OTHER ANIMATED FRAMES!
 	-- TODO: FIX THE ABOVE ISSUE
@@ -1194,7 +1291,7 @@ local function newBase(w, h, col)
 		["FitTextOnResize"] = false;
 		["Hidden"] = false;
 		["Id"] = module.TotalCreated;
-		["Name"] = nil; -- either nil or a string. This is a string if Obj:mark(name) is called to give it a name. This property is used for look-ups in the marked objects dictionary
+		--["Name"] = nil; -- either nil or a string. This is a string if Obj:mark(name) is called to give it a name. This property is used for look-ups in the marked objects dictionary
 		["Opacity"] = 1; -- if 0, this object is not drawn (but children are!) TODO: fix children not being drawn
 		["PaddingX"] = 0; -- an invisible border that creates a smaller inner-window to contain children and text. If 0 < padding < 1, then it's interpreted as a percentage / ratio
 		["PaddingY"] = 0;
@@ -1205,6 +1302,7 @@ local function newBase(w, h, col)
 		};
 		["Rotation"] = 0;
 		["Size"] = vector(w, h);
+		["Tags"] = {}; -- list of tags assigned to this object
 		["TextBlock"] = nil;
 		["VisualOnly"] = false; -- if true, no events are registered and the object can never be focused, so :at() will ignore the object
 
