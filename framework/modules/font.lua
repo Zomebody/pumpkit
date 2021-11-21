@@ -4,7 +4,7 @@ local fontDirectory = "framework/fonts/"
 local font = {}
 
 local history = {}
-local semaphores = {} -- UNTESTED
+local semaphores = {}
 
 font.history = history
 font.semaphores = semaphores

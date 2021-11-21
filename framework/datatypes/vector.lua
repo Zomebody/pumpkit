@@ -218,7 +218,7 @@ end
 
 -- get the heading (direction) of a vector
 function vector:heading()
-	return -math.atan2(self.y, self.x)
+	return -math.atan2(self.y, self.x) -- the negative sign here is because a positive Y in Love2D is down!!
 end
 
 -- returns the smallest angle between the two vectors
@@ -226,15 +226,43 @@ function vector:angleDiff(v)
 	return math.min((self:heading() - v:heading()) % (math.pi*2), (v:heading() - self:heading()) % (math.pi*2))
 end
 
+-- TODO: document this method!!
+-- return a vector that rotates the current vector to the given vector
+function vector:rotateTo(vec2, byAngle)
+	local angDiff = self:angleDiff(vec2)
+	if angDiff < byAngle then
+		return self:replace(vec2:clone():setMag(self:getMag()))
+	end
+	local angleA = self:heading()
+	local angleB = vec2:heading()
+	local absDiff = math.abs(angleA - angleB)
+	if absDiff > math.pi then
+		if angleA < angleB then
+			angleA = angleA + math.pi*2
+			local newA = (angleA - byAngle) % 360
+			return self:replace(fromAngle(newA):setMag(self:getMag()))
+		else
+			angleB = angleB + math.pi*2
+			local newA = (angleA + byAngle) % 360
+			return self:replace(fromAngle(newA):setMag(self:getMag()))
+		end
+	elseif angleB > angleA then
+		return self:replace(fromAngle(angleA + byAngle):setMag(self:getMag()))
+	else
+		return self:replace(fromAngle(angleA - byAngle):setMag(self:getMag()))
+	end
+end
+
 -- rotate a vector by a certain number of radians
 function vector:rotate(theta) -- edited to pull from: https://github.com/themousery/vector.lua/pull/3/commits/5ac47a29456a6f89939347f6b3b4d3160d732d3c
+	theta = -theta -- make theta negative because the Y-direction in Love2D is DOWN rather than UP
 	local s = math.sin(theta)
 	local c = math.cos(theta)
 	local v = new(
 		(c * self.x) + (s * self.y),
 		-(s * self.x) + (c * self.y))
 	self:replace(v)
-  return self
+	return self
 end
 
 -- rotate vector by a certain number of radians around a point

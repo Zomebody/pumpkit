@@ -1,3 +1,6 @@
+How to use:
+The framework folder contains all documented features. The *app* and *text_images* folders contain assets for the documentation app. To run the documentation app, run the Love2D software in this folder. The documentation app contains descriptions and examples of the framework's features.
+
 Code mark-up:
 - lower case for data types
 - camelCase for variables
