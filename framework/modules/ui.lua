@@ -943,6 +943,9 @@ function UIBase:hasTag(tag)
 end
 
 
+
+----------------------------------------------------[[ == DRAW HELPERS == ]]----------------------------------------------------
+
 -- only for internal use! This relies on there being a currently active coordinate space transformation!
 function UIBase:drawText()
 	-- draw text on top
@@ -955,6 +958,35 @@ function UIBase:drawText()
 		else -- bottom
 			love.graphics.draw(self.TextBlock.Text, -self.Size.x / 2 + self.PaddingX, self.Size.y / 2 - self.PaddingY - self.TextBlock.Text:getHeight())
 		end
+	end
+end
+
+-- local 'global' variables for the next two functions
+local stencilCornerArg
+local cornerStencilMode, cornerStencilValue
+
+function addCornerStencil(Obj)
+	stencilCornerArg = Obj.CornerRadius ~= 0 and Obj.CornerRadius or nil
+	-- set stencil
+	if stencilCornerArg ~= nil then
+		-- draw stencil (rectangle with rounded corners), then the image, then remove the stencil
+		cornerStencilMode, cornerStencilValue = love.graphics.getStencilTest()
+		love.graphics.setStencilTest("greater", 0)
+		love.graphics.stencil( -- replaces the stencil values from 0 to 1 in all places where geometry is drawn
+			function()
+				love.graphics.rectangle("fill", -Obj.Size.x / 2 + Obj.BorderWidth, -Obj.Size.y / 2 + Obj.BorderWidth, Obj.Size.x - Obj.BorderWidth*2, Obj.Size.y - Obj.BorderWidth*2, stencilCornerArg)
+			end
+		)
+	end
+end
+
+function clearCornerStencil(Obj)
+	-- this method is (and must) always (be) called after addCornerStencil(Obj) with the same Obj argument
+	-- clear stencil
+	if stencilCornerArg ~= nil then
+		love.graphics.setStencilTest("always", 0)
+		love.graphics.stencil(function() end) -- reset all stencil values back to 0
+		love.graphics.setStencilTest(cornerStencilMode, cornerStencilValue)
 	end
 end
 
@@ -988,14 +1020,15 @@ function Frame:draw()
 		love.graphics.translate(self.AbsolutePosition.x + self.Size.x / 2, self.AbsolutePosition.y + self.Size.y / 2)
 		love.graphics.rotate(math.rad(self.Rotation))
 
+		local cornerArg = self.CornerRadius ~= 0 and self.CornerRadius or nil
 		if self.BorderWidth > 0 then
 			love.graphics.setColor(self.BorderColor.r, self.BorderColor.g, self.BorderColor.b, self.BorderColor.a*self.Opacity)
 			love.graphics.setLineWidth(self.BorderWidth)
-			love.graphics.rectangle("line", -(self.Size.x - self.BorderWidth) / 2, -(self.Size.y - self.BorderWidth) / 2, self.Size.x - self.BorderWidth, self.Size.y - self.BorderWidth)
+			love.graphics.rectangle("line", -(self.Size.x - self.BorderWidth) / 2, -(self.Size.y - self.BorderWidth) / 2, self.Size.x - self.BorderWidth, self.Size.y - self.BorderWidth, cornerArg)
 		end
 		love.graphics.setColor(r, g, b, a*self.Opacity)
 		--love.graphics.rectangle("fill", self.AbsolutePosition.x + self.BorderWidth, self.AbsolutePosition.y + self.BorderWidth, self.Size.x - self.BorderWidth*2, self.Size.y - self.BorderWidth*2)
-		love.graphics.rectangle("fill", -self.Size.x / 2 + self.BorderWidth, -self.Size.y / 2 + self.BorderWidth, self.Size.x - self.BorderWidth*2, self.Size.y - self.BorderWidth*2)
+		love.graphics.rectangle("fill", -self.Size.x / 2 + self.BorderWidth, -self.Size.y / 2 + self.BorderWidth, self.Size.x - self.BorderWidth*2, self.Size.y - self.BorderWidth*2, cornerArg)
 		-- draw text on top
 		self:drawText()
 
@@ -1043,13 +1076,18 @@ function ImageFrame:draw()
 		love.graphics.rotate(math.rad(self.Rotation))
 
 		love.graphics.setColor(r, g, b, a*self.Opacity)
-		love.graphics.draw(self.ReferenceImage, -self.Size.x / 2 + self.BorderWidth, -self.Size.y / 2 + self.BorderWidth, 0, (self.Size.x - self.BorderWidth * 2) / imgWidth, (self.Size.y - self.BorderWidth * 2) / imgHeight)
 		
+		-- draw image, using a stencil for rounded corners
+		addCornerStencil(self)
+		love.graphics.draw(self.ReferenceImage, -self.Size.x / 2 + self.BorderWidth, -self.Size.y / 2 + self.BorderWidth, 0, (self.Size.x - self.BorderWidth * 2) / imgWidth, (self.Size.y - self.BorderWidth * 2) / imgHeight)
+		clearCornerStencil(self)
+
 		-- draw border
+		local cornerArg = self.CornerRadius ~= 0 and self.CornerRadius or nil
 		if self.BorderWidth > 0 then
 			love.graphics.setColor(self.BorderColor.r, self.BorderColor.g, self.BorderColor.b, self.BorderColor.a*self.Opacity)
 			love.graphics.setLineWidth(self.BorderWidth)
-			love.graphics.rectangle("line", -(self.Size.x - self.BorderWidth) / 2, -(self.Size.y - self.BorderWidth) / 2, self.Size.x - self.BorderWidth, self.Size.y - self.BorderWidth)
+			love.graphics.rectangle("line", -(self.Size.x - self.BorderWidth) / 2, -(self.Size.y - self.BorderWidth) / 2, self.Size.x - self.BorderWidth, self.Size.y - self.BorderWidth, cornerArg)
 		end
 		-- draw text on top
 		self:drawText()
@@ -1100,7 +1138,6 @@ function SlicedFrame:setSlice(topLeft, bottomRight)
 end
 
 
--- TODO: ADD COORDINATE TRANSLATION TO SUPPORT ROTATION PROPERTY
 -- draws the sliced image at its location in the UI. Called internally
 function SlicedFrame:draw()
 	if self.Hidden then return end
@@ -1136,6 +1173,7 @@ function SlicedFrame:draw()
 		local stretchXMultiplier = (self.Size.x - self.BorderWidth * 2 - self.TopLeftSlice.x * self.CornerScale - (imgWidth - self.BottomRightSlice.x) * self.CornerScale) / (self.BottomRightSlice.x - self.TopLeftSlice.x)
 		local stretchYMultiplier = (self.Size.y - self.BorderWidth * 2 - self.TopLeftSlice.y * self.CornerScale - (imgHeight - self.BottomRightSlice.y) * self.CornerScale) / (self.BottomRightSlice.y - self.TopLeftSlice.y)
 
+		addCornerStencil(self)
 		-- in reading order, top row
 		love.graphics.draw(self.ReferenceImage, self.ImageSlices[1], -self.Size.x / 2 + self.BorderWidth, -self.Size.y / 2 + self.BorderWidth, 0, self.CornerScale, self.CornerScale)
 		love.graphics.draw(self.ReferenceImage, self.ImageSlices[2], -self.Size.x / 2 + self.BorderWidth + x2, -self.Size.y / 2 + self.BorderWidth, 0, stretchXMultiplier, self.CornerScale)
@@ -1148,13 +1186,16 @@ function SlicedFrame:draw()
 		love.graphics.draw(self.ReferenceImage, self.ImageSlices[7], -self.Size.x / 2 + self.BorderWidth, -self.Size.y / 2 - self.BorderWidth + y3, 0, self.CornerScale, self.CornerScale)
 		love.graphics.draw(self.ReferenceImage, self.ImageSlices[8], -self.Size.x / 2 + self.BorderWidth + x2, -self.Size.y / 2 - self.BorderWidth + y3, 0, stretchXMultiplier, self.CornerScale)
 		love.graphics.draw(self.ReferenceImage, self.ImageSlices[9], -self.Size.x / 2 - self.BorderWidth + x3, -self.Size.y / 2 - self.BorderWidth + y3, 0, self.CornerScale, self.CornerScale)
+		
+		clearCornerStencil(self)
 
 		-- draw border
+		local cornerArg = self.CornerRadius ~= 0 and self.CornerRadius or nil
 		if self.BorderWidth > 0 then
 			love.graphics.setColor(self.BorderColor.r, self.BorderColor.g, self.BorderColor.b, self.BorderColor.a*self.Opacity)
 			love.graphics.setLineWidth(self.BorderWidth)
 			--love.graphics.rectangle("line", self.AbsolutePosition.x + self.BorderWidth / 2, self.AbsolutePosition.y + self.BorderWidth / 2, self.Size.x - self.BorderWidth, self.Size.y - self.BorderWidth)
-			love.graphics.rectangle("line", -(self.Size.x - self.BorderWidth) / 2, -(self.Size.y - self.BorderWidth) / 2, self.Size.x - self.BorderWidth, self.Size.y - self.BorderWidth)
+			love.graphics.rectangle("line", -(self.Size.x - self.BorderWidth) / 2, -(self.Size.y - self.BorderWidth) / 2, self.Size.x - self.BorderWidth, self.Size.y - self.BorderWidth, cornerArg)
 		end
 		-- draw text on top
 		self:drawText()
@@ -1179,7 +1220,6 @@ end
 
 -- remove the object by removing its children and unmarking the object
 -- TODO: DOCUMENT THIS METHOD
-
 function AnimatedFrame:remove()
 	for i = 1, #self.Children do
 		self.Children[i]:remove()
@@ -1219,7 +1259,7 @@ function AnimatedFrame:remove()
 end
 
 
--- THIS FUNCTION NOW USES COORDINATE TRANSLATIONS TO SUPPORT ROTATION
+
 function AnimatedFrame:draw()
 	if self.Hidden then return end
 
@@ -1247,13 +1287,16 @@ function AnimatedFrame:draw()
 		love.graphics.rotate(math.rad(self.Rotation))
 
 		love.graphics.setColor(r, g, b, a*self.Opacity)
+		addCornerStencil(self)
 		love.graphics.draw(img, quad, -(self.Size.x - self.BorderWidth) / 2, -(self.Size.y - self.BorderWidth) / 2, 0, (self.Size.x - self.BorderWidth) / imgWidth, (self.Size.y - self.BorderWidth) / imgHeight)
+		clearCornerStencil(self)
 		
 		-- draw border
+		local cornerArg = self.CornerRadius ~= 0 and self.CornerRadius or nil
 		if self.BorderWidth > 0 then
 			love.graphics.setColor(self.BorderColor.r, self.BorderColor.g, self.BorderColor.b, self.BorderColor.a*self.Opacity)
 			love.graphics.setLineWidth(self.BorderWidth)
-			love.graphics.rectangle("line", -(self.Size.x - self.BorderWidth) / 2, -(self.Size.y - self.BorderWidth) / 2, self.Size.x - self.BorderWidth, self.Size.y - self.BorderWidth)
+			love.graphics.rectangle("line", -(self.Size.x - self.BorderWidth) / 2, -(self.Size.y - self.BorderWidth) / 2, self.Size.x - self.BorderWidth, self.Size.y - self.BorderWidth, cornerArg)
 		end
 		-- draw text on top
 		self:drawText()
@@ -1288,6 +1331,7 @@ local function newBase(w, h, col)
 		["Color"] = col; -- color of the frame. For images, this adjusts the image color
 		["ColorHold"] = col:clone(); -- color when the element is being held down
 		["ColorFocus"] = col:clone(); -- color when the element is being hovered over by the cursor
+		["CornerRadius"] = 0; -- corner radius for drawing rounded corners
 		["FitTextOnResize"] = false;
 		["Hidden"] = false;
 		["Id"] = module.TotalCreated;

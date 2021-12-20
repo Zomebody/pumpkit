@@ -56,6 +56,7 @@ function love.load()
 	DisplayVars = love.graphics.getWidth() > 720 and Vars.Default or Vars.SmallScreen
 	Vars.SmallScreen.BodyWidth = ww - Vars.SmallScreen.NavigationWidth
 
+	task:initialize()
 	tween:initialize()
 	animation:initialize()
 	ui:initialize()

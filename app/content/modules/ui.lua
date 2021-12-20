@@ -14,9 +14,11 @@ table.insert(content, {
 
 		local Img = love.graphics.newImage("test_images/hierarchy.png")
 		local Example = ui.newImageFrame(Img)
+		Example.CornerRadius = 6
 		Container:addChild(Example)
 
 		local Tree = ui.newFrame(150, 200, color(1, 1, 1))
+		Tree.CornerRadius = 6
 		Tree:setPadding(10, 10)
 
 		local C1 = ui.newFrame(70, 100, color.fromHex("#D5E8D4"))
@@ -35,6 +37,7 @@ table.insert(content, {
 		L1:alignX("right")
 		C1:addChild(L1)
 		local L2 = ui.newFrame(60, 60, color.fromHex("#FFF2CC"))
+		L2.CornerRadius = 40
 		L2:setBorder(color(L2.Color):darken(0.25), 5)
 		L2:alignX("right")
 		L2:alignY("bottom")
