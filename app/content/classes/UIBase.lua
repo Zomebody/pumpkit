@@ -232,10 +232,17 @@ table.insert(content, {
 	["Type"] = "Property";
 	["ValueType"] = "number";
 	["Name"] = "Rotation";
-	["Description"] = "How many degrees to rotate the object clockwise around its middle point.\n\nLimitations:\n\t- Visuals do not apply to children; They treat their parent as if there is no rotation.\n\t- Rotation does not change the hitbox of any click events.\n\t- When ClipContent is set to true, corners will be cut-off when rotated outside of the original orientation box.";
+	["Description"] = "How many degrees to rotate the object clockwise around its middle point.\n\nLimitations:\n\t- Visuals do not apply to children; They treat their parent as if there is no rotation.\n\t- Rotation does not change the hitbox of any click events.\n\t- When ClipContent is set to true, corners will be cut-off when rotated outside of the original orientation box.\n\t- Rotated elements may not render correctly if they barely stick out on the edge of the screen.";
 	["ReadOnly"] = false;
 	["CodeMarkup"] = nil;
-	["Demo"] = nil;
+	["Demo"] = function()
+		local Rotato = ui.newFrame(100, 100)
+		Rotato.ClipContent = false
+		Rotato.Rotation = 20
+		Rotato.Color = color(0.3, 0.8, 0.7)
+		Rotato:setText("FiraCode.ttf", "Rotated text!", 16)
+		return Rotato
+	end;
 })
 
 table.insert(content, {

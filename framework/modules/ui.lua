@@ -365,10 +365,14 @@ end
 -- TODO: unmark all descendants to remove their references from the markedObjects dictionary
 -- TODO: if a font is only used in the object or its descendants, delete the font
 function module:remove(Obj)
+	local children = {}
 	for i = 1, #Obj.Children do
-		Obj.Children[i]:remove()
-		Obj.Children[i] = nil
+		children[i] = Obj.Children[i]
 	end
+	for i = 1, #children do
+		children[i]:remove()
+	end
+	Obj.Children = {}
 	-- unmark the object to remove all references in markedObjects
 	--Obj:mark()
 	Obj:clearTags()
@@ -1008,7 +1012,7 @@ function Frame:draw()
 
 	local gw, gh = love.graphics.getDimensions()
 	-- bounds check optimization. This will reduce GPU used! (GPU went down from 17% to 14% in a recent test)
-	if not (self.AbsolutePosition.x > gw or self.AbsolutePosition.x + self.Size.x < 0 or self.AbsolutePosition.y > gh or self.AbsolutePosition.x + self.Size.x < 0) then
+	if not (self.AbsolutePosition.x > gw or self.AbsolutePosition.x + self.Size.x < 0 or self.AbsolutePosition.y > gh or self.AbsolutePosition.y + self.Size.y < 0) then
 		local r, g, b, a = self.Color.r, self.Color.g, self.Color.b, self.Color.a
 		if module.PressedElement == self then
 			r, g, b, a = self.ColorHold.r, self.ColorHold.g, self.ColorHold.b, self.ColorHold.a
@@ -1063,7 +1067,7 @@ function ImageFrame:draw()
 
 	local gw, gh = love.graphics.getDimensions()
 	-- bounds check to reduce GPU load. Don't need to draw out of bounds!
-	if not (self.AbsolutePosition.x > gw or self.AbsolutePosition.x + self.Size.x < 0 or self.AbsolutePosition.y > gh or self.AbsolutePosition.x + self.Size.x < 0) then
+	if not (self.AbsolutePosition.x > gw or self.AbsolutePosition.x + self.Size.x < 0 or self.AbsolutePosition.y > gh or self.AbsolutePosition.y + self.Size.y < 0) then
 		local r, g, b, a = self.Color.r, self.Color.g, self.Color.b, self.Color.a
 		if module.PressedElement == self then
 			r, g, b, a = self.ColorHold.r, self.ColorHold.g, self.ColorHold.b, self.ColorHold.a
@@ -1151,7 +1155,7 @@ function SlicedFrame:draw()
 
 	local gw, gh = love.graphics.getDimensions()
 	-- bounds check to reduce GPU load. Don't need to draw out of bounds!
-	if not (self.AbsolutePosition.x > gw or self.AbsolutePosition.x + self.Size.x < 0 or self.AbsolutePosition.y > gh or self.AbsolutePosition.x + self.Size.x < 0) then
+	if not (self.AbsolutePosition.x > gw or self.AbsolutePosition.x + self.Size.x < 0 or self.AbsolutePosition.y > gh or self.AbsolutePosition.y + self.Size.y < 0) then
 		local r, g, b, a = self.Color.r, self.Color.g, self.Color.b, self.Color.a
 		if module.PressedElement == self then
 			r, g, b, a = self.ColorHold.r, self.ColorHold.g, self.ColorHold.b, self.ColorHold.a
@@ -1274,7 +1278,7 @@ function AnimatedFrame:draw()
 
 	local gw, gh = love.graphics.getDimensions()
 	-- bounds check to reduce GPU load. Don't need to draw out of bounds!
-	if not (self.AbsolutePosition.x > gw or self.AbsolutePosition.x + self.Size.x < 0 or self.AbsolutePosition.y > gh or self.AbsolutePosition.x + self.Size.x < 0) then
+	if not (self.AbsolutePosition.x > gw or self.AbsolutePosition.x + self.Size.x < 0 or self.AbsolutePosition.y > gh or self.AbsolutePosition.y + self.Size.y < 0) then
 		local r, g, b, a = self.Color.r, self.Color.g, self.Color.b, self.Color.a
 		if module.PressedElement == self then
 			r, g, b, a = self.ColorHold.r, self.ColorHold.g, self.ColorHold.b, self.ColorHold.a
