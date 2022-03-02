@@ -151,7 +151,14 @@ table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "rotate";
 	["Arguments"] = {"angle"};
-	["Description"] = "Rotates the vector by a given amount in radians. TODO: figure out if it's clockwise or counter-clockwise";
+	["Description"] = "Rotates the vector by a given amount in radians. TODO: figure out if it's clockwise or counter-clockwise.";
+})
+
+table.insert(content, {
+	["Type"] = "Method";
+	["Name"] = "rotateTo";
+	["Arguments"] = {"vector", "angle"};
+	["Description"] = "Rotates the vector by a given amount in radians towards another direction vector. This method will not overshoot if the amount to rotate by is larger than the angle between the two vectors.";
 })
 
 table.insert(content, {

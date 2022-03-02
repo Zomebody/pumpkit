@@ -956,11 +956,11 @@ function UIBase:drawText()
 	if self.TextBlock ~= nil then
 		love.graphics.setColor(self.TextBlock.Color:components())
 		if self.TextBlock.AlignmentY == "top" then
-			love.graphics.draw(self.TextBlock.Text, -self.Size.x / 2 + self.PaddingX, -self.Size.y / 2 + self.PaddingY)
+			love.graphics.draw(self.TextBlock.Text, -self.Size.x * self.Pivot.x + self.PaddingX, -self.Size.y * self.Pivot.y + self.PaddingY)
 		elseif self.TextBlock.AlignmentY == "center" then
-			love.graphics.draw(self.TextBlock.Text, -self.Size.x / 2 + self.PaddingX, -self.Size.y / 2 + math.floor(self.Size.y / 2 - self.TextBlock.Text:getHeight() / 2))
+			love.graphics.draw(self.TextBlock.Text, -self.Size.x * self.Pivot.x + self.PaddingX, -self.Size.y * self.Pivot.y + math.floor(self.Size.y / 2 - self.TextBlock.Text:getHeight() / 2))
 		else -- bottom
-			love.graphics.draw(self.TextBlock.Text, -self.Size.x / 2 + self.PaddingX, self.Size.y / 2 - self.PaddingY - self.TextBlock.Text:getHeight())
+			love.graphics.draw(self.TextBlock.Text, -self.Size.x * self.Pivot.x + self.PaddingX, self.Size.y * (1 - self.Pivot.y) - self.PaddingY - self.TextBlock.Text:getHeight())
 		end
 	end
 end
@@ -978,7 +978,7 @@ function addCornerStencil(Obj)
 		love.graphics.setStencilTest("greater", 0)
 		love.graphics.stencil( -- replaces the stencil values from 0 to 1 in all places where geometry is drawn
 			function()
-				love.graphics.rectangle("fill", -Obj.Size.x / 2 + Obj.BorderWidth, -Obj.Size.y / 2 + Obj.BorderWidth, Obj.Size.x - Obj.BorderWidth*2, Obj.Size.y - Obj.BorderWidth*2, stencilCornerArg)
+				love.graphics.rectangle("fill", -Obj.Size.x * Obj.Pivot.x + Obj.BorderWidth, -Obj.Size.y * Obj.Pivot.y + Obj.BorderWidth, Obj.Size.x - Obj.BorderWidth*2, Obj.Size.y - Obj.BorderWidth*2, stencilCornerArg)
 			end
 		)
 	end
@@ -1021,18 +1021,19 @@ function Frame:draw()
 		end
 
 		love.graphics.push() -- push current graphics coordinate state
-		love.graphics.translate(self.AbsolutePosition.x + self.Size.x / 2, self.AbsolutePosition.y + self.Size.y / 2)
+		--love.graphics.translate(self.AbsolutePosition.x + self.Size.x / 2, self.AbsolutePosition.y + self.Size.y / 2)
+		love.graphics.translate(self.AbsolutePosition.x + self.Size.x * self.Pivot.x, self.AbsolutePosition.y + self.Size.y * self.Pivot.y)
 		love.graphics.rotate(math.rad(self.Rotation))
 
 		local cornerArg = self.CornerRadius ~= 0 and self.CornerRadius or nil
 		if self.BorderWidth > 0 then
 			love.graphics.setColor(self.BorderColor.r, self.BorderColor.g, self.BorderColor.b, self.BorderColor.a*self.Opacity)
 			love.graphics.setLineWidth(self.BorderWidth)
-			love.graphics.rectangle("line", -(self.Size.x - self.BorderWidth) / 2, -(self.Size.y - self.BorderWidth) / 2, self.Size.x - self.BorderWidth, self.Size.y - self.BorderWidth, cornerArg)
+			love.graphics.rectangle("line", -self.Size.x * self.Pivot.x + self.BorderWidth / 2, -self.Size.y * self.Pivot.y + self.BorderWidth / 2, self.Size.x - self.BorderWidth, self.Size.y - self.BorderWidth, cornerArg)
 		end
 		love.graphics.setColor(r, g, b, a*self.Opacity)
 		--love.graphics.rectangle("fill", self.AbsolutePosition.x + self.BorderWidth, self.AbsolutePosition.y + self.BorderWidth, self.Size.x - self.BorderWidth*2, self.Size.y - self.BorderWidth*2)
-		love.graphics.rectangle("fill", -self.Size.x / 2 + self.BorderWidth, -self.Size.y / 2 + self.BorderWidth, self.Size.x - self.BorderWidth*2, self.Size.y - self.BorderWidth*2, cornerArg)
+		love.graphics.rectangle("fill", -self.Size.x * self.Pivot.x + self.BorderWidth, -self.Size.y * self.Pivot.y + self.BorderWidth, self.Size.x - self.BorderWidth*2, self.Size.y - self.BorderWidth*2, cornerArg)
 		-- draw text on top
 		self:drawText()
 
@@ -1076,14 +1077,14 @@ function ImageFrame:draw()
 		end
 
 		love.graphics.push() -- push current graphics coordinate state
-		love.graphics.translate(self.AbsolutePosition.x + self.Size.x / 2, self.AbsolutePosition.y + self.Size.y / 2)
+		love.graphics.translate(self.AbsolutePosition.x + self.Size.x * self.Pivot.x, self.AbsolutePosition.y + self.Size.y * self.Pivot.y)
 		love.graphics.rotate(math.rad(self.Rotation))
 
 		love.graphics.setColor(r, g, b, a*self.Opacity)
 		
 		-- draw image, using a stencil for rounded corners
 		addCornerStencil(self)
-		love.graphics.draw(self.ReferenceImage, -self.Size.x / 2 + self.BorderWidth, -self.Size.y / 2 + self.BorderWidth, 0, (self.Size.x - self.BorderWidth * 2) / imgWidth, (self.Size.y - self.BorderWidth * 2) / imgHeight)
+		love.graphics.draw(self.ReferenceImage, -self.Size.x * self.Pivot.x + self.BorderWidth, -self.Size.y * self.Pivot.y + self.BorderWidth, 0, (self.Size.x - self.BorderWidth * 2) / imgWidth, (self.Size.y - self.BorderWidth * 2) / imgHeight)
 		clearCornerStencil(self)
 
 		-- draw border
@@ -1091,7 +1092,7 @@ function ImageFrame:draw()
 		if self.BorderWidth > 0 then
 			love.graphics.setColor(self.BorderColor.r, self.BorderColor.g, self.BorderColor.b, self.BorderColor.a*self.Opacity)
 			love.graphics.setLineWidth(self.BorderWidth)
-			love.graphics.rectangle("line", -(self.Size.x - self.BorderWidth) / 2, -(self.Size.y - self.BorderWidth) / 2, self.Size.x - self.BorderWidth, self.Size.y - self.BorderWidth, cornerArg)
+			love.graphics.rectangle("line", -self.Size.x * self.Pivot.x + self.BorderWidth / 2, -self.Size.y * self.Pivot.y + self.BorderWidth / 2, self.Size.x - self.BorderWidth, self.Size.y - self.BorderWidth, cornerArg)
 		end
 		-- draw text on top
 		self:drawText()
@@ -1164,7 +1165,7 @@ function SlicedFrame:draw()
 		end
 
 		love.graphics.push() -- push current graphics coordinate state
-		love.graphics.translate(self.AbsolutePosition.x + self.Size.x / 2, self.AbsolutePosition.y + self.Size.y / 2)
+		love.graphics.translate(self.AbsolutePosition.x + self.Size.x * self.Pivot.x, self.AbsolutePosition.y + self.Size.y * self.Pivot.y)
 		love.graphics.rotate(math.rad(self.Rotation))
 
 		love.graphics.setColor(r, g, b, a*self.Opacity)
@@ -1179,17 +1180,17 @@ function SlicedFrame:draw()
 
 		addCornerStencil(self)
 		-- in reading order, top row
-		love.graphics.draw(self.ReferenceImage, self.ImageSlices[1], -self.Size.x / 2 + self.BorderWidth, -self.Size.y / 2 + self.BorderWidth, 0, self.CornerScale, self.CornerScale)
-		love.graphics.draw(self.ReferenceImage, self.ImageSlices[2], -self.Size.x / 2 + self.BorderWidth + x2, -self.Size.y / 2 + self.BorderWidth, 0, stretchXMultiplier, self.CornerScale)
-		love.graphics.draw(self.ReferenceImage, self.ImageSlices[3], -self.Size.x / 2 - self.BorderWidth + x3, -self.Size.y / 2 + self.BorderWidth, 0, self.CornerScale, self.CornerScale)
+		love.graphics.draw(self.ReferenceImage, self.ImageSlices[1], -self.Size.x * self.Pivot.x + self.BorderWidth, -self.Size.y * self.Pivot.y + self.BorderWidth, 0, self.CornerScale, self.CornerScale)
+		love.graphics.draw(self.ReferenceImage, self.ImageSlices[2], -self.Size.x * self.Pivot.x + self.BorderWidth + x2, -self.Size.y * self.Pivot.y + self.BorderWidth, 0, stretchXMultiplier, self.CornerScale)
+		love.graphics.draw(self.ReferenceImage, self.ImageSlices[3], -self.Size.x * self.Pivot.x - self.BorderWidth + x3, -self.Size.y * self.Pivot.y + self.BorderWidth, 0, self.CornerScale, self.CornerScale)
 		-- middle row
-		love.graphics.draw(self.ReferenceImage, self.ImageSlices[4], -self.Size.x / 2 + self.BorderWidth, -self.Size.y / 2 + self.BorderWidth + y2, 0, self.CornerScale, stretchYMultiplier)
-		love.graphics.draw(self.ReferenceImage, self.ImageSlices[5], -self.Size.x / 2 + self.BorderWidth + x2, -self.Size.y / 2 + self.BorderWidth + y2, 0, stretchXMultiplier, stretchYMultiplier)
-		love.graphics.draw(self.ReferenceImage, self.ImageSlices[6], -self.Size.x / 2 - self.BorderWidth + x3, -self.Size.y / 2 + self.BorderWidth + y2, 0, self.CornerScale, stretchYMultiplier)
+		love.graphics.draw(self.ReferenceImage, self.ImageSlices[4], -self.Size.x * self.Pivot.x + self.BorderWidth, -self.Size.y * self.Pivot.y + self.BorderWidth + y2, 0, self.CornerScale, stretchYMultiplier)
+		love.graphics.draw(self.ReferenceImage, self.ImageSlices[5], -self.Size.x * self.Pivot.x + self.BorderWidth + x2, -self.Size.y * self.Pivot.y + self.BorderWidth + y2, 0, stretchXMultiplier, stretchYMultiplier)
+		love.graphics.draw(self.ReferenceImage, self.ImageSlices[6], -self.Size.x * self.Pivot.x - self.BorderWidth + x3, -self.Size.y * self.Pivot.y + self.BorderWidth + y2, 0, self.CornerScale, stretchYMultiplier)
 		-- bottom row
-		love.graphics.draw(self.ReferenceImage, self.ImageSlices[7], -self.Size.x / 2 + self.BorderWidth, -self.Size.y / 2 - self.BorderWidth + y3, 0, self.CornerScale, self.CornerScale)
-		love.graphics.draw(self.ReferenceImage, self.ImageSlices[8], -self.Size.x / 2 + self.BorderWidth + x2, -self.Size.y / 2 - self.BorderWidth + y3, 0, stretchXMultiplier, self.CornerScale)
-		love.graphics.draw(self.ReferenceImage, self.ImageSlices[9], -self.Size.x / 2 - self.BorderWidth + x3, -self.Size.y / 2 - self.BorderWidth + y3, 0, self.CornerScale, self.CornerScale)
+		love.graphics.draw(self.ReferenceImage, self.ImageSlices[7], -self.Size.x * self.Pivot.x + self.BorderWidth, -self.Size.y * self.Pivot.y - self.BorderWidth + y3, 0, self.CornerScale, self.CornerScale)
+		love.graphics.draw(self.ReferenceImage, self.ImageSlices[8], -self.Size.x * self.Pivot.x + self.BorderWidth + x2, -self.Size.y * self.Pivot.y - self.BorderWidth + y3, 0, stretchXMultiplier, self.CornerScale)
+		love.graphics.draw(self.ReferenceImage, self.ImageSlices[9], -self.Size.x * self.Pivot.x - self.BorderWidth + x3, -self.Size.y * self.Pivot.y - self.BorderWidth + y3, 0, self.CornerScale, self.CornerScale)
 		
 		clearCornerStencil(self)
 
@@ -1199,7 +1200,7 @@ function SlicedFrame:draw()
 			love.graphics.setColor(self.BorderColor.r, self.BorderColor.g, self.BorderColor.b, self.BorderColor.a*self.Opacity)
 			love.graphics.setLineWidth(self.BorderWidth)
 			--love.graphics.rectangle("line", self.AbsolutePosition.x + self.BorderWidth / 2, self.AbsolutePosition.y + self.BorderWidth / 2, self.Size.x - self.BorderWidth, self.Size.y - self.BorderWidth)
-			love.graphics.rectangle("line", -(self.Size.x - self.BorderWidth) / 2, -(self.Size.y - self.BorderWidth) / 2, self.Size.x - self.BorderWidth, self.Size.y - self.BorderWidth, cornerArg)
+			love.graphics.rectangle("line", -self.Size.x * self.Pivot.x + self.BorderWidth / 2, -self.Size.y * self.Pivot.y + self.BorderWidth / 2, self.Size.x - self.BorderWidth, self.Size.y - self.BorderWidth, cornerArg)
 		end
 		-- draw text on top
 		self:drawText()
@@ -1287,12 +1288,12 @@ function AnimatedFrame:draw()
 		end
 
 		love.graphics.push() -- push current graphics coordinate state
-		love.graphics.translate(self.AbsolutePosition.x + self.Size.x / 2, self.AbsolutePosition.y + self.Size.y / 2)
+		love.graphics.translate(self.AbsolutePosition.x + self.Size.x * self.Pivot.x, self.AbsolutePosition.y + self.Size.y * self.Pivot.y)
 		love.graphics.rotate(math.rad(self.Rotation))
 
 		love.graphics.setColor(r, g, b, a*self.Opacity)
 		addCornerStencil(self)
-		love.graphics.draw(img, quad, -(self.Size.x - self.BorderWidth) / 2, -(self.Size.y - self.BorderWidth) / 2, 0, (self.Size.x - self.BorderWidth) / imgWidth, (self.Size.y - self.BorderWidth) / imgHeight)
+		love.graphics.draw(img, quad, -(self.Size.x - self.BorderWidth) * self.Pivot.x, -(self.Size.y - self.BorderWidth) * self.Pivot.y, 0, (self.Size.x - self.BorderWidth) / imgWidth, (self.Size.y - self.BorderWidth) / imgHeight)
 		clearCornerStencil(self)
 		
 		-- draw border
@@ -1300,7 +1301,7 @@ function AnimatedFrame:draw()
 		if self.BorderWidth > 0 then
 			love.graphics.setColor(self.BorderColor.r, self.BorderColor.g, self.BorderColor.b, self.BorderColor.a*self.Opacity)
 			love.graphics.setLineWidth(self.BorderWidth)
-			love.graphics.rectangle("line", -(self.Size.x - self.BorderWidth) / 2, -(self.Size.y - self.BorderWidth) / 2, self.Size.x - self.BorderWidth, self.Size.y - self.BorderWidth, cornerArg)
+			love.graphics.rectangle("line", -self.Size.x * self.Pivot.x + self.BorderWidth / 2, -self.Size.y * self.Pivot.y + self.BorderWidth / 2, self.Size.x - self.BorderWidth, self.Size.y - self.BorderWidth, cornerArg)
 		end
 		-- draw text on top
 		self:drawText()
@@ -1344,6 +1345,7 @@ local function newBase(w, h, col)
 		["PaddingX"] = 0; -- an invisible border that creates a smaller inner-window to contain children and text. If 0 < padding < 1, then it's interpreted as a percentage / ratio
 		["PaddingY"] = 0;
 		["Parent"] = nil;
+		["Pivot"] = vector(0.5, 0.5); -- when working with rotations, pivot determines where rotation is applied, 0,0 = top left, 1,1 = bottom right
 		["Position"] = { -- works similar to Roblox's UDim2
 			["Scale"] = vector(0, 0);
 			["Offset"] = vector(0, 0);

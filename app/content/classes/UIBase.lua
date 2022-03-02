@@ -41,7 +41,7 @@ table.insert(content, {
 	["Type"] = "Property";
 	["ValueType"] = "number";
 	["Name"] = "BorderWidth";
-	["Description"] = "The width of the inner border of the element. When this is 0, no border is drawn. Otherwise, a border is drawn with a thickness in pixels equal to this property.";
+	["Description"] = "The width of the inner border of the element. When this is 0, no border is drawn. Otherwise, a border is drawn with a thickness in pixels equal to this property.\n\nNote: when a rotated element has a border, there may be a small gap between the border and the inner visuals, because the border is drawn around the element, rather than on top. Using some form of anti-aliasing may help reduce this problem. Otherwise, use a parent element with padding as a border.";
 	["ReadOnly"] = false;
 	["CodeMarkup"] = nil;
 	["Demo"] = nil;
@@ -220,6 +220,16 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Property";
+	["ValueType"] = "vector";
+	["Name"] = "Pivot";
+	["Description"] = "Determines the point within the element to rotate around when a rotation is applied. vector(0,0) it the top left corner. vector(1,1) is the bottom right corner.";
+	["ReadOnly"] = false;
+	["CodeMarkup"] = nil;
+	["Demo"] = nil;
+})
+
+table.insert(content, {
+	["Type"] = "Property";
 	["ValueType"] = "Object";
 	["Name"] = "Position";
 	["Description"] = "This determines the location of the UI element relative to its parent. Position.Scale is a vector whose x and y are between 0 and 1, where (0,0) is the top left and (1,1) is the bottom right. Position.Offset is a position in absolute pixels. The two can be mixed to create UI that is scalable with the window's size. Setting this property can be done with the :reposition(scale,offset) method.";
@@ -236,12 +246,23 @@ table.insert(content, {
 	["ReadOnly"] = false;
 	["CodeMarkup"] = nil;
 	["Demo"] = function()
-		local Rotato = ui.newFrame(100, 100)
+		local Container = ui.newFrame(130, 130)
+		Container.Opacity = 0
+		local Rotato = ui.newFrame(100, 100, color(0.3, 0.8, 0.7))
 		Rotato.ClipContent = false
+		Rotato:setPadding(10)
+		--Rotato.CornerRadius = 18
+		Rotato:setBorder(8)
 		Rotato.Rotation = 20
-		Rotato.Color = color(0.3, 0.8, 0.7)
+		--Rotato.Color = color(0.3, 0.8, 0.7)
+		Rotato.Pivot = vector(0.5, 0.5)
 		Rotato:setText("FiraCode.ttf", "Rotated text!", 16)
-		return Rotato
+		Rotato.TextBlock:alignX("left")
+		Rotato.TextBlock:alignY("bottom")
+		Rotato:alignX("center")
+		Rotato:alignY("center")
+		Container:addChild(Rotato)
+		return Container
 	end;
 })
 
