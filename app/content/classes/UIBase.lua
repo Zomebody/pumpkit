@@ -649,7 +649,7 @@ table.insert(content, {
 		frameLeft:setText("FiraCode.ttf", "Click me!", 18)
 		frameLeft.TextBlock:alignX("left")
 		frameLeft.OnPressStart = function() frameLeft:toBack() end
-		local frameRight = ui.newFrame(160, 130, color(0.3, 0.5, 0.7))
+		local frameRight = ui.newFrame(160, 120, color(0.3, 0.5, 0.7))
 		frameRight:alignX("right")
 		frameRight:setPadding(10, 10)
 		frameRight:setText("FiraCode.ttf", "Click me!", 18)
@@ -675,7 +675,7 @@ table.insert(content, {
 		frameLeft:setText("FiraCode.ttf", "Click me!", 18)
 		frameLeft.TextBlock:alignX("left")
 		frameLeft.OnPressStart = function() frameLeft:toFront() end
-		local frameRight = ui.newFrame(160, 130, color(0.3, 0.5, 0.7))
+		local frameRight = ui.newFrame(160, 120, color(0.3, 0.5, 0.7))
 		frameRight:alignX("right")
 		frameRight:setPadding(10, 10)
 		frameRight:setText("FiraCode.ttf", "Click me!", 18)
@@ -776,6 +776,66 @@ table.insert(content, {
 			Frame:setText("FiraCode.ttf", tostring(counter), 18)
 		end
 		return Frame
+	end;
+})
+
+table.insert(content, {
+	["Type"] = "Callback";
+	["Name"] = "OnKeyboardFocus";
+	["Arguments"] = {};
+	["Description"] = "Called when ui:focusKeyboard() puts the current UI element as one of its focus targets. Note that this does not trigger when focusKeyboard is called when the current element already has focus.";
+})
+
+table.insert(content, {
+	["Type"] = "Callback";
+	["Name"] = "OnKeyboardLost";
+	["Arguments"] = {};
+	["Description"] = "Called when the keyboard focus is lost, which is when ui:focusKeyboard() is called and the given element is no longer supplied as one of the focus targets.";
+})
+
+table.insert(content, {
+	["Type"] = "Callback";
+	["Name"] = "OnKeyEntered";
+	["Arguments"] = {};
+	["Description"] = "Called when a key on the keyboard is pressed while the current UI element has focus through the ui:focusKeyboard() method. You can use this event to implement your own text fields.";
+	["Demo"] = function()
+		local base = color(0.95, 0.95, 0.95)
+		local highlight = color(0.7, 0.7, 0.7)
+		local TF = ui.newFrame(240, 30, base)
+		TF:setBorder(color(0.8, 0.8, 0.8), 2)
+		TF:setText("FiraCode.ttf", "text field (click me!)", 14)
+		TF.TextBlock:alignX("center")
+		TF.TextBlock:alignY("center")
+		TF.TextBlock.Color = color(0.2, 0.2, 0.2)
+		TF.OnPressStart = function()
+			ui:focusKeyboard({TF}, "click", "other")
+		end
+		TF.OnKeyboardFocus = function()
+			TF.TextBlock:setText("")
+			TF.Color = highlight
+			TF.ColorFocus = highlight
+			TF.ColorHold = highlight
+		end
+		TF.OnKeyboardLost = function()
+			TF.Color = base
+			TF.ColorFocus = base
+			TF.ColorHold = base
+		end
+		TF.OnKeyEntered = function(key, scancode)
+			print(key, scancode, key:byte())
+			if scancode == "backspace" then
+				TF.TextBlock:setText(TF.TextBlock:getText():sub(1, -2))
+			elseif scancode == "space" then
+				TF.TextBlock:setText(TF.TextBlock:getText() .. " ")
+			elseif string.len(key) == 1 then
+				if love.keyboard.isDown("lshift") or love.keyboard.isDown("rshift") then
+					TF.TextBlock:setText(TF.TextBlock:getText() .. key:upper())
+				else
+					TF.TextBlock:setText(TF.TextBlock:getText() .. key)
+				end
+			end
+		end
+		return TF
 	end;
 })
 

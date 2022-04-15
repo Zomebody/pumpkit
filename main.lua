@@ -281,6 +281,7 @@ end
 
 -- debug keys
 function love.keypressed(key)
+	if #ui.KeyboardFocus > 0 then return end
 	if key == "e" then
 		--print("garbage count: " .. collectgarbage("count"))
 		if ui.Visible then

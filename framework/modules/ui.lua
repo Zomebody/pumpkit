@@ -21,6 +21,23 @@ local markedObjects = {} -- stores marked objects in the form ["name"] = {Obj1, 
 
 ----------------------------------------------------[[ == BASE OBJECTS == ]]----------------------------------------------------
 
+--[[
+	KEYBOARD FOCUS FEATURE:
+
+	ui:focusKeyboard(obj, focusMode, modeArg):
+	- obj: a list of elements to focus the keyboard on
+	- focusMode: 'key' / 'click' / nil
+		> 'key': keep keyboard focus until one of the keys in 'modeArg' is pressed down
+			> modeArg: the keycode string (the key does not trigger OnKeyPressed)
+		> 'click': keep keyboard focus until the mouse is pressed down
+			> modeArg: 'self', 'other', nil
+				- self: keep keyboardFocus until you click on a focused element
+				- other: keep keyboardFocus until you click elsewhere
+				- nil: keep keyboardFocus until you press the mouse
+		> nil: keep focus forever, until focusKeyboard is called again
+	- modeArg: depends on focusMode argument
+
+]]
 local module = {
 	["AutoRendering"] = false;
 	["Changed"] = false; -- internal boolean to determine at the end of each frame if some element was added, removed, hidden, unhidden or changed position or size, so CursorFocus can be updated
@@ -29,6 +46,10 @@ local module = {
 	["DragActive"] = false; -- whether or not DragTarget is experiencing a drag
 	["DragStart"] = vector();
 	["DragTarget"] = nil; -- the element that is currently being dragged
+	["KeyboardFocus"] = {}; -- list of UI elements that have keyboard focus at the moment
+	["KeyboardFocusMode"] = {}; -- table with two indexes, tab[1] = mode, tab[2] = mode argument
+	--["KeyboardReleasedThisFrame"] = false; -- set to true if focusKeyboard() is called with no arguments this frame
+	["KeyboardFocusState"] = 0; -- keeps track of how often the keyboard focus changes
 	["PressedButton"] = nil;
 	["PressedElement"] = nil; -- the element that is currently being pressed / held down
 	["Size"] = vector(love.graphics.getDimensions()); -- TODO: use getSafeArea() to ignore the mobile inset
@@ -181,6 +202,7 @@ function module:initialize(autoRender)
 				end
 			end
 		end
+		--self.KeyboardReleasedThisFrame = false
 	end
 
 	-- Monkey Patching love.resize (at start)
@@ -204,6 +226,40 @@ function module:initialize(autoRender)
 	love.mousepressed = function(x, y, button, istouch, presses)
 		mousepressed(x, y, button, istouch, presses, self.CursorFocus ~= nil)
 
+		-- cancel current keyboard focus if cancel mode if set to 'click'
+		local loseKeyboardFocus = false
+		if self.KeyboardFocusMode[1] == "click" then
+			-- cancel keyboard focus when you click on a focused element
+			if self.KeyboardFocusMode[2] == "self" then
+				local found = false
+				for i = 1, #self.KeyboardFocus do
+					if self.KeyboardFocus[i] == self.CursorFocus then
+						loseKeyboardFocus = true
+						--self:focusKeyboard() -- cursor is currently hovering over one of the keyboard-focused elements
+						break
+					end
+				end
+			-- cancel keyboard focus when you click on another element (or on nothing)
+			elseif self.KeyboardFocusMode[2] == "other" then
+				local selfFocused = false
+				for i = 1, #self.KeyboardFocus do
+					if self.KeyboardFocus[i] == self.CursorFocus then
+						selfFocused = true
+						break
+					end
+				end
+				if not selfFocused then
+					loseKeyboardFocus = true
+					--self:focusKeyboard()
+				end
+			-- always cancel keyboard focus when clicking
+			else
+				loseKeyboardFocus = true
+				--self:focusKeyboard()
+			end
+		end
+		--self:focusKeyboard() -- old singular call before keyboard focus modes were programmed
+
 		-- stop current drag
 		if self.DragTarget ~= nil and self.DragActive then
 			local Target = self.DragTarget
@@ -222,6 +278,8 @@ function module:initialize(autoRender)
 			--self.DragSpeed:set(0, 0)
 		end
 
+		-- press UI elements
+		local prevKeyboardState = self.KeyboardFocusState
 		if self.CursorFocus ~= nil then
 			self.PressedElement = self.CursorFocus
 			self.PressedButton = button
@@ -242,6 +300,10 @@ function module:initialize(autoRender)
 					Target.OnNestedPressStart(x, y, button, istouch, presses)
 				end
 			end
+		end
+
+		if loseKeyboardFocus and (prevKeyboardState == self.KeyboardFocusState) then -- keyboard focus should be lost, plus no functions altered the state in the meantime
+			self:focusKeyboard()
 		end
 
 		-- on mobile, the cursor 'jumps' from the previous location to the next location
@@ -328,6 +390,32 @@ function module:initialize(autoRender)
 		end
 	end
 
+	-- Monkey Patching love.keypressed
+	local keypressed = love.keypressed or function() end
+	love.keypressed = function(key, scancode, isrepeat)
+		keypressed(key, scancode, isrepeat)
+		-- check if you need to release keyboard focus
+		if self.KeyboardFocusMode[1] == "key" then
+			if type(self.KeyboardFocusMode[2]) == "table" then
+				for i = 1, #self.KeyboardFocusMode[2] do
+					if self.KeyboardFocusMode[2][i] == scancode then
+						self:focusKeyboard() -- release the keyboard
+						return -- return early
+					end
+				end
+			elseif self.KeyboardFocusMode[2] == scancode then
+				self:focusKeyboard() -- release the keyboard
+				return -- return early to prevent OnKeyEntered from triggering (not that KeyboardFocus would have any indexes anyway but oh well)
+			end
+		end
+		-- trigger OnKeyEntered for all focused UI elements
+		for i = 1, #self.KeyboardFocus do
+			if self.KeyboardFocus[i].OnKeyEntered ~= nil then
+				self.KeyboardFocus[i].OnKeyEntered(key, scancode)
+			end
+		end
+	end
+
 	-- Monkey Patching love.draw if auto-render is enabled
 	if autoRender == true then
 		self.AutoRendering = true
@@ -362,8 +450,6 @@ function module:addChild(Obj)
 end
 
 -- remove the given object from the ui hierarchy by unparenting it. The object should go out of scope and be garbagecollected (if it is not referenced elsewhere)
--- TODO: unmark all descendants to remove their references from the markedObjects dictionary
--- TODO: if a font is only used in the object or its descendants, delete the font
 function module:remove(Obj)
 	local children = {}
 	for i = 1, #Obj.Children do
@@ -412,6 +498,102 @@ function module:getCursorSpeed(frameCount)
 		sumY = sumY + speedHistoryY[i]
 	end
 	return vector((sumX / frameCount) / love.timer.getDelta(), (sumY / frameCount) / love.timer.getDelta())
+end
+
+-- focuses the keyboard on the given UI elements, triggering their key related events
+function module:focusKeyboard(elements, focusMode, modeArg)
+	-- see which new elements should obtain focus, and which should lose focus
+	local newlyFocused = {}
+	local loseFocusIndexes = {} -- don't store the elements themselves, but their indexes to make removing faster :>
+	-- list elements that need focus
+	if elements ~= nil then
+		for i = 1, #elements do
+			local hasFocus = false
+			for j = 1, #self.KeyboardFocus do
+				if self.KeyboardFocus[j] == elements[i] then
+					hasFocus = true
+					break
+				end
+			end
+			if not hasFocus then
+				newlyFocused[#newlyFocused + 1] = elements[i]
+			end
+		end
+	end
+	-- list elements that should lose focus
+	for i = 1, #self.KeyboardFocus do
+		local found = false
+		if elements ~= nil then
+			for j = 1, #elements do
+				if self.KeyboardFocus[i] == elements[j] then
+					found = true
+				end
+			end
+		end
+		if not found then
+			loseFocusIndexes[#loseFocusIndexes + 1] = i
+		end
+	end
+	--print("newlyFocused:", #newlyFocused)
+	--print("loseFocusIndexes:", #loseFocusIndexes)
+
+	-- lose focus of currently focused elements
+	--[[
+	for i = 1, #self.KeyboardFocus do
+		if self.KeyboardFocus[1].OnKeyboardLost ~= nil then -- index 1 because I am using table.remove in this loop on all elements!
+			self.KeyboardFocus[1].OnKeyboardLost()
+		end
+		table.remove(self.KeyboardFocus, 1)
+	end
+	]]
+	-- lose focus of those elements that need to lose focus
+	local index = 0
+	local Element = nil
+	for i = #loseFocusIndexes, 1, -1 do -- loop backwards because table.remove() will be used
+		index = loseFocusIndexes[i]
+		Element = self.KeyboardFocus[index]
+		if Element.OnKeyboardLost ~= nil then
+			Element.OnKeyboardLost()
+		end
+		table.remove(self.KeyboardFocus, index)
+	end
+
+	-- set focus to new elements
+	--[[
+	if elements ~= nil then
+		for i = 1, #elements do
+			self.KeyboardFocus[i] = elements[i]
+		end
+		for i = 1, #elements do
+			if elements[i].OnKeyboardFocus ~= nil then
+				elements[i].OnKeyboardFocus()
+			end
+		end
+	else
+		self.KeyboardReleasedThisFrame = true
+	end
+	]]
+	for i = 1, #newlyFocused do
+		self.KeyboardFocus[#self.KeyboardFocus + 1] = newlyFocused[i]
+	end
+	for i = 1, #newlyFocused do
+		if newlyFocused[i].OnKeyboardFocus ~= nil then
+			newlyFocused[i].OnKeyboardFocus()
+		end
+	end
+
+	-- set keyboard focus mode
+	self.KeyboardFocusMode[1] = focusMode
+	self.KeyboardFocusMode[2] = modeArg
+	if #loseFocusIndexes > 0 or #newlyFocused > 0 then
+		self.KeyboardFocusState = self.KeyboardFocusState + 1
+	end
+end
+
+
+-- check if the given element currently has keyboard focus
+function module:hasKeyboardFocus(element)
+	return element:hasKeyboardFocus()
 end
 
 -- hides the UI
@@ -497,7 +679,6 @@ function UIBase:addChild(Obj)
 end
 
 -- remove the object by removing its children and unmarking the object
--- TODO: DOCUMENT THIS METHOD
 function UIBase:remove()
 	local children = {}
 	for i = 1, #self.Children do
@@ -775,7 +956,7 @@ end
 
 
 -- put the UI element to the back by moving it to the first index in the parent's Children array
-function UIBase:toBack() -- TODO: test and document this!
+function UIBase:toBack()
 	if self.Parent ~= nil and self.Parent.Children ~= nil then
 		local Items = self.Parent.Children
 		for i = 1, #Items do
@@ -937,9 +1118,21 @@ function UIBase:removeTag(tag)
 end
 
 
+-- return true if the object has a given tag in its tag list
 function UIBase:hasTag(tag)
 	for i = 1, #self.Tags do
 		if self.Tags[i] == tag then
+			return true
+		end
+	end
+	return false
+end
+
+
+-- return true if this element has keyboard focus (listening to OnKeyPressed)
+function UIBase:hasKeyboardFocus()
+	for i = 1, #module.KeyboardFocus do
+		if module.KeyboardFocus[i] == self then
 			return true
 		end
 	end
@@ -1224,7 +1417,6 @@ end
 
 
 -- remove the object by removing its children and unmarking the object
--- TODO: DOCUMENT THIS METHOD
 function AnimatedFrame:remove()
 	for i = 1, #self.Children do
 		self.Children[i]:remove()
@@ -1362,6 +1554,9 @@ local function newBase(w, h, col)
 		["OnFullPress"] = nil; -- tap/click started and ended in the same element with no interruption
 		["OnHoverEnd"] = nil; -- triggered when cursor left the element
 		["OnHoverStart"] = nil; -- triggered when cursor enters the element
+		["OnKeyboardLost"] = nil; -- triggered when the object no longer has keyboard focus
+		["OnKeyboardFocus"] = nil; -- triggered when the object receives keyboard focus
+		["OnKeyEntered"] = nil; -- triggered when a key is pressed while this object has keyboard focus
 		["OnNestedDrag"] = nil; -- same as OnDrag, but it also works on descendants
 		["OnNestedDragEnd"] = nil; -- same as OnDragEnd, but it also works on descendants
 		["OnNestedPressStart"] = nil;
