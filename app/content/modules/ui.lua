@@ -201,6 +201,20 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Method";
+	["Name"] = "focusKeyboard";
+	["Arguments"] = {"Objects", "focusMode", "modeArg"};
+	["Description"] = "Set the keyboard to focus on the given list of objects (UI elements). When a UI element has keyboard focus, any key-press will trigger the OnKeyEntered event of that UI element. 'focusMode' must either be the string 'key' or 'click' or nil:\n\n- When set to 'key', the 'modeArg' argument must be a string representing a key, or an array of key strings. When any of those keys are pressed, the UI element automatically loses focus.\n\n- When set to 'click', the 'modeArg' variable must be set to 'self' to lose keyboard focus when the UI element is clicked, or 'other', to indicate anything but the UI element itself must be clicked to lose focus. Additionally, nil can be used to always lose keyboard focus on a click.\n\nIf no objects are passed, the keyboard focus will be (re)set to nothing.";
+})
+
+table.insert(content, {
+	["Type"] = "Method";
+	["Name"] = "hasKeyboardFocus";
+	["Arguments"] = {"element"};
+	["Description"] = "Returns 'true' if the given UI element has keybord focus. If not, 'false' is returned.";
+})
+
+table.insert(content, {
+	["Type"] = "Method";
 	["Name"] = "initialize";
 	["Arguments"] = {"autoRender = true"};
 	["Description"] = "This method can only be called once. It will initialize the UI module by hooking into other Love2D functions and adding additional behavior there to make the system run. This method should be called right when the program first loads. After that, the system will be initialized and run forever.\r\rIf autoRender is set to true, ui:render() will automatically be called at the end of each love.draw call.";

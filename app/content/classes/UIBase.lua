@@ -129,6 +129,32 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Property";
+	["ValueType"] = "number";
+	["Name"] = "CornerRadius";
+	["Description"] = "Set to 0 by default. If this value is higher than 0, a rounded corner with a radius in pixels equal to this value will be drawn on the element.";
+	["ReadOnly"] = false;
+	["CodeMarkup"] = nil;
+	["Demo"] = function()
+		local Container = ui.newFrame(300, 50, color(0, 0, 0, 0))
+		local f1 = ui.newFrame(140, 50, color(1, 1, 1))
+		f1.CornerRadius = 0
+		f1:setText("FiraCode.ttf", {{0, 0, 0}, "Radius = 0"}, 14)
+		f1.TextBlock:alignX("center")
+		f1.TextBlock:alignY("center")
+		Container:addChild(f1)
+		local f2 = ui.newFrame(140, 50, color(1, 1, 1))
+		f2.CornerRadius = 16
+		f2:alignX("right")
+		f2:setText("FiraCode.ttf", {{0, 0, 0}, "Radius = 16"}, 14)
+		f2.TextBlock:alignX("center")
+		f2.TextBlock:alignY("center")
+		Container:addChild(f2)
+		return Container
+	end;
+})
+
+table.insert(content, {
+	["Type"] = "Property";
 	["ValueType"] = "boolean";
 	["Name"] = "FitTextOnResize";
 	["Description"] = "A boolean indicating whether or not the text inside the element should scale to fit perfectly within the element after its size is changed. This can be useful when creating, for example, speech bubbles.";
@@ -438,6 +464,13 @@ table.insert(content, {
 	["Name"] = "getPixelPadding";
 	["Arguments"] = {};
 	["Description"] = "Returns the padding on the x-axis and the y-axis.";
+})
+
+table.insert(content, {
+	["Type"] = "Method";
+	["Name"] = "hasKeyboardFocus";
+	["Arguments"] = {};
+	["Description"] = "Returns 'true' if the current element has keyboard focus. If not, this returns 'false'.";
 })
 
 table.insert(content, {
@@ -796,8 +829,8 @@ table.insert(content, {
 table.insert(content, {
 	["Type"] = "Callback";
 	["Name"] = "OnKeyEntered";
-	["Arguments"] = {};
-	["Description"] = "Called when a key on the keyboard is pressed while the current UI element has focus through the ui:focusKeyboard() method. You can use this event to implement your own text fields.";
+	["Arguments"] = {"key", "scancode"};
+	["Description"] = "Called when a key on the keyboard is pressed while the current UI element has focus through the ui:focusKeyboard() method. The 'key' and 'scancode' arguments are the same as the Love2D ones for keypressed. You can use this event to implement your own text fields.";
 	["Demo"] = function()
 		local base = color(0.95, 0.95, 0.95)
 		local highlight = color(0.7, 0.7, 0.7)
