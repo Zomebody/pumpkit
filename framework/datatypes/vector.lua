@@ -29,13 +29,22 @@ furnished to do so, subject to the following conditions:
 local vector = {}
 vector.__index = vector
 
+-- check if an object is a vector
+local function isVector(t)
+	return getmetatable(t) == vector
+end
+
 -- get a random function from Love2d or base lua, in that order.
 local rand = math.random
 if love and love.math then rand = love.math.random end
 
 -- makes a new vector
 local function new(x, y)
-	return setmetatable({x=x or 0, y=y or 0}, vector)
+	if isVector(x) then
+		return setmetatable({x=x.x or 0, y=x.y or 0}, vector)
+	else
+		return setmetatable({x=x or 0, y=y or 0}, vector)
+	end
 end
 
 -- makes a new vector from an angle
@@ -46,11 +55,6 @@ end
 -- makes a vector with a random direction
 local function random()
 	return fromAngle(rand() * math.pi*2)
-end
-
--- check if an object is a vector
-local function isVector(t)
-	return getmetatable(t) == vector
 end
 
 -- set the values of the vector to something new

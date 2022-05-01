@@ -5,6 +5,7 @@ function load()
 	getpath = require("framework.getpath");
 	vector = require(getpath(locale, "../framework/datatypes/vector"))
 	line = require(getpath(locale, "../framework/datatypes/line"))
+	polygon = require(getpath(locale, "../framework/datatypes/polygon"))
 	color = require(getpath(locale, "../framework/datatypes/color"))
 	task = require(getpath(locale, "../framework/modules/task"))
 	tween = require(getpath(locale, "../framework/modules/tween"))

@@ -199,7 +199,6 @@ end
 
 
 -- meta function to change how lines appear as string
--- ex: print(vector(2,8)) - this prints '(2,8)'
 function line:__tostring()
 	return "{" .. self.from .. ", " .. self.to .. "}"
 end
