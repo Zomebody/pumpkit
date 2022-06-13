@@ -159,6 +159,14 @@ function color:lighten(v)
 	return self
 end
 
+-- make the color black-white.
+function color:grayscale()
+	-- calculate luminance
+	local luminance = self.r * 0.299 + self.g * 0.587 + 0.114 * self.b -- source: https://www.w3.org/TR/AERT/#color-contrast
+	self:set(luminance, luminance, luminance)
+	return self
+end
+
 
 function color:getHue()
 	local cmax = math.max(self.r, self.g, self.b)
@@ -259,7 +267,7 @@ end
 
 -- set the rgba components.
 function color:set(r, g, b, a)
-	assert(r~=nil and g~=nil and b~=nil, "color:set(r, g, b, a) requires at least 3 arguments to be supplied")
+	assert(r ~= nil and g ~= nil and b ~= nil, "color:set(r, g, b, a) requires at least 3 arguments to be supplied")
 	if r > 1 or g > 1 or b > 1 then
 		self.r = r / 255
 		self.g = g / 255
@@ -270,6 +278,12 @@ function color:set(r, g, b, a)
 		self.b = b
 	end
 	self.a = a == nil and self.a or a
+end
+
+
+-- taken from: https://www.codegrepper.com/code-examples/lua/rgb+to+hex+lua
+function color:toHex()
+	return string.format("#%02X%02X%02X", math.floor(self.r * 255), math.floor(self.g * 255), math.floor(self.b * 255))
 end
 
 
