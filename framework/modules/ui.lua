@@ -484,6 +484,7 @@ function module:remove(Obj)
 		end
 	end
 	Obj.Parent = nil
+	self.Changed = true
 end
 
 -- return the cursor speed from the last X frames (limit of 30 frames)
@@ -700,7 +701,7 @@ function UIBase:remove()
 	if self.Parent ~= nil then
 		if self.Parent == module then
 			for i = 1, #module.Children do
-				if module.Children[i] == Obj then
+				if module.Children[i] == self then
 					table.remove(module.Children, i)
 					break
 				end
@@ -715,6 +716,7 @@ function UIBase:remove()
 		end
 	end
 	self.Parent = nil
+	self.Changed = true
 end
 
 -- return true if the given Object is an (indirect) parent of the UI element
@@ -1453,6 +1455,8 @@ function AnimatedFrame:remove()
 		end
 	end
 	self.Parent = nil
+	-- remove CursorFocus if object is focused
+	self.Changed = true
 end
 
 
