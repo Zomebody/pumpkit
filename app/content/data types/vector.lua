@@ -197,35 +197,35 @@ table.insert(content, {
 table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "__add";
-	["Arguments"] = {};
+	["Arguments"] = {"vector"};
 	["Description"] = "Returns the result of the addition between two vectors.";
 })
 
 table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "__div";
-	["Arguments"] = {};
+	["Arguments"] = {"vector"};
 	["Description"] = "Returns the division of two vectors.";
 })
 
 table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "__eq";
-	["Arguments"] = {};
+	["Arguments"] = {"vector"};
 	["Description"] = "Returns true if the two vectors have the same x and y values, and false otherwise.";
 })
 
 table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "__mul";
-	["Arguments"] = {};
+	["Arguments"] = {"vector"};
 	["Description"] = "Returns the product of two vectors.";
 })
 
 table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "__sub";
-	["Arguments"] = {};
+	["Arguments"] = {"vector"};
 	["Description"] = "Returns the result of the subtraction between two vectors.";
 })
 

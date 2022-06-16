@@ -8,7 +8,7 @@ local content = {}
 table.insert(content, {
 	["Type"] = "IntroHeader";
 	["Name"] = "The polygon data type";
-	["Description"] = "An object representing a 2D polygon. Internally, polygons are constructed from a collection of line variables.";
+	["Description"] = "An object representing a 2D polygon. A polygon must have at least 3 points. Internally, polygons are constructed from a collection of line variables.";
 })
 
 table.insert(content, {
@@ -92,6 +92,24 @@ table.insert(content, {
 	["Name"] = "__add";
 	["Arguments"] = {"vector"};
 	["Description"] = "Move the polygon along the x and y axis by the given vector.";
+	["CodeMarkup"] = "<k>local</k> p1 <k>=</k> <f>polygon</f>(<f>vector</f>(<n>60</n>, <n>15</n>), <f>vector</f>(<n>20</n>, <n>70</n>), <f>vector</f>(<n>90</n>, <n>45</n>))\n<k>local</k> p2 <k>=</k> p1 <k>+</k> <f>vector</f>(<n>50</n>, <n>15</n>)\nlove.graphics.<f>polygon</f>(<s>\"line\"</s>, p1:<f>unpack</f>())\nlove.graphics.<f>polygon</f>(<s>\"line\"</s>, p2:<f>unpack</f>())";
+	["Demo"] = function()
+		local p1 = polygon(vector(60, 15), vector(20, 70), vector(90, 45))
+		local p2 = p1 + vector(50, 15)
+		local Screen = love.graphics.newCanvas(150, 100)
+		Screen:renderTo(
+			function()
+				local lw = love.graphics.getLineWidth()
+				love.graphics.setLineWidth(3)
+				love.graphics.polygon("line", p1:unpack())
+				love.graphics.polygon("line", p2:unpack())
+				love.graphics.setLineWidth(lw)
+			end
+		)
+		local Image = love.graphics.newImage(Screen:newImageData())
+		local ImgFrame = ui.newImageFrame(Image)
+		return ImgFrame
+	end
 })
 
 table.insert(content, {

@@ -280,8 +280,8 @@ table.insert(content, {
 table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "__eq";
-	["Arguments"] = {};
-	["Description"] = "Returns true if the two compared objects are both line instances.";
+	["Arguments"] = {"line"};
+	["Description"] = "Returns true if the two compared objects are both line instances with the same start and end points.";
 })
 
 table.insert(content, {
