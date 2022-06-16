@@ -716,7 +716,7 @@ function UIBase:remove()
 		end
 	end
 	self.Parent = nil
-	self.Changed = true
+	module.Changed = true
 end
 
 -- return true if the given Object is an (indirect) parent of the UI element
@@ -1456,7 +1456,7 @@ function AnimatedFrame:remove()
 	end
 	self.Parent = nil
 	-- remove CursorFocus if object is focused
-	self.Changed = true
+	module.Changed = true
 end
 
 
@@ -1582,8 +1582,14 @@ end
 
 -- create new ImageFrame object
 local function newImageFrame(img, w, h, col)
-	local Obj = newBase(w or img:getPixelWidth(), h or img:getPixelHeight(), col)
-	Obj["ReferenceImage"] = img
+	local Obj = newBase(w or (img == nil and 1 or img:getPixelWidth()), h or (img == nil and 1 or img:getPixelHeight()), col)
+	if img ~= nil then
+		Obj["ReferenceImage"] = img
+	else
+		local imgData = love.image.newImageData(1, 1)
+		imgData:mapPixel(function() return 1, 1, 1, 1 end)
+		Obj["ReferenceImage"] = love.graphics.newImage(imgData)
+	end
 	setmetatable(Obj, ImageFrame)
 	return Obj
 end
