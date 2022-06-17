@@ -88,7 +88,7 @@ table.insert(content, {
 })
 
 table.insert(content, {
-	["Type"] = "Method";
+	["Type"] = "Constructor";
 	["Name"] = "__add";
 	["Arguments"] = {"vector"};
 	["Description"] = "Move the polygon along the x and y axis by the given vector.";
@@ -113,14 +113,14 @@ table.insert(content, {
 })
 
 table.insert(content, {
-	["Type"] = "Method";
+	["Type"] = "Constructor";
 	["Name"] = "__sub";
 	["Arguments"] = {"vector"};
 	["Description"] = "Move the polygon along the x and y axis by the inverse of the given vector.";
 })
 
 table.insert(content, {
-	["Type"] = "Method";
+	["Type"] = "Constructor";
 	["Name"] = "__tostring";
 	["Arguments"] = {};
 	["Description"] = "Returns the polygon as a string.";

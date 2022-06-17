@@ -207,6 +207,16 @@ table.insert(content, {
 table.insert(content, {
 	["Type"] = "Property";
 	["ValueType"] = "number";
+	["Name"] = "Name";
+	["Description"] = "The non-unique name of the instance. Names can be combined with the :child(name) method to find the first child with the given name in some parent instance.";
+	["ReadOnly"] = true;
+	["CodeMarkup"] = nil;
+	["Demo"] = nil;
+})
+
+table.insert(content, {
+	["Type"] = "Property";
+	["ValueType"] = "number";
 	["Name"] = "Opacity";
 	["Description"] = "A number between 0 and 1 that determines if the object is see-through. The same effect can also be achieved by editing the alpha channel of the Color property.";
 	["ReadOnly"] = false;
@@ -435,6 +445,13 @@ table.insert(content, {
 	["Name"] = "at";
 	["Arguments"] = {"x", "y"};
 	["Description"] = "Recursively finds and returns the element that is displayed at the absolute x and y coordinates. Objects whose Clickthrough property is set to true will be ignored.";
+})
+
+table.insert(content, {
+	["Type"] = "Method";
+	["Name"] = "child";
+	["Arguments"] = {"name"};
+	["Description"] = "Find the first child of the instance that has the given name. If no child is found, nil is returned. Otherwise, return the child object.";
 })
 
 table.insert(content, {

@@ -278,14 +278,14 @@ table.insert(content, {
 
 
 table.insert(content, {
-	["Type"] = "Method";
+	["Type"] = "Constructor";
 	["Name"] = "__eq";
 	["Arguments"] = {"line"};
 	["Description"] = "Returns true if the two compared objects are both line instances with the same start and end points.";
 })
 
 table.insert(content, {
-	["Type"] = "Method";
+	["Type"] = "Constructor";
 	["Name"] = "__tostring";
 	["Arguments"] = {};
 	["Description"] = "Returns a string which is the line in the form {vector,vector} where the first vector is the starting point and the second vector is the end point.";

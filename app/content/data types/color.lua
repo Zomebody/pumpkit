@@ -126,7 +126,7 @@ table.insert(content, {
 })
 
 table.insert(content, {
-	["Type"] = "Method";
+	["Type"] = "Constructor";
 	["Name"] = "__tostring";
 	["Arguments"] = {};
 	["Description"] = "Prints the color in the form (r,g,b) where r, g and b are values from 0 to 255.";

@@ -449,6 +449,16 @@ function module:addChild(Obj)
 	self.Changed = true
 end
 
+-- look through all children for the first child with the given name. Return either nil or the found child.
+function module:child(name)
+	for i = 1, #self.Children do
+		if self.Children[i].Name == name then
+			return self.Children[i]
+		end
+	end
+	return nil
+end
+
 -- remove the given object from the ui hierarchy by unparenting it. The object should go out of scope and be garbagecollected (if it is not referenced elsewhere)
 function module:remove(Obj)
 	local children = {}
@@ -653,7 +663,7 @@ function module:find(tag)
 	if markedObjects[tag] ~= nil then
 		return {unpack(markedObjects[tag])}
 	end
-	return nil
+	return {}
 end
 
 
@@ -678,6 +688,18 @@ function UIBase:addChild(Obj)
 	updateAbsolutePosition(Obj)
 	module.Changed = true
 end
+
+
+-- look through all children for the first child with the given name. Return either nil or the found child.
+function UIBase:child(name)
+	for i = 1, #self.Children do
+		if self.Children[i].Name == name then
+			return self.Children[i]
+		end
+	end
+	return nil
+end
+
 
 -- remove the object by removing its children and unmarking the object
 function UIBase:remove()
@@ -1536,7 +1558,7 @@ local function newBase(w, h, col)
 		["FitTextOnResize"] = false;
 		["Hidden"] = false;
 		["Id"] = module.TotalCreated;
-		--["Name"] = nil; -- either nil or a string. This is a string if Obj:mark(name) is called to give it a name. This property is used for look-ups in the marked objects dictionary
+		["Name"] = "Object"; -- The name of the instance. Names are not unique. They can be used with the :child() method to find a child with a given name inside some parent instance.
 		["Opacity"] = 1; -- if 0, this object is not drawn (but children are!) TODO: fix children not being drawn
 		["PaddingX"] = 0; -- an invisible border that creates a smaller inner-window to contain children and text. If 0 < padding < 1, then it's interpreted as a percentage / ratio
 		["PaddingY"] = 0;

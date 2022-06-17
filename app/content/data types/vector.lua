@@ -195,49 +195,49 @@ table.insert(content, {
 })
 
 table.insert(content, {
-	["Type"] = "Method";
+	["Type"] = "Constructor";
 	["Name"] = "__add";
 	["Arguments"] = {"vector"};
 	["Description"] = "Returns the result of the addition between two vectors.";
 })
 
 table.insert(content, {
-	["Type"] = "Method";
+	["Type"] = "Constructor";
 	["Name"] = "__div";
 	["Arguments"] = {"vector"};
 	["Description"] = "Returns the division of two vectors.";
 })
 
 table.insert(content, {
-	["Type"] = "Method";
+	["Type"] = "Constructor";
 	["Name"] = "__eq";
 	["Arguments"] = {"vector"};
 	["Description"] = "Returns true if the two vectors have the same x and y values, and false otherwise.";
 })
 
 table.insert(content, {
-	["Type"] = "Method";
+	["Type"] = "Constructor";
 	["Name"] = "__mul";
 	["Arguments"] = {"vector"};
 	["Description"] = "Returns the product of two vectors.";
 })
 
 table.insert(content, {
-	["Type"] = "Method";
+	["Type"] = "Constructor";
 	["Name"] = "__sub";
 	["Arguments"] = {"vector"};
 	["Description"] = "Returns the result of the subtraction between two vectors.";
 })
 
 table.insert(content, {
-	["Type"] = "Method";
+	["Type"] = "Constructor";
 	["Name"] = "__tostring";
 	["Arguments"] = {};
 	["Description"] = "Prints the color in the form (r,g,b) where r, g and b are values from 0 to 255.";
 })
 
 table.insert(content, {
-	["Type"] = "Method";
+	["Type"] = "Constructor";
 	["Name"] = "__unm";
 	["Arguments"] = {};
 	["Description"] = "Inverts the x and y components of the vector.";

@@ -46,5 +46,17 @@ function font:dereference(filename, size)
 end
 
 
+function font:getSupportedFonts()
+	local list = {}
+	local items = love.filesystem.getDirectoryItems(fontDirectory)
+	for i = 1, #items do
+		if items[i]:sub(-3) ~= "txt" then
+			list[#list + 1] = items[i]
+		end
+	end
+	return list
+end
+
+
 
 return font
