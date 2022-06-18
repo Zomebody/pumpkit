@@ -50,7 +50,7 @@ local function create_doc(BodyRef, NavigationRef, data, DisplayVars, superClass)
 		local Separator = ui.newFrame(DisplayVars.BodyWidth, 30, Colors.BackgroundSemiDark)
 		Separator:setPadding(DisplayVars.PagePaddingLeft, 6)
 		Separator:setText(defaultFont, {Colors.TextComment:array(), "From <" .. superClass .. ">"}, DisplayVars.HeaderFontSize, true)
-		Separator:resize(Separator.Size.x, Separator.Size.y + 30)
+		Separator:resize(0, 0, Separator.Size.Offset.x, Separator.Size.Offset.y + 30)
 		Separator.TextBlock:alignX("left")
 		Separator.TextBlock:alignY("bottom")
 		if #BodyRef.Children > 0 then
@@ -73,7 +73,7 @@ local function create_doc(BodyRef, NavigationRef, data, DisplayVars, superClass)
 				BodyRef.Parent:positionContent(0, -Separator.Position.Offset.y)
 			end
 		end
-		Button:resize(Button.Size.x, Button.Size.y + 4)
+		Button:resize(0, 0, Button.Size.Offset.x, Button.Size.Offset.y + 4)
 		Button.TextBlock:alignY("bottom")
 		Button:putNextTo(NavigationRef.Children[#NavigationRef.Children], "below")
 		Button.ColorFocus = Colors.ButtonHover
@@ -101,7 +101,7 @@ local function create_doc(BodyRef, NavigationRef, data, DisplayVars, superClass)
 				BodyRef:addChild(Header)
 				JumpToObject = Header
 				if Item.Note ~= nil then
-					local Note = ui.newFrame(Header.Size.x - Header.PaddingX * 2, Header.Size.y - Header.PaddingY * 2, Colors.Transparent)
+					local Note = ui.newFrame(Header.Size.Offset.x - Header.PaddingX * 2, Header.Size.Offset.y - Header.PaddingY * 2, Colors.Transparent)
 					Note:setText(defaultFont, {Colors.TextComment:array(), Item.Note}, DisplayVars.TextSize)
 					Note.TextBlock:alignX("right")
 					Note.TextBlock:alignY("bottom")
@@ -197,7 +197,7 @@ local function create_doc(BodyRef, NavigationRef, data, DisplayVars, superClass)
 				CodeTitle:setText(defaultFont, {Colors.TextTableHeader:array(), "Code example"}, DisplayVars.TextSize)
 				CodeTitle.TextBlock:alignY("bottom")
 				BodyRef:addChild(CodeTitle)
-				local CodeFrame = ui.newFrame(CodeTitle.Size.x, 100, Colors.BackgroundDark)
+				local CodeFrame = ui.newFrame(CodeTitle.Size.Offset.x, 100, Colors.BackgroundDark)
 				CodeFrame:setPadding(14, 14)
 				CodeFrame:setText("FiraCode.ttf", colorString(Item.CodeMarkup), DisplayVars.TextSize, true)
 				CodeFrame.BorderColor = Colors.Border
@@ -250,7 +250,7 @@ local function create_doc(BodyRef, NavigationRef, data, DisplayVars, superClass)
 				end
 			end
 			if Item.Type == "Header" or Item.Type == "IntroHeader" then
-				Button:resize(Button.Size.x, Button.Size.y + 10)
+				Button:resize(0, 0, Button.Size.Offset.x, Button.Size.Offset.y + 10)
 				Button.TextBlock:alignY("bottom")
 			end
 			if #NavigationRef.Children > 0 then

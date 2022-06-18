@@ -30,10 +30,10 @@ function createDropdown(Vars, LinkedButton, strings)
 		Container:addChild(Button)
 	end
 	for i = 1, #Container.Children do
-		Container.Children[i]:resize(maxWidth, Container.Children[i].Size.y)
+		Container.Children[i]:resize(0, 0, maxWidth, Container.Children[i].Size.Offset.y)
 	end
 	if #Container.Children > 0 then
-		Container:resize(maxWidth, Container.Children[#Container.Children].Position.Offset.y + Container.Children[#Container.Children].Size.y)
+		Container:resize(0, 0, maxWidth, Container.Children[#Container.Children].Position.Offset.y + Container.Children[#Container.Children].Size.Offset.y)
 	end
 	Container:putNextTo(LinkedButton, "below")
 

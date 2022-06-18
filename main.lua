@@ -186,7 +186,7 @@ function initializeApp()
 		Button.ColorFocus = Colors.ButtonHover
 		Button.ColorHold = Colors.ButtonHold
 		Button:setText(defaultFont, tabs[i], DisplayVars.TextSize)
-		Button:resize(Button.TextBlock:getSize() + 20, Button.Size.y)
+		Button:resize(0, 0, Button.TextBlock:getSize() + 20, Button.Size.y)
 		Button.TextBlock:alignX("center")
 		Button.TextBlock:alignY("center")
 		if prevButton ~= nil then
@@ -325,10 +325,10 @@ function love.keypressed(key)
 end
 
 function love.resize(w, h)
-	TopBar:resize(w, DisplayVars.TopBarThickness)
-	Container:resize(Container.Size.x, h)
-	Navigation:resize(Navigation.Size.x, h)
-	Body:resize(Body.Size.x, h)
+	TopBar:resize(0, 0, w, DisplayVars.TopBarThickness)
+	Container:resize(0, 0, Container.Size.x, h)
+	Navigation:resize(0, 0, Navigation.Size.x, h)
+	Body:resize(0, 0, Body.Size.x, h)
 end
 
 function love.update()

@@ -126,7 +126,7 @@ table.insert(content, {
 	["CodeMarkup"] = nil;
 	["Demo"] = nil;
 })
-
+--[[
 table.insert(content, {
 	["Type"] = "Property";
 	["ValueType"] = "number";
@@ -152,7 +152,7 @@ table.insert(content, {
 		return Container
 	end;
 })
-
+]]
 table.insert(content, {
 	["Type"] = "Property";
 	["ValueType"] = "boolean";
@@ -169,7 +169,7 @@ table.insert(content, {
 		LargeSpeech:setText("FiraCode.ttf", {{0, 0, 0}, "Speech"}, 12)
 		LargeSpeech.TextBlock:alignX("center")
 		LargeSpeech.TextBlock:alignY("center")
-		LargeSpeech:resize(100, 50)
+		LargeSpeech:resize(0, 0, 100, 50)
 		Container:addChild(LargeSpeech)
 		local SmallSpeech = ui.newSlicedFrame(SpeechImg, vector(16, 16), vector(24, 24), 200, 200, nil, 7/10)
 		SmallSpeech.FitTextOnResize = true
@@ -177,7 +177,7 @@ table.insert(content, {
 		SmallSpeech:setText("FiraCode.ttf", {{0, 0, 0}, "Speech"}, 12)
 		SmallSpeech.TextBlock:alignX("center")
 		SmallSpeech.TextBlock:alignY("center")
-		SmallSpeech:resize(70, 35)
+		SmallSpeech:resize(0, 0, 70, 35)
 		SmallSpeech:putNextTo(LargeSpeech, "right", 30)
 		Container:addChild(SmallSpeech)
 		return Container
@@ -585,7 +585,7 @@ table.insert(content, {
 		local Frame2 = ui.newFrame(100, 100, color(0, 0, 0))
 		Frame2:setText("FiraCode.ttf", "Frame 2", 18)
 		Frame2:putNextTo(Frame1, "right", 20)
-		Frame2:resize(130, 80)
+		Frame2:resize(0, 0, 130, 80)
 		Container:addChild(Frame1)
 		Container:addChild(Frame2)
 		return Container

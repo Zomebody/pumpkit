@@ -85,8 +85,8 @@ local function updateAbsolutePosition(Obj, wX, wY, wWidth, wHeight)
 	if OP and OP ~= module then
 		wX = (wX == nil and OP.AbsolutePosition.x or wX) + OP.PaddingX
 		wY = (wY == nil and OP.AbsolutePosition.y or wY) + OP.PaddingY
-		wWidth = (wWidth == nil and OP.Size.x or wWidth) - 2 * OP.PaddingX
-		wHeight = (wHeight == nil and OP.Size.y or wHeight) - 2 * OP.PaddingY
+		wWidth = (wWidth == nil and OP.AbsoluteSize.x or wWidth) - 2 * OP.PaddingX
+		wHeight = (wHeight == nil and OP.AbsoluteSize.y or wHeight) - 2 * OP.PaddingY
 	else
 		wX = wX == nil and 0 or wX
 		wY = wY == nil and 0 or wY
@@ -103,11 +103,48 @@ local function updateAbsolutePosition(Obj, wX, wY, wWidth, wHeight)
 	end
 
 	-- calculate and apply absolute position. Then update children
-	local absX = wX + contentOffsetX + Obj.Position.Offset.x + math.floor(Obj.Position.Scale.x * wWidth) - math.floor(Obj.Size.x * Obj.Center.x)
-	local absY = wY + contentOffsetY + Obj.Position.Offset.y + math.floor(Obj.Position.Scale.y * wHeight) - math.floor(Obj.Size.y * Obj.Center.y)
+	local absX = wX + contentOffsetX + Obj.Position.Offset.x + math.floor(Obj.Position.Scale.x * wWidth) - math.floor(Obj.AbsoluteSize.x * Obj.Center.x)
+	local absY = wY + contentOffsetY + Obj.Position.Offset.y + math.floor(Obj.Position.Scale.y * wHeight) - math.floor(Obj.AbsoluteSize.y * Obj.Center.y)
 	Obj.AbsolutePosition:set(math.floor(absX), math.floor(absY))
 	for i = 1, #Obj.Children do
-		updateAbsolutePosition(Obj.Children[i], absX, absY, Obj.Size.x, Obj.Size.y)
+		updateAbsolutePosition(Obj.Children[i], absX, absY, Obj.AbsoluteSize.x, Obj.AbsoluteSize.y)
+	end
+end
+
+
+
+-- when updating the absolute size of an object (and by extension its descendants), their positions may also need to be updated (for example when a child is aligned to the right of a parent that is being resized)
+-- therefore, after calling updateAbsoluteSize() on an object, you should also call updateAbsolutePosition() on the same element afterwards!
+local Par = nil
+local function updateAbsoluteSize(Obj)
+	Par = Obj.Parent
+	local sX = 0
+	local sY = 0
+	if Par and Par ~= module then -- inherit size from parent
+		sX = Obj.Size.Scale.x * (Par.AbsoluteSize.x - Par.PaddingX * 2) + Obj.Size.Offset.x
+		sY = Obj.Size.Scale.y * (Par.AbsoluteSize.y - Par.PaddingY * 2) + Obj.Size.Offset.y
+	else -- use the window's size
+		sX = Obj.Size.Scale.x * module.Size.x + Obj.Size.Offset.x
+		sY = Obj.Size.Scale.y * module.Size.y + Obj.Size.Offset.y
+	end
+	Obj.AbsoluteSize:set(math.floor(sX), math.floor(sY))
+
+	if Obj.TextBlock ~= nil then
+		Obj.TextBlock:setWidth(Obj.AbsoluteSize.x - 2 * Obj.PaddingX)
+		if Obj.FitTextOnResize then
+			Obj:fitText()
+		end
+	end
+	--if Obj.FitTextOnResize and Obj.TextBlock ~= nil then
+	--	Obj:fitText()
+	--end
+
+	for i = 1, #Obj.Children do
+		print(Obj.Children[i].Size.Scale.x, Obj.Children[i].Size.Scale.y)
+		-- if a child's Size.Scale.x and Size.Scale.y both are 0, there is no use in updating them (because their AbsoluteSize will remain the same anyway!)
+		if not (Obj.Children[i].Size.Scale.x == 0 and Obj.Children[i].Size.Scale.y == 0) then
+			updateAbsoluteSize(Obj.Children[i])
+		end
 	end
 end
 
@@ -214,6 +251,9 @@ function module:initialize(autoRender)
 		if self.Size.x ~= screenW or self.Size.y ~= screenH then
 			screenW = self.Size.x
 			screenH = self.Size.y
+			for i = 1, #self.Children do
+				updateAbsoluteSize(self.Children[i])
+			end
 			for i = 1, #self.Children do
 				updateAbsolutePosition(self.Children[i])
 			end
@@ -445,6 +485,7 @@ function module:addChild(Obj)
 	-- set new parent of object
 	Obj.Parent = self
 	self.Children[#self.Children + 1] = Obj
+	updateAbsoluteSize(Obj)
 	updateAbsolutePosition(Obj)
 	self.Changed = true
 end
@@ -685,6 +726,7 @@ function UIBase:addChild(Obj)
 	-- set new parent of object
 	Obj.Parent = self
 	self.Children[#self.Children + 1] = Obj
+	updateAbsoluteSize(Obj)
 	updateAbsolutePosition(Obj)
 	module.Changed = true
 end
@@ -774,14 +816,14 @@ function UIBase:at(x, y)
 	local w = scissorW == nil and module.Size.x or scissorW
 	local h = scissorH == nil and module.Size.y or scissorH
 	if self.ClipContent == true then
-		if x < self.AbsolutePosition.x or x > self.AbsolutePosition.x + self.Size.x or y < self.AbsolutePosition.y or y > self.AbsolutePosition.y + self.Size.y then
+		if x < self.AbsolutePosition.x or x > self.AbsolutePosition.x + self.AbsoluteSize.x or y < self.AbsolutePosition.y or y > self.AbsolutePosition.y + self.AbsoluteSize.y then
 			return nil
 		end
-		love.graphics.intersectScissor(self.AbsolutePosition.x, self.AbsolutePosition.y, self.Size.x, self.Size.y)
+		love.graphics.intersectScissor(self.AbsolutePosition.x, self.AbsolutePosition.y, self.AbsoluteSize.x, self.AbsoluteSize.y)
 	end
 	-- in bounds and within the UI element and not VisualOnly
 	if (not self.VisualOnly) and x >= pX and x <= pX + w and y >= pY and y <= pY + h then
-		if x >= self.AbsolutePosition.x and x <= self.AbsolutePosition.x + self.Size.x and y >= self.AbsolutePosition.y and y <= self.AbsolutePosition.y + self.Size.y then
+		if x >= self.AbsolutePosition.x and x <= self.AbsolutePosition.x + self.AbsoluteSize.x and y >= self.AbsolutePosition.y and y <= self.AbsolutePosition.y + self.AbsoluteSize.y then
 			Obj = self
 		end
 	end
@@ -798,19 +840,26 @@ function UIBase:at(x, y)
 end
 
 -- resize the UI element to (w, h)
-function UIBase:resize(w, h)
-	self.Size:set(w, h)
-	if self.TextBlock ~= nil then
-		self.TextBlock:setWidth(w - 2 * self.PaddingX)
+function UIBase:resize(sw, sh, ow, oh)
+	if vector.isVector(sw) then
+		self.Size.Scale:set(sw)
+		self.Size.Offset:set(sh)
+	else
+		self.Size.Scale:set(sw, sh)
+		self.Size.Offset:set(ow, oh)
 	end
+	updateAbsoluteSize(self)
+	--if self.TextBlock ~= nil then
+	--	self.TextBlock:setWidth(self.AbsoluteSize.x - 2 * self.PaddingX)
+	--end
 	if self.Parent ~= nil and self.Parent ~= module then
-		updateAbsolutePosition(self, self.Parent.AbsolutePosition.x, self.Parent.AbsolutePosition.y, self.Parent.Size.x, self.Parent.Size.y)
+		updateAbsolutePosition(self, self.Parent.AbsolutePosition.x, self.Parent.AbsolutePosition.y, self.Parent.AbsoluteSize.x, self.Parent.AbsoluteSize.y)
 	else
 		updateAbsolutePosition(self) -- TODO: THIS LINE OF CODE IS NOT TESTED
 	end
-	if self.FitTextOnResize and self.TextBlock ~= nil then
-		self:fitText()
-	end
+	--if self.FitTextOnResize and self.TextBlock ~= nil then
+	--	self:fitText()
+	--end
 	module.Changed = true
 end
 
@@ -827,18 +876,18 @@ function UIBase:reposition(sx, sy, ox, oy)
 	module.Changed = true
 end
 
--- reposition the UI element to be placed to one of the sides of the given UI element (Parents should be the same to make this work)
+-- reposition the UI element to be placed to one of the sides of the given UI element (Parents should have the same Center property to make this work)
 -- side: "left" / "right" / "top" / "above" / "bottom" / "under"
 function UIBase:putNextTo(Obj, side, offset)
 	offset = offset == nil and 0 or offset
 	if side == "left" then
-		self:reposition(Obj.Position.Scale, Obj.Position.Offset + vector(-self.Size.x - offset, 0))
+		self:reposition(Obj.Position.Scale, Obj.Position.Offset + vector(-self.AbsoluteSize.x - offset, 0))
 	elseif side == "right" then
-		self:reposition(Obj.Position.Scale, Obj.Position.Offset + vector(Obj.Size.x + offset, 0))
+		self:reposition(Obj.Position.Scale, Obj.Position.Offset + vector(Obj.AbsoluteSize.x + offset, 0))
 	elseif side == "top" or side == "above" then
-		self:reposition(Obj.Position.Scale, Obj.Position.Offset + vector(0, -self.Size.y - offset))
+		self:reposition(Obj.Position.Scale, Obj.Position.Offset + vector(0, -self.AbsoluteSize.y - offset))
 	elseif side == "bottom" or side == "under" or side == "below" then
-		self:reposition(Obj.Position.Scale, Obj.Position.Offset + vector(0, Obj.Size.y + offset))
+		self:reposition(Obj.Position.Scale, Obj.Position.Offset + vector(0, Obj.AbsoluteSize.y + offset))
 	end
 end
 
@@ -927,16 +976,17 @@ function UIBase:setPadding(sizeX, sizeY)
 		self.PaddingY = sizeY
 	end
 	if self.TextBlock ~= nil then
-		self.TextBlock:setWidth(self.Size.x - 2 * self.PaddingX)
+		self.TextBlock:setWidth(self.AbsoluteSize.x - 2 * self.PaddingX)
 	end
+	updateAbsoluteSize(self)
 	updateAbsolutePosition(self)
 	module.Changed = true
 end
 
 
 function UIBase:getPixelPadding()
-	local px = (self.PaddingX < 1) and (self.PaddingX * 0.5 * self.Size.x) or (self.PaddingX)
-	local py = (self.PaddingY < 1) and (self.PaddingY * 0.5 * self.Size.y) or (self.PaddingY)
+	local px = (self.PaddingX < 1) and (self.PaddingX * 0.5 * self.AbsoluteSize.x) or (self.PaddingX)
+	local py = (self.PaddingY < 1) and (self.PaddingY * 0.5 * self.AbsoluteSize.y) or (self.PaddingY)
 	return px, py
 end
 
@@ -953,19 +1003,20 @@ function UIBase:setText(fontname, textData, size, scaleHeight)
 	if fontname == nil then
 		self.TextBlock = nil
 	elseif size == nil then -- scale text to fit box
-		local w = self.Size.x - 2 * self.PaddingX
-		local h = self.Size.y - 2 * self.PaddingY
+		local w = self.AbsoluteSize.x - 2 * self.PaddingX
+		local h = self.AbsoluteSize.y - 2 * self.PaddingY
 		local tb = textblock(fontname, size, textData, w)
 		tb:fitText(w, h)
 		self.FitTextOnResize = true
 		self.TextBlock = tb
 	else
-		local w = self.Size.x - 2 * self.PaddingX
+		local w = self.AbsoluteSize.x - 2 * self.PaddingX
 		local tb = textblock(fontname, size, textData, w)
 		self.TextBlock = tb
 		if scaleHeight then
 			local width, height = tb:getSize()
-			self:resize(self.Size.x, height + self.PaddingY * 2)
+			--self:resize(self.AbsoluteSize.x, height + self.PaddingY * 2)
+			self:resize(self.Size.Scale.x, 0, self.Size.Offset.x, height + self.PaddingY * 2)
 		end
 	end
 end
@@ -974,7 +1025,7 @@ end
 -- resize the text to fit perfectly within the box
 function UIBase:fitText()
 	if self.TextBlock ~= nil then
-		self.TextBlock:fitText(self.Size.x - 2 * self.PaddingX, self.Size.y - 2 * self.PaddingY)
+		self.TextBlock:fitText(self.AbsoluteSize.x - 2 * self.PaddingX, self.AbsoluteSize.y - 2 * self.PaddingY)
 	end
 end
 
@@ -1173,11 +1224,11 @@ function UIBase:drawText()
 	if self.TextBlock ~= nil then
 		love.graphics.setColor(self.TextBlock.Color:components())
 		if self.TextBlock.AlignmentY == "top" then
-			love.graphics.draw(self.TextBlock.Text, -self.Size.x * self.Pivot.x + self.PaddingX, -self.Size.y * self.Pivot.y + self.PaddingY)
+			love.graphics.draw(self.TextBlock.Text, -self.AbsoluteSize.x * self.Pivot.x + self.PaddingX, -self.AbsoluteSize.y * self.Pivot.y + self.PaddingY)
 		elseif self.TextBlock.AlignmentY == "center" then
-			love.graphics.draw(self.TextBlock.Text, -self.Size.x * self.Pivot.x + self.PaddingX, -self.Size.y * self.Pivot.y + math.floor(self.Size.y / 2 - self.TextBlock.Text:getHeight() / 2))
+			love.graphics.draw(self.TextBlock.Text, -self.AbsoluteSize.x * self.Pivot.x + self.PaddingX, -self.AbsoluteSize.y * self.Pivot.y + math.floor(self.AbsoluteSize.y / 2 - self.TextBlock.Text:getHeight() / 2))
 		else -- bottom
-			love.graphics.draw(self.TextBlock.Text, -self.Size.x * self.Pivot.x + self.PaddingX, self.Size.y * (1 - self.Pivot.y) - self.PaddingY - self.TextBlock.Text:getHeight())
+			love.graphics.draw(self.TextBlock.Text, -self.AbsoluteSize.x * self.Pivot.x + self.PaddingX, self.AbsoluteSize.y * (1 - self.Pivot.y) - self.PaddingY - self.TextBlock.Text:getHeight())
 		end
 	end
 end
@@ -1195,7 +1246,7 @@ function addCornerStencil(Obj)
 		love.graphics.setStencilTest("greater", 0)
 		love.graphics.stencil( -- replaces the stencil values from 0 to 1 in all places where geometry is drawn
 			function()
-				love.graphics.rectangle("fill", -Obj.Size.x * Obj.Pivot.x + Obj.BorderWidth, -Obj.Size.y * Obj.Pivot.y + Obj.BorderWidth, Obj.Size.x - Obj.BorderWidth*2, Obj.Size.y - Obj.BorderWidth*2, stencilCornerArg)
+				love.graphics.rectangle("fill", -Obj.AbsoluteSize.x * Obj.Pivot.x + Obj.BorderWidth, -Obj.AbsoluteSize.y * Obj.Pivot.y + Obj.BorderWidth, Obj.AbsoluteSize.x - Obj.BorderWidth*2, Obj.AbsoluteSize.y - Obj.BorderWidth*2, stencilCornerArg)
 			end
 		)
 	end
@@ -1224,12 +1275,12 @@ function Frame:draw()
 	local scissorX, scissorY, scissorW, scissorH = love.graphics.getScissor()
 
 	if self.ClipContent == true then
-		love.graphics.intersectScissor(self.AbsolutePosition.x, self.AbsolutePosition.y, self.Size.x, self.Size.y)
+		love.graphics.intersectScissor(self.AbsolutePosition.x, self.AbsolutePosition.y, self.AbsoluteSize.x, self.AbsoluteSize.y)
 	end
 
 	local gw, gh = love.graphics.getDimensions()
 	-- bounds check optimization. This will reduce GPU used! (GPU went down from 17% to 14% in a recent test)
-	if not (self.AbsolutePosition.x > gw or self.AbsolutePosition.x + self.Size.x < 0 or self.AbsolutePosition.y > gh or self.AbsolutePosition.y + self.Size.y < 0) then
+	if not (self.AbsolutePosition.x > gw or self.AbsolutePosition.x + self.AbsoluteSize.x < 0 or self.AbsolutePosition.y > gh or self.AbsolutePosition.y + self.AbsoluteSize.y < 0) then
 		local r, g, b, a = self.Color.r, self.Color.g, self.Color.b, self.Color.a
 		if module.PressedElement == self then
 			r, g, b, a = self.ColorHold.r, self.ColorHold.g, self.ColorHold.b, self.ColorHold.a
@@ -1238,19 +1289,19 @@ function Frame:draw()
 		end
 
 		love.graphics.push() -- push current graphics coordinate state
-		--love.graphics.translate(self.AbsolutePosition.x + self.Size.x / 2, self.AbsolutePosition.y + self.Size.y / 2)
-		love.graphics.translate(self.AbsolutePosition.x + self.Size.x * self.Pivot.x, self.AbsolutePosition.y + self.Size.y * self.Pivot.y)
+		--love.graphics.translate(self.AbsolutePosition.x + self.AbsoluteSize.x / 2, self.AbsolutePosition.y + self.AbsoluteSize.y / 2)
+		love.graphics.translate(self.AbsolutePosition.x + self.AbsoluteSize.x * self.Pivot.x, self.AbsolutePosition.y + self.AbsoluteSize.y * self.Pivot.y)
 		love.graphics.rotate(math.rad(self.Rotation))
 
 		local cornerArg = self.CornerRadius ~= 0 and self.CornerRadius or nil
 		if self.BorderWidth > 0 then
 			love.graphics.setColor(self.BorderColor.r, self.BorderColor.g, self.BorderColor.b, self.BorderColor.a*self.Opacity)
 			love.graphics.setLineWidth(self.BorderWidth)
-			love.graphics.rectangle("line", -self.Size.x * self.Pivot.x + self.BorderWidth / 2, -self.Size.y * self.Pivot.y + self.BorderWidth / 2, self.Size.x - self.BorderWidth, self.Size.y - self.BorderWidth, cornerArg)
+			love.graphics.rectangle("line", -self.AbsoluteSize.x * self.Pivot.x + self.BorderWidth / 2, -self.AbsoluteSize.y * self.Pivot.y + self.BorderWidth / 2, self.AbsoluteSize.x - self.BorderWidth, self.AbsoluteSize.y - self.BorderWidth, cornerArg)
 		end
 		love.graphics.setColor(r, g, b, a*self.Opacity)
-		--love.graphics.rectangle("fill", self.AbsolutePosition.x + self.BorderWidth, self.AbsolutePosition.y + self.BorderWidth, self.Size.x - self.BorderWidth*2, self.Size.y - self.BorderWidth*2)
-		love.graphics.rectangle("fill", -self.Size.x * self.Pivot.x + self.BorderWidth, -self.Size.y * self.Pivot.y + self.BorderWidth, self.Size.x - self.BorderWidth*2, self.Size.y - self.BorderWidth*2, cornerArg)
+		--love.graphics.rectangle("fill", self.AbsolutePosition.x + self.BorderWidth, self.AbsolutePosition.y + self.BorderWidth, self.AbsoluteSize.x - self.BorderWidth*2, self.AbsoluteSize.y - self.BorderWidth*2)
+		love.graphics.rectangle("fill", -self.AbsoluteSize.x * self.Pivot.x + self.BorderWidth, -self.AbsoluteSize.y * self.Pivot.y + self.BorderWidth, self.AbsoluteSize.x - self.BorderWidth*2, self.AbsoluteSize.y - self.BorderWidth*2, cornerArg)
 		-- draw text on top
 		self:drawText()
 
@@ -1279,13 +1330,13 @@ function ImageFrame:draw()
 	local scissorX, scissorY, scissorW, scissorH = love.graphics.getScissor()
 
 	if self.ClipContent == true then
-		love.graphics.intersectScissor(self.AbsolutePosition.x, self.AbsolutePosition.y, self.Size.x, self.Size.y)
+		love.graphics.intersectScissor(self.AbsolutePosition.x, self.AbsolutePosition.y, self.AbsoluteSize.x, self.AbsoluteSize.y)
 	end
 
 
 	local gw, gh = love.graphics.getDimensions()
 	-- bounds check to reduce GPU load. Don't need to draw out of bounds!
-	if not (self.AbsolutePosition.x > gw or self.AbsolutePosition.x + self.Size.x < 0 or self.AbsolutePosition.y > gh or self.AbsolutePosition.y + self.Size.y < 0) then
+	if not (self.AbsolutePosition.x > gw or self.AbsolutePosition.x + self.AbsoluteSize.x < 0 or self.AbsolutePosition.y > gh or self.AbsolutePosition.y + self.AbsoluteSize.y < 0) then
 		local r, g, b, a = self.Color.r, self.Color.g, self.Color.b, self.Color.a
 		if module.PressedElement == self then
 			r, g, b, a = self.ColorHold.r, self.ColorHold.g, self.ColorHold.b, self.ColorHold.a
@@ -1294,14 +1345,14 @@ function ImageFrame:draw()
 		end
 
 		love.graphics.push() -- push current graphics coordinate state
-		love.graphics.translate(self.AbsolutePosition.x + self.Size.x * self.Pivot.x, self.AbsolutePosition.y + self.Size.y * self.Pivot.y)
+		love.graphics.translate(self.AbsolutePosition.x + self.AbsoluteSize.x * self.Pivot.x, self.AbsolutePosition.y + self.AbsoluteSize.y * self.Pivot.y)
 		love.graphics.rotate(math.rad(self.Rotation))
 
 		love.graphics.setColor(r, g, b, a*self.Opacity)
 		
 		-- draw image, using a stencil for rounded corners
 		addCornerStencil(self)
-		love.graphics.draw(self.ReferenceImage, -self.Size.x * self.Pivot.x + self.BorderWidth, -self.Size.y * self.Pivot.y + self.BorderWidth, 0, (self.Size.x - self.BorderWidth * 2) / imgWidth, (self.Size.y - self.BorderWidth * 2) / imgHeight)
+		love.graphics.draw(self.ReferenceImage, -self.AbsoluteSize.x * self.Pivot.x + self.BorderWidth, -self.AbsoluteSize.y * self.Pivot.y + self.BorderWidth, 0, (self.AbsoluteSize.x - self.BorderWidth * 2) / imgWidth, (self.AbsoluteSize.y - self.BorderWidth * 2) / imgHeight)
 		clearCornerStencil(self)
 
 		-- draw border
@@ -1309,7 +1360,7 @@ function ImageFrame:draw()
 		if self.BorderWidth > 0 then
 			love.graphics.setColor(self.BorderColor.r, self.BorderColor.g, self.BorderColor.b, self.BorderColor.a*self.Opacity)
 			love.graphics.setLineWidth(self.BorderWidth)
-			love.graphics.rectangle("line", -self.Size.x * self.Pivot.x + self.BorderWidth / 2, -self.Size.y * self.Pivot.y + self.BorderWidth / 2, self.Size.x - self.BorderWidth, self.Size.y - self.BorderWidth, cornerArg)
+			love.graphics.rectangle("line", -self.AbsoluteSize.x * self.Pivot.x + self.BorderWidth / 2, -self.AbsoluteSize.y * self.Pivot.y + self.BorderWidth / 2, self.AbsoluteSize.x - self.BorderWidth, self.AbsoluteSize.y - self.BorderWidth, cornerArg)
 		end
 		-- draw text on top
 		self:drawText()
@@ -1368,12 +1419,12 @@ function SlicedFrame:draw()
 	local scissorX, scissorY, scissorW, scissorH = love.graphics.getScissor()
 
 	if self.ClipContent == true then
-		love.graphics.intersectScissor(self.AbsolutePosition.x, self.AbsolutePosition.y, self.Size.x, self.Size.y)
+		love.graphics.intersectScissor(self.AbsolutePosition.x, self.AbsolutePosition.y, self.AbsoluteSize.x, self.AbsoluteSize.y)
 	end
 
 	local gw, gh = love.graphics.getDimensions()
 	-- bounds check to reduce GPU load. Don't need to draw out of bounds!
-	if not (self.AbsolutePosition.x > gw or self.AbsolutePosition.x + self.Size.x < 0 or self.AbsolutePosition.y > gh or self.AbsolutePosition.y + self.Size.y < 0) then
+	if not (self.AbsolutePosition.x > gw or self.AbsolutePosition.x + self.AbsoluteSize.x < 0 or self.AbsolutePosition.y > gh or self.AbsolutePosition.y + self.AbsoluteSize.y < 0) then
 		local r, g, b, a = self.Color.r, self.Color.g, self.Color.b, self.Color.a
 		if module.PressedElement == self then
 			r, g, b, a = self.ColorHold.r, self.ColorHold.g, self.ColorHold.b, self.ColorHold.a
@@ -1382,32 +1433,32 @@ function SlicedFrame:draw()
 		end
 
 		love.graphics.push() -- push current graphics coordinate state
-		love.graphics.translate(self.AbsolutePosition.x + self.Size.x * self.Pivot.x, self.AbsolutePosition.y + self.Size.y * self.Pivot.y)
+		love.graphics.translate(self.AbsolutePosition.x + self.AbsoluteSize.x * self.Pivot.x, self.AbsolutePosition.y + self.AbsoluteSize.y * self.Pivot.y)
 		love.graphics.rotate(math.rad(self.Rotation))
 
 		love.graphics.setColor(r, g, b, a*self.Opacity)
 
 		local x2 = self.TopLeftSlice.x * self.CornerScale
-		local x3 = self.Size.x - (imgWidth - self.BottomRightSlice.x) * self.CornerScale
+		local x3 = self.AbsoluteSize.x - (imgWidth - self.BottomRightSlice.x) * self.CornerScale
 		local y2 = self.TopLeftSlice.y * self.CornerScale
-		local y3 = self.Size.y - (imgHeight - self.BottomRightSlice.y) * self.CornerScale
+		local y3 = self.AbsoluteSize.y - (imgHeight - self.BottomRightSlice.y) * self.CornerScale
 
-		local stretchXMultiplier = (self.Size.x - self.BorderWidth * 2 - self.TopLeftSlice.x * self.CornerScale - (imgWidth - self.BottomRightSlice.x) * self.CornerScale) / (self.BottomRightSlice.x - self.TopLeftSlice.x)
-		local stretchYMultiplier = (self.Size.y - self.BorderWidth * 2 - self.TopLeftSlice.y * self.CornerScale - (imgHeight - self.BottomRightSlice.y) * self.CornerScale) / (self.BottomRightSlice.y - self.TopLeftSlice.y)
+		local stretchXMultiplier = (self.AbsoluteSize.x - self.BorderWidth * 2 - self.TopLeftSlice.x * self.CornerScale - (imgWidth - self.BottomRightSlice.x) * self.CornerScale) / (self.BottomRightSlice.x - self.TopLeftSlice.x)
+		local stretchYMultiplier = (self.AbsoluteSize.y - self.BorderWidth * 2 - self.TopLeftSlice.y * self.CornerScale - (imgHeight - self.BottomRightSlice.y) * self.CornerScale) / (self.BottomRightSlice.y - self.TopLeftSlice.y)
 
 		addCornerStencil(self)
 		-- in reading order, top row
-		love.graphics.draw(self.ReferenceImage, self.ImageSlices[1], -self.Size.x * self.Pivot.x + self.BorderWidth, -self.Size.y * self.Pivot.y + self.BorderWidth, 0, self.CornerScale, self.CornerScale)
-		love.graphics.draw(self.ReferenceImage, self.ImageSlices[2], -self.Size.x * self.Pivot.x + self.BorderWidth + x2, -self.Size.y * self.Pivot.y + self.BorderWidth, 0, stretchXMultiplier, self.CornerScale)
-		love.graphics.draw(self.ReferenceImage, self.ImageSlices[3], -self.Size.x * self.Pivot.x - self.BorderWidth + x3, -self.Size.y * self.Pivot.y + self.BorderWidth, 0, self.CornerScale, self.CornerScale)
+		love.graphics.draw(self.ReferenceImage, self.ImageSlices[1], -self.AbsoluteSize.x * self.Pivot.x + self.BorderWidth, -self.AbsoluteSize.y * self.Pivot.y + self.BorderWidth, 0, self.CornerScale, self.CornerScale)
+		love.graphics.draw(self.ReferenceImage, self.ImageSlices[2], -self.AbsoluteSize.x * self.Pivot.x + self.BorderWidth + x2, -self.AbsoluteSize.y * self.Pivot.y + self.BorderWidth, 0, stretchXMultiplier, self.CornerScale)
+		love.graphics.draw(self.ReferenceImage, self.ImageSlices[3], -self.AbsoluteSize.x * self.Pivot.x - self.BorderWidth + x3, -self.AbsoluteSize.y * self.Pivot.y + self.BorderWidth, 0, self.CornerScale, self.CornerScale)
 		-- middle row
-		love.graphics.draw(self.ReferenceImage, self.ImageSlices[4], -self.Size.x * self.Pivot.x + self.BorderWidth, -self.Size.y * self.Pivot.y + self.BorderWidth + y2, 0, self.CornerScale, stretchYMultiplier)
-		love.graphics.draw(self.ReferenceImage, self.ImageSlices[5], -self.Size.x * self.Pivot.x + self.BorderWidth + x2, -self.Size.y * self.Pivot.y + self.BorderWidth + y2, 0, stretchXMultiplier, stretchYMultiplier)
-		love.graphics.draw(self.ReferenceImage, self.ImageSlices[6], -self.Size.x * self.Pivot.x - self.BorderWidth + x3, -self.Size.y * self.Pivot.y + self.BorderWidth + y2, 0, self.CornerScale, stretchYMultiplier)
+		love.graphics.draw(self.ReferenceImage, self.ImageSlices[4], -self.AbsoluteSize.x * self.Pivot.x + self.BorderWidth, -self.AbsoluteSize.y * self.Pivot.y + self.BorderWidth + y2, 0, self.CornerScale, stretchYMultiplier)
+		love.graphics.draw(self.ReferenceImage, self.ImageSlices[5], -self.AbsoluteSize.x * self.Pivot.x + self.BorderWidth + x2, -self.AbsoluteSize.y * self.Pivot.y + self.BorderWidth + y2, 0, stretchXMultiplier, stretchYMultiplier)
+		love.graphics.draw(self.ReferenceImage, self.ImageSlices[6], -self.AbsoluteSize.x * self.Pivot.x - self.BorderWidth + x3, -self.AbsoluteSize.y * self.Pivot.y + self.BorderWidth + y2, 0, self.CornerScale, stretchYMultiplier)
 		-- bottom row
-		love.graphics.draw(self.ReferenceImage, self.ImageSlices[7], -self.Size.x * self.Pivot.x + self.BorderWidth, -self.Size.y * self.Pivot.y - self.BorderWidth + y3, 0, self.CornerScale, self.CornerScale)
-		love.graphics.draw(self.ReferenceImage, self.ImageSlices[8], -self.Size.x * self.Pivot.x + self.BorderWidth + x2, -self.Size.y * self.Pivot.y - self.BorderWidth + y3, 0, stretchXMultiplier, self.CornerScale)
-		love.graphics.draw(self.ReferenceImage, self.ImageSlices[9], -self.Size.x * self.Pivot.x - self.BorderWidth + x3, -self.Size.y * self.Pivot.y - self.BorderWidth + y3, 0, self.CornerScale, self.CornerScale)
+		love.graphics.draw(self.ReferenceImage, self.ImageSlices[7], -self.AbsoluteSize.x * self.Pivot.x + self.BorderWidth, -self.AbsoluteSize.y * self.Pivot.y - self.BorderWidth + y3, 0, self.CornerScale, self.CornerScale)
+		love.graphics.draw(self.ReferenceImage, self.ImageSlices[8], -self.AbsoluteSize.x * self.Pivot.x + self.BorderWidth + x2, -self.AbsoluteSize.y * self.Pivot.y - self.BorderWidth + y3, 0, stretchXMultiplier, self.CornerScale)
+		love.graphics.draw(self.ReferenceImage, self.ImageSlices[9], -self.AbsoluteSize.x * self.Pivot.x - self.BorderWidth + x3, -self.AbsoluteSize.y * self.Pivot.y - self.BorderWidth + y3, 0, self.CornerScale, self.CornerScale)
 		
 		clearCornerStencil(self)
 
@@ -1416,8 +1467,8 @@ function SlicedFrame:draw()
 		if self.BorderWidth > 0 then
 			love.graphics.setColor(self.BorderColor.r, self.BorderColor.g, self.BorderColor.b, self.BorderColor.a*self.Opacity)
 			love.graphics.setLineWidth(self.BorderWidth)
-			--love.graphics.rectangle("line", self.AbsolutePosition.x + self.BorderWidth / 2, self.AbsolutePosition.y + self.BorderWidth / 2, self.Size.x - self.BorderWidth, self.Size.y - self.BorderWidth)
-			love.graphics.rectangle("line", -self.Size.x * self.Pivot.x + self.BorderWidth / 2, -self.Size.y * self.Pivot.y + self.BorderWidth / 2, self.Size.x - self.BorderWidth, self.Size.y - self.BorderWidth, cornerArg)
+			--love.graphics.rectangle("line", self.AbsolutePosition.x + self.BorderWidth / 2, self.AbsolutePosition.y + self.BorderWidth / 2, self.AbsoluteSize.x - self.BorderWidth, self.AbsoluteSize.y - self.BorderWidth)
+			love.graphics.rectangle("line", -self.AbsoluteSize.x * self.Pivot.x + self.BorderWidth / 2, -self.AbsoluteSize.y * self.Pivot.y + self.BorderWidth / 2, self.AbsoluteSize.x - self.BorderWidth, self.AbsoluteSize.y - self.BorderWidth, cornerArg)
 		end
 		-- draw text on top
 		self:drawText()
@@ -1491,13 +1542,13 @@ function AnimatedFrame:draw()
 	local img, quad = self.ReferenceAnimation:getSprite()
 
 	if self.ClipContent == true then
-		love.graphics.intersectScissor(self.AbsolutePosition.x, self.AbsolutePosition.y, self.Size.x, self.Size.y)
+		love.graphics.intersectScissor(self.AbsolutePosition.x, self.AbsolutePosition.y, self.AbsoluteSize.x, self.AbsoluteSize.y)
 	end
 
 
 	local gw, gh = love.graphics.getDimensions()
 	-- bounds check to reduce GPU load. Don't need to draw out of bounds!
-	if not (self.AbsolutePosition.x > gw or self.AbsolutePosition.x + self.Size.x < 0 or self.AbsolutePosition.y > gh or self.AbsolutePosition.y + self.Size.y < 0) then
+	if not (self.AbsolutePosition.x > gw or self.AbsolutePosition.x + self.AbsoluteSize.x < 0 or self.AbsolutePosition.y > gh or self.AbsolutePosition.y + self.AbsoluteSize.y < 0) then
 		local r, g, b, a = self.Color.r, self.Color.g, self.Color.b, self.Color.a
 		if module.PressedElement == self then
 			r, g, b, a = self.ColorHold.r, self.ColorHold.g, self.ColorHold.b, self.ColorHold.a
@@ -1506,12 +1557,12 @@ function AnimatedFrame:draw()
 		end
 
 		love.graphics.push() -- push current graphics coordinate state
-		love.graphics.translate(self.AbsolutePosition.x + self.Size.x * self.Pivot.x, self.AbsolutePosition.y + self.Size.y * self.Pivot.y)
+		love.graphics.translate(self.AbsolutePosition.x + self.AbsoluteSize.x * self.Pivot.x, self.AbsolutePosition.y + self.AbsoluteSize.y * self.Pivot.y)
 		love.graphics.rotate(math.rad(self.Rotation))
 
 		love.graphics.setColor(r, g, b, a*self.Opacity)
 		addCornerStencil(self)
-		love.graphics.draw(img, quad, -(self.Size.x - self.BorderWidth) * self.Pivot.x, -(self.Size.y - self.BorderWidth) * self.Pivot.y, 0, (self.Size.x - self.BorderWidth) / imgWidth, (self.Size.y - self.BorderWidth) / imgHeight)
+		love.graphics.draw(img, quad, -(self.AbsoluteSize.x - self.BorderWidth) * self.Pivot.x, -(self.AbsoluteSize.y - self.BorderWidth) * self.Pivot.y, 0, (self.AbsoluteSize.x - self.BorderWidth) / imgWidth, (self.AbsoluteSize.y - self.BorderWidth) / imgHeight)
 		clearCornerStencil(self)
 		
 		-- draw border
@@ -1519,7 +1570,7 @@ function AnimatedFrame:draw()
 		if self.BorderWidth > 0 then
 			love.graphics.setColor(self.BorderColor.r, self.BorderColor.g, self.BorderColor.b, self.BorderColor.a*self.Opacity)
 			love.graphics.setLineWidth(self.BorderWidth)
-			love.graphics.rectangle("line", -self.Size.x * self.Pivot.x + self.BorderWidth / 2, -self.Size.y * self.Pivot.y + self.BorderWidth / 2, self.Size.x - self.BorderWidth, self.Size.y - self.BorderWidth, cornerArg)
+			love.graphics.rectangle("line", -self.AbsoluteSize.x * self.Pivot.x + self.BorderWidth / 2, -self.AbsoluteSize.y * self.Pivot.y + self.BorderWidth / 2, self.AbsoluteSize.x - self.BorderWidth, self.AbsoluteSize.y - self.BorderWidth, cornerArg)
 		end
 		-- draw text on top
 		self:drawText()
@@ -1539,11 +1590,24 @@ end
 
 -- the base properties of each UIBase
 local function newBase(w, h, col)
+	local sw, sh, ow, oh
+	if vector.isVector(w) and vector.isVector(h) then
+		sw = w.x
+		sh = w.y
+		ow = h.x
+		oh = h.y
+	else
+		sw = 0
+		sh = 0
+		ow = w
+		oh = h
+	end
 	col = col == nil and color(1, 1, 1) or color(col)
 	module.TotalCreated = module.TotalCreated + 1
 	local Obj = {
 		-- properties
 		["AbsolutePosition"] = vector(0, 0); -- position in absolute pixels
+		["AbsoluteSize"] = vector(w, h);
 		["BorderColor"] = color(col):darken(0.4); -- color of the inner border of the frame
 		["BorderWidth"] = 0; -- border thickness in pixels
 		["Center"] = vector(0, 0); -- AnchorPoint from Roblox
@@ -1569,7 +1633,11 @@ local function newBase(w, h, col)
 			["Offset"] = vector(0, 0);
 		};
 		["Rotation"] = 0;
-		["Size"] = vector(w, h);
+		--["Size"] = vector(w, h);
+		["Size"] = { -- works similar to Roblox's UDim2
+			["Scale"] = vector(sw, sh);
+			["Offset"] = vector(ow, oh);
+		};
 		["Tags"] = {}; -- list of tags assigned to this object
 		["TextBlock"] = nil;
 		["VisualOnly"] = false; -- if true, no events are registered and the object can never be focused, so :at() will ignore the object
