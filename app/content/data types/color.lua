@@ -85,13 +85,6 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Method";
-	["Name"] = "lighten";
-	["Arguments"] = {"value"};
-	["Description"] = "Lightens the color towards white, where 0 is no change and 1 is pure white.";
-})
-
-table.insert(content, {
-	["Type"] = "Method";
 	["Name"] = "getHSL";
 	["Arguments"] = {};
 	["Description"] = "Returns the h, s and l components of the color.";
@@ -108,7 +101,39 @@ table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "getHue";
 	["Arguments"] = {};
-	["Description"] = "TODO: implement this method.";
+	["Description"] = "Returns the hue of a color as a number in the range 0 - 360";
+})
+
+table.insert(content, {
+	["Type"] = "Method";
+	["Name"] = "grayscale";
+	["Arguments"] = {};
+	["Description"] = "Converts the color to a gray color with the same light intensity. Below is an image converted to a grayscale by sampling and then converting its pixels using this method.";
+	["Demo"] = function()
+		local Container = ui.newFrame(260, 120, color(0, 0, 0))
+		Container.Opacity = 0
+		local img = love.graphics.newImage("test_images/pumpky.png")
+		local frame1 = ui.newImageFrame(img, 120, 120)
+		local imgdata = love.image.newImageData("test_images/pumpky.png")
+		imgdata:mapPixel(
+			function(x, y, r, g, b, a)
+				local c = color(r, g, b)
+				return c:grayscale():components()
+			end
+		)
+		local frame2 = ui.newImageFrame(love.graphics.newImage(imgdata), 120, 120)
+		frame2:alignX("right")
+		Container:addChild(frame1)
+		Container:addChild(frame2)
+		return Container;
+	end
+})
+
+table.insert(content, {
+	["Type"] = "Method";
+	["Name"] = "lighten";
+	["Arguments"] = {"value"};
+	["Description"] = "Lightens the color towards white, where 0 is no change and 1 is pure white.";
 })
 
 table.insert(content, {

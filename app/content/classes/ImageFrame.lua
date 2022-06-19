@@ -13,7 +13,7 @@ table.insert(content, {
 	["Description"] = "An interface element that contains an image. When drawn, the image is stretched to perfectly fit within the element. If an instance is created without supplying an image, a 1x1 pixel white image will be created as a placeholder.";
 	["CodeMarkup"] = "<k>local</k> img <k>=</k> love.graphics.<f>newImage</f>(<n>...</n>)\n<k>local</k> image_frame <k>=</k> ui.<f>newImageFrame</f>(img, <n>200</n>, <n>200</n>)";
 	["Demo"] = function() -- function that creates and returns an element to be placed right below the code example
-		local img = love.graphics.newImage("test_images/Twitch_PFP.png")
+		local img = love.graphics.newImage("test_images/pumpky.png")
 		local image_frame = ui.newImageFrame(img, 200, 200)
 		image_frame.BorderColor = color(0, 0, 0)
 		--image_frame.Rotation = 10
