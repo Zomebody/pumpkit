@@ -17,7 +17,7 @@ table.insert(content, {
 		img:setFilter("nearest", "nearest")
 		local SlicedFrame = ui.newSlicedFrame(img, vector(10, 10), vector(50, 50), 200, 100, color(1, 1, 1), 3)
 		local ImageFrame = ui.newImageFrame(img, 200, 100)
-		local Container = ui.newFrame(ImageFrame.Size.x * 2 + 30, ImageFrame.Size.y)
+		local Container = ui.newFrame(ImageFrame.AbsoluteSize.x * 2 + 30, ImageFrame.AbsoluteSize.y)
 		Container.Opacity = 0
 		Container:addChild(ImageFrame)
 		SlicedFrame:alignX("right")

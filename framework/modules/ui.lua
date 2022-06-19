@@ -140,7 +140,6 @@ local function updateAbsoluteSize(Obj)
 	--end
 
 	for i = 1, #Obj.Children do
-		print(Obj.Children[i].Size.Scale.x, Obj.Children[i].Size.Scale.y)
 		-- if a child's Size.Scale.x and Size.Scale.y both are 0, there is no use in updating them (because their AbsoluteSize will remain the same anyway!)
 		if not (Obj.Children[i].Size.Scale.x == 0 and Obj.Children[i].Size.Scale.y == 0) then
 			updateAbsoluteSize(Obj.Children[i])
@@ -586,8 +585,6 @@ function module:focusKeyboard(elements, focusMode, modeArg)
 			loseFocusIndexes[#loseFocusIndexes + 1] = i
 		end
 	end
-	--print("newlyFocused:", #newlyFocused)
-	--print("loseFocusIndexes:", #loseFocusIndexes)
 
 	-- lose focus of currently focused elements
 	--[[
@@ -841,13 +838,20 @@ end
 
 -- resize the UI element to (w, h)
 function UIBase:resize(sw, sh, ow, oh)
-	if vector.isVector(sw) then
-		self.Size.Scale:set(sw)
-		self.Size.Offset:set(sh)
-	else
+	
+	if vector.isVector(sw) then -- 2 vector arguments: scale, offset
+		self.Size.Scale:set(sw.x, sw.y)
+		self.Size.Offset:set(sh.x, sh.y)
+	elseif ow ~= nil and oh ~= nil then -- 4 arguments: scale.x, scale.y, offset.x, offset.y
 		self.Size.Scale:set(sw, sh)
 		self.Size.Offset:set(ow, oh)
+	else -- two number arguments: offset.x, offset.y
+		self.Size.Scale:set(0, 0)
+		self.Size.Offset:set(sw, sh)
 	end
+	
+	--self.Size.Scale:set(sw, sh)
+	--self.Size.Offset:set(ow, oh)
 	updateAbsoluteSize(self)
 	--if self.TextBlock ~= nil then
 	--	self.TextBlock:setWidth(self.AbsoluteSize.x - 2 * self.PaddingX)

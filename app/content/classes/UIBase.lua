@@ -29,6 +29,16 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Property";
+	["ValueType"] = "vector";
+	["Name"] = "AbsoluteSize";
+	["Description"] = "The exact size of the element in pixels. This property is updates whenever any method or event is called that manipulates positions or sizes. The computed values will be rounded down to prevent blurriness in the resulting draw calls.";
+	["ReadOnly"] = true;
+	["CodeMarkup"] = nil;
+	["Demo"] = nil;
+})
+
+table.insert(content, {
+	["Type"] = "Property";
 	["ValueType"] = "color";
 	["Name"] = "BorderColor";
 	["Description"] = "The color of the inner border of the object, if BorderWidth > 0.";
@@ -126,7 +136,7 @@ table.insert(content, {
 	["CodeMarkup"] = nil;
 	["Demo"] = nil;
 })
---[[
+
 table.insert(content, {
 	["Type"] = "Property";
 	["ValueType"] = "number";
@@ -152,7 +162,7 @@ table.insert(content, {
 		return Container
 	end;
 })
-]]
+
 table.insert(content, {
 	["Type"] = "Property";
 	["ValueType"] = "boolean";
@@ -304,9 +314,9 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Property";
-	["ValueType"] = "vector";
+	["ValueType"] = "Object";
 	["Name"] = "Size";
-	["Description"] = "A vector indicating the size of the element in pixels. Setting the size can be done with the :resize(x,y) method.";
+	["Description"] = "An object with two properties: Scale and Offset. Both are vectors.\n\n- Scale determines the size as a fraction of its parent (while respecting padding). So a scale of 0.5 is half its parents size if no padding is present in the parent.\n- Offset is an additional size in absolute pixels, independent of its parent.";
 	["ReadOnly"] = true;
 	["CodeMarkup"] = nil;
 	["Demo"] = nil;
@@ -574,8 +584,8 @@ table.insert(content, {
 table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "resize";
-	["Arguments"] = {"x", "y"};
-	["Description"] = "Resizes the element. This also updates the AbsolutePosition of the element and its children.";
+	["Arguments"] = {"a", "b", "c", "d"};
+	["Description"] = "Resizes the element. This also updates the AbsolutePosition and AbsoluteSize of the element and its children. There are multiple ways of calling this method:\n\n1. The first two arguments are numbers. This will only set the Offset part of the Size property and the Scale part will be zero.\n\n2. The first two arguments are vectors. This will set the Scale property of the element to the first vector and the Offset property to the second vector.\n\n3. All four arguments are numbers. This will set the Scale property to a vector using the first two numbers and the Offset property to a vector using the last two numbers.";
 	["CodeMarkup"] = "<k>local</k> Frame1 <k>=</k> ui.<f>newFrame</f>(<n>100</n>, <n>100</n>, <f>color</f>(<n>0</n>, <n>0</n>, <n>0</n>))\nFrame1:<f>setText</f>(<s>\"FiraCode.ttf\"</s>, <s>\"Frame 1\"</s>, <n>18</n>)\n<k>local</k> Frame2 <k>=</k> ui.<f>newFrame</f>(<n>100</n>, <n>100</n>, <f>color</f>(<n>0</n>, <n>0</n>, <n>0</n>))\nFrame2:<f>setText</f>(<s>\"FiraCode.ttf\"</s>, <s>\"Frame 2\"</s>, <n>18</n>)\nFrame2:<f>resize</f>(<n>130</n>, <n>80</n>)";
 	["Demo"] = function() -- function that creates and returns an element to be placed right below the code example
 		local Container = ui.newFrame(300, 100)
