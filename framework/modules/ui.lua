@@ -83,10 +83,10 @@ local function updateAbsolutePosition(Obj, wX, wY, wWidth, wHeight)
 	-- set value depending on if this is a top-level element, or if there is a parent
 	OP = Obj.Parent
 	if OP and OP ~= module then
-		wX = (wX == nil and OP.AbsolutePosition.x or wX) + OP.PaddingX
-		wY = (wY == nil and OP.AbsolutePosition.y or wY) + OP.PaddingY
-		wWidth = (wWidth == nil and OP.AbsoluteSize.x or wWidth) - 2 * OP.PaddingX
-		wHeight = (wHeight == nil and OP.AbsoluteSize.y or wHeight) - 2 * OP.PaddingY
+		wX = (wX == nil and OP.AbsolutePosition.x or wX) + OP.Padding.x
+		wY = (wY == nil and OP.AbsolutePosition.y or wY) + OP.Padding.y
+		wWidth = (wWidth == nil and OP.AbsoluteSize.x or wWidth) - 2 * OP.Padding.x
+		wHeight = (wHeight == nil and OP.AbsoluteSize.y or wHeight) - 2 * OP.Padding.y
 	else
 		wX = wX == nil and 0 or wX
 		wY = wY == nil and 0 or wY
@@ -121,8 +121,8 @@ local function updateAbsoluteSize(Obj)
 	local sX = 0
 	local sY = 0
 	if Par and Par ~= module then -- inherit size from parent
-		sX = Obj.Size.Scale.x * (Par.AbsoluteSize.x - Par.PaddingX * 2) + Obj.Size.Offset.x
-		sY = Obj.Size.Scale.y * (Par.AbsoluteSize.y - Par.PaddingY * 2) + Obj.Size.Offset.y
+		sX = Obj.Size.Scale.x * (Par.AbsoluteSize.x - Par.Padding.x * 2) + Obj.Size.Offset.x
+		sY = Obj.Size.Scale.y * (Par.AbsoluteSize.y - Par.Padding.y * 2) + Obj.Size.Offset.y
 	else -- use the window's size
 		sX = Obj.Size.Scale.x * module.Size.x + Obj.Size.Offset.x
 		sY = Obj.Size.Scale.y * module.Size.y + Obj.Size.Offset.y
@@ -130,7 +130,7 @@ local function updateAbsoluteSize(Obj)
 	Obj.AbsoluteSize:set(math.floor(sX), math.floor(sY))
 
 	if Obj.TextBlock ~= nil then
-		Obj.TextBlock:setWidth(Obj.AbsoluteSize.x - 2 * Obj.PaddingX)
+		Obj.TextBlock:setWidth(Obj.AbsoluteSize.x - 2 * Obj.Padding.x)
 		if Obj.FitTextOnResize then
 			Obj:fitText()
 		end
@@ -854,7 +854,7 @@ function UIBase:resize(sw, sh, ow, oh)
 	--self.Size.Offset:set(ow, oh)
 	updateAbsoluteSize(self)
 	--if self.TextBlock ~= nil then
-	--	self.TextBlock:setWidth(self.AbsoluteSize.x - 2 * self.PaddingX)
+	--	self.TextBlock:setWidth(self.AbsoluteSize.x - 2 * self.Padding.x)
 	--end
 	if self.Parent ~= nil and self.Parent ~= module then
 		updateAbsolutePosition(self, self.Parent.AbsolutePosition.x, self.Parent.AbsolutePosition.y, self.Parent.AbsoluteSize.x, self.Parent.AbsoluteSize.y)
@@ -973,27 +973,26 @@ end
 
 -- create an invisible border of a certain thickness in pixels, used to offset inner elements and text
 function UIBase:setPadding(sizeX, sizeY)
-	self.PaddingX = sizeX
 	if sizeY == nil then
-		self.PaddingY = sizeX
+		self.Padding:set(sizeX, sizeX)
 	else
-		self.PaddingY = sizeY
+		self.Padding:set(sizeX, sizeY)
 	end
 	if self.TextBlock ~= nil then
-		self.TextBlock:setWidth(self.AbsoluteSize.x - 2 * self.PaddingX)
+		self.TextBlock:setWidth(self.AbsoluteSize.x - 2 * self.Padding.x)
 	end
 	updateAbsoluteSize(self)
 	updateAbsolutePosition(self)
 	module.Changed = true
 end
 
-
+--[[
 function UIBase:getPixelPadding()
-	local px = (self.PaddingX < 1) and (self.PaddingX * 0.5 * self.AbsoluteSize.x) or (self.PaddingX)
-	local py = (self.PaddingY < 1) and (self.PaddingY * 0.5 * self.AbsoluteSize.y) or (self.PaddingY)
+	local px = (self.Padding.x < 1) and (self.Padding.x * 0.5 * self.AbsoluteSize.x) or (self.Padding.x)
+	local py = (self.Padding.y < 1) and (self.Padding.y * 0.5 * self.AbsoluteSize.y) or (self.Padding.y)
 	return px, py
 end
-
+]]
 
 function UIBase:setCenter(x, y)
 	self.Center:set(x, y)
@@ -1007,20 +1006,20 @@ function UIBase:setText(fontname, textData, size, scaleHeight)
 	if fontname == nil then
 		self.TextBlock = nil
 	elseif size == nil then -- scale text to fit box
-		local w = self.AbsoluteSize.x - 2 * self.PaddingX
-		local h = self.AbsoluteSize.y - 2 * self.PaddingY
+		local w = self.AbsoluteSize.x - 2 * self.Padding.x
+		local h = self.AbsoluteSize.y - 2 * self.Padding.y
 		local tb = textblock(fontname, size, textData, w)
 		tb:fitText(w, h)
 		self.FitTextOnResize = true
 		self.TextBlock = tb
 	else
-		local w = self.AbsoluteSize.x - 2 * self.PaddingX
+		local w = self.AbsoluteSize.x - 2 * self.Padding.x
 		local tb = textblock(fontname, size, textData, w)
 		self.TextBlock = tb
 		if scaleHeight then
 			local width, height = tb:getSize()
-			--self:resize(self.AbsoluteSize.x, height + self.PaddingY * 2)
-			self:resize(self.Size.Scale.x, 0, self.Size.Offset.x, height + self.PaddingY * 2)
+			--self:resize(self.AbsoluteSize.x, height + self.Padding.y * 2)
+			self:resize(self.Size.Scale.x, 0, self.Size.Offset.x, height + self.Padding.y * 2)
 		end
 	end
 end
@@ -1029,7 +1028,7 @@ end
 -- resize the text to fit perfectly within the box
 function UIBase:fitText()
 	if self.TextBlock ~= nil then
-		self.TextBlock:fitText(self.AbsoluteSize.x - 2 * self.PaddingX, self.AbsoluteSize.y - 2 * self.PaddingY)
+		self.TextBlock:fitText(self.AbsoluteSize.x - 2 * self.Padding.x, self.AbsoluteSize.y - 2 * self.Padding.y)
 	end
 end
 
@@ -1228,11 +1227,11 @@ function UIBase:drawText()
 	if self.TextBlock ~= nil then
 		love.graphics.setColor(self.TextBlock.Color:components())
 		if self.TextBlock.AlignmentY == "top" then
-			love.graphics.draw(self.TextBlock.Text, -self.AbsoluteSize.x * self.Pivot.x + self.PaddingX, -self.AbsoluteSize.y * self.Pivot.y + self.PaddingY)
+			love.graphics.draw(self.TextBlock.Text, -self.AbsoluteSize.x * self.Pivot.x + self.Padding.x, -self.AbsoluteSize.y * self.Pivot.y + self.Padding.y)
 		elseif self.TextBlock.AlignmentY == "center" then
-			love.graphics.draw(self.TextBlock.Text, -self.AbsoluteSize.x * self.Pivot.x + self.PaddingX, -self.AbsoluteSize.y * self.Pivot.y + math.floor(self.AbsoluteSize.y / 2 - self.TextBlock.Text:getHeight() / 2))
+			love.graphics.draw(self.TextBlock.Text, -self.AbsoluteSize.x * self.Pivot.x + self.Padding.x, -self.AbsoluteSize.y * self.Pivot.y + math.floor(self.AbsoluteSize.y / 2 - self.TextBlock.Text:getHeight() / 2))
 		else -- bottom
-			love.graphics.draw(self.TextBlock.Text, -self.AbsoluteSize.x * self.Pivot.x + self.PaddingX, self.AbsoluteSize.y * (1 - self.Pivot.y) - self.PaddingY - self.TextBlock.Text:getHeight())
+			love.graphics.draw(self.TextBlock.Text, -self.AbsoluteSize.x * self.Pivot.x + self.Padding.x, self.AbsoluteSize.y * (1 - self.Pivot.y) - self.Padding.y - self.TextBlock.Text:getHeight())
 		end
 	end
 end
@@ -1628,8 +1627,9 @@ local function newBase(w, h, col)
 		["Id"] = module.TotalCreated;
 		["Name"] = "Object"; -- The name of the instance. Names are not unique. They can be used with the :child() method to find a child with a given name inside some parent instance.
 		["Opacity"] = 1; -- if 0, this object is not drawn (but children are!) TODO: fix children not being drawn
-		["PaddingX"] = 0; -- an invisible border that creates a smaller inner-window to contain children and text. If 0 < padding < 1, then it's interpreted as a percentage / ratio
-		["PaddingY"] = 0;
+		--["PaddingX"] = 0; -- an invisible border that creates a smaller inner-window to contain children and text.
+		--["PaddingY"] = 0;
+		["Padding"] = vector(0, 0); -- an invisible border that creates a smaller inner-window to contain children and text. If 0 < padding < 1, then it's interpreted as a percentage / ratio
 		["Parent"] = nil;
 		["Pivot"] = vector(0.5, 0.5); -- when working with rotations, pivot determines where rotation is applied, 0,0 = top left, 1,1 = bottom right
 		["Position"] = { -- works similar to Roblox's UDim2

@@ -101,7 +101,7 @@ local function create_doc(BodyRef, NavigationRef, data, DisplayVars, superClass)
 				BodyRef:addChild(Header)
 				JumpToObject = Header
 				if Item.Note ~= nil then
-					local Note = ui.newFrame(Header.Size.Offset.x - Header.PaddingX * 2, Header.Size.Offset.y - Header.PaddingY * 2, Colors.Transparent)
+					local Note = ui.newFrame(Header.Size.Offset.x - Header.Padding.x * 2, Header.Size.Offset.y - Header.Padding.y * 2, Colors.Transparent)
 					Note:setText(defaultFont, {Colors.TextComment:array(), Item.Note}, DisplayVars.TextSize)
 					Note.TextBlock:alignX("right")
 					Note.TextBlock:alignY("bottom")

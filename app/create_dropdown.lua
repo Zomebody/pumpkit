@@ -13,7 +13,7 @@ function createDropdown(Vars, LinkedButton, strings)
 		Button:setPadding(12, 8)
 		Button:setText(defaultFont, strings[i], Vars.TextSize, true)
 		Button:alignX("left")
-		local textWidth = Button.TextBlock:getSize() + Button.PaddingX * 2
+		local textWidth = Button.TextBlock:getSize() + Button.Padding.x * 2
 		if textWidth > maxWidth then
 			maxWidth = textWidth
 		end

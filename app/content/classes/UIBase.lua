@@ -236,14 +236,14 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Property";
-	["ValueType"] = "number";
-	["Name"] = "PaddingX";
-	["Description"] = "Adds a padding on the left and right side of the UIBase in pixels. This property applies to child elements and the UIBase's TextBlock. This value can be changed with :setPadding().";
+	["ValueType"] = "vector";
+	["Name"] = "Padding";
+	["Description"] = "Adds a padding to the UIBase.\n\n- Padding.x determines the padding in pixels on the left and right.\n- Padding.y determines the padding in pixels at the top and bottom.\n\nThis property applies to child elements and the UIBase's TextBlock. This value can be changed with :setPadding().";
 	["ReadOnly"] = true;
 	["CodeMarkup"] = nil;
 	["Demo"] = nil;
 })
-
+--[[
 table.insert(content, {
 	["Type"] = "Property";
 	["ValueType"] = "number";
@@ -253,7 +253,7 @@ table.insert(content, {
 	["CodeMarkup"] = nil;
 	["Demo"] = nil;
 })
-
+]]
 table.insert(content, {
 	["Type"] = "Property";
 	["ValueType"] = "Object";
@@ -485,14 +485,14 @@ table.insert(content, {
 		return Frame
 	end
 })
-
+--[[
 table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "getPixelPadding";
 	["Arguments"] = {};
 	["Description"] = "Returns the padding on the x-axis and the y-axis.";
 })
-
+]]
 table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "hasKeyboardFocus";
@@ -633,7 +633,7 @@ table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "setPadding";
 	["Arguments"] = {"x", "y"};
-	["Description"] = "Sets the horizontal and vertical padding of an element. If the second argument is missing, the first argument replaces it. Horizontal and vertical padding applies on both of their edges. Padding will apply to the element's childrens' Position property and it will apply to the element's TextBlock to offset text from the sides.";
+	["Description"] = "Sets the horizontal and vertical padding of an element. If the second argument is missing, the first argument replaces it. Horizontal and vertical padding applies on both of their edges. Padding will apply to the object's childrens' positions and the object's TextBlock.";
 	["CodeMarkup"] = "<k>local</k> Container <k>=</k> ui.<f>newFrame</f>(<n>300</n>, <n>100</n>, <f>color</f>(<n>0</n>, <n>0</n>, <n>0</n>))\nContainer:<f>setPadding</f>(<n>20</n>, <n>10</n>)\nContainer:<f>setText</f>(<s>\"FiraCode.ttf\"</s>, <s>\"Hello World\"</s>, <n>18</n>)\n<k>local</k> Child <k>=</k> ui.<f>newFrame</f>(<n>60</n>, <n>60</n>, <f>color</f>(<n>1</n>, <n>1</n>, <n>1</n>))\nChild:<f>alignX</f>(<s>\"right\"</s>)\nChild:<f>alignY</f>(<s>\"bottom\"</s>)\nContainer:<f>addChild</f>(Child)";
 	["Demo"] = function()
 		local Container = ui.newFrame(300, 100, color(0, 0, 0))
