@@ -68,11 +68,18 @@ local function create_doc(BodyRef, NavigationRef, data, DisplayVars, superClass)
 		local Button = ui.newFrame(DisplayVars.NavigationWidth, 30, Colors.Transparent)
 		Button:setPadding(8, 4)
 		Button:setText(defaultFont, {Colors.TextComment:array(), "<" .. superClass .. ">"}, DisplayVars.TextSize, true)
+		--[[
 		Button.OnFullPress = function(x, y, button)
 			if button == 1 then
 				BodyRef.Parent:positionContent(0, -Separator.Position.Offset.y)
 			end
 		end
+		]]
+		Button:on("FullPress", function(x, y, button)
+			if button == 1 then
+				BodyRef.Parent:positionContent(0, -Separator.Position.Offset.y)
+			end
+		end)
 		Button:resize(0, 0, Button.Size.Offset.x, Button.Size.Offset.y + 4)
 		Button.TextBlock:alignY("bottom")
 		Button:putNextTo(NavigationRef.Children[#NavigationRef.Children], "below")
@@ -127,9 +134,9 @@ local function create_doc(BodyRef, NavigationRef, data, DisplayVars, superClass)
 						table.insert(titleText, Colors.TextAlternative:array())
 						table.insert(titleText, " [READ-ONLY]")
 					end
-				elseif Item.Type == "Callback" then
+				elseif Item.Type == "Event" then
 					titleText[1] = Colors.MonokaiText:array()
-					table.insert(titleText, 1, "callback ")
+					table.insert(titleText, 1, "event ")
 					table.insert(titleText, 1, Colors.MonokaiKeyword:array())
 					table.insert(titleText, Colors.MonokaiText:array())
 					table.insert(titleText, "(")
@@ -211,9 +218,14 @@ local function create_doc(BodyRef, NavigationRef, data, DisplayVars, superClass)
 				CopyButton.ColorHold = color(CopyButton.Color):darken(0.6)
 				CopyButton:alignX("right")
 				CopyButton:alignY("center")
+				--[[
 				CopyButton.OnFullPress = function()
 					love.system.setClipboardText(CodeFrame.TextBlock.RawText)
 				end
+				]]
+				CopyButton:on("FullPress", function()
+					love.system.setClipboardText(CodeFrame.TextBlock.RawText)
+				end)
 				CodeTitle:addChild(CopyButton)
 			end
 
@@ -244,11 +256,18 @@ local function create_doc(BodyRef, NavigationRef, data, DisplayVars, superClass)
 				Button:setPadding(22, 4)
 			end
 			Button:setText(defaultFont, {TextColor:array(), Item.Name}, DisplayVars.TextSize, true)
+			--[[
 			Button.OnFullPress = function(x, y, button)
 				if button == 1 and not ui.DragActive then
 					BodyRef.Parent:positionContent(0, -JumpToObject.Position.Offset.y)
 				end
 			end
+			]]
+			Button:on("FullPress", function(x, y, button)
+				if button == 1 and not ui.DragActive then
+					BodyRef.Parent:positionContent(0, -JumpToObject.Position.Offset.y)
+				end
+			end)
 			if Item.Type == "Header" or Item.Type == "IntroHeader" then
 				Button:resize(0, 0, Button.Size.Offset.x, Button.Size.Offset.y + 10)
 				Button.TextBlock:alignY("bottom")

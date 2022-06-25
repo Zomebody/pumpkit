@@ -84,13 +84,15 @@ function initializeApp()
 
 	local function hasScrollEvents(Obj)
 		if Obj ~= nil and Obj ~= Body then
-			return Obj.OnScroll ~= nil or Obj.OnNestedScroll ~= nil
+			--return Obj.OnScroll ~= nil or Obj.OnNestedScroll ~= nil
+			return Obj.Events.Scroll ~= nil or Obj.Events.NestedScroll ~= nil
 		end
 		return false
 	end
 	local function hasPressEvents(Obj)
 		if Obj ~= nil and Obj ~= Body then
-			return Obj.OnPressStart ~= nil or Obj.OnPressEnd ~= nil or Obj.OnFullPress ~= nil or Obj.OnDrag ~= nil or Obj.OnNestedDrag
+			--return Obj.OnPressStart ~= nil or Obj.OnPressEnd ~= nil or Obj.OnFullPress ~= nil or Obj.OnDrag ~= nil or Obj.OnNestedDrag
+			return Obj.Events.PressStart ~= nil or Obj.Events.PressEnd ~= nil or Obj.Events.FullPress ~= nil or Obj.Events.Drag ~= nil or Obj.Events.NestedDrag ~= nil
 		end
 		return false
 	end
@@ -106,7 +108,8 @@ function initializeApp()
 		end
 		local scrollTween = nil
 		local Obj = Scrollables[i][1]
-		Obj.OnNestedScroll = function(x, y)
+		--Obj.OnNestedScroll = function(x, y)
+		Obj:on("NestedScroll", function(x, y)
 			if i == 2 and hasScrollEvents(ui.CursorFocus) then
 				return
 			end
@@ -119,8 +122,9 @@ function initializeApp()
 					Obj:positionContent(0, -ShownChild.Children[#ShownChild.Children].Position.Offset.y)
 				end
 			end
-		end
-		Obj.OnNestedDrag = function(dx, dy, button)
+		end)
+		--Obj.OnNestedDrag = function(dx, dy, button)
+		Obj:on("NestedDrag", function(dx, dy, button)
 			if button == 1 then
 				if i == 2 and hasPressEvents(ui.DragTarget) then
 					return
@@ -135,8 +139,9 @@ function initializeApp()
 					end
 				end
 			end
-		end
-		Obj.OnNestedDragEnd = function(_, _, button)
+		end)
+		--Obj.OnNestedDragEnd = function(_, _, button)
+		Obj:on("NestedDragEnd", function(_, _, button)
 			if button == 1 then
 				if i == 2 and hasPressEvents(ui.DragTarget) then
 					return
@@ -151,23 +156,25 @@ function initializeApp()
 					local sign = ValueObject.Value / math.abs(ValueObject.Value)
 					scrollTween = tween(ValueObject, "linear", math.sqrt(sign * ValueObject.Value / 30), {["Value"] = 0})
 					scrollTween:play()
-					scrollTween.OnUpdate = function()
+					--scrollTween.OnUpdate = function()
+					scrollTween:on("Update", function()
 						Obj:shiftContent(0, ValueObject.Value)
 						if Obj.ContentOffset.y > 0 then
 							Obj:positionContent(0, 0)
 						elseif Obj.ContentOffset.y < -ShownChild.Children[#ShownChild.Children].Position.Offset.y then
 							Obj:positionContent(0, -ShownChild.Children[#ShownChild.Children].Position.Offset.y)
 						end
-					end
+					end)
 				end
 			end
-		end
-		Obj.OnNestedPressStart = function()
+		end)
+		--Obj.OnNestedPressStart = function()
+		Obj:on("NestedPressStart", function()
 			if scrollTween ~= nil then
 				scrollTween:stop()
 				scrollTween = nil
 			end
-		end
+		end)
 	end
 
 	-- create and fill in the top bar
@@ -223,7 +230,8 @@ function initializeApp()
 
 			-- link the right button in the dropdown to open the page and close the previous page
 			local bodyInitialized = false
-			DropdownBox.Children[k].OnFullPress = function(x, y, button)
+			--DropdownBox.Children[k].OnFullPress = function(x, y, button)
+			DropdownBox.Children[k]:on("FullPress", function(x, y, button)
 				if button == 1 then
 					-- check if page has been initialized yet
 					if not bodyInitialized then
@@ -259,7 +267,7 @@ function initializeApp()
 					BodyContainer:show()
 					shownBody = BodyContainer
 				end
-			end
+			end)
 		end
 	end
 

@@ -149,7 +149,7 @@ table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "markFrame";
 	["Arguments"] = {"frameNumber", "name"};
-	["Description"] = "Marks the given frame number with a certain name (string). When a marked frame is reached, the OnFrameReached callback will be triggered.";
+	["Description"] = "Marks the given frame number with a certain name (string). When a marked frame is reached, the FrameReached event will be triggered.";
 })
 
 table.insert(content, {
@@ -197,20 +197,20 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Header";
-	["Name"] = "Callbacks";
+	["Name"] = "Events";
 	["Description"] = "";
 })
 
 table.insert(content, {
-	["Type"] = "Callback";
-	["Name"] = "OnEndReached";
+	["Type"] = "Event";
+	["Name"] = "EndReached";
 	["Arguments"] = {};
-	["Description"] = "Called right after the animation completed its last frame. If the last frame is skipped due to low frame rates, this callback should still be called.";
+	["Description"] = "Called right after the animation completed its last frame. If the last frame is skipped due to low frame rates, this event should still be called.";
 })
 
 table.insert(content, {
-	["Type"] = "Callback";
-	["Name"] = "OnFrameReached";
+	["Type"] = "Event";
+	["Name"] = "FrameReached";
 	["Arguments"] = {"frameName"};
 	["Description"] = "Called anytime a marked frame is reached. The frameName argument contains the name that the frame was marked with. This can be useful for enabling/disabling state transitions and such.";
 })

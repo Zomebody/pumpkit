@@ -20,7 +20,7 @@ table.insert(content, {
 		local TweenedObject = {["Value"] = 0}
 		local posTween = tween.new(TweenedObject, "sine", 2, {["Value"] = 1})
 
-		Box.OnFullPress = function(x, y, button)
+		Box:on("FullPress", function(x, y, button)
 			if button == 1 then
 				print(#tween.Active)
 				if posTween.State == "playing" then
@@ -29,12 +29,12 @@ table.insert(content, {
 					posTween:resume()
 				end
 			end
-		end
+		end)
 
-		posTween.OnUpdate = function()
+		posTween:on("Update", function()
 			Box:reposition(TweenedObject.Value, 0, 0, 0)
 			Box:setCenter(TweenedObject.Value, 0)
-		end
+		end)
 
 		return Container
 	end;

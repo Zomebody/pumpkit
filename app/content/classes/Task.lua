@@ -114,20 +114,20 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Header";
-	["Name"] = "Callbacks";
+	["Name"] = "Events";
 	["Description"] = "";
 })
 
 table.insert(content, {
-	["Type"] = "Callback";
-	["Name"] = "OnStop";
+	["Type"] = "Event";
+	["Name"] = "Stop";
 	["Arguments"] = {"state"};
 	["Description"] = "Called right after the tween stopped. State is either \"completed\" if the tween stopped on its own when reaching the end, or \"cancelled\" if it was stopped manually with a :stop() call.";
 })
 
 table.insert(content, {
-	["Type"] = "Callback";
-	["Name"] = "OnUpdate";
+	["Type"] = "Event";
+	["Name"] = "Update";
 	["Arguments"] = {};
 	["Description"] = "Called anytime the tween's values are updated.";
 })

@@ -22,11 +22,18 @@ function createDropdown(Vars, LinkedButton, strings)
 		if #Container.Children > 0 then
 			Button:putNextTo(Container.Children[#Container.Children], "under")
 		end
+		--[[
 		Button.OnHoverEnd = function()
 			if ui.CursorFocus == nil or (ui.CursorFocus.Parent ~= Button.Parent and ui.CursorFocus ~= LinkedButton) then
 				Container.Hidden = true
 			end
 		end
+		]]
+		Button:on("HoverEnd", function()
+			if ui.CursorFocus == nil or (ui.CursorFocus.Parent ~= Button.Parent and ui.CursorFocus ~= LinkedButton) then
+				Container.Hidden = true
+			end
+		end)
 		Container:addChild(Button)
 	end
 	for i = 1, #Container.Children do
@@ -38,6 +45,7 @@ function createDropdown(Vars, LinkedButton, strings)
 	Container:putNextTo(LinkedButton, "below")
 
 	-- link events to make dropdown work
+	--[[
 	LinkedButton.OnFullPress = function(x, y, button)
 		if button == 1 then
 			Container.Hidden = not Container.Hidden
@@ -48,6 +56,17 @@ function createDropdown(Vars, LinkedButton, strings)
 			Container.Hidden = true
 		end
 	end
+	]]
+	LinkedButton:on("FullPress", function(x, y, button)
+		if button == 1 then
+			Container.Hidden = not Container.Hidden
+		end
+	end)
+	LinkedButton:on("HoverEnd", function()
+		if not (ui.CursorFocus == Container or (ui.CursorFocus ~= nil and ui.CursorFocus.Parent == Container)) then
+			Container.Hidden = true
+		end
+	end)
 
 	LinkedButton.Parent:addChild(Container)
 	

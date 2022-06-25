@@ -2,12 +2,33 @@
 
 ----------------------------------------------------[[ == VARIABLES & IMPORTS == ]]----------------------------------------------------
 
+local connection = require("framework.connection")
+
 local module = {}
 module.Active = {}
 
 
 local tween = {}
 tween.__index = tween
+
+
+
+----------------------------------------------------[[ == UTILITY FUNCTIONS == ]]----------------------------------------------------
+
+local function findFirstNil(arr)
+	local first = nil
+	for _ in ipairs(arr) do
+		first = first + 1
+	end
+	return first
+end
+
+
+local function callFunctionArray(arr, ...) -- dots are the arguments that are passed
+	for _, funcPair in pairs(arr) do
+		funcPair[1](...) -- first index of funcPair is the function to call. Second index is the connection object
+	end
+end
 
 
 
@@ -43,6 +64,23 @@ interpolations["quadratic"] = interpolations["squared"]
 
 
 ----------------------------------------------------[[ == TWEEN METHODS == ]]----------------------------------------------------
+
+-- eventName is the name of the event to call. All event name strings are accepted, but not all of them may trigger
+-- func is the function to link
+function tween:on(eventName, func)
+	local index
+	if self.Events[eventName] == nil then
+		index = 1
+		self.Events[eventName] = {}
+	else
+		-- find the first open hole
+		index = findFirstNil(self.Events[eventName])
+	end
+	local Conn = connection.new(self, eventName, index)
+	self.Events[eventName][index] = {func, Conn}
+	return Conn
+end
+
 
 -- returns a value between 0 and 1 where 0 is 'just started' and 1 is 'completed'
 function tween:getProgress()
@@ -119,8 +157,10 @@ function tween:stop(complete)
 	end
 
 	-- call OnStop callback
-	if self.OnStop ~= nil then
-		self.OnStop(complete and "complete" or "cancelled")
+	--if self.OnStop ~= nil then
+	if self.Events.Stop ~= nil then
+		--self.OnStop(complete and "complete" or "cancelled")
+		callFunctionArray(self.Events.Stop, complete and "complete" or "cancelled")
 	end
 
 	return true
@@ -155,8 +195,10 @@ function tween:update(dt)
 		end
 
 		-- call OnUpdate
-		if self.OnUpdate ~= nil then
-			self.OnUpdate(self.TimePlayed / self.Duration)
+		--if self.OnUpdate ~= nil then
+		--	self.OnUpdate(self.TimePlayed / self.Duration)
+		if self.Events.Update then
+			callFunctionArray(self.Events.Update, self.TimePlayed / self.Duration)
 		end
 
 		-- stop tween if at the end
@@ -227,8 +269,9 @@ local function new(Target, tweenType, duration, valueTable)
 			["Goal"] = {};
 		};
 		-- callbacks
-		["OnStop"] = nil; -- called right when the tween ends
-		["OnUpdate"] = nil; -- called at the end of each tween:update() call
+		--["OnStop"] = nil; -- called right when the tween ends
+		--["OnUpdate"] = nil; -- called at the end of each tween:update() call
+		["Events"] = {};
 	}
 
 	for k, v in pairs(valueTable) do

@@ -1,7 +1,8 @@
 
 
-local getpath = require("framework.getpath")
-local vector = require(getpath(..., "../datatypes/vector"))
+----------------------------------------------------[[ == VARIABLES & IMPORTS == ]]----------------------------------------------------
+
+local connection = require("framework.connection")
 
 local module = {
 	["Active"] = {}
@@ -10,6 +11,28 @@ local module = {
 local animation = {}
 animation.__index = animation
 
+
+
+----------------------------------------------------[[ == UTILITY FUNCTIONS == ]]----------------------------------------------------
+
+local function findFirstNil(arr)
+	local first = nil
+	for _ in ipairs(arr) do
+		first = first + 1
+	end
+	return first
+end
+
+
+local function callFunctionArray(arr, ...) -- dots are the arguments that are passed
+	for _, funcPair in pairs(arr) do
+		funcPair[1](...) -- first index of funcPair is the function to call. Second index is the connection object
+	end
+end
+
+
+
+----------------------------------------------------[[ == MODULE FUNCTIONS == ]]----------------------------------------------------
 
 function module.isAnimation(Obj)
 	return getmetatable(Obj) == animation
@@ -45,6 +68,23 @@ end
 
 
 
+----------------------------------------------------[[ == ANIMATION FUNCTIONS == ]]----------------------------------------------------
+
+-- eventName is the name of the event to call. All event name strings are accepted, but not all of them may trigger
+-- func is the function to link
+function animation:on(eventName, func)
+	local index
+	if self.Events[eventName] == nil then
+		index = 1
+		self.Events[eventName] = {}
+	else
+		-- find the first open hole
+		index = findFirstNil(self.Events[eventName])
+	end
+	local Conn = connection.new(self, eventName, index)
+	self.Events[eventName][index] = {func, Conn}
+	return Conn
+end
 
 -- start playing the animation by setting its state and putting it in the active animations list
 -- animation must be idle in order to start
@@ -58,8 +98,8 @@ function animation:play()
 	module.Active[#module.Active + 1] = self
 
 	-- check if the first frame is marked, and if so, call OnFrameReached
-	if self.OnFrameReached ~= nil and self.MarkedFrames[1] ~= nil then
-		self.OnFrameReached(self.MarkedFrames[1])
+	if self.Events.FrameReached ~= nil and self.MarkedFrames[1] ~= nil then
+		callFunctionArray("FrameReached", self.MarkedFrames[1])
 	end
 	return true
 end
@@ -136,17 +176,16 @@ function animation:update(dt)
 		--print(prevFramesPlayed, newFramesPlayed)
 		for i = math.ceil(prevFramesPlayed + 1), math.floor(newFramesPlayed + 1) do
 			local frame = (i - 1) % self.FrameCount + 1
-			if frame == 1 and self.OnEndReached ~= nil then
-				self.OnEndReached()
+			if frame == 1 and self.Events.EndReached ~= nil then
+				--self.OnEndReached()
+				callFunctionArray(self.Events.EndReached)
 			end
-			if self.MarkedFrames[frame] ~= nil and self.OnFrameReached ~= nil and (not (frame == 1 and self.Looped == false and self.TimePlayed == (self.FrameCount * self.FrameDuration))) then
-				self.OnFrameReached(self.MarkedFrames[frame])
+			--if self.MarkedFrames[frame] ~= nil and self.OnFrameReached ~= nil and (not (frame == 1 and self.Looped == false and self.TimePlayed == (self.FrameCount * self.FrameDuration))) then
+			if self.MarkedFrames[frame] ~= nil and self.Events.FrameReached ~= nil and (not (frame == 1 and self.Looped == false and self.TimePlayed == (self.FrameCount * self.FrameDuration))) then
+				--self.OnFrameReached(self.MarkedFrames[frame])
+				callFunctionArray(self.Events.FrameReached, self.MarkedFrames[frame])
 			end
 		end
-
-		--if curFrame ~= prevFrame and self.MarkedFrames[curFrame] ~= nil and self.OnFrameReached ~= nil then
-		--	self.OnFrameReached(self.MarkedFrames[curFrame])
-		--end
 
 		if stopAnimation then
 			self:stop()
@@ -177,7 +216,7 @@ end
 
 
 
-
+----------------------------------------------------[[ == ANIMATION CREATION == ]]----------------------------------------------------
 
 local function new(refImg, width, height, coordinates, playSpeed, looped)
 	local Obj = {
@@ -195,8 +234,9 @@ local function new(refImg, width, height, coordinates, playSpeed, looped)
 		["Looped"] = looped or false;
 		["MarkedFrames"] = {};
 		-- callbacks
-		["OnFrameReached"] = nil;
-		["OnEndReached"] = nil;
+		--["OnFrameReached"] = nil;
+		--["OnEndReached"] = nil;
+		["Events"] = {};
 	}
 
 	-- transform coordinates into readable format for the animation
@@ -233,6 +273,8 @@ local function new(refImg, width, height, coordinates, playSpeed, looped)
 end
 
 
+
+----------------------------------------------------[[ == MODULE RETURN == ]]----------------------------------------------------
 
 module.new = new
 return setmetatable(module, {__call = function(_, ...) return new(...) end})
