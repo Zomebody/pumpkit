@@ -154,6 +154,13 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Method";
+	["Name"] = "on";
+	["Arguments"] = {"eventName", "function"};
+	["Description"] = "Registers a function to be called when the given event triggered. When this method is called multiple times, each function will be called in the same order as they were registered.\n\nReturns a Connection object.";
+})
+
+table.insert(content, {
+	["Type"] = "Method";
 	["Name"] = "pause";
 	["Arguments"] = {};
 	["Description"] = "Pauses the animation. The animation's state must be \"idle\" for it to get paused.";
