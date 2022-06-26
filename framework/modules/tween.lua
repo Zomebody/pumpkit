@@ -13,25 +13,6 @@ tween.__index = tween
 
 
 
-----------------------------------------------------[[ == UTILITY FUNCTIONS == ]]----------------------------------------------------
-
-local function findFirstNil(arr)
-	local first = nil
-	for _ in ipairs(arr) do
-		first = first + 1
-	end
-	return first
-end
-
-
-local function callFunctionArray(arr, ...) -- dots are the arguments that are passed
-	for _, funcPair in pairs(arr) do
-		funcPair[1](...) -- first index of funcPair is the function to call. Second index is the connection object
-	end
-end
-
-
-
 ----------------------------------------------------[[ == TWEENING FUNCTIONS == ]]----------------------------------------------------
 
 local interpolations = {}
@@ -68,15 +49,11 @@ interpolations["quadratic"] = interpolations["squared"]
 -- eventName is the name of the event to call. All event name strings are accepted, but not all of them may trigger
 -- func is the function to link
 function tween:on(eventName, func)
-	local index
 	if self.Events[eventName] == nil then
-		index = 1
 		self.Events[eventName] = {}
-	else
-		-- find the first open hole
-		index = findFirstNil(self.Events[eventName])
 	end
-	local Conn = connection.new(self, eventName, index)
+	local index = #self.Events[eventName] + 1
+	local Conn = connection.new(self, eventName)
 	self.Events[eventName][index] = {func, Conn}
 	return Conn
 end
@@ -160,7 +137,7 @@ function tween:stop(complete)
 	--if self.OnStop ~= nil then
 	if self.Events.Stop ~= nil then
 		--self.OnStop(complete and "complete" or "cancelled")
-		callFunctionArray(self.Events.Stop, complete and "complete" or "cancelled")
+		connection.doEvents(self.Events.Stop, complete and "complete" or "cancelled")
 	end
 
 	return true
@@ -198,7 +175,7 @@ function tween:update(dt)
 		--if self.OnUpdate ~= nil then
 		--	self.OnUpdate(self.TimePlayed / self.Duration)
 		if self.Events.Update then
-			callFunctionArray(self.Events.Update, self.TimePlayed / self.Duration)
+			connection.doEvents(self.Events.Update, self.TimePlayed / self.Duration)
 		end
 
 		-- stop tween if at the end

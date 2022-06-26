@@ -13,25 +13,6 @@ animation.__index = animation
 
 
 
-----------------------------------------------------[[ == UTILITY FUNCTIONS == ]]----------------------------------------------------
-
-local function findFirstNil(arr)
-	local first = nil
-	for _ in ipairs(arr) do
-		first = first + 1
-	end
-	return first
-end
-
-
-local function callFunctionArray(arr, ...) -- dots are the arguments that are passed
-	for _, funcPair in pairs(arr) do
-		funcPair[1](...) -- first index of funcPair is the function to call. Second index is the connection object
-	end
-end
-
-
-
 ----------------------------------------------------[[ == MODULE FUNCTIONS == ]]----------------------------------------------------
 
 function module.isAnimation(Obj)
@@ -73,15 +54,11 @@ end
 -- eventName is the name of the event to call. All event name strings are accepted, but not all of them may trigger
 -- func is the function to link
 function animation:on(eventName, func)
-	local index
 	if self.Events[eventName] == nil then
-		index = 1
 		self.Events[eventName] = {}
-	else
-		-- find the first open hole
-		index = findFirstNil(self.Events[eventName])
 	end
-	local Conn = connection.new(self, eventName, index)
+	local index = #self.Events[eventName] + 1
+	local Conn = connection.new(self, eventName)
 	self.Events[eventName][index] = {func, Conn}
 	return Conn
 end
@@ -99,7 +76,7 @@ function animation:play()
 
 	-- check if the first frame is marked, and if so, call OnFrameReached
 	if self.Events.FrameReached ~= nil and self.MarkedFrames[1] ~= nil then
-		callFunctionArray("FrameReached", self.MarkedFrames[1])
+		connection.doEvents("FrameReached", self.MarkedFrames[1])
 	end
 	return true
 end
@@ -178,12 +155,12 @@ function animation:update(dt)
 			local frame = (i - 1) % self.FrameCount + 1
 			if frame == 1 and self.Events.EndReached ~= nil then
 				--self.OnEndReached()
-				callFunctionArray(self.Events.EndReached)
+				connection.doEvents(self.Events.EndReached)
 			end
 			--if self.MarkedFrames[frame] ~= nil and self.OnFrameReached ~= nil and (not (frame == 1 and self.Looped == false and self.TimePlayed == (self.FrameCount * self.FrameDuration))) then
 			if self.MarkedFrames[frame] ~= nil and self.Events.FrameReached ~= nil and (not (frame == 1 and self.Looped == false and self.TimePlayed == (self.FrameCount * self.FrameDuration))) then
 				--self.OnFrameReached(self.MarkedFrames[frame])
-				callFunctionArray(self.Events.FrameReached, self.MarkedFrames[frame])
+				connection.doEvents(self.Events.FrameReached, self.MarkedFrames[frame])
 			end
 		end
 

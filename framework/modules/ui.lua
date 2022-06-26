@@ -149,25 +149,6 @@ end
 
 
 
-----------------------------------------------------[[ == UTILITY FUNCTIONS == ]]----------------------------------------------------
-
-local function findFirstNil(arr)
-	local first = nil
-	for _ in ipairs(arr) do
-		first = first + 1
-	end
-	return first
-end
-
-
-local function callFunctionArray(arr, ...) -- dots are the arguments that are passed
-	for _, funcPair in pairs(arr) do
-		funcPair[1](...) -- first index of funcPair is the function to call. Second index is the connection object
-	end
-end
-
-
-
 ----------------------------------------------------[[ == MODULE INITIALIZATION == ]]----------------------------------------------------
 
 -- connects love2d events to UI element events
@@ -192,13 +173,13 @@ function module:initialize(autoRender)
 				--if oldFocus.OnHoverEnd ~= nil then
 				--	oldFocus.OnHoverEnd()
 				if oldFocus.Events.HoverEnd ~= nil then
-					callFunctionArray(oldFocus.Events.HoverEnd)
+					connection.doEvents(oldFocus.Events.HoverEnd)
 				end
 			end
 			--if self.CursorFocus ~= nil and self.CursorFocus.OnHoverStart ~= nil then
 			--	self.CursorFocus.OnHoverStart()
 			if self.CursorFocus ~= nil and self.CursorFocus.Events.HoverStart ~= nil then
-				callFunctionArray(self.CursorFocus.Events.HoverStart)
+				connection.doEvents(self.CursorFocus.Events.HoverStart)
 			end
 		end
 
@@ -210,19 +191,19 @@ function module:initialize(autoRender)
 			--if Target.OnDrag ~= nil then
 			--	Target.OnDrag(dx, dy, self.PressedButton, x - self.DragStart.x, y - self.DragStart.y)
 			if Target.Events.Drag ~= nil then
-				callFunctionArray(Target.Events.Drag, dx, dy, self.PressedButton, x - self.DragStart.x, y - self.DragStart.y)
+				connection.doEvents(Target.Events.Drag, dx, dy, self.PressedButton, x - self.DragStart.x, y - self.DragStart.y)
 			end
 			--if Target.OnNestedDrag ~= nil then
 			--	Target.OnNestedDrag(dx, dy, self.PressedButton, x - self.DragStart.x, y - self.DragStart.y)
 			if Target.Events.NestedDrag ~= nil then
-				callFunctionArray(Target.Events.NestedDrag, dx, dy, self.PressedButton, x - self.DragStart.x, y - self.DragStart.y)
+				connection.doEvents(Target.Events.NestedDrag, dx, dy, self.PressedButton, x - self.DragStart.x, y - self.DragStart.y)
 			end
 			while Target.Parent ~= nil and Target.Parent ~= module do
 				Target = Target.Parent
 				--if Target.OnNestedDrag ~= nil then
 				--	Target.OnNestedDrag(dx, dy, self.PressedButton, x - self.DragStart.x, y - self.DragStart.y)
 				if Target.Events.NestedDrag ~= nil then
-					callFunctionArray(Target.Events.NestedDrag, dx, dy, self.PressedButton, x - self.DragStart.x, y - self.DragStart.y)
+					connection.doEvents(Target.Events.NestedDrag, dx, dy, self.PressedButton, x - self.DragStart.x, y - self.DragStart.y)
 				end
 			end
 		end
@@ -261,13 +242,13 @@ function module:initialize(autoRender)
 					--if oldFocus.OnHoverEnd ~= nil then
 					--	oldFocus.OnHoverEnd()
 					if oldFocus.Events.HoverEnd ~= nil then
-						callFunctionArray(oldFocus.Events.HoverEnd)
+						connection.doEvents(oldFocus.Events.HoverEnd)
 					end
 				end
 				--if self.CursorFocus ~= nil and self.CursorFocus.OnHoverStart ~= nil then
 				--	self.CursorFocus.OnHoverStart()
 				if self.CursorFocus ~= nil and self.CursorFocus.Events.HoverStart ~= nil then
-					callFunctionArray(self.CursorFocus.Events.HoverStart)
+					connection.doEvents(self.CursorFocus.Events.HoverStart)
 				end
 			end
 		end
@@ -338,19 +319,19 @@ function module:initialize(autoRender)
 			--if Target.OnDragEnd ~= nil then
 			--	Target.OnDragEnd(x - self.DragStart.x, y - self.DragStart.y, button)
 			if Target.Events.DragEnd ~= nil then
-				callFunctionArray(Target.Events.DragEnd, x - self.DragStart.x, y - self.DragStart.y, button)
+				connection.doEvents(Target.Events.DragEnd, x - self.DragStart.x, y - self.DragStart.y, button)
 			end
 			--if Target.OnNestedDragEnd ~= nil then
 			--	Target.OnNestedDragEnd(x - self.DragStart.x, y - self.DragStart.y, button)
 			if Target.Events.NestedDragEnd ~= nil then
-				callFunctionArray(Target.Events.NestedDragEnd, x - self.DragStart.x, y - self.DragStart.y, button)
+				connection.doEvents(Target.Events.NestedDragEnd, x - self.DragStart.x, y - self.DragStart.y, button)
 			end
 			while Target.Parent ~= nil and Target.Parent ~= module do
 				Target = Target.Parent
 				--if Target.OnNestedDragEnd ~= nil then
 				--	Target.OnNestedDragEnd(x - self.DragStart.x, y - self.DragStart.y, button)
 				if Target.Events.NestedDragEnd ~= nil then
-					callFunctionArray(Target.Events.NestedDragEnd, x - self.DragStart.x, y - self.DragStart.y, button)
+					connection.doEvents(Target.Events.NestedDragEnd, x - self.DragStart.x, y - self.DragStart.y, button)
 				end
 			end
 			--self.DragSpeed:set(0, 0)
@@ -369,19 +350,19 @@ function module:initialize(autoRender)
 			--if Target.OnPressStart ~= nil then
 			--	Target.OnPressStart(x, y, button, istouch, presses)
 			if Target.Events.PressStart ~= nil then
-				callFunctionArray(Target.Events.PressStart, x, y, button, istouch, presses)
+				connection.doEvents(Target.Events.PressStart, x, y, button, istouch, presses)
 			end
 			--if Target.OnNestedPressStart ~= nil then
 			--	Target.OnNestedPressStart(x, y, button, istouch, presses)
 			if Target.Events.NestedPressStart ~= nil then
-				callFunctionArray(Target.Events.NestedPressStart, x, y, button, istouch, presses)
+				connection.doEvents(Target.Events.NestedPressStart, x, y, button, istouch, presses)
 			end
 			while Target.Parent ~= nil and Target.Parent ~= module do
 				Target = Target.Parent
 				--if Target.OnNestedPressStart ~= nil then
 				--	Target.OnNestedPressStart(x, y, button, istouch, presses)
 				if Target.Events.NestedPressStart ~= nil then
-					callFunctionArray(Target.Events.NestedPressStart, x, y, button, istouch, presses)
+					connection.doEvents(Target.Events.NestedPressStart, x, y, button, istouch, presses)
 				end
 			end
 		end
@@ -407,25 +388,25 @@ function module:initialize(autoRender)
 			--if Target.OnPressEnd ~= nil then
 			--	Target.OnPressEnd(x, y, button, istouch, presses)
 			if Target.Events.PressEnd ~= nil then
-				callFunctionArray(Target.Events.PressEnd, x, y, button, istouch, presses)
+				connection.doEvents(Target.Events.PressEnd, x, y, button, istouch, presses)
 			end
 			--if Target.OnNestedPressEnd ~= nil then
 			--	Target.OnNestedPressEnd(x, y, button, istouch, presses)
 			if Target.Events.NestedPressEnd ~= nil then
-				callFunctionArray(Target.Events.NestedPressEnd, x, y, button, istouch, presses)
+				connection.doEvents(Target.Events.NestedPressEnd, x, y, button, istouch, presses)
 			end
 			while Target.Parent ~= nil and Target.Parent ~= module do
 				Target = Target.Parent
 				--if Target.OnNestedPressEnd ~= nil then
 				--	Target.OnNestedPressEnd(x, y, button, istouch, presses)
 				if Target.Events.NestedPressEnd ~= nil then
-					callFunctionArray(Target.Events.NestedPressEnd, x, y, button, istouch, presses)
+					connection.doEvents(Target.Events.NestedPressEnd, x, y, button, istouch, presses)
 				end
 			end
 			--if self.CursorFocus == self.PressedElement and self.CursorFocus.OnFullPress ~= nil then
 			--	self.CursorFocus.OnFullPress(x, y, button, istouch, presses)
 			if self.CursorFocus == self.PressedElement and self.CursorFocus.Events.FullPress ~= nil then
-				callFunctionArray(self.CursorFocus.Events.FullPress, x, y, button, istouch, presses)
+				connection.doEvents(self.CursorFocus.Events.FullPress, x, y, button, istouch, presses)
 			end
 		end
 
@@ -435,19 +416,19 @@ function module:initialize(autoRender)
 			--if Target.OnDragEnd ~= nil then
 			--	Target.OnDragEnd(x - self.DragStart.x, y - self.DragStart.y, button)
 			if Target.Events.DragEnd ~= nil then
-				callFunctionArray(Target.Events.DragEnd, x - self.DragStart.x, y - self.DragStart.y, button)
+				connection.doEvents(Target.Events.DragEnd, x - self.DragStart.x, y - self.DragStart.y, button)
 			end
 			--if Target.OnNestedDragEnd ~= nil then
 			--	Target.OnNestedDragEnd(x - self.DragStart.x, y - self.DragStart.y, button)
 			if Target.Events.NestedDragEnd ~= nil then
-				callFunctionArray(Target.Events.NestedDragEnd, x - self.DragStart.x, y - self.DragStart.y, button)
+				connection.doEvents(Target.Events.NestedDragEnd, x - self.DragStart.x, y - self.DragStart.y, button)
 			end
 			while Target.Parent ~= nil and Target.Parent ~= module do
 				Target = Target.Parent
 				--if Target.OnNestedDragEnd ~= nil then
 				--	Target.OnNestedDragEnd(x - self.DragStart.x, y - self.DragStart.y, button)
 				if Target.Events.NestedDragEnd ~= nil then
-					callFunctionArray(Target.Events.NestedDragEnd, x - self.DragStart.x, y - self.DragStart.y, button)
+					connection.doEvents(Target.Events.NestedDragEnd, x - self.DragStart.x, y - self.DragStart.y, button)
 				end
 			end
 		end
@@ -473,20 +454,20 @@ function module:initialize(autoRender)
 			--if self.CursorFocus.OnScroll ~= nil then
 			--	self.CursorFocus.OnScroll(x, y)
 			if self.CursorFocus.Events.Scroll ~= nil then
-				callFunctionArray(self.CursorFocus.Events.Scroll, x, y)
+				connection.doEvents(self.CursorFocus.Events.Scroll, x, y)
 			end
 			local Target = self.CursorFocus
 			--if self.CursorFocus.OnNestedScroll ~= nil then
 			--	self.CursorFocus.OnNestedScroll(x, y)
 			if self.CursorFocus.Events.NestedScroll ~= nil then
-				callFunctionArray(self.CursorFocus.Events.NestedScroll, x, y)
+				connection.doEvents(self.CursorFocus.Events.NestedScroll, x, y)
 			end
 			while Target.Parent ~= nil and Target.Parent ~= module do
 				Target = Target.Parent
 				--if Target.OnNestedScroll ~= nil then
 				--	Target.OnNestedScroll(x, y)
 				if Target.Events.NestedScroll ~= nil then
-					callFunctionArray(Target.Events.NestedScroll, x, y)
+					connection.doEvents(Target.Events.NestedScroll, x, y)
 				end
 			end
 		end
@@ -515,7 +496,7 @@ function module:initialize(autoRender)
 			--if self.KeyboardFocus[i].OnKeyEntered ~= nil then
 			--	self.KeyboardFocus[i].OnKeyEntered(key, scancode)
 			if self.KeyboardFocus[i].Events.KeyEntered ~= nil then
-				callFunctionArray(self.KeyboardFocus[i].Events.KeyEntered, key, scancode)
+				connection.doEvents(self.KeyboardFocus[i].Events.KeyEntered, key, scancode)
 			end
 		end
 	end
@@ -669,7 +650,7 @@ function module:focusKeyboard(elements, focusMode, modeArg)
 		--if Element.OnKeyboardLost ~= nil then
 		--	Element.OnKeyboardLost()
 		if Element.Events.KeyboardLost ~= nil then
-			callFunctionArray(Element.Events.KeyboardLost)
+			connection.doEvents(Element.Events.KeyboardLost)
 		end
 		table.remove(self.KeyboardFocus, index)
 	end
@@ -696,7 +677,7 @@ function module:focusKeyboard(elements, focusMode, modeArg)
 		--if newlyFocused[i].OnKeyboardFocus ~= nil then
 		--	newlyFocused[i].OnKeyboardFocus()
 		if newlyFocused[i].Events.KeyboardFocus ~= nil then
-			callFunctionArray(newlyFocused[i].Events.KeyboardFocus)
+			connection.doEvents(newlyFocused[i].Events.KeyboardFocus)
 		end
 	end
 
@@ -780,15 +761,11 @@ end
 -- eventName is the name of the event to call. All event name strings are accepted, but not all of them may trigger
 -- func is the function to link
 function UIBase:on(eventName, func)
-	local index
 	if self.Events[eventName] == nil then
-		index = 1
 		self.Events[eventName] = {}
-	else
-		-- find the first open hole
-		index = findFirstNil(self.Events[eventName])
 	end
-	local Conn = connection.new(self, eventName, index)
+	local index = #self.Events[eventName] + 1
+	local Conn = connection.new(self, eventName)
 	self.Events[eventName][index] = {func, Conn}
 	return Conn
 end
