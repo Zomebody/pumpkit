@@ -288,7 +288,6 @@ function module:initialize(autoRender)
 				for i = 1, #self.KeyboardFocus do
 					if self.KeyboardFocus[i] == self.CursorFocus then
 						loseKeyboardFocus = true
-						--self:focusKeyboard() -- cursor is currently hovering over one of the keyboard-focused elements
 						break
 					end
 				end
@@ -303,15 +302,12 @@ function module:initialize(autoRender)
 				end
 				if not selfFocused then
 					loseKeyboardFocus = true
-					--self:focusKeyboard()
 				end
 			-- always cancel keyboard focus when clicking
 			else
 				loseKeyboardFocus = true
-				--self:focusKeyboard()
 			end
 		end
-		--self:focusKeyboard() -- old singular call before keyboard focus modes were programmed
 
 		-- stop current drag
 		if self.DragTarget ~= nil and self.DragActive then
@@ -555,9 +551,18 @@ function module:remove(Obj)
 		children[i]:remove()
 	end
 	Obj.Children = {}
-	-- unmark the object to remove all references in markedObjects
 	--Obj:mark()
 	Obj:clearTags()
+	-- clear any events (TODO: just setting the event list to nil should be good enough for the garbage collector)
+	for eventName, eventList in pairs(Obj.Events) do
+		for index, dataPair in pairs(eventList) do
+			if dataPair[2] ~= nil and dataPair[2].Connected then
+				dataPair[2]:disconnect()
+			end
+			eventList[index] = nil
+		end
+		Obj.Events[eventName] = nil
+	end
 	-- remove any fonts from memory
 	if Obj.TextBlock ~= nil then
 		Obj.TextBlock:clearFont()
@@ -1567,13 +1572,26 @@ end
 
 -- remove the object by removing its children and unmarking the object
 function AnimatedFrame:remove()
+	local children = {}
 	for i = 1, #self.Children do
-		self.Children[i]:remove()
-		self.Children[i] = nil
+		children[i] = self.Children[i]
 	end
-	-- unmark the object to remove all references in markedObjects
-	--self:mark()
+	for i = 1, #children do
+		children[i]:remove()
+	end
+	self.Children = {}
+	-- clear all tags
 	self:clearTags()
+	-- clear any events (TODO: just setting the event list to nil should be good enough for the garbage collector)
+	for eventName, eventList in pairs(self.Events) do
+		for index, dataPair in pairs(eventList) do
+			if dataPair[2] ~= nil and dataPair[2].Connected then
+				dataPair[2]:disconnect()
+			end
+			eventList[index] = nil
+		end
+		self.Events[eventName] = nil
+	end
 	-- stop the referenced animation to remove it from the animation.Active array, so it can get dereferenced
 	-- WARNING: IF ONE ANIMATION REFERENCE IS SHARED ACROSS ANIMATED FRAMES, REMOVING ONE OF THEM WILL STOP THE OTHER ANIMATED FRAMES!
 	-- TODO: FIX THE ABOVE ISSUE
