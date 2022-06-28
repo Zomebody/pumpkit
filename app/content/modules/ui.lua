@@ -203,7 +203,7 @@ table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "focusKeyboard";
 	["Arguments"] = {"Objects", "focusMode", "modeArg"};
-	["Description"] = "Set the keyboard to focus on the given list of objects (UI elements). When a UI element has keyboard focus, any key-press will trigger the OnKeyEntered event of that UI element. 'focusMode' must either be the string 'key' or 'click' or nil:\n\n- When set to 'key', the 'modeArg' argument must be a string representing a key, or an array of key strings. When any of those keys are pressed, the UI element automatically loses focus.\n\n- When set to 'click', the 'modeArg' variable must be set to 'self' to lose keyboard focus when the UI element is clicked, or 'other', to indicate anything but the UI element itself must be clicked to lose focus. Additionally, nil can be used to always lose keyboard focus on a click.\n\nIf no objects are passed, the keyboard focus will be (re)set to nothing.";
+	["Description"] = "Set the keyboard to focus on the given object or list of objects (UI elements). When a UI element has keyboard focus, any key-press will trigger the OnKeyEntered event of that UI element. 'focusMode' must either be the string 'key' or 'click' or nil:\n\n- When set to 'key', the 'modeArg' argument must be a string representing a key, or an array of key strings. When any of those keys are pressed, the UI element automatically loses focus.\n\n- When set to 'click', the 'modeArg' variable must be set to 'self' to lose keyboard focus when the UI element is clicked, or 'other', to indicate anything but the UI element itself must be clicked to lose focus. Additionally, nil can be used to always lose keyboard focus on a click.\n\nIf no objects are passed, the keyboard focus will be (re)set to nothing.";
 })
 
 table.insert(content, {
@@ -246,6 +246,13 @@ table.insert(content, {
 	["Name"] = "show";
 	["Arguments"] = {};
 	["Description"] = "If the Visible property is set to false, this will set the property back to true so the UI can be drawn again.";
+})
+
+table.insert(content, {
+	["Type"] = "Method";
+	["Name"] = "unfocusKeyboard";
+	["Arguments"] = {"Objects"};
+	["Description"] = "Removes keyboard focus from the given object or list of objects. See the focusKeyboard method for more information.";
 })
 
 table.insert(content, {

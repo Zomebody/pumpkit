@@ -541,8 +541,10 @@ function module:child(name)
 	return nil
 end
 
--- remove the given object from the ui hierarchy by unparenting it. The object should go out of scope and be garbagecollected (if it is not referenced elsewhere)
+-- remove the object by calling its :remove() method
 function module:remove(Obj)
+	Obj:remove()
+	--[[
 	local children = {}
 	for i = 1, #Obj.Children do
 		children[i] = Obj.Children[i]
@@ -586,6 +588,7 @@ function module:remove(Obj)
 	end
 	Obj.Parent = nil
 	self.Changed = true
+	]]
 end
 
 -- return the cursor speed from the last X frames (limit of 30 frames)
@@ -604,6 +607,7 @@ end
 
 -- focuses the keyboard on the given UI elements, triggering their key related events
 function module:focusKeyboard(elements, focusMode, modeArg)
+	if getmetatable(elements) ~= nil then elements = {elements} end -- check if the passed object is a ui element, if so, put it in a table
 	-- see which new elements should obtain focus, and which should lose focus
 	local newlyFocused = {}
 	local loseFocusIndexes = {} -- don't store the elements themselves, but their indexes to make removing faster :>
@@ -629,6 +633,7 @@ function module:focusKeyboard(elements, focusMode, modeArg)
 			for j = 1, #elements do
 				if self.KeyboardFocus[i] == elements[j] then
 					found = true
+					break
 				end
 			end
 		end
@@ -637,23 +642,12 @@ function module:focusKeyboard(elements, focusMode, modeArg)
 		end
 	end
 
-	-- lose focus of currently focused elements
-	--[[
-	for i = 1, #self.KeyboardFocus do
-		if self.KeyboardFocus[1].OnKeyboardLost ~= nil then -- index 1 because I am using table.remove in this loop on all elements!
-			self.KeyboardFocus[1].OnKeyboardLost()
-		end
-		table.remove(self.KeyboardFocus, 1)
-	end
-	]]
 	-- lose focus of those elements that need to lose focus
 	local index = 0
 	local Element = nil
 	for i = #loseFocusIndexes, 1, -1 do -- loop backwards because table.remove() will be used
 		index = loseFocusIndexes[i]
 		Element = self.KeyboardFocus[index]
-		--if Element.OnKeyboardLost ~= nil then
-		--	Element.OnKeyboardLost()
 		if Element.Events.KeyboardLost ~= nil then
 			connection.doEvents(Element.Events.KeyboardLost)
 		end
@@ -661,26 +655,10 @@ function module:focusKeyboard(elements, focusMode, modeArg)
 	end
 
 	-- set focus to new elements
-	--[[
-	if elements ~= nil then
-		for i = 1, #elements do
-			self.KeyboardFocus[i] = elements[i]
-		end
-		for i = 1, #elements do
-			if elements[i].OnKeyboardFocus ~= nil then
-				elements[i].OnKeyboardFocus()
-			end
-		end
-	else
-		self.KeyboardReleasedThisFrame = true
-	end
-	]]
 	for i = 1, #newlyFocused do
 		self.KeyboardFocus[#self.KeyboardFocus + 1] = newlyFocused[i]
 	end
 	for i = 1, #newlyFocused do
-		--if newlyFocused[i].OnKeyboardFocus ~= nil then
-		--	newlyFocused[i].OnKeyboardFocus()
 		if newlyFocused[i].Events.KeyboardFocus ~= nil then
 			connection.doEvents(newlyFocused[i].Events.KeyboardFocus)
 		end
@@ -693,6 +671,36 @@ function module:focusKeyboard(elements, focusMode, modeArg)
 		self.KeyboardFocusState = self.KeyboardFocusState + 1
 	end
 end
+
+
+function module:unfocusKeyboard(elements)
+	if getmetatable(elements) ~= nil then elements = {elements} end -- check if the passed object is a ui element, if so, put it in a table
+	
+	local loseFocusIndexes = {} -- stores the idexes to remove
+
+	-- check if any of the items in the KeyboardFocus array are in the elements array
+	for i = 1, #self.KeyboardFocus do
+		for k = 1, #elements do
+			if self.KeyboardFocus[i] == elements[k] then
+				loseFocusIndexes[#loseFocusIndexes + 1] = i
+				break
+			end
+		end
+	end
+
+	-- lose focus of those elements that need to lose focus
+	local index = 0
+	local Element = nil
+	for i = #loseFocusIndexes, 1, -1 do -- loop backwards because table.remove() will be used
+		index = loseFocusIndexes[i]
+		Element = self.KeyboardFocus[index]
+		if Element.Events.KeyboardLost ~= nil then
+			connection.doEvents(Element.Events.KeyboardLost)
+		end
+		table.remove(self.KeyboardFocus, index)
+	end
+end
+
 
 
 -- check if the given element currently has keyboard focus
@@ -807,7 +815,13 @@ function UIBase:child(name)
 end
 
 
--- remove the object by removing its children and unmarking the object
+--[[
+	remove the object by:
+	- removing its children
+	- clearing its tags
+	- removing its connected events
+	- clearing its font from memory if that font is now unused
+]]
 function UIBase:remove()
 	local children = {}
 	for i = 1, #self.Children do
@@ -817,6 +831,10 @@ function UIBase:remove()
 		children[i]:remove()
 	end
 	self.Children = {}
+	-- first, remove focus (this is done before unlinking any events, so they can still trigger if there were do be unfocus-events support down the line)
+	if self:hasKeyboardFocus() then
+		ui:unfocusKeyboard(self)
+	end
 	-- clear all tags
 	self:clearTags()
 	-- clear any events (TODO: just setting the event list to nil should be good enough for the garbage collector)
@@ -825,6 +843,8 @@ function UIBase:remove()
 			if dataPair[2] ~= nil and dataPair[2].Connected then
 				dataPair[2]:disconnect()
 			end
+			dataPair[1] = nil
+			dataPair[2] = nil
 			eventList[index] = nil
 		end
 		self.Events[eventName] = nil
@@ -836,6 +856,14 @@ function UIBase:remove()
 		self.TextBlock.Text = nil
 	end
 	if self.Parent ~= nil then
+		local Par = self.Parent
+		for i = 1, #Par.Children do
+			if Par.Children[i] == self then
+				table.remove(Par.Children, i)
+				break
+			end
+		end
+		--[[
 		if self.Parent == module then
 			for i = 1, #module.Children do
 				if module.Children[i] == self then
@@ -851,6 +879,7 @@ function UIBase:remove()
 				end
 			end
 		end
+		]]
 	end
 	self.Parent = nil
 	module.Changed = true
@@ -1570,7 +1599,13 @@ function AnimatedFrame:setReference(anim)
 end
 
 
--- remove the object by removing its children and unmarking the object
+--[[
+	remove the object by:
+	- removing its children
+	- clearing its tags
+	- removing its connected events
+	- clearing its font from memory if that font is now unused
+]]
 function AnimatedFrame:remove()
 	local children = {}
 	for i = 1, #self.Children do
@@ -1580,6 +1615,10 @@ function AnimatedFrame:remove()
 		children[i]:remove()
 	end
 	self.Children = {}
+	-- first, remove focus (this is done before unlinking any events, so they can still trigger if there were do be unfocus-events support down the line)
+	if self:hasKeyboardFocus() then
+		ui:unfocusKeyboard(self)
+	end
 	-- clear all tags
 	self:clearTags()
 	-- clear any events (TODO: just setting the event list to nil should be good enough for the garbage collector)
@@ -1603,6 +1642,14 @@ function AnimatedFrame:remove()
 		self.TextBlock.Text = nil
 	end
 	if self.Parent ~= nil then
+		local Par = self.Parent
+		for i = 1, #Par.Children do
+			if Par.Children[i] == self then
+				table.remove(Par.Children, i)
+				break
+			end
+		end
+		--[[
 		if self.Parent == module then
 			for i = 1, #module.Children do
 				if module.Children[i] == Obj then
@@ -1618,6 +1665,7 @@ function AnimatedFrame:remove()
 				end
 			end
 		end
+		]]
 	end
 	self.Parent = nil
 	-- remove CursorFocus if object is focused
@@ -1715,7 +1763,7 @@ local function newBase(w, h, col)
 		["Hidden"] = false;
 		["Id"] = module.TotalCreated;
 		["Name"] = "Object"; -- The name of the instance. Names are not unique. They can be used with the :child() method to find a child with a given name inside some parent instance.
-		["Opacity"] = 1; -- if 0, this object is not drawn (but children are!) TODO: fix children not being drawn
+		["Opacity"] = 1; -- if 0, this object is not drawn (but children are!)
 		--["PaddingX"] = 0; -- an invisible border that creates a smaller inner-window to contain children and text.
 		--["PaddingY"] = 0;
 		["Padding"] = vector(0, 0); -- an invisible border that creates a smaller inner-window to contain children and text. If 0 < padding < 1, then it's interpreted as a percentage / ratio
