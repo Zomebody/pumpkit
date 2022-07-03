@@ -989,6 +989,7 @@ end
 -- side: "left" / "right" / "top" / "above" / "bottom" / "under"
 function UIBase:putNextTo(Obj, side, offset)
 	offset = offset == nil and 0 or offset
+	self:setCenter(Obj.Center.x, Obj.Center.y)
 	if side == "left" then
 		self:reposition(Obj.Position.Scale, Obj.Position.Offset + vector(-self.AbsoluteSize.x - offset, 0))
 	elseif side == "right" then
@@ -1747,7 +1748,7 @@ local function newBase(w, h, col)
 	local Obj = {
 		-- properties
 		["AbsolutePosition"] = vector(0, 0); -- position in absolute pixels
-		["AbsoluteSize"] = vector(w, h);
+		["AbsoluteSize"] = vector(ow, oh);
 		["BorderColor"] = color(col):darken(0.4); -- color of the inner border of the frame
 		["BorderWidth"] = 0; -- border thickness in pixels
 		["Center"] = vector(0, 0); -- AnchorPoint from Roblox

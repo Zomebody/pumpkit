@@ -37,7 +37,8 @@ local function new(fontname, size, textData, w)
 		["ColoredText"] = textData;
 		["AlignmentX"] = "left";
 		["AlignmentY"] = "top";
-		["Width"] = w;
+		["Width"] = w; -- the *actual* width of the text is different if WrapEnabled is false, but this will keep the 'other' width in case you set WrapEnabled back to true
+		["WrapEnabled"] = true; -- if text should wrap or stay on one line
 	}
 	Obj.Font = Obj.Text:getFont()
 	Obj.Text:setf(textData, Obj.Width, "left")
@@ -53,7 +54,14 @@ end
 function textblock:alignX(side)
 	assert(side == "left" or side == "center" or side == "right" or side == "justify", "Method textblock:alignX(side) expects argument 'side' to be one of ('left', 'center', 'right', 'justify')")
 	self.AlignmentX = side
-	self.Text:setf(self.ColoredText, self.Width, side)
+	--self.Text:setf(self.ColoredText, self.Width, side)
+	if self.WrapEnabled then
+		self.Text:setf(self.ColoredText, self.Width, side)
+	else
+		self.Text:set(self.ColoredText)
+		local maxWidth = self.Text:getWidth()
+		self.Text:setf(self.ColoredText, math.max(maxWidth, self.Width), side)
+	end
 end
 
 -- "bottom" / "center" / "top"
@@ -80,7 +88,14 @@ function textblock:setText(textData)
 	end
 	self.RawText = raw or "";
 	self.ColoredText = textData
-	self.Text:setf(self.ColoredText, self.Width, self.AlignmentX)
+	--self.Text:setf(self.ColoredText, self.Width, self.AlignmentX)
+	if self.WrapEnabled then
+		self.Text:setf(self.ColoredText, self.Width, self.AlignmentX)
+	else
+		self.Text:set(self.ColoredText)
+		local maxWidth = self.Text:getWidth()
+		self.Text:setf(self.ColoredText, math.max(maxWidth, self.Width), self.AlignmentX)
+	end
 end
 
 -- returns the raw or colored text of the textblock
@@ -160,7 +175,20 @@ end
 -- set a new maximum width for the textblock
 function textblock:setWidth(w)
 	self.Width = w
-	self.Text:setf(self.ColoredText, self.Width, self.AlignmentX)
+	if self.WrapEnabled then
+		self.Text:setf(self.ColoredText, self.Width, self.AlignmentX)
+	else
+		self.Text:set(self.ColoredText)
+		local maxWidth = self.Text:getWidth()
+		self.Text:setf(self.ColoredText, math.max(maxWidth, w), self.AlignmentX)
+	end
+end
+
+
+function textblock:setWrap(state)
+	if state == self.WrapEnabled then return end
+	self.WrapEnabled = state
+	self:setWidth(self.Width)
 end
 
 -- called when the object that uses the textblock is being removed
