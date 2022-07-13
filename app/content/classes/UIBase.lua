@@ -563,7 +563,7 @@ table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "putNextTo";
 	["Arguments"] = {"Object", "side", "offset"};
-	["Description"] = "Moves the element to be positioned next to 'Object'. 'side' is a string determining on which of the four sides the object should be placed. The value can be either 'top'/'above', 'bottom'/'under'/'below', 'left' or 'right'. The offset value determines a distance in pixels between the two elements.";
+	["Description"] = "Moves the element to be positioned next to 'Object'. 'side' is a string determining on which of the four sides the object should be placed. The value can be either 'top'/'above', 'bottom'/'under'/'below', 'left' or 'right'. The offset value determines a distance in pixels between the two elements.\n\nNote: The position of an element may be unknown before being assigned a parent, in which case this method may not position the element correctly.";
 	["CodeMarkup"] = "<k>local</k> Frame1 <k>=</k> ui.<f>newFrame</f>(<n>100</n>, <n>100</n>, <f>color</f>(<n>0</n>, <n>0</n>, <n>0</n>))\n<k>local</k> Frame2 <k>=</k> ui.<f>newFrame</f>(<n>100</n>, <n>200</n>, <f>color</f>(<n>0</n>, <n>0</n>, <n>0</n>))\nFrame2:<f>putNextTo</f>(Frame1, <s>\"right\"</s>, <n>20</n>) <c>-- put Frame2 20 pixels to the right of Frame1</c>";
 	["Demo"] = function() -- function that creates and returns an element to be placed right below the code example
 		local Container = ui.newFrame(300, 100)

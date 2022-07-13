@@ -17,6 +17,8 @@ local speedHistoryX = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
 local speedHistoryY = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 
 local markedObjects = {} -- stores marked objects in the form ["name"] = {Obj1, Obj2, ...}
+local resizedElements = {} -- the Resize event is called (a.) for each resized element after love.resize is called and (b.) for each resized element at the end of the love.update call
+local resizedElementsCache = {} -- cache with resized elements in case an element is resized multiple times in a frame
 
 
 
@@ -79,10 +81,16 @@ AnimatedFrame.__index = AnimatedFrame
 local contentOffsetX = 0
 local contentOffsetY = 0
 local OP = nil -- Obj.Parent
-local function updateAbsolutePosition(Obj, wX, wY, wWidth, wHeight)
+local function updateAbsolutePosition(Obj, wX, wY, wWidth, wHeight, ignoreParentPosition) -- ignoreParentPosition is used in combination with :renderTo() to correctly position children that are rendered without parent
+	if Obj == nil or Obj == module then
+		for i = 1, #module.Children do
+			updateAbsolutePosition(module.Children[i], wX, wY, wWidth, wHeight, ignoreParentPosition)
+		end
+		return
+	end
 	-- set value depending on if this is a top-level element, or if there is a parent
 	OP = Obj.Parent
-	if OP and OP ~= module then
+	if OP and OP ~= module and (not ignoreParentPosition) then
 		wX = (wX == nil and OP.AbsolutePosition.x or wX) + OP.Padding.x
 		wY = (wY == nil and OP.AbsolutePosition.y or wY) + OP.Padding.y
 		wWidth = (wWidth == nil and OP.AbsoluteSize.x or wWidth) - 2 * OP.Padding.x
@@ -107,7 +115,7 @@ local function updateAbsolutePosition(Obj, wX, wY, wWidth, wHeight)
 	local absY = wY + contentOffsetY + Obj.Position.Offset.y + math.floor(Obj.Position.Scale.y * wHeight) - math.floor(Obj.AbsoluteSize.y * Obj.Center.y)
 	Obj.AbsolutePosition:set(math.floor(absX), math.floor(absY))
 	for i = 1, #Obj.Children do
-		updateAbsolutePosition(Obj.Children[i], absX, absY, Obj.AbsoluteSize.x, Obj.AbsoluteSize.y)
+		updateAbsolutePosition(Obj.Children[i], absX, absY, Obj.AbsoluteSize.x, Obj.AbsoluteSize.y, ignoreParentPosition)
 	end
 end
 
@@ -116,18 +124,32 @@ end
 -- when updating the absolute size of an object (and by extension its descendants), their positions may also need to be updated (for example when a child is aligned to the right of a parent that is being resized)
 -- therefore, after calling updateAbsoluteSize() on an object, you should also call updateAbsolutePosition() on the same element afterwards!
 local Par = nil
-local function updateAbsoluteSize(Obj)
+local function updateAbsoluteSize(Obj, ignoreParentSize) -- ignoreParentSize is a boolean to ignore the parent's size. Useful in combination with :renderTo() if the object has a parent already
+	if Obj == nil or Obj == module then
+		for i = 1, #module.Children do
+			updateAbsoluteSize(module.Children[i])
+		end
+		return
+	end
 	Par = Obj.Parent
 	local sX = 0
 	local sY = 0
-	if Par and Par ~= module then -- inherit size from parent
+	if Par and Par ~= module and (not ignoreParentSize) then -- inherit size from parent
 		sX = Obj.Size.Scale.x * (Par.AbsoluteSize.x - Par.Padding.x * 2) + Obj.Size.Offset.x
 		sY = Obj.Size.Scale.y * (Par.AbsoluteSize.y - Par.Padding.y * 2) + Obj.Size.Offset.y
 	else -- use the window's size
 		sX = Obj.Size.Scale.x * module.Size.x + Obj.Size.Offset.x
 		sY = Obj.Size.Scale.y * module.Size.y + Obj.Size.Offset.y
 	end
+	local prevX, prevY = Obj.AbsoluteSize.x, Obj.AbsoluteSize.y
 	Obj.AbsoluteSize:set(math.floor(sX), math.floor(sY))
+	-- store the resized element in a cache so that the 'resize' event can be called at the end of the love.update or love.resize function
+	if prevX ~= math.floor(sX) or prevY ~= math.floor(sY) then
+		if resizedElementsCache[Obj] == nil then
+			resizedElementsCache[Obj] = true
+			resizedElements[#resizedElements + 1] = Obj -- elements are ordered in Parent -> Child order so a child can always check its parent's size and it will be up-to-date
+		end
+	end
 
 	if Obj.TextBlock ~= nil then
 		Obj.TextBlock:setWidth(Obj.AbsoluteSize.x - 2 * Obj.Padding.x)
@@ -219,6 +241,15 @@ function module:initialize(autoRender)
 	love.update = function()
 		update()
 
+		-- call the resize event on the resized elements this frame
+		for i = 1, #resizedElements do
+			if resizedElements[i].Events.Resize ~= nil then
+				connection.doEvents(resizedElements[i].Events.Resize)
+			end
+		end
+		resizedElements = {}
+		resizedElementsCache = {}
+
 		-- update speed history table and recalculate cursor speed
 		local newX, newY = love.mouse.getPosition()
 		if not skipSpeedUpdate then
@@ -271,6 +302,13 @@ function module:initialize(autoRender)
 				updateAbsolutePosition(self.Children[i])
 			end
 		end
+		for i = 1, #resizedElements do
+			if resizedElements[i].Events.Resize ~= nil then
+				connection.doEvents(resizedElements[i].Events.Resize)
+			end
+		end
+		resizedElements = {}
+		resizedElementsCache = {}
 		resize(w, h)
 	end
 
@@ -721,15 +759,36 @@ end
 -- draw all UI on screen
 function module:render()
 	if self.Visible then
+		local x, y, w, h = love.graphics.getScissor()
 		local r, g, b, a = love.graphics.getColor()
 		love.graphics.setColor(1, 1, 1, 1)
 		for i = 1, #self.Children do
 			self.Children[i]:draw()
 		end
-		love.graphics.setScissor()
+		love.graphics.setScissor(x, y, w, h)
 		love.graphics.setColor(r, g, b, a)
 	end
 end
+
+-- draw all UI onto a given canvas
+function module:renderTo(canv, mipmap)
+	if canv == nil or (not canv:typeOf("Canvas")) then
+		error("ui:renderTo(canvas, mipmap) takes a canvas as the first argument. Supplied is a " .. canv:type())
+	end
+	local canvasX, canvasY = canv:getDimensions()
+	local curWidth, curHeight = self.Size.x, self.Size.y
+	local curCanvas = love.graphics.getCanvas()
+	self.Size:set(canvasX, canvasY) -- setting this somehow screws things up
+	love.graphics.setCanvas(canv, mipmap or 1)
+	updateAbsoluteSize(self, nil)
+	updateAbsolutePosition(self, nil, nil, nil, nil, true)
+	self:render()
+	self.Size:set(curWidth, curHeight)
+	love.graphics.setCanvas(curCanvas)
+	updateAbsoluteSize()
+	updateAbsolutePosition()
+end
+
 
 -- returns the UI element being drawn at location (x, y)
 function module:at(x, y)
@@ -781,6 +840,25 @@ function UIBase:on(eventName, func)
 	local Conn = connection.new(self, eventName)
 	self.Events[eventName][index] = {func, Conn}
 	return Conn
+end
+
+
+function UIBase:renderTo(canv, mipmap)
+	if canv == nil or (not canv:typeOf("Canvas")) then
+		error("ui:renderTo(canvas, mipmaps) takes a canvas as the first argument. Supplied is a " .. canv:type())
+	end
+	local canvasX, canvasY = canv:getDimensions()
+	local curWidth, curHeight = module.Size.x, module.Size.y
+	local curCanvas = love.graphics.getCanvas()
+	module.Size = vector(canvasX, canvasY)
+	love.graphics.setCanvas(canv, mipmap or 1)
+	updateAbsoluteSize(self, true) -- update size while ignoring the parent's position and size
+	updateAbsolutePosition(self, nil, nil, nil, nil, true) -- update position while ignoring the parent's position and size
+	self:draw() -- UIBase has no draw function, but its metatable should always have one! (draw the UI onto the canvas)
+	module.Size = vector(curWidth, curHeight)
+	love.graphics.setCanvas(curCanvas)
+	updateAbsoluteSize(self)
+	updateAbsolutePosition(self)
 end
 
 -- removes the old parent from Obj and sets its new parent to self.
