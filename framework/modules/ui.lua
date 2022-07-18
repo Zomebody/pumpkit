@@ -1821,7 +1821,10 @@ local function newBase(w, h, col)
 		ow = w
 		oh = h
 	end
-	col = col == nil and color(1, 1, 1) or color(col)
+	--col = col == nil and color(1, 1, 1) or color(col)
+	if col == nil then
+		col = color(1, 1, 1)
+	end
 	module.TotalCreated = module.TotalCreated + 1
 	local Obj = {
 		-- properties
