@@ -1838,8 +1838,8 @@ local function newBase(w, h, col)
 		["ClipContent"] = true; -- children and text will be cut off if it falls outside of the frame
 		["ContentOffset"] = vector();
 		["Color"] = col; -- color of the frame. For images, this adjusts the image color
-		["ColorHold"] = col:clone(); -- color when the element is being held down
-		["ColorFocus"] = col:clone(); -- color when the element is being hovered over by the cursor
+		["ColorHold"] = col; -- color when the element is being held down
+		["ColorFocus"] = col; -- color when the element is being hovered over by the cursor
 		["CornerRadius"] = 0; -- corner radius for drawing rounded corners
 		["FitTextOnResize"] = false;
 		["Hidden"] = false;

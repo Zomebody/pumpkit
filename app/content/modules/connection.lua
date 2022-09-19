@@ -8,7 +8,7 @@ local content = {}
 table.insert(content, {
 	["Type"] = "IntroHeader";
 	["Name"] = "The connection Module";
-	["Description"] = "FOR INTERNAL USE ONLY!\n\nThis module is responsible for the creation on Connection instances.";
+	["Description"] = "FOR INTERNAL USE ONLY!\n\nThis module is responsible for the creation of Connection instances.";
 })
 
 table.insert(content, {
