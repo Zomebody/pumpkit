@@ -78,6 +78,7 @@ end
 
 function task:resume()
 	if not self.Active then
+		self.Active = true
 		module.Active[#module.Active + 1] = self
 	end
 end
