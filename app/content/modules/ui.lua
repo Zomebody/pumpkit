@@ -243,6 +243,13 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Method";
+	["Name"] = "renderTo";
+	["Arguments"] = {"canvas", "mipmaps"};
+	["Description"] = "Draw the whole UI to a given canvas object. Mipmaps is the number of mipmaps used when drawing to the canvas. The UI properly resizes itself to fit the canvas' size.";
+})
+
+table.insert(content, {
+	["Type"] = "Method";
 	["Name"] = "show";
 	["Arguments"] = {};
 	["Description"] = "If the Visible property is set to false, this will set the property back to true so the UI can be drawn again.";

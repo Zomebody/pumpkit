@@ -593,6 +593,13 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Method";
+	["Name"] = "renderTo";
+	["Arguments"] = {"canvas", "mipmaps"};
+	["Description"] = "Draw the UI object and its children to a given canvas object. Mipmaps is the number of mipmaps used when drawing to the canvas. The UI properly resizes itself to fit the canvas' size.";
+})
+
+table.insert(content, {
+	["Type"] = "Method";
 	["Name"] = "reposition";
 	["Arguments"] = {"sx", "sy", "ox", "oy"};
 	["Description"] = "Sets the Position property and updates the AbsolutePosition of the elements and its descendants. sx and sy are the scale, ox and oy are the offset. Alternatively, two vectors can be passed for sx and sy instead.";
@@ -1020,6 +1027,13 @@ table.insert(content, {
 		end)
 		return Frame
 	end;
+})
+
+table.insert(content, {
+	["Type"] = "Event";
+	["Name"] = "Resize";
+	["Arguments"] = {};
+	["Description"] = "Called when the UI object changes its size, which can happen when the window changes size, a parent element changes its size or the UI object itself changes its size. This is called at most once per frame.";
 })
 
 table.insert(content, {
