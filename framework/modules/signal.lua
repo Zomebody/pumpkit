@@ -10,8 +10,8 @@ local totalCreated = 0
 
 
 function Signal:fire(sigName, ...)
-	if type(signName) ~= "string" then
-		error("signal:fire() expects the first argument to be of type <string>")
+	if type(sigName) ~= "string" then
+		error("signal:fire() expects the first argument to be of type <string>, given is: " .. type(sigName))
 	end
 	local array = self.Connected[sigName]
 	if array ~= nil then
@@ -24,12 +24,6 @@ function Signal:fire(sigName, ...)
 		end
 	end
 end
-
-
-Signal.__call = function(...)
-	return fire(...)
-end
-
 
 
 function Signal:listen(name, func, isOnce)
@@ -91,4 +85,4 @@ end
 
 
 
-return Signal
+return setmetatable(Signal, {["__call"] = function(_, ...) Signal:fire(...) end})

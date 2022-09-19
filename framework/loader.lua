@@ -11,6 +11,7 @@ function load()
 	tween = require(getpath(locale, "../framework/modules/tween"))
 	animation = require(getpath(locale, "../framework/modules/animation"))
 	font = require(getpath(locale, "../framework/modules/font"))
+	--signal = require(getpath(locale, "../framework/modules/signal"))
 	printObject = require(getpath(locale, "../framework/objectPrinter"))
 	ui = require(getpath(locale, "../framework/modules/ui"))
 end
