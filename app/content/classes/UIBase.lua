@@ -663,7 +663,7 @@ table.insert(content, {
 		local Container = ui.newFrame(300, 100, color(0, 0, 0))
 		Container:setPadding(20, 10)
 		Container:setText("FiraCode.ttf", "Hello World", 18)
-		local Child = ui.newFrame(60, 60, 60, color(1, 1, 1))
+		local Child = ui.newFrame(60, 60, color(1, 1, 1))
 		Child:alignX("right")
 		Child:alignY("bottom")
 		Container:addChild(Child)
