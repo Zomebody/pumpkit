@@ -157,9 +157,9 @@ local function updateAbsoluteSize(Obj, ignoreParentSize) -- ignoreParentSize is 
 			Obj:fitText()
 		end
 	end
-	--if Obj.FitTextOnResize and Obj.TextBlock ~= nil then
-	--	Obj:fitText()
-	--end
+	if Obj.Tiled then -- for ImageFrame objects that are 'tiled'
+		Obj.Quad:setViewport(0, 0, Obj.AbsoluteSize.x, Obj.AbsoluteSize.y, Obj.ReferenceImage:getPixelWidth(), Obj.ReferenceImage:getPixelHeight())
+	end
 
 	for i = 1, #Obj.Children do
 		-- if a child's Size.Scale.x and Size.Scale.y both are 0, there is no use in updating them (because their AbsoluteSize will remain the same anyway!)
@@ -582,51 +582,6 @@ end
 -- remove the object by calling its :remove() method
 function module:remove(Obj)
 	Obj:remove()
-	--[[
-	local children = {}
-	for i = 1, #Obj.Children do
-		children[i] = Obj.Children[i]
-	end
-	for i = 1, #children do
-		children[i]:remove()
-	end
-	Obj.Children = {}
-	--Obj:mark()
-	Obj:clearTags()
-	-- clear any events (TODO: just setting the event list to nil should be good enough for the garbage collector)
-	for eventName, eventList in pairs(Obj.Events) do
-		for index, dataPair in pairs(eventList) do
-			if dataPair[2] ~= nil and dataPair[2].Connected then
-				dataPair[2]:disconnect()
-			end
-			eventList[index] = nil
-		end
-		Obj.Events[eventName] = nil
-	end
-	-- remove any fonts from memory
-	if Obj.TextBlock ~= nil then
-		Obj.TextBlock:clearFont()
-		Obj.TextBlock.Text:release()
-		Obj.TextBlock.Text = nil
-	end
-	if Obj.Parent == self then
-		for i = 1, #self.Children do
-			if self.Children[i] == Obj then
-				table.remove(self.Children, i)
-				break
-			end
-		end
-	else
-		for i = 1, #Obj.Parent.Children do
-			if Obj.Parent.Children[i] == Obj then
-				table.remove(Obj.Parent.Children, i)
-				break
-			end
-		end
-	end
-	Obj.Parent = nil
-	self.Changed = true
-	]]
 end
 
 -- return the cursor speed from the last X frames (limit of 30 frames)
@@ -941,23 +896,6 @@ function UIBase:remove()
 				break
 			end
 		end
-		--[[
-		if self.Parent == module then
-			for i = 1, #module.Children do
-				if module.Children[i] == self then
-					table.remove(module.Children, i)
-					break
-				end
-			end
-		else
-			for i = 1, #self.Parent.Children do
-				if self.Parent.Children[i] == self then
-					table.remove(self.Parent.Children, i)
-					break
-				end
-			end
-		end
-		]]
 	end
 	self.Parent = nil
 	module.Changed = true
@@ -1248,55 +1186,6 @@ function UIBase:toFront()
 end
 
 
--- mark the object. If no argument is provided, the object will be unmarked. If the object already has a name/mark, remove the old one
---[[
-function UIBase:mark(name)
-	assert((type(name) == "string" or name == nil), "method UIBase:mark(name) expects 'name' to be of type 'string' or 'nil', but given is: " .. type(name))
-	if name ~= nil and self.Name ~= name then -- trying to give the object a new name
-		-- check if the object already has a name so the old one can be removed
-		if self.Name ~= nil then -- object already has a name, so remove the old name
-			for i = 1, #markedObjects[self.Name] do -- find the entry in the list
-				if markedObjects[self.Name][i] == self then
-					table.remove(markedObjects[self.Name], i) -- entry found, remove it
-					if #markedObjects[self.Name] == 0 then -- if the list is now empty, remove the list
-						markedObjects[self.Name] = nil
-					end
-					break
-				end
-			end
-		end
-		-- give the UI object the new name
-		self.Name = name
-		-- add the new name to the dictionary of marked objects
-		if markedObjects[name] ~= nil then -- check if the dictionary already has an entry for the new name
-			local found = false
-			for i = 1, #markedObjects[name] do
-				if markedObjects[name][i] == self then
-					found = true
-					break
-				end
-			end
-			if not found then
-				table.insert(markedObjects[name], self)
-			end
-		else
-			markedObjects[name] = {self}
-		end
-	elseif name == nil and self.Name ~= nil then -- trying to unmark the object while it already has a name
-		for i = 1, #markedObjects[self.Name] do
-			if markedObjects[self.Name][i] == self then
-				table.remove(markedObjects[self.Name], i)
-				if #markedObjects[self.Name] == 0 then
-					markedObjects[self.Name] = nil
-				end
-				break
-			end
-		end
-		self.Name = nil
-	end
-end
-]]
-
 -- log2(n) insert search to support large numbers of tagged objects!
 local function findOrderedUIInsertLocation(tbl, Obj)
 	local l, r = 1, #tbl
@@ -1507,6 +1396,9 @@ end
 
 function ImageFrame:setReference(img)
 	self.ReferenceImage = img
+	if self.Tiled then
+		self.Quad:setViewport(0, 0, self.AbsoluteSize.x, self.AbsoluteSize.y, img:getPixelWidth(), img:getPixelHeight())
+	end
 end
 
 -- THIS FUNCTION NOW USES COORDINATE TRANSLATIONS TO SUPPORT ROTATION
@@ -1539,7 +1431,11 @@ function ImageFrame:draw()
 		
 		-- draw image, using a stencil for rounded corners
 		addCornerStencil(self)
-		love.graphics.draw(self.ReferenceImage, -self.AbsoluteSize.x * self.Pivot.x + self.BorderWidth, -self.AbsoluteSize.y * self.Pivot.y + self.BorderWidth, 0, (self.AbsoluteSize.x - self.BorderWidth * 2) / imgWidth, (self.AbsoluteSize.y - self.BorderWidth * 2) / imgHeight)
+		if self.Tiled then
+			love.graphics.draw(self.ReferenceImage, self.Quad, -self.AbsoluteSize.x * self.Pivot.x + self.BorderWidth, -self.AbsoluteSize.y * self.Pivot.y + self.BorderWidth, 0, 1, 1)
+		else
+			love.graphics.draw(self.ReferenceImage, -self.AbsoluteSize.x * self.Pivot.x + self.BorderWidth, -self.AbsoluteSize.y * self.Pivot.y + self.BorderWidth, 0, (self.AbsoluteSize.x - self.BorderWidth * 2) / imgWidth, (self.AbsoluteSize.y - self.BorderWidth * 2) / imgHeight)
+		end
 		clearCornerStencil(self)
 
 		-- draw border
@@ -1728,23 +1624,6 @@ function AnimatedFrame:remove()
 				break
 			end
 		end
-		--[[
-		if self.Parent == module then
-			for i = 1, #module.Children do
-				if module.Children[i] == Obj then
-					table.remove(module.Children, i)
-					break
-				end
-			end
-		else
-			for i = 1, #self.Parent.Children do
-				if self.Parent.Children[i] == self then
-					table.remove(self.Parent.Children, i)
-					break
-				end
-			end
-		end
-		]]
 	end
 	self.Parent = nil
 	-- remove CursorFocus if object is focused
@@ -1866,24 +1745,6 @@ local function newBase(w, h, col)
 		["VisualOnly"] = false; -- if true, no events are registered and the object can never be focused, so :at() will ignore the object
 
 		-- events
-		--[[
-		["OnDrag"] = nil; -- triggered when you move the input across the pressed element
-		["OnDragEnd"] = nil; -- triggered when you stop dragging an object, by releasing or changing the input button
-		["OnFullPress"] = nil; -- tap/click started and ended in the same element with no interruption
-		["OnHoverEnd"] = nil; -- triggered when cursor left the element
-		["OnHoverStart"] = nil; -- triggered when cursor enters the element
-		["OnKeyboardLost"] = nil; -- triggered when the object no longer has keyboard focus
-		["OnKeyboardFocus"] = nil; -- triggered when the object receives keyboard focus
-		["OnKeyEntered"] = nil; -- triggered when a key is pressed while this object has keyboard focus
-		["OnNestedDrag"] = nil; -- same as OnDrag, but it also works on descendants
-		["OnNestedDragEnd"] = nil; -- same as OnDragEnd, but it also works on descendants
-		["OnNestedPressStart"] = nil;
-		["OnNestedPressEnd"] = nil;
-		["OnNestedScroll"] = nil; -- triggered when you scroll the mouse wheel over an element, or one of its descendants
-		["OnPressEnd"] = nil; -- tap/click ended in the element
-		["OnPressStart"] = nil; -- tap/click started in the element
-		["OnScroll"] = nil; -- triggered when you scroll the mouse wheel while hovering over the element
-		]]
 		["Events"] = {}; -- dictionary where keys are event names, values are pairs of the form {function, connection object}
 	}
 	return Obj
@@ -1897,10 +1758,15 @@ local function newFrame(w, h, col)
 end
 
 -- create new ImageFrame object
-local function newImageFrame(img, w, h, col)
+local function newImageFrame(img, w, h, col) -- tiled: if true, tile the image, else, stretch it
 	local Obj = newBase(w or (img == nil and 1 or img:getPixelWidth()), h or (img == nil and 1 or img:getPixelHeight()), col)
+	local wrapX, wrapY = img:getWrap()
+	Obj["Tiled"] = (wrapX == "repeat" and wrapY == "repeat")
 	if img ~= nil then
 		Obj["ReferenceImage"] = img
+		if Obj.Tiled then
+			Obj["Quad"] = love.graphics.newQuad(0, 0, Obj.AbsoluteSize.x, Obj.AbsoluteSize.y, img:getPixelHeight(), img:getPixelWidth())
+		end
 	else
 		local imgData = love.image.newImageData(1, 1)
 		imgData:mapPixel(function() return 1, 1, 1, 1 end)
