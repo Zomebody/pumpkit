@@ -84,6 +84,16 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Property";
+	["ValueType"] = "Object";
+	["Name"] = "CursorFocus";
+	["Description"] = "Either nil or a reference to a UI object that the mouse is currently targeting. An element that is hidden cannot become the CursorFocus. This property is used internally to trigger events on UI objects and to color elements.";
+	["ReadOnly"] = true;
+	["CodeMarkup"] = nil;
+	["Demo"] = nil;
+})
+
+table.insert(content, {
+	["Type"] = "Property";
 	["ValueType"] = "boolean";
 	["Name"] = "DragActive";
 	["Description"] = "A boolean indicating if an element is currently undergoing a drag. An element does not need to have drag-related callbacks for a drag to become active. DragActive is set to false after the mouserelease event is triggered, so it can be used within the mouserelease function to check if a drag was active prior.";
@@ -114,9 +124,29 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Property";
-	["ValueType"] = "Object";
-	["Name"] = "CursorFocus";
-	["Description"] = "Either nil or a reference to a UI object that the mouse is currently targeting. An element that is hidden cannot become the CursorFocus. This property is used internally to trigger events on UI objects and to color elements.";
+	["ValueType"] = "table";
+	["Name"] = "KeyboardFocus";
+	["Description"] = "An array with UI elements that currently have keyboard focus.";
+	["ReadOnly"] = true;
+	["CodeMarkup"] = nil;
+	["Demo"] = nil;
+})
+
+table.insert(content, {
+	["Type"] = "Property";
+	["ValueType"] = "table";
+	["Name"] = "KeyboardFocusMode";
+	["Description"] = "An array with two indexes of the form {mode, argument} where 'mode' is a string representing the type of action that will cause the keyboard focus to be lost automatically and 'argument' is additional data for the current mode. See ui:focusKeyboard() for more details.";
+	["ReadOnly"] = true;
+	["CodeMarkup"] = nil;
+	["Demo"] = nil;
+})
+
+table.insert(content, {
+	["Type"] = "Property";
+	["ValueType"] = "number";
+	["Name"] = "KeyboardFocusState";
+	["Description"] = "A semaphore number that keeps track of how often keyboard focus changes.";
 	["ReadOnly"] = true;
 	["CodeMarkup"] = nil;
 	["Demo"] = nil;
@@ -144,9 +174,9 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Property";
-	["ValueType"] = "number";
-	["Name"] = "TotalCreated";
-	["Description"] = "A number indicating how many UI objects have ever been created. This property is used internally to assign a unique ID to each UI element.";
+	["ValueType"] = "vector";
+	["Name"] = "Size";
+	["Description"] = "A vector describing the size of the viewport in which UI can be rendered. This property is used internally to update the AbsolutePosition of UI elements.";
 	["ReadOnly"] = true;
 	["CodeMarkup"] = nil;
 	["Demo"] = nil;
@@ -154,9 +184,9 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Property";
-	["ValueType"] = "vector";
-	["Name"] = "Size";
-	["Description"] = "A vector describing the size of the viewport in which UI can be rendered. This property is used internally to update the AbsolutePosition of UI elements.";
+	["ValueType"] = "number";
+	["Name"] = "TotalCreated";
+	["Description"] = "A number indicating how many UI objects have ever been created. This property is used internally to assign a unique ID to each UI element.";
 	["ReadOnly"] = true;
 	["CodeMarkup"] = nil;
 	["Demo"] = nil;

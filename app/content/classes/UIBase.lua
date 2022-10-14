@@ -219,7 +219,7 @@ table.insert(content, {
 	["ValueType"] = "number";
 	["Name"] = "Name";
 	["Description"] = "The non-unique name of the instance. Names can be combined with the :child(name) method to find the first child with the given name in some parent instance.";
-	["ReadOnly"] = true;
+	["ReadOnly"] = false;
 	["CodeMarkup"] = nil;
 	["Demo"] = nil;
 })

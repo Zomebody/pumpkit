@@ -1760,7 +1760,10 @@ end
 -- create new ImageFrame object
 local function newImageFrame(img, w, h, col) -- tiled: if true, tile the image, else, stretch it
 	local Obj = newBase(w or (img == nil and 1 or img:getPixelWidth()), h or (img == nil and 1 or img:getPixelHeight()), col)
-	local wrapX, wrapY = img:getWrap()
+	local wrapX, wrapY
+	if img ~= nil then
+		wrapX, wrapY = img:getWrap()
+	end
 	Obj["Tiled"] = (wrapX == "repeat" and wrapY == "repeat")
 	if img ~= nil then
 		Obj["ReferenceImage"] = img
