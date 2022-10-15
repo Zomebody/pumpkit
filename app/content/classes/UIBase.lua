@@ -396,7 +396,7 @@ table.insert(content, {
 	["Name"] = "addTag";
 	["Arguments"] = {"tag"};
 	["Description"] = "Mark the object with a tag so it can be found with ui:find(). If the object already has the tag, this will do nothing. Tags must be strings. Multiple tags may be assigned.";
-	["CodeMarkup"] = "<k>local</k> FrameCyan1 <k>=</k> ui.<f>newFrame</f>(<n>60</n>, <n>60</n>, <f>color</f>(<n>0</n>, <n>0.5</n>, <n>1</n>))\n<k>local</k> FrameCyan2 <k>=</k> ui.<f>newFrame</f>(<n>60</n>, <n>60</n>, <f>color</f>(<n>0</n>, <n>0.5</n>, <n>1</n>))\nFrameCyan1:<f>addTag</f>(<s>\"cyan\"</s>)\nFrameCyan2:<f>addTag</f>(<s>\"cyan\"</s>)\n<k>local</k> ButtonRed <k>=</k> ui.<f>newFrame</f>(<n>60</n>, <n>60</n>, <f>color</f>(<n>0.8</n>, <n>0.2</n>, <n>0.2</n>))\nFrameCyan2:<f>putNextTo</f>(FrameCyan1, <s>\"right\"</s>, <n>20</n>)\nButtonRed:<f>putNextTo</f>(FrameCyan2, <s>\"right\"</s>, <n>20</n>)\nButtonRed:<f>setText</f>(<s>\"FiraCode.ttf\"</s>, <s>\"Click to find cyan\"</s>, <n>18</n>)\nButtonRed:<f>on</f>(\"FullPress\", <f>function</f>()\n\t<k>local</k> Objects <k>=</k> ui:<f>find</f>(<s>\"cyan\"</s>)\n\t<k>for</k> i <k>=</k> 1, #Objects <k>do</k>\n\t\tObjects[i]:<f>setText</f>(<s>\"FiraCode.ttf\"</s>, <s>\"I am cyan!\"</s>, <n>18</n>)\n\t<k>end</k>\n<k>end</k>)";
+	["CodeMarkup"] = "<k>local</k> FrameCyan1 <k>=</k> ui.<f>newFrame</f>(<n>60</n>, <n>60</n>, <f>color</f>(<n>0</n>, <n>0.5</n>, <n>1</n>))\n<k>local</k> FrameCyan2 <k>=</k> ui.<f>newFrame</f>(<n>60</n>, <n>60</n>, <f>color</f>(<n>0</n>, <n>0.5</n>, <n>1</n>))\nFrameCyan1:<f>addTag</f>(<s>\"cyan\"</s>)\nFrameCyan2:<f>addTag</f>(<s>\"cyan\"</s>)\n<k>local</k> ButtonRed <k>=</k> ui.<f>newFrame</f>(<n>60</n>, <n>60</n>, <f>color</f>(<n>0.8</n>, <n>0.2</n>, <n>0.2</n>))\nFrameCyan2:<f>putNextTo</f>(FrameCyan1, <s>\"right\"</s>, <n>20</n>)\nButtonRed:<f>putNextTo</f>(FrameCyan2, <s>\"right\"</s>, <n>20</n>)\nButtonRed:<f>setText</f>(<s>\"FiraCode.ttf\"</s>, <s>\"Click to find cyan\"</s>, <n>18</n>)\nButtonRed:<f>on</f>(<s>\"FullPress\"</s>, <f>function</f>()\n\t<k>local</k> Objects <k>=</k> ui:<f>find</f>(<s>\"cyan\"</s>)\n\t<k>for</k> i <k>=</k> 1, #Objects <k>do</k>\n\t\tObjects[i]:<f>setText</f>(<s>\"FiraCode.ttf\"</s>, <s>\"I am cyan!\"</s>, <n>18</n>)\n\t<k>end</k>\n<k>end</k>)";
 	["Demo"] = function()
 		local Container = ui.newFrame(400, 100, color(0, 0, 0))
 		local FrameCyan1 = ui.newFrame(60, 60, color(0, 0.5, 1))
@@ -494,14 +494,40 @@ table.insert(content, {
 		return Frame
 	end
 })
---[[
+
 table.insert(content, {
 	["Type"] = "Method";
-	["Name"] = "getPixelPadding";
-	["Arguments"] = {};
-	["Description"] = "Returns the padding on the x-axis and the y-axis.";
+	["Name"] = "getWordAt";
+	["Arguments"] = {"x", "y"};
+	["Description"] = "If the element has a TextBlock set, return the word covering the given screen position. If no word is at that position, return nil.";
+	["CodeMarkup"] = "<k>local</k> txt <k>=</k> <s>\"Try hovering your cursor over these words!\"</s>\n<k>local</k> Frame <k>=</k> ui.<f>newFrame</f>(<n>250</n>, <n>80</n>, <f>color</f>(<n>0</n>, <n>0</n>, <n>0</n>))\nFrame:<f>setPadding</f>(<n>4</n>)\nFrame:<f>setText</f>(<s>\"LieraSansMedium.ttf\"</s>, txt, <n>16</n>)\n<k>local</k> t <k>=</k> task.<f>new</f>(\n\t<f>function</f>()\n\t\t<k>local</k> word, s, e <k>=</k> Frame:<f>getWordAt</f>(\n\t\t\tlove.mouse.<f>getX</f>(),\n\t\t\tlove.mouse.<f>getY</f>()\n\t\t)\n\t\t<k>if</k> word <k>~=</k> <n>nil</n> <k>then</k>\n\t\t\tFrame.TextBlock:<f>setText</f>({\n\t\t\t\t{<n>1</n>, <n>1</n>, <n>1</n>}, txt:<f>sub</f>(<n>1</n>, s <k>-</k> <n>1</n>),\n\t\t\t\t{<n>1</n>, <n>0</n>, <n>0</n>}, txt:<f>sub</f>(s, e),\n\t\t\t\t{<n>1</n>, <n>1</n>, <n>1</n>}, txt:<f>sub</f>(e <k>+</k> <n>1</n>)\n\t\t\t})\n\t\t<k>else</k>\n\t\t\tFrame.TextBlock:<f>setText</f>(txt)\n\t\t<k>end</k>\n\t<k>end</k>, <n>math.huge</n>, <n>0</n>\n)\nFrame:<f>on</f>(<s>\"HoverStart\"</s>, <f>function</f>() t:<f>resume</f>() <k>end</k>)\nFrame:<f>on</f>(<s>\"HoverEnd\"</s>, <f>function</f>()\n\tt:<f>stop</f>()\n\tFrame.TextBlock:<f>setText</f>(txt)\n<k>end</k>)";
+	["Demo"] = function()
+		local txt = "Try hovering your cursor over these words!"
+		local Frame = ui.newFrame(250, 80, color(0, 0, 0))
+		Frame:setPadding(4)
+		Frame:setText("LieraSansMedium.ttf", txt, 16)
+		local t = task.new(
+			function()
+				local word, s, e = Frame:getWordAt(love.mouse.getX(), love.mouse.getY())
+				if word ~= nil then
+					Frame.TextBlock:setText({{1, 1, 1}, txt:sub(1, s - 1), {1, 0, 0}, txt:sub(s, e), {1, 1, 1}, txt:sub(e + 1)})
+				else
+					Frame.TextBlock:setText(txt)
+				end
+			end, math.huge, 0
+		)
+		Frame:on("HoverStart", function()
+			t:resume()
+		end)
+		Frame:on("HoverEnd", function()
+			t:stop()
+			Frame.TextBlock:setText(txt)
+		end)
+		return Frame
+	end
 })
-]]
+
+
 table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "hasKeyboardFocus";

@@ -1187,7 +1187,6 @@ function UIBase:getWordAt(x, y)
 
 			-- get the pixel Y from the top of the current line to the current Y of the mouse. If higher than the font's height, you're in 'empty space' --> return nil
 			local heightWithinLine = (relY - textStartY) % (Font:getHeight() * Font:getLineHeight())
-			print(heightWithinLine)
 			if heightWithinLine > Font:getHeight() then
 				return nil
 			end
