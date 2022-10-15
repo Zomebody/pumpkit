@@ -1155,6 +1155,102 @@ function UIBase:fitText()
 end
 
 
+function UIBase:getWordAt(x, y)
+	if self.TextBlock ~= nil then
+		local Font = self.TextBlock.Font
+
+		-- relX and relY are the X and Y relative to the top left corner, incorporating active transforms (such as rotation)
+		local relX
+		local relY
+		if self.Rotation == 0 then -- simple subtraction
+			relX = x - self.AbsolutePosition.x
+			relY = y - self.AbsolutePosition.y
+		else -- transform magic
+			love.graphics.push() -- push current graphics coordinate state
+			love.graphics.translate(self.AbsolutePosition.x + self.AbsoluteSize.x * self.Pivot.x, self.AbsolutePosition.y + self.AbsoluteSize.y * self.Pivot.y)
+			love.graphics.rotate(math.rad(self.Rotation))
+			love.graphics.translate(-self.AbsoluteSize.x * self.Pivot.x, -self.AbsoluteSize.y * self.Pivot.y)
+			relX, relY = love.graphics.inverseTransformPoint(x, y) -- get x and y relative to the rotation of the object
+			love.graphics.pop() -- reset back to previous
+		end
+		
+		if relX >= 0 and relX <= self.AbsoluteSize.x and relY >= 0 and relY <= self.AbsoluteSize.y then
+			-- calculate the height at which the text starts:
+			local textStartY = 0 -- relative to the top-side of the UI element
+			if self.TextBlock.AlignmentY == "top" then
+				textStartY = self.Padding.y
+			elseif self.TextBlock.AlignmentY == "center" then
+				textStartY = (self.AbsoluteSize.y - self.TextBlock.Text:getHeight()) / 2
+			else
+				textStartY = self.AbsoluteSize.y - self.Padding.y - self.TextBlock.Text:getHeight()
+			end
+
+			-- get the pixel Y from the top of the current line to the current Y of the mouse. If higher than the font's height, you're in 'empty space' --> return nil
+			local heightWithinLine = (relY - textStartY) % (Font:getHeight() * Font:getLineHeight())
+			print(heightWithinLine)
+			if heightWithinLine > Font:getHeight() then
+				return nil
+			end
+
+			-- calculate which line the cursor is focused on
+			local atLine = math.ceil((relY - textStartY) / (Font:getHeight() * Font:getLineHeight()))
+			local width, wrappedText = Font:getWrap(self.TextBlock:getText(), self.TextBlock.Text:getWidth())
+			if wrappedText[atLine] == nil then
+				return nil
+			end
+
+			-- now that the line is known, find out the word within the line that is being focused on
+			local line = wrappedText[atLine]
+			if line:sub(line:len()) == " " then
+				line = line:sub(1, line:len() - 1)
+			end
+			--print(line, line:len(), line:sub(1, 1):byte(), line:sub(line:len()):byte())
+			local textStartX = 0
+			if self.TextBlock.AlignmentX == "left" then
+				textStartX = self.Padding.x
+			elseif self.TextBlock.AlignmentX == "center" then
+				textStartX = (self.AbsoluteSize.x - Font:getWidth(line)) / 2
+			else
+				textStartX = self.AbsoluteSize.x - self.Padding.x - Font:getWidth(line)
+			end
+			if relX < textStartX then
+				return nil -- you are to the left of the left-most word in the sentence, so no word is selected
+			end
+
+			-- split the sentence into individual words. Then concatenate them back until the text width is larger than the relative cursor X position
+			local splitPattern = "[%a%d']+[%a%d%-']*"
+			local curLocation = 1
+			local s, e = line:find(splitPattern)
+			while s ~= nil do
+				-- iteratively build up the string word for word until the relative mouse X is smaller than the text width! If you concatenated a word last, you are on the word, otherwise you are on a space/interpunction
+				if s > curLocation then -- if true, there is empty space to check out first
+					if relX - textStartX <= Font:getWidth(line:sub(1, s - 1)) then
+						return nil
+					end
+				end
+
+				-- check out up until the end of the word
+				if relX - textStartX <= Font:getWidth(line:sub(1, e)) then
+					if atLine > 1 then
+						local num = 0
+						for i = 1, atLine - 1 do
+							num = num + wrappedText[i]:len()
+						end
+						return line:sub(s, e), s + num, e + num
+					else
+						return line:sub(s, e), s, e
+					end
+				end
+
+				curLocation = e + 1
+				s, e = line:find(splitPattern, curLocation)
+			end
+		end
+	end
+	return nil
+end
+
+
 -- put the UI element to the back by moving it to the first index in the parent's Children array
 function UIBase:toBack()
 	if self.Parent ~= nil and self.Parent.Children ~= nil then
