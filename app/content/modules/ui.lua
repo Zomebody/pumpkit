@@ -238,6 +238,13 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Method";
+	["Name"] = "getWordAt";
+	["Arguments"] = {"x", "y"};
+	["Description"] = "Returns the word displayed at the given coordinates, alongside with the start position and end position of the word in the string of the element's TextBlock's text. This method also takes rotation of elements into account as well ignoring elements with VisualOnly set to true.";
+})
+
+table.insert(content, {
+	["Type"] = "Method";
 	["Name"] = "hasKeyboardFocus";
 	["Arguments"] = {"element"};
 	["Description"] = "Returns 'true' if the given UI element has keybord focus. If not, 'false' is returned.";

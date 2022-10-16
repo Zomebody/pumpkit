@@ -598,6 +598,15 @@ function module:getCursorSpeed(frameCount)
 	return vector((sumX / frameCount) / love.timer.getDelta(), (sumY / frameCount) / love.timer.getDelta())
 end
 
+-- return the current word at a given location on the screen
+function module:getWordAt(x, y)
+	local Obj = self:at(x, y)
+	if Obj ~= nil then
+		return Obj:getWordAt(x, y)
+	end
+	return nil
+end
+
 -- focuses the keyboard on the given UI elements, triggering their key related events
 function module:focusKeyboard(elements, focusMode, modeArg)
 	if getmetatable(elements) ~= nil then elements = {elements} end -- check if the passed object is a ui element, if so, put it in a table
@@ -1172,6 +1181,12 @@ function UIBase:getWordAt(x, y)
 			love.graphics.translate(-self.AbsoluteSize.x * self.Pivot.x, -self.AbsoluteSize.y * self.Pivot.y)
 			relX, relY = love.graphics.inverseTransformPoint(x, y) -- get x and y relative to the rotation of the object
 			love.graphics.pop() -- reset back to previous
+		end
+
+		if self.ClipContent == true and self.Rotation ~= 0 then -- part of the UI is cut off when ClipContent == true and Rotation ~= 0. So do an AABB check as well
+			if x < self.AbsolutePosition.x or x > self.AbsolutePosition.x + self.AbsoluteSize.x or y < self.AbsolutePosition.y or y > self.AbsolutePosition.y + self.AbsoluteSize.y then
+				return nil -- position is outside of the 'box'
+			end
 		end
 		
 		if relX >= 0 and relX <= self.AbsoluteSize.x and relY >= 0 and relY <= self.AbsoluteSize.y then
