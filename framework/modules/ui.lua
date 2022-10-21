@@ -1270,6 +1270,21 @@ function UIBase:getWordAt(x, y)
 end
 
 
+function UIBase:getDescendants(addSelf)
+	local Elements = {}
+	if addSelf then
+		Elements = {self}
+	end
+	for i = 1, #self.Children do
+		local Descendants = self.Children[i]:getDescendants(true)
+		for k = 1, #Descendants do
+			Elements[#Elements + 1] = Descendants[k]
+		end
+	end
+	return Elements
+end
+
+
 -- put the UI element to the back by moving it to the first index in the parent's Children array
 function UIBase:toBack()
 	if self.Parent ~= nil and self.Parent.Children ~= nil then

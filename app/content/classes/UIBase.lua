@@ -530,6 +530,14 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Method";
+	["Name"] = "getDescendants";
+	["Arguments"] = {"includeSelf"};
+	["Description"] = "Returns a list of elements whose ancestors include the current element. Optionally an argument can be passed to include the current UI element into the list. This argument is mostly for internal use and has little practical value elsewhere.";
+})
+
+
+table.insert(content, {
+	["Type"] = "Method";
 	["Name"] = "hasKeyboardFocus";
 	["Arguments"] = {};
 	["Description"] = "Returns 'true' if the current element has keyboard focus. If not, this returns 'false'.";
