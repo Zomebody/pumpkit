@@ -61,18 +61,23 @@ local module = {
 
 local UIBase = {}
 UIBase.__index = UIBase
+UIBase.__tostring = function(tab) return "{UIBase: \"" .. tostring(tab.Name) .. "\" (" .. tostring(tab.Id) .. ")}" end
 
 local Frame = setmetatable({}, UIBase)
 Frame.__index = Frame
+Frame.__tostring = function(tab) return "{Frame: \"" .. tostring(tab.Name) .. "\" (" .. tostring(tab.Id) .. ")}" end
 
 local ImageFrame = setmetatable({}, UIBase)
 ImageFrame.__index = ImageFrame
+ImageFrame.__tostring = function(tab) return "{ImageFrame: \"" .. tostring(tab.Name) .. "\" (" .. tostring(tab.Id) .. ")}" end
 
 local SlicedFrame = setmetatable({}, UIBase)
 SlicedFrame.__index = SlicedFrame
+SlicedFrame.__tostring = function(tab) return "{SlicedFrame: \"" .. tostring(tab.Name) .. "\" (" .. tostring(tab.Id) .. ")}" end
 
 local AnimatedFrame = setmetatable({}, UIBase)
 AnimatedFrame.__index = AnimatedFrame
+AnimatedFrame.__tostring = function(tab) return "{AnimatedFrame: \"" .. tostring(tab.Name) .. "\" (" .. tostring(tab.Id) .. ")}" end
 
 
 
@@ -1333,7 +1338,7 @@ function UIBase:addTag(tag)
 	assert(type(tag) == "string", "UIBase:addTag(tag) expects argument 'tag' to be of type 'string'.")
 	-- check if the object already has the tag
 	for i = 1, #self.Tags do
-		if self.Tags[i] == tag then return end -- object alreadt has that tag
+		if self.Tags[i] == tag then return end -- object already has that tag
 	end
 
 	-- add tag to object

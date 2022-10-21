@@ -29,6 +29,7 @@ function module:initialize()
 end
 
 -- update all tasks
+--[[
 function module:update()
 	local dt = love.timer.getDelta()
 	local i = 0
@@ -47,7 +48,28 @@ function module:update()
 		end
 	end
 end
+]]
 
+
+function module:update()
+	local dt = love.timer.getDelta()
+	local i = 0
+	local curTime = love.timer.getTime()
+	local CopiedTasks = {} -- copy tasks over into a temporary array to preserve their spots when executing their functions!
+	for i = 1, #self.Active do
+		CopiedTasks[i] = self.Active[i]
+	end
+	for i = 1, #CopiedTasks do
+		if curTime >= CopiedTasks[i].LastRun + CopiedTasks[i].Interval and CopiedTasks[i].Active then
+			CopiedTasks[i].Function(dt)
+			CopiedTasks[i].LastRun = CopiedTasks[i].LastRun + CopiedTasks[i].Interval
+			CopiedTasks[i].TimesRan = CopiedTasks[i].TimesRan + 1
+			if CopiedTasks[i].TimesRan >= CopiedTasks[i].Repeats then
+				CopiedTasks[i]:stop()
+			end
+		end
+	end
+end
 
 -- returns a task object with its own functions. f is the function, r is the number of repeats, w is the time between each repeat
 local function new(f, r, w)
@@ -58,6 +80,7 @@ local function new(f, r, w)
 		["TimesRan"] = 0;
 		["Interval"] = w or 0; -- 0 seconds means the task is run every frame
 		["LastRun"] = -math.huge; -- when the task was last run
+		["ActivatedAt"] = 0; -- will be set to the current timestep when resume is called
 	}
 	return setmetatable(t, task)
 end
@@ -80,6 +103,7 @@ function task:resume()
 	if not self.Active then
 		self.Active = true
 		module.Active[#module.Active + 1] = self
+		self.ActivatedAt = love.timer.getTime()
 	end
 end
 
