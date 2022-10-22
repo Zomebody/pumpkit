@@ -1890,6 +1890,7 @@ end
 -- create new ImageFrame object
 local function newImageFrame(img, w, h, col) -- tiled: if true, tile the image, else, stretch it
 	local Obj = newBase(w or (img == nil and 1 or img:getPixelWidth()), h or (img == nil and 1 or img:getPixelHeight()), col)
+	Obj["Class"] = "ImageFrame"
 	local wrapX, wrapY
 	if img ~= nil then
 		wrapX, wrapY = img:getWrap()
@@ -1912,6 +1913,7 @@ end
 -- create new AnimatedFrame object
 local function newAnimatedFrame(anim, w, h, col)
 	local Obj = newBase(w or anim.FrameWidth, h or anim.FrameHeight, col)
+	Obj["Class"] = "AnimatedFrame"
 	Obj["ReferenceAnimation"] = anim
 	setmetatable(Obj, AnimatedFrame)
 	return Obj
@@ -1925,6 +1927,7 @@ local function newSlicedFrame(img, topLeft, bottomRight, w, h, col, corScale)
 		bottomRight = vector(imgPixelWidth, imgPixelHeight) - topLeft
 	end
 	local Obj = newBase(w or imgPixelWidth, h or imgPixelHeight, col)
+	Obj["Class"] = "SlicedFrame"
 	Obj["ReferenceImage"] = img
 	Obj["CornerScale"] = corScale or 1
 	Obj["TopLeftSlice"] = topLeft

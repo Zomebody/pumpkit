@@ -290,12 +290,16 @@ end
 
 -- taken from: https://www.codegrepper.com/code-examples/lua/rgb+to+hex+lua
 function color:toHex()
-	return string.format("#%02X%02X%02X", math.floor(self.r * 255), math.floor(self.g * 255), math.floor(self.b * 255))
+	return string.format("#%02X%02X%02X", math.floor(self.r * 255 + 0.5), math.floor(self.g * 255 + 0.5), math.floor(self.b * 255 + 0.5))
 end
 
 
 function color:__tostring()
 	return "(" .. math.floor(self.r * 255 + 0.5) .. ", " .. math.floor(self.g * 255 + 0.5) .. ", " .. math.floor(self.b * 255 + 0.5) .. ", " .. math.floor(self.a * 1000) / 1000 .. ")"
+end
+
+function color:__eq(a)
+	return math.floor(a.r * 255 + 0.5) == math.floor(self.r * 255 + 0.5) and math.floor(a.g * 255 + 0.5) == math.floor(self.g * 255 + 0.5) and math.floor(a.b * 255 + 0.5) == math.floor(self.b * 255 + 0.5)
 end
 
 
