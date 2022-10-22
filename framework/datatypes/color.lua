@@ -47,6 +47,13 @@ local function fromHex(hexString)
 	return new(unpack(numbers))
 end
 
+
+local hexMatch = "^#?" .. ("[A-Fa-f0-9]"):rep(6) .. "$" -- start with a '#' optionally, followed by 6 characters that are HEX values
+local function isHex(s)
+	return string.match(s, hexMatch) ~= nil
+end
+
+
 local function fromHSV(h, s, v)
 	local c = v * s
 	local x = c * (1 - math.abs((h / 60) % 2 - 1))
@@ -300,6 +307,7 @@ module.fromHSL = fromHSL
 module.fromHex = fromHex
 module.random = random
 module.isColor = isColor
+module.isHex = isHex
 module.interpolate = interpolate
 return setmetatable(module, {__call = function(_, ...) return new(...) end})
 

@@ -125,6 +125,13 @@ table.insert(content, {
 })
 
 table.insert(content, {
+	["Type"] = "Function";
+	["Name"] = "isHex";
+	["Arguments"] = {"string"};
+	["Description"] = "Checks if the given string is in HEX format, which is an optional hashtag followed by 6 valid hex characters.";
+})
+
+table.insert(content, {
 	["Type"] = "Constructor";
 	["Name"] = "random";
 	["Arguments"] = {};
