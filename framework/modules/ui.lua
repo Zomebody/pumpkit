@@ -1109,7 +1109,9 @@ end
 
 -- create an invisible border of a certain thickness in pixels, used to offset inner elements and text
 function UIBase:setPadding(sizeX, sizeY)
-	if sizeY == nil then
+	if vector.isVector(sizeX) then
+		self.Padding:set(sizeX.x, sizeX.y)
+	elseif sizeY == nil then
 		self.Padding:set(sizeX, sizeX)
 	else
 		self.Padding:set(sizeX, sizeY)
@@ -1847,8 +1849,8 @@ local function newBase(w, h, col)
 		["ClipContent"] = true; -- children and text will be cut off if it falls outside of the frame
 		["ContentOffset"] = vector();
 		["Color"] = col; -- color of the frame. For images, this adjusts the image color
-		["ColorHold"] = col; -- color when the element is being held down
 		["ColorFocus"] = col; -- color when the element is being hovered over by the cursor
+		["ColorHold"] = col; -- color when the element is being held down
 		["CornerRadius"] = 0; -- corner radius for drawing rounded corners
 		["FitTextOnResize"] = false;
 		["Hidden"] = false;

@@ -691,7 +691,7 @@ table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "setPadding";
 	["Arguments"] = {"x", "y"};
-	["Description"] = "Sets the horizontal and vertical padding of an element. If the second argument is missing, the first argument replaces it. Horizontal and vertical padding applies on both of their edges. Padding will apply to the object's childrens' positions and the object's TextBlock.";
+	["Description"] = "Sets the horizontal and vertical padding of an element. If the second argument is missing, the first argument replaces it. Additionally, a vector can be passed instead of two numbers. Horizontal and vertical padding applies on both of their edges. Padding will apply to the object's childrens' positions and the object's TextBlock.";
 	["CodeMarkup"] = "<k>local</k> Container <k>=</k> ui.<f>newFrame</f>(<n>300</n>, <n>100</n>, <f>color</f>(<n>0</n>, <n>0</n>, <n>0</n>))\nContainer:<f>setPadding</f>(<n>20</n>, <n>10</n>)\nContainer:<f>setText</f>(<s>\"FiraCode.ttf\"</s>, <s>\"Hello World\"</s>, <n>18</n>)\n<k>local</k> Child <k>=</k> ui.<f>newFrame</f>(<n>60</n>, <n>60</n>, <f>color</f>(<n>1</n>, <n>1</n>, <n>1</n>))\nChild:<f>alignX</f>(<s>\"right\"</s>)\nChild:<f>alignY</f>(<s>\"bottom\"</s>)\nContainer:<f>addChild</f>(Child)";
 	["Demo"] = function()
 		local Container = ui.newFrame(300, 100, color(0, 0, 0))
@@ -729,7 +729,7 @@ table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "shiftContent";
 	["Arguments"] = {"offsetX", "offsetY"};
-	["Description"] = "Changes the ContentOffset property by the specified amount on the x-axis and y-axis. This can be used to program scrollable elements.";
+	["Description"] = "Changes the ContentOffset property by the specified amount on the x-axis and y-axis. This can be used to program scrollable elements.\n\nOptionally, a vector can be passed instead of two numbers.";
 	["CodeMarkup"] = "<k>local</k> Container <k>=</k> ui.<f>newFrame</f>(<n>250</n>, <n>100</n>, <f>color</f>(<n>0</n>, <n>0</n>, <n>0</n>))\n<k>local</k> Child <k>=</k> ui.<f>newFrame</f>(<n>100</n>, <n>100</n>, <f>color</f>(<n>1</n>, <n>1</n>, <n>1</n>))\nChild:<f>on</f>(<s>\"FullPress\"</s>, <f>function</f>()\n\t<k>if</k> Container.ContentOffset.x <k><</k> <n>150</n> <k>then</k>\n\t\tContainer:<f>shiftContent</f>(<n>25</n>, <n>0</n>)\n\t<k>else</k>\n\t\tContainer:<f>shiftContent</f>(<n>-150</n>, <n>0</n>)\n\t<k>end</k>\n<k>end</k>)\nContainer:<f>addChild</f>(Child)";
 	["Demo"] = function()
 		local Container = ui.newFrame(250, 100, color(0, 0, 0))
