@@ -1007,6 +1007,9 @@ function UIBase:reposition(sx, sy, ox, oy)
 	if vector.isVector(sx) then
 		self.Position.Scale:set(sx)
 		self.Position.Offset:set(sy)
+	elseif ox == nil then
+		self.Position.Scale:set(0, 0)
+		self.Position.Offset:set(sx, sy)
 	else
 		self.Position.Scale:set(sx, sy)
 		self.Position.Offset:set(ox, oy)
