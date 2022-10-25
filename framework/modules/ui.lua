@@ -1531,8 +1531,41 @@ end
 
 function ImageFrame:setReference(img)
 	self.ReferenceImage = img
-	if self.Tiled then
-		self.Quad:setViewport(0, 0, self.AbsoluteSize.x, self.AbsoluteSize.y, img:getPixelWidth(), img:getPixelHeight())
+	local wrapX, wrapY = img:getWrap()
+	if wrapX == "repeat" and wrapY == "repeat" then
+		self.Tiled = true
+	else
+		self.Tiled = false
+	end
+	--if self.Tiled then
+	--	self.Quad:setViewport(0, 0, self.AbsoluteSize.x, self.AbsoluteSize.y, img:getPixelWidth(), img:getPixelHeight())
+	--end
+	self:setImageFit(self.ImageFit)
+end
+
+
+function ImageFrame:setImageFit(mode)
+	assert(mode == "stretch" or mode == "contain" or mode == "cover", "setImageFit(mode) does not support options " .. tostring(mode) .. ".")
+	self.ImageFit = mode
+	if mode == "stretch" then
+		if self.Tiled then
+			self.Quad:setViewport(0, 0, self.AbsoluteSize.x, self.AbsoluteSize.y, self.ReferenceImage:getPixelWidth(), self.ReferenceImage:getPixelHeight())
+		else
+			self.Quad:setViewport(0, 0, self.AbsoluteSize.x, self.AbsoluteSize.y, self.AbsoluteSize.x, self.AbsoluteSize.y)
+		end
+	elseif mode == "cover" then
+		print(1)
+		local scaleX = self.AbsoluteSize.x / self.ReferenceImage:getPixelWidth()
+		local scaleY = self.AbsoluteSize.y / self.ReferenceImage:getPixelHeight()
+		if scaleX > scaleY then -- scaling on the Y-axis will overflow so the top and bottom of the image will be cut off
+			local height = self.AbsoluteSize.y * (scaleY / scaleX)
+			self.Quad:setViewport(0, (self.AbsoluteSize.y - height) / 2, self.AbsoluteSize.x, height, self.AbsoluteSize.x, self.AbsoluteSize.y)
+		else -- scaling on the X-axis will overflow so the left and right of the image will be cut off
+			local width = self.AbsoluteSize.x * (scaleX / scaleY)
+			self.Quad:setViewport((self.AbsoluteSize.x - width) / 2, 0, width, self.AbsoluteSize.y, self.AbsoluteSize.x, self.AbsoluteSize.y)
+		end
+	elseif mode == "contain" then
+		self.Quad:setViewport(0, 0, self.AbsoluteSize.x, self.AbsoluteSize.y, self.AbsoluteSize.x, self.AbsoluteSize.y)
 	end
 end
 
@@ -1540,7 +1573,7 @@ end
 function ImageFrame:draw()
 	if self.Hidden then return end
 
-	local imgWidth, imgHeight = self.ReferenceImage:getDimensions()
+	local _, _, imgWidth, imgHeight = self.Quad:getViewport()
 	local scissorX, scissorY, scissorW, scissorH = love.graphics.getScissor()
 
 	if self.ClipContent == true then
@@ -1566,10 +1599,12 @@ function ImageFrame:draw()
 		
 		-- draw image, using a stencil for rounded corners
 		addCornerStencil(self)
-		if self.Tiled then
+		if self.Tiled or self.ImageFit == "stretch" then
 			love.graphics.draw(self.ReferenceImage, self.Quad, -self.AbsoluteSize.x * self.Pivot.x + self.BorderWidth, -self.AbsoluteSize.y * self.Pivot.y + self.BorderWidth, 0, 1, 1)
-		else
-			love.graphics.draw(self.ReferenceImage, -self.AbsoluteSize.x * self.Pivot.x + self.BorderWidth, -self.AbsoluteSize.y * self.Pivot.y + self.BorderWidth, 0, (self.AbsoluteSize.x - self.BorderWidth * 2) / imgWidth, (self.AbsoluteSize.y - self.BorderWidth * 2) / imgHeight)
+		elseif self.ImageFit == "cover" then
+			love.graphics.draw(self.ReferenceImage, self.Quad, -self.AbsoluteSize.x * self.Pivot.x + self.BorderWidth, -self.AbsoluteSize.y * self.Pivot.y + self.BorderWidth, 0, (self.AbsoluteSize.x - self.BorderWidth * 2) / imgWidth, (self.AbsoluteSize.y - self.BorderWidth * 2) / imgHeight)
+		else -- TODO: "contain" mode
+			love.graphics.draw(self.ReferenceImage, self.Quad, -self.AbsoluteSize.x * self.Pivot.x + self.BorderWidth, -self.AbsoluteSize.y * self.Pivot.y + self.BorderWidth, 0, (self.AbsoluteSize.x - self.BorderWidth * 2) / imgWidth, (self.AbsoluteSize.y - self.BorderWidth * 2) / imgHeight)
 		end
 		clearCornerStencil(self)
 
@@ -1895,22 +1930,28 @@ end
 -- create new ImageFrame object
 local function newImageFrame(img, w, h, col) -- tiled: if true, tile the image, else, stretch it
 	local Obj = newBase(w or (img == nil and 1 or img:getPixelWidth()), h or (img == nil and 1 or img:getPixelHeight()), col)
-	Obj["Class"] = "ImageFrame"
+
+	-- set wrap
 	local wrapX, wrapY
 	if img ~= nil then
 		wrapX, wrapY = img:getWrap()
 	end
 	Obj["Tiled"] = (wrapX == "repeat" and wrapY == "repeat")
+
+	-- set image
 	if img ~= nil then
 		Obj["ReferenceImage"] = img
-		if Obj.Tiled then
-			Obj["Quad"] = love.graphics.newQuad(0, 0, Obj.AbsoluteSize.x, Obj.AbsoluteSize.y, img:getPixelHeight(), img:getPixelWidth())
-		end
 	else
 		local imgData = love.image.newImageData(1, 1)
 		imgData:mapPixel(function() return 1, 1, 1, 1 end)
 		Obj["ReferenceImage"] = love.graphics.newImage(imgData)
 	end
+	Obj["Quad"] = love.graphics.newQuad(0, 0, Obj.AbsoluteSize.x, Obj.AbsoluteSize.y, Obj.AbsoluteSize.x, Obj.AbsoluteSize.y)
+
+	-- set fitting
+	Obj["ImageFit"] = "stretch" -- stretch / cover / contain (stretch = proportions may be messed up, but exact width/height, cover = clipped, contain = open space)
+
+
 	setmetatable(Obj, ImageFrame)
 	return Obj
 end
