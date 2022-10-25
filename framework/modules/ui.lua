@@ -1554,7 +1554,6 @@ function ImageFrame:setImageFit(mode)
 			self.Quad:setViewport(0, 0, self.AbsoluteSize.x, self.AbsoluteSize.y, self.AbsoluteSize.x, self.AbsoluteSize.y)
 		end
 	elseif mode == "cover" then
-		print(1)
 		local scaleX = self.AbsoluteSize.x / self.ReferenceImage:getPixelWidth()
 		local scaleY = self.AbsoluteSize.y / self.ReferenceImage:getPixelHeight()
 		if scaleX > scaleY then -- scaling on the Y-axis will overflow so the top and bottom of the image will be cut off
@@ -1565,9 +1564,21 @@ function ImageFrame:setImageFit(mode)
 			self.Quad:setViewport((self.AbsoluteSize.x - width) / 2, 0, width, self.AbsoluteSize.y, self.AbsoluteSize.x, self.AbsoluteSize.y)
 		end
 	elseif mode == "contain" then
-		self.Quad:setViewport(0, 0, self.AbsoluteSize.x, self.AbsoluteSize.y, self.AbsoluteSize.x, self.AbsoluteSize.y)
+		if self.Tiled then
+			local scaleX = self.AbsoluteSize.x / self.ReferenceImage:getPixelWidth()
+			local scaleY = self.AbsoluteSize.y / self.ReferenceImage:getPixelHeight()
+			if scaleX < scaleY then
+				self.Quad:setViewport(0, 0, self.AbsoluteSize.x, self.AbsoluteSize.y, self.AbsoluteSize.x, self.AbsoluteSize.y * (scaleX / scaleY))
+			else
+				self.Quad:setViewport(0, 0, self.AbsoluteSize.x, self.AbsoluteSize.y, self.AbsoluteSize.x * (scaleY / scaleX), self.AbsoluteSize.y)
+			end
+		else
+			self.Quad:setViewport(0, 0, self.AbsoluteSize.x, self.AbsoluteSize.y, self.AbsoluteSize.x, self.AbsoluteSize.y)
+		end
 	end
 end
+
+
 
 -- THIS FUNCTION NOW USES COORDINATE TRANSLATIONS TO SUPPORT ROTATION
 function ImageFrame:draw()
@@ -1599,11 +1610,40 @@ function ImageFrame:draw()
 		
 		-- draw image, using a stencil for rounded corners
 		addCornerStencil(self)
-		if self.Tiled or self.ImageFit == "stretch" then
+		if self.ImageFit == "stretch" or (self.Tiled and (not self.ImageFit == "contain")) then
 			love.graphics.draw(self.ReferenceImage, self.Quad, -self.AbsoluteSize.x * self.Pivot.x + self.BorderWidth, -self.AbsoluteSize.y * self.Pivot.y + self.BorderWidth, 0, 1, 1)
 		elseif self.ImageFit == "cover" then
 			love.graphics.draw(self.ReferenceImage, self.Quad, -self.AbsoluteSize.x * self.Pivot.x + self.BorderWidth, -self.AbsoluteSize.y * self.Pivot.y + self.BorderWidth, 0, (self.AbsoluteSize.x - self.BorderWidth * 2) / imgWidth, (self.AbsoluteSize.y - self.BorderWidth * 2) / imgHeight)
-		else -- TODO: "contain" mode
+		elseif self.ImageFit == "contain" then
+			imgWidth, imgHeight = self.ReferenceImage:getPixelWidth(), self.ReferenceImage:getPixelHeight()
+			local scaleX = self.AbsoluteSize.x / imgWidth
+			local scaleY = self.AbsoluteSize.y / imgHeight
+			if scaleX < scaleY then -- keep open space at the top and bottom
+				local height = self.AbsoluteSize.y * (scaleY / scaleX)
+				if self.Tiled then
+					love.graphics.draw(self.ReferenceImage, self.Quad, -self.AbsoluteSize.x * self.Pivot.x + self.BorderWidth, -self.AbsoluteSize.y * self.Pivot.y + self.BorderWidth, 0, 1, 1)
+				else
+					-- THIS ELSE BLOCK WORKS CORRECTLY NOW. DON'T TOUCH OR IT WILL FALL APART AND YOU WON'T KNOW HOW TO FIX IT
+					love.graphics.push()
+					-- the aspect ratio of the image is correct at this moment in time, but the image is not yet scaled to properly touch one of the borders, so scale the graphics state and then draw the image at the right scale
+					love.graphics.scale(scaleX / scaleY)
+					love.graphics.draw(self.ReferenceImage, self.Quad, -self.AbsoluteSize.x * (scaleY / scaleX) * self.Pivot.x + self.BorderWidth, -self.AbsoluteSize.y * self.Pivot.y + self.BorderWidth, 0, scaleY / scaleX, 1)
+					love.graphics.pop()
+				end
+			else -- keep open space to the left and right
+				local width = self.AbsoluteSize.x * (scaleX / scaleY)
+				if self.Tiled then
+					love.graphics.draw(self.ReferenceImage, self.Quad, -self.AbsoluteSize.x * self.Pivot.x + self.BorderWidth, -self.AbsoluteSize.y * self.Pivot.y + self.BorderWidth, 0, 1, 1)
+				else
+					-- THIS ELSE BLOCK WORKS CORRECTLY NOW. DON'T TOUCH OR IT WILL FALL APART AND YOU WON'T KNOW HOW TO FIX IT
+					love.graphics.push()
+					-- the aspect ratio of the image is correct at this moment in time, but the image is not yet scaled to properly touch one of the borders, so scale the graphics state and then draw the image at the right scale
+					love.graphics.scale(scaleY / scaleX)
+					love.graphics.draw(self.ReferenceImage, self.Quad, -self.AbsoluteSize.x * self.Pivot.x + self.BorderWidth, -self.AbsoluteSize.y * (scaleX / scaleY) * self.Pivot.y + self.BorderWidth, 0, 1, scaleX / scaleY)
+					love.graphics.pop()
+				end
+			end
+		else -- default: I don't actually know what the default is supposed to be
 			love.graphics.draw(self.ReferenceImage, self.Quad, -self.AbsoluteSize.x * self.Pivot.x + self.BorderWidth, -self.AbsoluteSize.y * self.Pivot.y + self.BorderWidth, 0, (self.AbsoluteSize.x - self.BorderWidth * 2) / imgWidth, (self.AbsoluteSize.y - self.BorderWidth * 2) / imgHeight)
 		end
 		clearCornerStencil(self)
