@@ -162,8 +162,9 @@ local function updateAbsoluteSize(Obj, ignoreParentSize) -- ignoreParentSize is 
 			Obj:fitText()
 		end
 	end
-	if Obj.Tiled then -- for ImageFrame objects that are 'tiled'
-		Obj.Quad:setViewport(0, 0, Obj.AbsoluteSize.x, Obj.AbsoluteSize.y, Obj.ReferenceImage:getPixelWidth(), Obj.ReferenceImage:getPixelHeight())
+
+	if Obj.ImageFit ~= nil then
+		Obj:setImageFit(Obj.ImageFit)
 	end
 
 	for i = 1, #Obj.Children do
@@ -1970,6 +1971,7 @@ end
 -- create new ImageFrame object
 local function newImageFrame(img, w, h, col) -- tiled: if true, tile the image, else, stretch it
 	local Obj = newBase(w or (img == nil and 1 or img:getPixelWidth()), h or (img == nil and 1 or img:getPixelHeight()), col)
+	Obj["Class"] = "ImageFrame"
 
 	-- set wrap
 	local wrapX, wrapY
