@@ -15,5 +15,5 @@ Code mark-up:
 
 ### Weaknesses
 - No built-in support for non-rectangular UI elements
-- No built-in support for creating clickable text
-- No built-in UI components
+- No built-in UI components. You will have to program those yourself with the tools and events provided
+- No good support for setting the render priority/layer of objects

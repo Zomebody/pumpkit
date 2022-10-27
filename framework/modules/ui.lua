@@ -1108,6 +1108,7 @@ function UIBase:setBorder(col, width)
 		self.BorderColor = color(col)
 		self.BorderWidth = math.floor(width + 0.5)
 	end
+	self:setImageFit(self.ImageFit)
 end
 
 
@@ -1458,7 +1459,7 @@ function addCornerStencil(Obj)
 		love.graphics.setStencilTest("greater", 0)
 		love.graphics.stencil( -- replaces the stencil values from 0 to 1 in all places where geometry is drawn
 			function()
-				love.graphics.rectangle("fill", -Obj.AbsoluteSize.x * Obj.Pivot.x + Obj.BorderWidth, -Obj.AbsoluteSize.y * Obj.Pivot.y + Obj.BorderWidth, Obj.AbsoluteSize.x - Obj.BorderWidth*2, Obj.AbsoluteSize.y - Obj.BorderWidth*2, stencilCornerArg)
+				love.graphics.rectangle("fill", -Obj.AbsoluteSize.x * Obj.Pivot.x, -Obj.AbsoluteSize.y * Obj.Pivot.y, Obj.AbsoluteSize.x, Obj.AbsoluteSize.y, stencilCornerArg)
 			end
 		)
 	end
@@ -1509,11 +1510,11 @@ function Frame:draw()
 		if self.BorderWidth > 0 then
 			love.graphics.setColor(self.BorderColor.r, self.BorderColor.g, self.BorderColor.b, self.BorderColor.a*self.Opacity)
 			love.graphics.setLineWidth(self.BorderWidth)
-			love.graphics.rectangle("line", -self.AbsoluteSize.x * self.Pivot.x + self.BorderWidth / 2, -self.AbsoluteSize.y * self.Pivot.y + self.BorderWidth / 2, self.AbsoluteSize.x - self.BorderWidth, self.AbsoluteSize.y - self.BorderWidth, cornerArg)
+			love.graphics.rectangle("line", -self.AbsoluteSize.x * self.Pivot.x + self.BorderWidth / 2, -self.AbsoluteSize.y * self.Pivot.y + self.BorderWidth / 2, self.AbsoluteSize.x - self.BorderWidth, self.AbsoluteSize.y - self.BorderWidth, cornerArg and cornerArg - self.BorderWidth / 2)
 		end
 		love.graphics.setColor(r, g, b, a*self.Opacity)
 		--love.graphics.rectangle("fill", self.AbsolutePosition.x + self.BorderWidth, self.AbsolutePosition.y + self.BorderWidth, self.AbsoluteSize.x - self.BorderWidth*2, self.AbsoluteSize.y - self.BorderWidth*2)
-		love.graphics.rectangle("fill", -self.AbsoluteSize.x * self.Pivot.x + self.BorderWidth, -self.AbsoluteSize.y * self.Pivot.y + self.BorderWidth, self.AbsoluteSize.x - self.BorderWidth*2, self.AbsoluteSize.y - self.BorderWidth*2, cornerArg)
+		love.graphics.rectangle("fill", -self.AbsoluteSize.x * self.Pivot.x + self.BorderWidth, -self.AbsoluteSize.y * self.Pivot.y + self.BorderWidth, self.AbsoluteSize.x - self.BorderWidth*2, self.AbsoluteSize.y - self.BorderWidth*2, cornerArg and math.max(0, cornerArg - self.BorderWidth))
 		-- draw text on top
 		self:drawText()
 
@@ -1544,44 +1545,50 @@ function ImageFrame:setReference(img)
 	self:setImageFit(self.ImageFit)
 end
 
-
+-- TODO: properly implement BorderWidth here!
 function ImageFrame:setImageFit(mode)
 	assert(mode == "stretch" or mode == "contain" or mode == "cover", "setImageFit(mode) does not support options " .. tostring(mode) .. ".")
 	self.ImageFit = mode
 	if mode == "stretch" then
 		if self.Tiled then
-			self.Quad:setViewport(0, 0, self.AbsoluteSize.x, self.AbsoluteSize.y, self.ReferenceImage:getPixelWidth(), self.ReferenceImage:getPixelHeight())
+			-- compute the number of tiles to display on the X-axis and Y-axis
+			local tilesX = (self.AbsoluteSize.x - self.BorderWidth*2) / self.ReferenceImage:getPixelWidth()
+			local tilesY = (self.AbsoluteSize.y - self.BorderWidth*2) / self.ReferenceImage:getPixelHeight()
+			self.Quad:setViewport(0, 0, self.AbsoluteSize.x, self.AbsoluteSize.y, self.AbsoluteSize.x / tilesX, self.AbsoluteSize.y / tilesY)
 		else
 			self.Quad:setViewport(0, 0, self.AbsoluteSize.x, self.AbsoluteSize.y, self.AbsoluteSize.x, self.AbsoluteSize.y)
 		end
 	elseif mode == "cover" then
-		local scaleX = self.AbsoluteSize.x / self.ReferenceImage:getPixelWidth()
-		local scaleY = self.AbsoluteSize.y / self.ReferenceImage:getPixelHeight()
+		local imageFillX, imageFillY = self.AbsoluteSize.x - self.BorderWidth*2, self.AbsoluteSize.y - self.BorderWidth*2
+		local scaleX = imageFillX / self.ReferenceImage:getPixelWidth()
+		local scaleY = imageFillY / self.ReferenceImage:getPixelHeight()
 		if scaleX > scaleY then -- scaling on the Y-axis will overflow so the top and bottom of the image will be cut off
-			local height = self.AbsoluteSize.y * (scaleY / scaleX)
-			self.Quad:setViewport(0, (self.AbsoluteSize.y - height) / 2, self.AbsoluteSize.x, height, self.AbsoluteSize.x, self.AbsoluteSize.y)
+			local height = imageFillY * (scaleY / scaleX)
+			self.Quad:setViewport(0, (imageFillY - height) / 2, imageFillX, height, imageFillX, imageFillY)
 		else -- scaling on the X-axis will overflow so the left and right of the image will be cut off
-			local width = self.AbsoluteSize.x * (scaleX / scaleY)
-			self.Quad:setViewport((self.AbsoluteSize.x - width) / 2, 0, width, self.AbsoluteSize.y, self.AbsoluteSize.x, self.AbsoluteSize.y)
+			local width = imageFillX * (scaleX / scaleY)
+			self.Quad:setViewport((imageFillX - width) / 2, 0, width, imageFillY, imageFillX, imageFillY)
 		end
 	elseif mode == "contain" then
 		if self.Tiled then
-			local scaleX = self.AbsoluteSize.x / self.ReferenceImage:getPixelWidth()
-			local scaleY = self.AbsoluteSize.y / self.ReferenceImage:getPixelHeight()
+			local imageFillX, imageFillY = self.AbsoluteSize.x - self.BorderWidth*2, self.AbsoluteSize.y - self.BorderWidth*2
+			local scaleX = imageFillX / self.ReferenceImage:getPixelWidth()
+			local scaleY = imageFillY / self.ReferenceImage:getPixelHeight()
 			if scaleX < scaleY then
-				self.Quad:setViewport(0, 0, self.AbsoluteSize.x, self.AbsoluteSize.y, self.AbsoluteSize.x, self.AbsoluteSize.y * (scaleX / scaleY))
+				self.Quad:setViewport(0, 0, imageFillX, imageFillY, imageFillX, imageFillY * (scaleX / scaleY))
 			else
-				self.Quad:setViewport(0, 0, self.AbsoluteSize.x, self.AbsoluteSize.y, self.AbsoluteSize.x * (scaleY / scaleX), self.AbsoluteSize.y)
+				self.Quad:setViewport(0, 0, imageFillX, imageFillY, imageFillX * (scaleY / scaleX), imageFillY)
 			end
 		else
-			self.Quad:setViewport(0, 0, self.AbsoluteSize.x, self.AbsoluteSize.y, self.AbsoluteSize.x, self.AbsoluteSize.y)
+			local imageFillX, imageFillY = self.AbsoluteSize.x - self.BorderWidth*2, self.AbsoluteSize.y - self.BorderWidth*2
+			self.Quad:setViewport(0, 0, imageFillX, imageFillY, imageFillX, imageFillY)
 		end
 	end
 end
 
 
 
--- THIS FUNCTION NOW USES COORDINATE TRANSLATIONS TO SUPPORT ROTATION
+
 function ImageFrame:draw()
 	if self.Hidden then return end
 
@@ -1612,36 +1619,27 @@ function ImageFrame:draw()
 		-- draw image, using a stencil for rounded corners
 		addCornerStencil(self)
 		if self.ImageFit == "stretch" or (self.Tiled and (not self.ImageFit == "contain")) then
-			love.graphics.draw(self.ReferenceImage, self.Quad, -self.AbsoluteSize.x * self.Pivot.x + self.BorderWidth, -self.AbsoluteSize.y * self.Pivot.y + self.BorderWidth, 0, 1, 1)
+			love.graphics.draw(self.ReferenceImage, self.Quad, -self.AbsoluteSize.x * self.Pivot.x + self.BorderWidth, -self.AbsoluteSize.y * self.Pivot.y + self.BorderWidth, 0, (self.AbsoluteSize.x - self.BorderWidth*2) / self.AbsoluteSize.x, (self.AbsoluteSize.y - self.BorderWidth*2) / self.AbsoluteSize.y)
 		elseif self.ImageFit == "cover" then
 			love.graphics.draw(self.ReferenceImage, self.Quad, -self.AbsoluteSize.x * self.Pivot.x + self.BorderWidth, -self.AbsoluteSize.y * self.Pivot.y + self.BorderWidth, 0, (self.AbsoluteSize.x - self.BorderWidth * 2) / imgWidth, (self.AbsoluteSize.y - self.BorderWidth * 2) / imgHeight)
 		elseif self.ImageFit == "contain" then
 			imgWidth, imgHeight = self.ReferenceImage:getPixelWidth(), self.ReferenceImage:getPixelHeight()
-			local scaleX = self.AbsoluteSize.x / imgWidth
-			local scaleY = self.AbsoluteSize.y / imgHeight
-			if scaleX < scaleY then -- keep open space at the top and bottom
-				local height = self.AbsoluteSize.y * (scaleY / scaleX)
+			local imageFillX, imageFillY = self.AbsoluteSize.x - self.BorderWidth*2, self.AbsoluteSize.y - self.BorderWidth*2
+			local scaleX = imageFillX / imgWidth
+			local scaleY = imageFillY / imgHeight
+			if scaleX > scaleY then -- keep open space at the top and bottom
+				local height = (self.AbsoluteSize.y - self.BorderWidth*2) * (scaleY / scaleX)
 				if self.Tiled then
 					love.graphics.draw(self.ReferenceImage, self.Quad, -self.AbsoluteSize.x * self.Pivot.x + self.BorderWidth, -self.AbsoluteSize.y * self.Pivot.y + self.BorderWidth, 0, 1, 1)
 				else
-					-- THIS ELSE BLOCK WORKS CORRECTLY NOW. DON'T TOUCH OR IT WILL FALL APART AND YOU WON'T KNOW HOW TO FIX IT
-					love.graphics.push()
-					-- the aspect ratio of the image is correct at this moment in time, but the image is not yet scaled to properly touch one of the borders, so scale the graphics state and then draw the image at the right scale
-					love.graphics.scale(scaleX / scaleY)
-					love.graphics.draw(self.ReferenceImage, self.Quad, -self.AbsoluteSize.x * (scaleY / scaleX) * self.Pivot.x + self.BorderWidth, -self.AbsoluteSize.y * self.Pivot.y + self.BorderWidth, 0, scaleY / scaleX, 1)
-					love.graphics.pop()
+					love.graphics.draw(self.ReferenceImage, self.Quad, -self.AbsoluteSize.x * self.Pivot.x - (height / 2) * (imageFillX/imageFillY) + self.AbsoluteSize.x/2, -self.AbsoluteSize.y * self.Pivot.y + self.BorderWidth, 0, scaleY / scaleX, 1)
 				end
 			else -- keep open space to the left and right
-				local width = self.AbsoluteSize.x * (scaleX / scaleY)
+				local width = (self.AbsoluteSize.x - self.BorderWidth*2) * (scaleX / scaleY)
 				if self.Tiled then
 					love.graphics.draw(self.ReferenceImage, self.Quad, -self.AbsoluteSize.x * self.Pivot.x + self.BorderWidth, -self.AbsoluteSize.y * self.Pivot.y + self.BorderWidth, 0, 1, 1)
 				else
-					-- THIS ELSE BLOCK WORKS CORRECTLY NOW. DON'T TOUCH OR IT WILL FALL APART AND YOU WON'T KNOW HOW TO FIX IT
-					love.graphics.push()
-					-- the aspect ratio of the image is correct at this moment in time, but the image is not yet scaled to properly touch one of the borders, so scale the graphics state and then draw the image at the right scale
-					love.graphics.scale(scaleY / scaleX)
-					love.graphics.draw(self.ReferenceImage, self.Quad, -self.AbsoluteSize.x * self.Pivot.x + self.BorderWidth, -self.AbsoluteSize.y * (scaleX / scaleY) * self.Pivot.y + self.BorderWidth, 0, 1, scaleX / scaleY)
-					love.graphics.pop()
+					love.graphics.draw(self.ReferenceImage, self.Quad, -self.AbsoluteSize.x * self.Pivot.x + self.BorderWidth, -self.AbsoluteSize.y * self.Pivot.y - (width / 2) * (imageFillY/imageFillX) + self.AbsoluteSize.y/2, 0, 1, scaleX / scaleY)
 				end
 			end
 		else -- default: I don't actually know what the default is supposed to be
@@ -1654,7 +1652,7 @@ function ImageFrame:draw()
 		if self.BorderWidth > 0 then
 			love.graphics.setColor(self.BorderColor.r, self.BorderColor.g, self.BorderColor.b, self.BorderColor.a*self.Opacity)
 			love.graphics.setLineWidth(self.BorderWidth)
-			love.graphics.rectangle("line", -self.AbsoluteSize.x * self.Pivot.x + self.BorderWidth / 2, -self.AbsoluteSize.y * self.Pivot.y + self.BorderWidth / 2, self.AbsoluteSize.x - self.BorderWidth, self.AbsoluteSize.y - self.BorderWidth, cornerArg)
+			love.graphics.rectangle("line", -self.AbsoluteSize.x * self.Pivot.x + self.BorderWidth / 2, -self.AbsoluteSize.y * self.Pivot.y + self.BorderWidth / 2, self.AbsoluteSize.x - self.BorderWidth, self.AbsoluteSize.y - self.BorderWidth, cornerArg)-- and math.max(0, cornerArg - self.BorderWidth)
 		end
 		-- draw text on top
 		self:drawText()
@@ -1705,7 +1703,7 @@ function SlicedFrame:setSlice(topLeft, bottomRight)
 end
 
 
--- draws the sliced image at its location in the UI. Called internally
+-- draws the sliced image at its location in the UI
 function SlicedFrame:draw()
 	if self.Hidden then return end
 
@@ -1762,7 +1760,7 @@ function SlicedFrame:draw()
 			love.graphics.setColor(self.BorderColor.r, self.BorderColor.g, self.BorderColor.b, self.BorderColor.a*self.Opacity)
 			love.graphics.setLineWidth(self.BorderWidth)
 			--love.graphics.rectangle("line", self.AbsolutePosition.x + self.BorderWidth / 2, self.AbsolutePosition.y + self.BorderWidth / 2, self.AbsoluteSize.x - self.BorderWidth, self.AbsoluteSize.y - self.BorderWidth)
-			love.graphics.rectangle("line", -self.AbsoluteSize.x * self.Pivot.x + self.BorderWidth / 2, -self.AbsoluteSize.y * self.Pivot.y + self.BorderWidth / 2, self.AbsoluteSize.x - self.BorderWidth, self.AbsoluteSize.y - self.BorderWidth, cornerArg)
+			love.graphics.rectangle("line", -self.AbsoluteSize.x * self.Pivot.x + self.BorderWidth / 2, -self.AbsoluteSize.y * self.Pivot.y + self.BorderWidth / 2, self.AbsoluteSize.x - self.BorderWidth, self.AbsoluteSize.y - self.BorderWidth, cornerArg and math.max(0, cornerArg - self.BorderWidth))
 		end
 		-- draw text on top
 		self:drawText()
@@ -1842,7 +1840,7 @@ function AnimatedFrame:remove()
 end
 
 
-
+-- TODO: implement BorderWidth correctly!
 function AnimatedFrame:draw()
 	if self.Hidden then return end
 
@@ -1879,7 +1877,7 @@ function AnimatedFrame:draw()
 		if self.BorderWidth > 0 then
 			love.graphics.setColor(self.BorderColor.r, self.BorderColor.g, self.BorderColor.b, self.BorderColor.a*self.Opacity)
 			love.graphics.setLineWidth(self.BorderWidth)
-			love.graphics.rectangle("line", -self.AbsoluteSize.x * self.Pivot.x + self.BorderWidth / 2, -self.AbsoluteSize.y * self.Pivot.y + self.BorderWidth / 2, self.AbsoluteSize.x - self.BorderWidth, self.AbsoluteSize.y - self.BorderWidth, cornerArg)
+			love.graphics.rectangle("line", -self.AbsoluteSize.x * self.Pivot.x + self.BorderWidth / 2, -self.AbsoluteSize.y * self.Pivot.y + self.BorderWidth / 2, self.AbsoluteSize.x - self.BorderWidth, self.AbsoluteSize.y - self.BorderWidth, cornerArg and math.max(0, cornerArg - self.BorderWidth))
 		end
 		-- draw text on top
 		self:drawText()
