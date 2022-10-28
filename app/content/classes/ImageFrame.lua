@@ -75,34 +75,28 @@ table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "setImageFit";
 	["Arguments"] = {"string"};
-	["Description"] = "Sets the image fitting mode. Valid arguments are:\n- 'stretch': stretch or squidsh the image such that it fills its space.\n- 'cover': scale the image while preserving its aspect ratio such that its fills the space. Any overflow on the sides is cut off.\n- 'contain': scale the image while preserving its aspect ratio such that it fits within the space without cutting off any edges. This may cause open space horizontally or vertically.";
+	["Description"] = "Sets the image fitting mode. Valid arguments are:\n- 'stretch': stretch or squish the image such that it fills its space.\n- 'cover': scale the image while preserving its aspect ratio such that its fills the space. Any overflow on the sides is cut off.\n- 'contain': scale the image while preserving its aspect ratio such that it fits within the space without cutting off any edges. This may cause open space horizontally or vertically.";
 	["Demo"] = function()
 		local img = love.graphics.newImage("test_images/pumpky_small.png")
 		local Container = ui.newFrame(550, 200, color(0, 0, 0))
 		--local LabelStretch = 
 		local Stretch = ui.newImageFrame(img, 80, 130)
+		Stretch:setBorder(color(1, 0, 0, 0.6), 4)
 		Stretch:alignY("bottom")
 		Stretch:shift(30, -10)
 		Stretch:setImageFit("stretch")
-		local BorderFrame = ui.newFrame(vector(1, 1), vector(0, 0), color(1, 1, 1, 0))
-		BorderFrame:setBorder(color(1, 0, 0, 0.6), 5)
-		Stretch:addChild(BorderFrame)
 		Container:addChild(Stretch)
 		local Cover = ui.newImageFrame(img, 180, 130)
+		Cover:setBorder(color(1, 0, 0, 0.6), 4)
 		Cover:alignY("bottom")
 		Cover:shift(150, -10)
 		Cover:setImageFit("cover")
-		local BorderFrame = ui.newFrame(vector(1, 1), vector(0, 0), color(1, 1, 1, 0))
-		BorderFrame:setBorder(color(1, 0, 0, 0.6), 5)
-		Cover:addChild(BorderFrame)
 		Container:addChild(Cover)
 		local Contain = ui.newImageFrame(img, 180, 130)
+		Contain:setBorder(color(1, 0, 0, 0.6), 4)
 		Contain:alignY("bottom")
 		Contain:shift(355, -10)
 		Contain:setImageFit("contain")
-		local BorderFrame = ui.newFrame(vector(1, 1), vector(0, 0), color(1, 1, 1, 0))
-		BorderFrame:setBorder(color(1, 0, 0, 0.6), 5)
-		Contain:addChild(BorderFrame)
 		Container:addChild(Contain)
 		return Container
 	end
