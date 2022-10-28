@@ -1108,7 +1108,9 @@ function UIBase:setBorder(col, width)
 		self.BorderColor = color(col)
 		self.BorderWidth = math.floor(width + 0.5)
 	end
-	self:setImageFit(self.ImageFit)
+	if self.ImageFit ~= nil then
+		self:setImageFit(self.ImageFit)
+	end
 end
 
 
