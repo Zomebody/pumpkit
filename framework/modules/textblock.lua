@@ -2,6 +2,7 @@
 ----------------------------------------------------[[ == IMPORTS == ]]----------------------------------------------------
 
 local getpath = require("framework.getpath")
+local fontDirectory = "framework/fonts/"
 local font = require(getpath(..., "font"))
 local color = require(getpath(..., "../datatypes/color"))
 
@@ -152,8 +153,8 @@ end
 -- change the font to one from the fonts directory, CAN BE SLOW IF CALLED EVERY FRAME!
 function textblock:setFont(name)
 	if love.filesystem.getInfo(fontDirectory .. name) then
-		self.FontFile = name
 		self:clearFont()
+		self.FontFile = name
 		self.Font = font.new(name, self.FontSize)--love.graphics.newFont(fontDirectory .. name, self.FontSize)
 		self.Text:setFont(self.Font)
 	end
