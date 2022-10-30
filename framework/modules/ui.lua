@@ -1149,6 +1149,9 @@ end
 -- adds a TextBlock to the UI and sets its content. If no arguments provided, removes the text. If no font size provided, text is scaled to fit the frame
 function UIBase:setText(fontname, textData, size, scaleHeight)
 	if fontname == nil then
+		if self.TextBlock ~= nil then
+			self.TextBlock:clearFont()
+		end
 		self.TextBlock = nil
 	elseif size == nil then -- scale text to fit box
 		local w = self.AbsoluteSize.x - 2 * self.Padding.x

@@ -165,8 +165,8 @@ end
 function textblock:setTextSize(size)
 	size = math.floor(size + 0.5)
 	if self.FontSize ~= size then
-		self.FontSize = size
 		self:clearFont()
+		self.FontSize = size
 		self.Font = font.new(self.FontFile, self.FontSize)--love.graphics.newFont(fontDirectory .. self.FontFile, self.FontSize)
 		self.Text:setFont(self.Font)
 	end
