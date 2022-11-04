@@ -3,7 +3,7 @@
 -- relativeChange is a string in the form, e.g. "../../folder2/newfile"
 -- you can also call getPath("absolute/file/path") and it will be converted to lua require notation: "absolute.file.path"
 local getPath
-getPath = function(selfPath, relativeChange)
+getPath = function(selfPath, relativeChange, useSlashes)
 	if relativeChange == nil then
 		return getPath("", selfPath)
 	end
@@ -19,7 +19,7 @@ getPath = function(selfPath, relativeChange)
 				curPath = ""
 			end
 		else
-			curPath = curPath .. "." .. word -- move down a folder
+			curPath = curPath .. (useSlashes and "/" or ".") .. word -- move down a folder
 		end
 	end
 	if curPath:sub(1, 1) == "." then
