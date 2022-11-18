@@ -1088,20 +1088,31 @@ end
 function UIBase:alignChildren(direction, side, padding)
 	if #self.Children == 0 then return end
 	assert(direction == "horizontal" or direction == "vertical", "The 'direction' parameter in :alignChildren(direction, side, padding) must be one of 'horizontal' or 'vertical'.")
-	padding = (padding == nil) and 0 or padding
-	if direction == "horizontal" then
-		assert(side == "top" or side == "center" or side == "bottom" or side == nil, "The 'side' parameter in :alignChildren(direction, side, padding) must be one of 'top', 'center', 'bottom' or nil.")
-		self.Children[1]:alignX("left")
-		self.Children[1]:alignY(side)
-		for i = 2, #self.Children do
-			self.Children[i]:putNextTo(self.Children[i - 1], "right", padding)
+	
+	-- create a list of all visible children
+	local VisibleChildren = {} -- list of all children that are visible (and thus should be aligned)
+	for i = 1, #self.Children do
+		if self.Children[i].Hidden == false then
+			VisibleChildren[#VisibleChildren + 1] = self.Children[i]
 		end
-	elseif direction == "vertical" then
-		assert(side == "left" or side == "center" or side == "right" or side == nil, "The 'side' parameter in :alignChildren(direction, side, padding) must be one of 'left', 'center', 'right' or nil.")
-		self.Children[1]:alignX(side)
-		self.Children[1]:alignY("top")
-		for i = 2, #self.Children do
-			self.Children[i]:putNextTo(self.Children[i - 1], "bottom", padding)
+	end
+
+	if #VisibleChildren > 0 then
+		padding = (padding == nil) and 0 or padding
+		if direction == "horizontal" then
+			assert(side == "top" or side == "center" or side == "bottom" or side == nil, "The 'side' parameter in :alignChildren(direction, side, padding) must be one of 'top', 'center', 'bottom' or nil.")
+			VisibleChildren[1]:alignX("left")
+			VisibleChildren[1]:alignY(side)
+			for i = 2, #VisibleChildren do
+				VisibleChildren[i]:putNextTo(VisibleChildren[i - 1], "right", padding)
+			end
+		elseif direction == "vertical" then
+			assert(side == "left" or side == "center" or side == "right" or side == nil, "The 'side' parameter in :alignChildren(direction, side, padding) must be one of 'left', 'center', 'right' or nil.")
+			VisibleChildren[1]:alignX(side)
+			VisibleChildren[1]:alignY("top")
+			for i = 2, #VisibleChildren do
+				VisibleChildren[i]:putNextTo(VisibleChildren[i - 1], "bottom", padding)
+			end
 		end
 	end
 end

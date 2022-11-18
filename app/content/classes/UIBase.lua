@@ -422,7 +422,7 @@ table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "alignChildren";
 	["Arguments"] = {"direction", "side", "padding"};
-	["Description"] = "Aligns the children of the given object in a row. This method is implemented by calling the :putNextTo() method internally. \n- 'direction' must be either \"horizontal\" or \"vertical\".\n- 'side' must be one of \"left\", \"center\" or \"right\" if 'direction' is set to \"vertical\". Otherwise, the parameter must be one of \"top\", \"center\" or \"bottom\".\n- 'padding' is the spacing between child elements in pixels.";
+	["Description"] = "Aligns the children of the given object in a row. Hidden children are skipped over. You should call this method again when resizing or reparenting any of the aligned children as it does not update children automatically. This method is implemented by calling the :putNextTo() method internally.\n\n- 'direction' must be either \"horizontal\" or \"vertical\".\n- 'side' must be one of \"left\", \"center\" or \"right\" if 'direction' is set to \"vertical\". Otherwise, the parameter must be one of \"top\", \"center\" or \"bottom\".\n- 'padding' is the spacing between child elements in pixels.";
 })
 
 table.insert(content, {
