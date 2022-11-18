@@ -243,17 +243,7 @@ table.insert(content, {
 	["CodeMarkup"] = nil;
 	["Demo"] = nil;
 })
---[[
-table.insert(content, {
-	["Type"] = "Property";
-	["ValueType"] = "number";
-	["Name"] = "PaddingY";
-	["Description"] = "Adds a padding on the top and bottom side of the UIBase in pixels. This property applies to child elements and the UIBase's TextBlock. This value can be changed with :setPadding().";
-	["ReadOnly"] = true;
-	["CodeMarkup"] = nil;
-	["Demo"] = nil;
-})
-]]
+
 table.insert(content, {
 	["Type"] = "Property";
 	["ValueType"] = "Object";
@@ -428,6 +418,12 @@ table.insert(content, {
 	end
 })
 
+table.insert(content, {
+	["Type"] = "Method";
+	["Name"] = "alignChildren";
+	["Arguments"] = {"direction", "side", "padding"};
+	["Description"] = "Aligns the children of the given object in a row. This method is implemented by calling the :putNextTo() method internally. \n- 'direction' must be either \"horizontal\" or \"vertical\".\n- 'side' must be one of \"left\", \"center\" or \"right\" if 'direction' is set to \"vertical\". Otherwise, the parameter must be one of \"top\", \"center\" or \"bottom\".\n- 'padding' is the spacing between child elements in pixels.";
+})
 
 table.insert(content, {
 	["Type"] = "Method";

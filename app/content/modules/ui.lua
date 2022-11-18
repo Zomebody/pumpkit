@@ -300,6 +300,13 @@ table.insert(content, {
 })
 
 table.insert(content, {
+	["Type"] = "Method";
+	["Name"] = "unparent";
+	["Arguments"] = {"Object"};
+	["Description"] = "Removes the parent of the given object. If the object has no parent, this method does nothing. NOTE: This is not the same as removing an object. You can reparent the object at a later moment and it will remain in memory.";
+})
+
+table.insert(content, {
 	["Type"] = "Header";
 	["Name"] = "Events";
 	["Description"] = "UI events are processed in different ways by hooking into Love2D's events, such as e.g. love.mousemoved and love.mousepressed.\n\nWhen the UI system is first initialized by the ui:initialize() method, a process called 'Monkey Patching' takes place, which will replace the defined mousemoved, update, mousepressed and other functions with new functions that call the old ones. But those new functions will add new behavior as well. By doing this, the UI system remains isolated within its own files, meaning you only have to call ui:initialize() once for the system to run permanently.\n\nThe following love functions have received an additional boolean argument at the end to indicate if the input will take place on top of a UI element:\n- love.mousepressed()\n- love.mousereleased()\n- love.wheelmoved()";

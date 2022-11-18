@@ -575,6 +575,24 @@ function module:addChild(Obj)
 	self.Changed = true
 end
 
+
+-- remove the object from the hierarchy (but do not remove it!)
+function module:unparent(Obj)
+	if Obj.Parent ~= nil then
+		-- remove the object from the parent's list of children
+		for i = 1, #Obj.Parent.Children do
+			if Obj.Parent.Children[i] == Obj then
+				table.remove(Obj.Parent.Children, i)
+				break
+			end
+		end
+		-- unparent the object
+		Obj.Parent = nil
+		-- other stuff
+		self.Changed = true
+	end
+end
+
 -- look through all children for the first child with the given name. Return either nil or the found child.
 function module:child(name)
 	for i = 1, #self.Children do
@@ -1064,6 +1082,28 @@ function UIBase:positionContent(offsetX, offsetY)
 	end
 	updateAbsolutePosition(self)
 	module.Changed = true
+end
+
+-- align the children horizontally / vertically and align the top/bottom/left/right/center. Order in which the elements are aligned it based on the order of the children: first child in front, last child last
+function UIBase:alignChildren(direction, side, padding)
+	if #self.Children == 0 then return end
+	assert(direction == "horizontal" or direction == "vertical", "The 'direction' parameter in :alignChildren(direction, side, padding) must be one of 'horizontal' or 'vertical'.")
+	padding = (padding == nil) and 0 or padding
+	if direction == "horizontal" then
+		assert(side == "top" or side == "center" or side == "bottom" or side == nil, "The 'side' parameter in :alignChildren(direction, side, padding) must be one of 'top', 'center', 'bottom' or nil.")
+		self.Children[1]:alignX("left")
+		self.Children[1]:alignY(side)
+		for i = 2, #self.Children do
+			self.Children[i]:putNextTo(self.Children[i - 1], "right", padding)
+		end
+	elseif direction == "vertical" then
+		assert(side == "left" or side == "center" or side == "right" or side == nil, "The 'side' parameter in :alignChildren(direction, side, padding) must be one of 'left', 'center', 'right' or nil.")
+		self.Children[1]:alignX(side)
+		self.Children[1]:alignY("top")
+		for i = 2, #self.Children do
+			self.Children[i]:putNextTo(self.Children[i - 1], "bottom", padding)
+		end
+	end
 end
 
 -- horizontally align the element to a side, valid options: "left" / "center" / "right"
