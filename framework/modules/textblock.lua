@@ -29,15 +29,15 @@ local function new(fontname, size, textData, w)
 		end
 	end
 	local Obj = {
-		["Text"] = love.graphics.newText(font.new(fontname, size));
+		["AlignmentX"] = "left";
+		["AlignmentY"] = "top";
 		["Color"] = color(1, 1, 1);
+		["ColoredText"] = textData;
 		["Font"] = nil;
 		["FontFile"] = fontname;
 		["FontSize"] = size;
 		["RawText"] = raw or "";
-		["ColoredText"] = textData;
-		["AlignmentX"] = "left";
-		["AlignmentY"] = "top";
+		["Text"] = love.graphics.newText(font.new(fontname, size));
 		["Width"] = w; -- the *actual* width of the text is different if WrapEnabled is false, but this will keep the 'other' width in case you set WrapEnabled back to true
 		["WrapEnabled"] = true; -- if text should wrap or stay on one line
 	}
@@ -128,7 +128,6 @@ function textblock:fitText(w, h)
 		local newWidth, wrappedText = createdFont:getWrap(self.RawText, w)
 		local newHeight = createdFont:getHeight() * #wrappedText
 		doesFit = (newHeight <= h)
-		--print(h, doesFit, self.Font:getHeight(), newHeight, #wrappedText)
 		if doesFit then
 			lastFit = curTry
 			floor = curTry
@@ -145,7 +144,6 @@ function textblock:fitText(w, h)
 	
 	self.FontSize = lastFit
 	self.Text:setFont(font.new(self.FontFile, lastFit))
-	--print("loops: " .. tostring(loops) .. ", time taken: " .. tostring(love.timer.getTime() - startTime))
 	return lastFit
 end
 
@@ -193,7 +191,6 @@ function textblock:setWrap(state)
 end
 
 -- called when the object that uses the textblock is being removed
--- TODO: DOCUMENT THIS METHOD
 function textblock:clearFont()
 	self.Font = nil
 	font:dereference(self.FontFile, self.FontSize)

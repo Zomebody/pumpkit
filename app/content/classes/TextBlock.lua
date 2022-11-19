@@ -59,17 +59,17 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Property";
-	["ValueType"] = "number";
-	["Name"] = "FontSize";
-	["Description"] = "The size of the displayed text.";
+	["ValueType"] = "string";
+	["Name"] = "FontFile";
+	["Description"] = "The file name of the font used.";
 	["ReadOnly"] = true;
 })
 
 table.insert(content, {
 	["Type"] = "Property";
-	["ValueType"] = "string";
-	["Name"] = "FontFile";
-	["Description"] = "The file name of the font used.";
+	["ValueType"] = "number";
+	["Name"] = "FontSize";
+	["Description"] = "The size of the displayed text.";
 	["ReadOnly"] = true;
 })
 
@@ -86,6 +86,22 @@ table.insert(content, {
 	["ValueType"] = "Text";
 	["Name"] = "Text";
 	["Description"] = "A Love2D Text object.";
+	["ReadOnly"] = true;
+})
+
+table.insert(content, {
+	["Type"] = "Property";
+	["ValueType"] = "number";
+	["Name"] = "Width";
+	["Description"] = "Unclear what this property actually does, but it was required to implement the WrapEnabled property.";
+	["ReadOnly"] = true;
+})
+
+table.insert(content, {
+	["Type"] = "Property";
+	["ValueType"] = "number";
+	["Name"] = "WrapEnabled";
+	["Description"] = "Defaulted to true. If true, the text will wrap on the edge and then continue on the line below.";
 	["ReadOnly"] = true;
 })
 
@@ -163,6 +179,13 @@ table.insert(content, {
 	["Name"] = "setWidth";
 	["Arguments"] = {"number"};
 	["Description"] = "Changes the width (in pixels) of the text block in which the text resides.";
+})
+
+table.insert(content, {
+	["Type"] = "Method";
+	["Name"] = "setWrap";
+	["Arguments"] = {"boolean"};
+	["Description"] = "Sets whether or not the text should wrap onto the next line. If set to false, the text will overflow or cut off on the side of the element it resides in.";
 })
 
 return {
