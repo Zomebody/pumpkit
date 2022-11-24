@@ -30,8 +30,7 @@ function module:initialize()
 	local oldResize = love.resize or function() end
 	love.resize = function(w, h)
 		for i = 1, #self.AllCameras do
-			self.AllCameras[i].Transform:reset()
-			self.AllCameras[i].Transform:translate(-self.AllCameras[i].Position.x + love.graphics.getWidth() / 2, -self.AllCameras[i].Position.y + love.graphics.getHeight() / 2)
+			self.AllCameras[i]:updateTransform()
 		end
 		oldResize()
 	end
@@ -49,14 +48,23 @@ function Camera:getTransform()
 end
 
 
+-- only for internal use!
+-- correctly re-applies the current Camera properties to its Transform
+function Camera:updateTransform()
+	self.Transform:reset()
+	self.Transform:translate(love.graphics.getWidth() / 2, love.graphics.getHeight() / 2) -- center origin to middle of screen
+	self.Transform:scale(self.Zoom) -- apply zoom
+	self.Transform:translate(-self.Position.x, -self.Position.y) -- translations are now affected by the zoom level (so zoomed in will make camera movement appear 'faster', zoomed out 'slower')
+end
+
+
 function Camera:moveTo(x, y)
 	if vector.isVector(x) then
 		y = x.y
 		x = x.x
 	end
 	self.Position = vector(x, y)
-	self.Transform:reset()
-	self.Transform:translate(-x + love.graphics.getWidth() / 2, -y + love.graphics.getHeight() / 2)
+	self:updateTransform()
 
 	if self.Events.Moved then
 		connection.doEvents(self.Events.Moved, x, y)
@@ -66,7 +74,10 @@ end
 
 function Camera:setZoom(zoom)
 	assert(type(zoom) == "number", "Camera:setZoom(zoom) only takes a number as its argument")
-	self.Zoom = zoom
+	if self.Zoom ~= zoom then
+		self.Zoom = zoom
+		self:updateTransform()
+	end
 end
 
 
@@ -102,7 +113,7 @@ local function new()
 
 	local Object = {
 		["Position"] = vector(0, 0);
-		--["Zoom"] = 1; -- zoom of 1 equals 1:1 pixels. Zoom of 2 means every game pixel takes up 2x2 screen pixels. Zoom of 0.5 means you see twice as much on the x-axis and y-axis
+		["Zoom"] = 1; -- zoom of 1 equals 1:1 pixels. Zoom of 2 means every game pixel takes up 2x2 screen pixels. Zoom of 0.5 means you see twice as much on the x-axis and y-axis
 		["Transform"] = love.math.newTransform();
 
 		-- event table, manipulated by the :on() method
