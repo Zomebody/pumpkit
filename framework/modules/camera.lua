@@ -28,11 +28,11 @@ function module:initialize()
 	end
 
 	local oldResize = love.resize or function() end
-	love.resize = function(w, h)
+	love.resize = function(...)
 		for i = 1, #self.AllCameras do
 			self.AllCameras[i]:updateTransform()
 		end
-		oldResize()
+		oldResize(...)
 	end
 end
 
@@ -54,7 +54,7 @@ end
 -- correctly re-applies the current Camera properties to its Transform
 function Camera:updateTransform()
 	self.Transform:reset()
-	self.Transform:translate(love.graphics.getWidth() / 2, love.graphics.getHeight() / 2) -- center origin to middle of screen
+	self.Transform:translate(math.floor(love.graphics.getWidth() / 2), math.floor(love.graphics.getHeight() / 2)) -- center origin to middle of screen (rounded to prevent half-pixel alignments)
 	self.Transform:scale(self.Zoom) -- apply zoom
 	self.Transform:translate(-self.Position.x, -self.Position.y) -- translations are now affected by the zoom level (so zoomed in will make camera movement appear 'faster', zoomed out 'slower')
 end
