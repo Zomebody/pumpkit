@@ -23,7 +23,7 @@ setmetatable(TiledScene, Scene)
 
 -- check if an object is a scene
 local function isScene(t)
-	return getmetatable(t) == Scene
+	return getmetatable(t) == Scene or getmetatable(t) == TiledScene
 end
 
 
@@ -74,6 +74,26 @@ function Scene:draw()
 end
 
 
+function TiledScene:draw()
+	-- the scene image starts at coordinate (0,0) and extends towards positive X (to the left) and positive Y (downwards)
+	-- the camera will have its focus point centered on the middle of the screen
+
+	-- get and apply camera transform
+	local trans = self.Camera:getTransform()
+	love.graphics.push()
+	love.graphics.origin()
+	love.graphics.applyTransform(trans)
+
+	-- draw the scene image
+	love.graphics.draw(self.SpriteBatch)
+
+	-- TODO: draw entities (and use the camera object to check which entities are within bounds)
+
+	-- reset graphics transform to previous state
+	love.graphics.pop()
+end
+
+
 
 ----------------------------------------------------[[ == OBJECT CREATION == ]]----------------------------------------------------
 
@@ -107,12 +127,41 @@ end
 
 -- atlasImage is a spritesheet / image atlas with the tiles the map consists out of.
 -- grid is a 2d array of vectors representing which sprites should be drawn on which tiles of the grid
-
 function newTiledScene(atlasImage, grid, tileSize, sceneCamera)
 	assert(camera.isCamera(sceneCamera) or sceneCamera == nil, "scene.newTiledScene(atlasImage, grid, sceneCamera) only accepts a camera instance or nil for 'sceneCamera'")
 	assert(type(grid) == "table" and type(grid[1]) == "table" and vector.isVector(grid[1][1]), "scene.newTiledScene(atlasImage, grid, tileSize, sceneCamera) requires argument 'grid' to be a 2d array of vectors")
+	module.TotalCreated = module.TotalCreated + 1
+
+	-- for each tile in the atlasImage, create a Quad and store it in a 2D array.
+	local imageTilesX, imageTilesY = atlasImage:getWidth() / tileSize, atlasImage:getHeight() / tileSize
+	local Quads = {}
+	for x = 1, imageTilesX do
+		Quads[x] = {}
+		for y = 1, imageTilesY do
+			Quads[x][y] = love.graphics.newQuad((x-1) * tileSize, (y-1) * tileSize, tileSize, tileSize, atlasImage)
+		end
+	end
+	-- now that all quads are created, create a SpriteBatch and initialize it with the right quads on the right locations using the 'grid'
+	local SpriteBatch = love.graphics.newSpriteBatch(atlasImage, (#grid * #grid[1]), "static")
+	for x = 1, #grid do
+		for y = 1, #grid[x] do
+			SpriteBatch:add(Quads[grid[x][y].x][grid[x][y].y], (x-1) * tileSize, (y-1) * tileSize)
+		end
+	end
 
 	-- TODO: create the spritebatch w/ quads that will be used to draw the map image
+	local Object = {
+		["Id"] = module.TotalCreated;
+		["SceneImage"] = atlasImage;
+		["SpriteBatch"] = SpriteBatch;
+		["Quads"] = Quads;
+		["Camera"] = sceneCamera or camera.new();
+		["Entities"] = {};
+
+		-- table with arrays of event functions stored under keys named after the events
+		["Events"] = {};
+	};
+	return setmetatable(Object, TiledScene)
 end
 
 
@@ -120,5 +169,6 @@ end
 ----------------------------------------------------[[ == RETURN == ]]----------------------------------------------------
 
 module.newScene = newScene
+module.newTiledScene = newTiledScene
 module.isScene = isScene
 return setmetatable(module, {__call = function(_, ...) return new(...) end})

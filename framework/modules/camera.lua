@@ -36,6 +36,7 @@ function module:initialize()
 	end
 end
 
+
 -- check if an object is a camera
 local function isCamera(t)
 	return getmetatable(t) == Camera
@@ -44,6 +45,7 @@ end
 
 -- return the current transform used to translate from 'scene space' to 'camera space'
 function Camera:getTransform()
+	-- TODO: in the case of a TiledScene, return a *different* transform which is rounded to the nearest pixel to prevent tearing/bleeding
 	return self.Transform
 end
 
@@ -88,6 +90,17 @@ function Camera:remove()
 			table.remove(module.AllCameras, i)
 		end
 	end
+end
+
+
+-- given an x and y coordinate in screen space (a pixel on the screen), return a vector describing that location in world space (so with transforms etc. applied)
+function Camera:screenPointToWorldSpace(x, y)
+	if vector.isVector(x) then
+		y = x.y
+		x = x.x
+	end
+	local globalX, globalY = self:getTransform():inverseTransformPoint(x, y)
+	return globalX, globalY
 end
 
 
