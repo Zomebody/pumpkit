@@ -23,6 +23,7 @@ function load()
 	world = require(getpath(here, "../framework/modules/world"))
 	scene = require(getpath(here, "../framework/modules/scene"))
 	camera = require(getpath(here, "../framework/modules/camera"))
+	entity = require(getpath(here, "../framework/modules/entity"))
 end
 
 return load

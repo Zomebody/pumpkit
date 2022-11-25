@@ -19,6 +19,32 @@ setmetatable(TiledScene, Scene)
 
 
 
+----------------------------------------------------[[ == FUNCTIONS == ]]----------------------------------------------------
+
+-- returns the location to insert 'item' into table 'tab' based on the 'Position' property, where every following element has a higher Position.y value
+local function getInsertionIndexInAscendingArray(tab, item)
+	if #tab == 0 then
+		return 1
+	end
+	local l, r = 1, #tab
+	local mid
+	while l ~= r do
+		mid = math.floor((l + r) / 2)
+		if tab[mid].Position.y > item.Position.y then
+			r = math.max(l, mid - 1)
+		else
+			l = math.min(mid + 1, r)
+		end
+	end
+	if item.Position.y < tab[l].Position.y then
+		return l
+	else
+		return l + 1
+	end
+end
+
+
+
 ----------------------------------------------------[[ == METHODS == ]]----------------------------------------------------
 
 -- check if an object is a scene
@@ -29,13 +55,22 @@ end
 
 
 function Scene:setCamera(theCamera)
-	assert(camera.isCamera(theCamera), "world:setCamera(obj) only accepts cameras as its argument")
+	assert(camera.isCamera(theCamera), "Scene:setCamera(obj) only accepts cameras as its argument")
 	self.Camera = theCamera
 end
 
 
 function Scene:getCamera()
 	return self.Camera
+end
+
+
+function Scene:addEntity(Object)
+	assert(entity.isEntity(Object), "Scene:addEntity(obj) requires it argument to be of type 'entity'")
+	
+	-- log2(n) search
+	local index = getInsertionIndexInAscendingArray(self.Entities, Object)
+	table.insert(self.Entities, index, Object)
 end
 
 
@@ -88,9 +123,21 @@ function TiledScene:draw()
 	love.graphics.draw(self.SpriteBatch)
 
 	-- TODO: draw entities (and use the camera object to check which entities are within bounds)
+	self:drawEntities()
 
 	-- reset graphics transform to previous state
 	love.graphics.pop()
+end
+
+
+-- only for internal use. Used by both the TiledScene and Scene to draw their entities on screen after drawing the scene's map
+function Scene:drawEntities()
+	-- the camera transform should already be applied!
+	local Object
+	for i = 1, #self.Entities do
+		Object = self.Entities[i]
+		love.graphics.draw(Object.Image, Object.Position.x, Object.Position.y, 0, 1, 1, Object.Pivot.x * Object.Image:getWidth(), Object.Pivot.y * Object.Image:getHeight())
+	end
 end
 
 

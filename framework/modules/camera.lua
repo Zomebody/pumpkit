@@ -45,7 +45,6 @@ end
 
 -- return the current transform used to translate from 'scene space' to 'camera space'
 function Camera:getTransform()
-	-- TODO: in the case of a TiledScene, return a *different* transform which is rounded to the nearest pixel to prevent tearing/bleeding
 	return self.Transform
 end
 
