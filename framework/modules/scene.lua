@@ -74,6 +74,37 @@ function Scene:addEntity(Object)
 end
 
 
+-- return the entity located the given screen coordinate
+function Scene:at(x, y)
+	if vector.isVector(x) then
+		y = x.y
+		x = x.x
+	end
+	if self.Camera == nil then return nil end
+	local worldX, worldY = self.Camera:screenPointToWorldSpace(x, y)
+
+	-- loop through all entities (backwards) and return the first entity overlapping the current location
+	-- looping backwards is used here because the last entity is drawn in front!
+	local Entity
+	local dx
+	local dy
+	for i = #self.Entities, 1, -1 do
+		Entity = self.Entities[i]
+		dx = Entity.Position.x - worldX
+		dy = Entity.Position.y - worldY
+		if Entity.Shape == "rectangle" then
+			if math.abs(dx) <= Entity.ShapeSize.x / 2 and math.abs(dy) <= Entity.ShapeSize.y / 2 then -- 'point within rectangle' check
+				return Entity
+			end
+		elseif Entity.Shape == "ellipse" then
+			if dx^2 / (Entity.ShapeSize.x / 2)^2 + dy^2 / (Entity.ShapeSize.y / 2)^2 <= 1 then -- 'point within ellipse' check
+				return Entity
+			end
+		end
+	end
+end
+
+
 -- eventName is the name of the event to call. All event name strings are accepted, but not all of them may trigger
 -- func is the function to link
 function Scene:on(eventName, func)
@@ -102,7 +133,7 @@ function Scene:draw()
 	-- draw the scene image
 	love.graphics.draw(self.SceneImage)
 
-	-- TODO: draw entities (and use the camera object to check which entities are within bounds)
+	self:drawEntities()
 
 	-- reset graphics transform to previous state
 	love.graphics.pop()
@@ -122,7 +153,6 @@ function TiledScene:draw()
 	-- draw the scene image
 	love.graphics.draw(self.SpriteBatch)
 
-	-- TODO: draw entities (and use the camera object to check which entities are within bounds)
 	self:drawEntities()
 
 	-- reset graphics transform to previous state
@@ -134,9 +164,11 @@ end
 function Scene:drawEntities()
 	-- the camera transform should already be applied!
 	local Object
+	local w, h
 	for i = 1, #self.Entities do
 		Object = self.Entities[i]
-		love.graphics.draw(Object.Image, Object.Position.x, Object.Position.y, 0, 1, 1, Object.Pivot.x * Object.Image:getWidth(), Object.Pivot.y * Object.Image:getHeight())
+		w, h = Object.Image:getDimensions()
+		love.graphics.draw(Object.Image, Object.Position.x, Object.Position.y, 0, Object.ImageSize.x / w, Object.ImageSize.y / h, Object.ImagePivot.x * w, Object.ImagePivot.y * h)
 	end
 end
 
