@@ -11,6 +11,31 @@ Entity.__tostring = function(tab) return "{Entity: " .. tostring(tab.Id) .. "}" 
 
 
 
+----------------------------------------------------[[ == SHADER == ]]----------------------------------------------------
+--[[
+-- outline shader shamelessly copied from https://blogs.love2d.org/content/let-it-glow-dynamically-adding-outlines-characters
+local outlineShader = love.graphics.newShader([ [
+vec4 resultCol;
+extern vec2 stepSize;
+extern vec4 outlineColor; // TODO: implement this!
+
+vec4 effect(vec4 col, Image texture, vec2 texturePos, vec2 screenPos) {
+	// get color of pixels:
+	number alpha = 4 * texture2D(texture, texturePos).a;
+	alpha -= texture2D( texture, texturePos + vec2(stepSize.x, 0.0f)).a;
+	alpha -= texture2D( texture, texturePos + vec2(-stepSize.x, 0.0f)).a;
+	alpha -= texture2D( texture, texturePos + vec2(0.0f, stepSize.y)).a;
+	alpha -= texture2D( texture, texturePos + vec2(0.0f, -stepSize.y)).a;
+
+	// calculate resulting color
+	resultCol = vec4(1.0f, 1.0f, 1.0f, alpha) * outlineColor;
+	// return color for current pixel
+	return resultCol;
+}
+] ])
+]]
+
+
 ----------------------------------------------------[[ == METHODS == ]]----------------------------------------------------
 
 local function isEntity(t)
@@ -23,6 +48,11 @@ function Entity:setShape(shape)
 	self.Shape = shape
 end
 
+--[[
+function Entity:outline()
+
+end
+]]
 
 
 
