@@ -20,8 +20,7 @@ local module = { -- the world module
 
 ----------------------------------------------------[[ == MODULE INITIALIZATION == ]]----------------------------------------------------
 
-function module:initialize(autoRender)
-	if autoRender == nil then autoRender = true end
+function module:initialize()
 	if not self.Initialized then
 		self.Initialized = true
 	else
@@ -32,19 +31,7 @@ function module:initialize(autoRender)
 	local update = love.update or function() end -- define new update function if it doesn't exist yet
 	love.update = function()
 		update()
-
-	end
-
-	-- Monkey Patching love.draw if auto-render is enabled
-	if autoRender == true then
-		self.AutoRendering = true
-		local draw = love.draw or function() end
-		love.draw = function()
-			draw()
-			self:render()
-		end
-	else
-		self.AutoRendering = false
+		-- TODO: world update code and such!
 	end
 end
 

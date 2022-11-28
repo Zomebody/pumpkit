@@ -29,10 +29,11 @@ function module:initialize()
 
 	local oldResize = love.resize or function() end
 	love.resize = function(...)
+		oldResize(...)
+		
 		for i = 1, #self.AllCameras do
 			self.AllCameras[i]:updateTransform()
 		end
-		oldResize(...)
 	end
 end
 

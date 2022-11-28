@@ -42,7 +42,7 @@ local resizedElementsCache = {} -- cache with resized elements in case an elemen
 
 ]]
 local module = {
-	["AutoRendering"] = false;
+	--["AutoRendering"] = false;
 	["Changed"] = false; -- internal boolean to determine at the end of each frame if some element was added, removed, hidden, unhidden or changed position or size, so CursorFocus can be updated
 	["Children"] = {};
 	["CursorFocus"] = nil; -- current element the mouse is hovering over
@@ -180,13 +180,14 @@ end
 ----------------------------------------------------[[ == MODULE INITIALIZATION == ]]----------------------------------------------------
 
 -- connects love2d events to UI element events
-function module:initialize(autoRender)
-	if autoRender == nil then autoRender = true end
+function module:initialize() -- autoRender
+	--if autoRender == nil then autoRender = true end
+	--[[
 	if not self.Initialized then
 		self.Initialized = true
 	else
 		return
-	end
+	end]]
 
 	-- Monkey Patching love.mousemoved (at start)
 	local mousemoved = love.mousemoved or function() end -- define new mousemoved function if it doesn't exist yet
@@ -214,22 +215,16 @@ function module:initialize(autoRender)
 		-- use delta movement to call (nested) drag events
 		if self.DragTarget ~= nil then
 			self.DragActive = true
-			--self.DragSpeed:set(dx / love.timer.getDelta(), dy / love.timer.getDelta())
+			
 			local Target = self.DragTarget
-			--if Target.OnDrag ~= nil then
-			--	Target.OnDrag(dx, dy, self.PressedButton, x - self.DragStart.x, y - self.DragStart.y)
 			if Target.Events.Drag ~= nil then
 				connection.doEvents(Target.Events.Drag, dx, dy, self.PressedButton, x - self.DragStart.x, y - self.DragStart.y)
 			end
-			--if Target.OnNestedDrag ~= nil then
-			--	Target.OnNestedDrag(dx, dy, self.PressedButton, x - self.DragStart.x, y - self.DragStart.y)
 			if Target.Events.NestedDrag ~= nil then
 				connection.doEvents(Target.Events.NestedDrag, dx, dy, self.PressedButton, x - self.DragStart.x, y - self.DragStart.y)
 			end
 			while Target.Parent ~= nil and Target.Parent ~= module do
 				Target = Target.Parent
-				--if Target.OnNestedDrag ~= nil then
-				--	Target.OnNestedDrag(dx, dy, self.PressedButton, x - self.DragStart.x, y - self.DragStart.y)
 				if Target.Events.NestedDrag ~= nil then
 					connection.doEvents(Target.Events.NestedDrag, dx, dy, self.PressedButton, x - self.DragStart.x, y - self.DragStart.y)
 				end
@@ -273,28 +268,24 @@ function module:initialize(autoRender)
 			local oldFocus = self.CursorFocus
 			self.CursorFocus = self:at(love.mouse.getPosition())
 			if oldFocus ~= self.CursorFocus then
-				--self.IsFullPress = false
 				if oldFocus ~= nil then
 					self.PressedElement = nil
-					--if oldFocus.OnHoverEnd ~= nil then
-					--	oldFocus.OnHoverEnd()
 					if oldFocus.Events.HoverEnd ~= nil then
 						connection.doEvents(oldFocus.Events.HoverEnd)
 					end
 				end
-				--if self.CursorFocus ~= nil and self.CursorFocus.OnHoverStart ~= nil then
-				--	self.CursorFocus.OnHoverStart()
 				if self.CursorFocus ~= nil and self.CursorFocus.Events.HoverStart ~= nil then
 					connection.doEvents(self.CursorFocus.Events.HoverStart)
 				end
 			end
 		end
-		--self.KeyboardReleasedThisFrame = false
 	end
 
 	-- Monkey Patching love.resize (at start)
 	local resize = love.resize or function() end -- define new resize function if it doesn't exist yet
-	love.resize = function(w, h)
+	love.resize = function(...)
+		resize(...)
+
 		self.Changed = true
 		local screenW, screenH = self.Size.x, self.Size.y
 		self.Size = vector(love.graphics.getDimensions())
@@ -315,7 +306,6 @@ function module:initialize(autoRender)
 		end
 		resizedElements = {}
 		resizedElementsCache = {}
-		resize(w, h)
 	end
 
 	-- Monkey Patching mouse pressed and mouse released
@@ -356,25 +346,18 @@ function module:initialize(autoRender)
 		-- stop current drag
 		if self.DragTarget ~= nil and self.DragActive then
 			local Target = self.DragTarget
-			--if Target.OnDragEnd ~= nil then
-			--	Target.OnDragEnd(x - self.DragStart.x, y - self.DragStart.y, button)
 			if Target.Events.DragEnd ~= nil then
 				connection.doEvents(Target.Events.DragEnd, x - self.DragStart.x, y - self.DragStart.y, button)
 			end
-			--if Target.OnNestedDragEnd ~= nil then
-			--	Target.OnNestedDragEnd(x - self.DragStart.x, y - self.DragStart.y, button)
 			if Target.Events.NestedDragEnd ~= nil then
 				connection.doEvents(Target.Events.NestedDragEnd, x - self.DragStart.x, y - self.DragStart.y, button)
 			end
 			while Target.Parent ~= nil and Target.Parent ~= module do
 				Target = Target.Parent
-				--if Target.OnNestedDragEnd ~= nil then
-				--	Target.OnNestedDragEnd(x - self.DragStart.x, y - self.DragStart.y, button)
 				if Target.Events.NestedDragEnd ~= nil then
 					connection.doEvents(Target.Events.NestedDragEnd, x - self.DragStart.x, y - self.DragStart.y, button)
 				end
 			end
-			--self.DragSpeed:set(0, 0)
 		end
 
 		-- press UI elements
@@ -387,20 +370,14 @@ function module:initialize(autoRender)
 			self.DragTarget = self.PressedElement
 
 			local Target = self.CursorFocus
-			--if Target.OnPressStart ~= nil then
-			--	Target.OnPressStart(x, y, button, istouch, presses)
 			if Target.Events.PressStart ~= nil then
 				connection.doEvents(Target.Events.PressStart, x, y, button, istouch, presses)
 			end
-			--if Target.OnNestedPressStart ~= nil then
-			--	Target.OnNestedPressStart(x, y, button, istouch, presses)
 			if Target.Events.NestedPressStart ~= nil then
 				connection.doEvents(Target.Events.NestedPressStart, x, y, button, istouch, presses)
 			end
 			while Target.Parent ~= nil and Target.Parent ~= module do
 				Target = Target.Parent
-				--if Target.OnNestedPressStart ~= nil then
-				--	Target.OnNestedPressStart(x, y, button, istouch, presses)
 				if Target.Events.NestedPressStart ~= nil then
 					connection.doEvents(Target.Events.NestedPressStart, x, y, button, istouch, presses)
 				end
@@ -425,26 +402,18 @@ function module:initialize(autoRender)
 
 		if self.CursorFocus ~= nil then
 			local Target = self.CursorFocus
-			--if Target.OnPressEnd ~= nil then
-			--	Target.OnPressEnd(x, y, button, istouch, presses)
 			if Target.Events.PressEnd ~= nil then
 				connection.doEvents(Target.Events.PressEnd, x, y, button, istouch, presses)
 			end
-			--if Target.OnNestedPressEnd ~= nil then
-			--	Target.OnNestedPressEnd(x, y, button, istouch, presses)
 			if Target.Events.NestedPressEnd ~= nil then
 				connection.doEvents(Target.Events.NestedPressEnd, x, y, button, istouch, presses)
 			end
 			while Target.Parent ~= nil and Target.Parent ~= module do
 				Target = Target.Parent
-				--if Target.OnNestedPressEnd ~= nil then
-				--	Target.OnNestedPressEnd(x, y, button, istouch, presses)
 				if Target.Events.NestedPressEnd ~= nil then
 					connection.doEvents(Target.Events.NestedPressEnd, x, y, button, istouch, presses)
 				end
 			end
-			--if self.CursorFocus == self.PressedElement and self.CursorFocus.OnFullPress ~= nil then
-			--	self.CursorFocus.OnFullPress(x, y, button, istouch, presses)
 			if self.CursorFocus == self.PressedElement and self.CursorFocus.Events.FullPress ~= nil then
 				connection.doEvents(self.CursorFocus.Events.FullPress, x, y, button, istouch, presses)
 			end
@@ -453,20 +422,14 @@ function module:initialize(autoRender)
 		-- stop current drag
 		if self.DragTarget ~= nil and self.DragActive then
 			local Target = self.DragTarget
-			--if Target.OnDragEnd ~= nil then
-			--	Target.OnDragEnd(x - self.DragStart.x, y - self.DragStart.y, button)
 			if Target.Events.DragEnd ~= nil then
 				connection.doEvents(Target.Events.DragEnd, x - self.DragStart.x, y - self.DragStart.y, button)
 			end
-			--if Target.OnNestedDragEnd ~= nil then
-			--	Target.OnNestedDragEnd(x - self.DragStart.x, y - self.DragStart.y, button)
 			if Target.Events.NestedDragEnd ~= nil then
 				connection.doEvents(Target.Events.NestedDragEnd, x - self.DragStart.x, y - self.DragStart.y, button)
 			end
 			while Target.Parent ~= nil and Target.Parent ~= module do
 				Target = Target.Parent
-				--if Target.OnNestedDragEnd ~= nil then
-				--	Target.OnNestedDragEnd(x - self.DragStart.x, y - self.DragStart.y, button)
 				if Target.Events.NestedDragEnd ~= nil then
 					connection.doEvents(Target.Events.NestedDragEnd, x - self.DragStart.x, y - self.DragStart.y, button)
 				end
@@ -481,31 +444,20 @@ function module:initialize(autoRender)
 		--self.DragSpeed:set(0, 0)
 	end
 
-	-- Monkey Patching mouse pressed and mouse released
-	--love.touchpressed = function(x, y, button, istouch, presses)
-	--
-	--end
-
 	-- Monkey patching mousescroll
 	local wheelmoved = love.wheelmoved or function() end
 	love.wheelmoved = function(x, y)
 		wheelmoved(x, y, self.CursorFocus ~= nil)
 		if self.CursorFocus ~= nil then
-			--if self.CursorFocus.OnScroll ~= nil then
-			--	self.CursorFocus.OnScroll(x, y)
 			if self.CursorFocus.Events.Scroll ~= nil then
 				connection.doEvents(self.CursorFocus.Events.Scroll, x, y)
 			end
 			local Target = self.CursorFocus
-			--if self.CursorFocus.OnNestedScroll ~= nil then
-			--	self.CursorFocus.OnNestedScroll(x, y)
 			if self.CursorFocus.Events.NestedScroll ~= nil then
 				connection.doEvents(self.CursorFocus.Events.NestedScroll, x, y)
 			end
 			while Target.Parent ~= nil and Target.Parent ~= module do
 				Target = Target.Parent
-				--if Target.OnNestedScroll ~= nil then
-				--	Target.OnNestedScroll(x, y)
 				if Target.Events.NestedScroll ~= nil then
 					connection.doEvents(Target.Events.NestedScroll, x, y)
 				end
@@ -533,8 +485,6 @@ function module:initialize(autoRender)
 		end
 		-- trigger OnKeyEntered for all focused UI elements
 		for i = 1, #self.KeyboardFocus do
-			--if self.KeyboardFocus[i].OnKeyEntered ~= nil then
-			--	self.KeyboardFocus[i].OnKeyEntered(key, scancode)
 			if self.KeyboardFocus[i].Events.KeyEntered ~= nil then
 				connection.doEvents(self.KeyboardFocus[i].Events.KeyEntered, key, scancode)
 			end
@@ -542,6 +492,7 @@ function module:initialize(autoRender)
 	end
 
 	-- Monkey Patching love.draw if auto-render is enabled
+	--[[
 	if autoRender == true then
 		self.AutoRendering = true
 		local draw = love.draw or function() end
@@ -552,6 +503,7 @@ function module:initialize(autoRender)
 	else
 		self.AutoRendering = false
 	end
+	]]
 end
 
 

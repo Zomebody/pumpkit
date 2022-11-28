@@ -23,8 +23,8 @@ function module:initialize()
 	-- Monkey Patching love.update such that tasks are executed at the start of the update loop
 	local update = love.update or function() end
 	love.update = function()
-		self:update()
 		update()
+		self:update()
 	end
 end
 

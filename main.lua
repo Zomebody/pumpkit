@@ -1,8 +1,9 @@
+local here = ...
+local loader = require("framework.loader")
 
-require("framework.loader")()
-
-local addToPage = require(getpath(..., "app/append_page"))
-local createDropdown = require(getpath(..., "app/create_dropdown"))
+local addToPage
+local createDropdown
+local Colors
 
 local defaultFont = "LieraSansMedium.ttf"
 
@@ -45,21 +46,28 @@ local Body = nil
 local shownBody = nil
 local shownNavigation = nil
 
-local Colors = require("app.color_palette")
+
 
 local wx, wy, ww, wh = love.window.getSafeArea()
 
 function love.load()
+	loader()
+	addToPage = require(getpath(here, "app/append_page"))
+	createDropdown = require(getpath(here, "app/create_dropdown"))
+	Colors = require("app.color_palette")
+	
 	love.window.setTitle("UI Documentation")
 
 	wx, wy, ww, wh = love.window.getSafeArea()
 	DisplayVars = love.graphics.getWidth() > 720 and Vars.Default or Vars.SmallScreen
 	Vars.SmallScreen.BodyWidth = ww - Vars.SmallScreen.NavigationWidth
 
+	--[[
 	task:initialize()
 	tween:initialize()
 	animation:initialize()
-	ui:initialize(false)
+	ui:initialize()
+]]
 
 	initializeApp()
 end
@@ -291,24 +299,17 @@ end
 function love.keypressed(key)
 	if #ui.KeyboardFocus > 0 then return end
 	if key == "e" then
-		--print("garbage count: " .. collectgarbage("count"))
 		if ui.Visible then
 			ui:hide()
 		else
 			ui:show()
 		end
 	elseif key == "d" then
-		--print("garbage count: " .. collectgarbage("count"))
-		--print("NO. ui children: " .. #ui.Children)
 		for i = 1, #ui.Children do
 			print(ui.Children[i], ui.Children[i].Parent)
 		end
-		--print(printObject(font.history, "History"))
-		--print(printObject(font.semaphores, "Semaphores"))
+
 	elseif key == "q" and TopBar ~= nil then
-		--print(#ui.Children)
-		--print("active animations: " .. #animation.Active)
-		--print(collectgarbage("count"))
 		ui:remove(TopBar)
 		ui:remove(Container)
 		TopBar = nil
@@ -317,16 +318,11 @@ function love.keypressed(key)
 		Body = nil
 		shownNavigation = nil
 		shownBody = nil
-		--print("garbage count: " .. collectgarbage("count"))
 		collectgarbage("collect")
 		garbage = collectgarbage("count")
-		--print("garbage count: " .. collectgarbage("count"))
-		--print("NO. ui children: " .. #ui.Children)
 		for i = 1, #ui.Children do
 			print(ui.Children[i], ui.Children[i].Parent)
 		end
-		--print(printObject(font.history, "History"))
-		--print(printObject(font.semaphores, "Semaphores"))
 	elseif key == "r" and TopBar == nil then
 		initializeApp()
 	end
