@@ -59,18 +59,6 @@ function conn:disconnect()
 	local Element = self.LinkedElement
 	if Element ~= nil then
 		if Element.Events[self.EventName] ~= nil then
-			--[[
-			if Element.Events[self.EventName][self.EventIndex] ~= nil then
-				Element.Events[self.EventName][self.EventIndex] = nil
-				if #Element.Events[self.EventName] == 0 then -- there are no more events with this name that are linked to the given UI element
-					Element.Events[self.EventName] = nil
-				end
-				self.Connected = false
-				return true
-			else
-				error("EventConnection is disconnecting but the function to disconnect no longer exists.")
-			end
-			]]
 			local objIndex = FindConnectionInSortedArray(self, Element.Events[self.EventName])
 			if objIndex ~= nil then
 				table.remove(Element.Events[self.EventName], objIndex) -- table.remove guarantees the ascending connection id order, and no gaps will be left behind in the array
