@@ -161,6 +161,7 @@ end
 
 
 -- only for internal use. Used by both the TiledScene and Scene to draw their entities on screen after drawing the scene's map
+-- default shader, forwards looping through entities: 170-180 fps @ 10.000 entities
 function Scene:drawEntities()
 	-- the camera transform should already be applied!
 	local Object
