@@ -205,8 +205,8 @@ function module:initialize()
 	-- Monkey Patching love.update such that tweens are played at the start
 	local update = love.update or function() end
 	love.update = function()
-		self:update()
 		update()
+		self:update()
 	end
 end
 

@@ -5,7 +5,8 @@
 local connection = require("framework.connection")
 
 local module = {
-	["Active"] = {}
+	["Active"] = {};
+	["TotalCreated"] = 0;
 }
 
 local animation = {}
@@ -188,7 +189,7 @@ function animation:getSize()
 end
 
 function animation:__tostring()
-	return "{" .. self.State .. ", " .. tostring(self.CurrentFrame) .. "/" .. tostring(self.FrameCount) .. ", " .. tostring(self.FrameWidth) .. "x" .. tostring(self.FrameHeight) .. ", " .. tostring(self.Looped) .. "}"
+	return ("{Animation: id = %d; state = %s; frame = %d/%d; size = %dx%d; looped = %s}"):format(self.Id, self.State, self.CurrentFrame, self.FrameCount, self.FrameWidth, self.FrameHeight, tostring(self.Looped))
 end
 
 
@@ -196,8 +197,10 @@ end
 ----------------------------------------------------[[ == ANIMATION CREATION == ]]----------------------------------------------------
 
 local function new(refImg, width, height, coordinates, playSpeed, looped)
+	module.TotalCreated = module.TotalCreated + 1
 	local Obj = {
 		-- properties
+		["Id"] = module.TotalCreated;
 		["State"] = "idle"; -- idle, paused, playing
 		["TimePlayed"] = 0;
 		["ReferenceImage"] = refImg;
