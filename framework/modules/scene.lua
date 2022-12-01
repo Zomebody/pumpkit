@@ -165,11 +165,15 @@ end
 function Scene:drawEntities()
 	-- the camera transform should already be applied!
 	local Object
-	local w, h
+	local Image, Quad
+	local x, y, w, h
+
 	for i = 1, #self.Entities do
 		Object = self.Entities[i]
-		w, h = Object.Image:getDimensions()
-		love.graphics.draw(Object.Image, Object.Position.x, Object.Position.y, 0, Object.ImageSize.x / w, Object.ImageSize.y / h, Object.ImagePivot.x * w, Object.ImagePivot.y * h)
+		--love.graphics.draw(Object.Image, Object.Position.x, Object.Position.y, 0, Object.ImageSize.x / w, Object.ImageSize.y / h, Object.ImagePivot.x * w, Object.ImagePivot.y * h)
+		Image, Quad = Object:getSprite()
+		x, y, w, h = Quad:getViewport()
+		love.graphics.draw(Image, Quad, Object.Position.x, Object.Position.y, 0, 1, 1, Object.Pivot.x * w, Object.Pivot.y * h)
 	end
 end
 

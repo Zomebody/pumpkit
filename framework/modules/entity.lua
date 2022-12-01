@@ -96,7 +96,7 @@ function Entity:getSprite()
 		end
 	end
 	-- return the sprite of the currently shown animation (Image, Quad)
-	return State.Animations[i]:getSprite()
+	return State.Animations[curIndex]:getSprite()
 end
 
 
@@ -121,7 +121,7 @@ function Entity:setState(name)
 	State = self:getState()
 
 	-- update the entity Size property
-	self.Size = vector(State.Animations[1].FrameWidth, State.Animations[i].FrameHeight)
+	self.Size = vector(State.Animations[1].FrameWidth, State.Animations[1].FrameHeight)
 
 	-- play all animations in the new state
 	for i = 1, #State.Animations do
@@ -164,6 +164,8 @@ local function new(defaultState, ...)
 		["Shape"] = "rectangle";
 		["ShapeSize"] = vector(1, 1);
 		["States"] = {};
+
+		["Events"] = {}; -- list of connected events
 	}
 	-- set metatable early so that :addState() can be called
 	setmetatable(Object, Entity)
