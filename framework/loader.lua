@@ -31,11 +31,6 @@ function load()
 	animation:initialize()
 	world:initialize()
 	camera:initialize()
-	
-	--[[
-	world:initialize()
-	camera:initialize()
-	]]
 end
 
 return load

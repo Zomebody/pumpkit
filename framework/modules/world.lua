@@ -8,11 +8,12 @@ local connection = require("framework.connection")
 ----------------------------------------------------[[ == BASE OBJECTS == ]]----------------------------------------------------
 
 local module = { -- the world module
-	["AutoRendering"] = false;
+	--[[
 	["Background"] = {
 		["Image"] = nil;
 		["Quad"] = nil;
 	};
+	]]
 	["CurrentScene"] = nil;
 }
 
@@ -78,10 +79,10 @@ end
 
 
 function module:render()
-	if self.Background.Image ~= nil then
+	--if self.Background.Image ~= nil then
 		-- if quad, draw quad
 		-- otherwise, draw image and stretch to screen bounds
-	end
+	--end
 	if self.CurrentScene ~= nil then
 		-- draw the scene
 		self.CurrentScene:draw()

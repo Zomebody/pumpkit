@@ -8,7 +8,7 @@ local content = {}
 table.insert(content, {
 	["Type"] = "IntroHeader";
 	["Name"] = "The animation Module";
-	["Description"] = "A module used to construct animation data types.\n\nAnimations created with this module are singular animations. If you want to create an entity that requires multiple animations, you will need to create multiple animation objects. However, you could reuse the same sprite sheet or image for the different animations!";
+	["Description"] = "A module used to construct Animation instances.\n\nAnimations created with this module are singular animations. If you want to create an entity that requires multiple animations, you will need to create multiple animation objects. However, you could reuse the same sprite sheet or image for the different animations!";
 	["CodeMarkup"] = "<k>local</k> Dino <k>=</k> love.graphics.<f>newImage</f>(<s>\"test_images/DinoSprites.png\"</s>)\nDino:<f>setFilter</f>(<s>\"nearest\"</s>, <s>\"nearest\"</s>)\n<k>local</k> Animation <k>=</k> <f>animation</f>(Dino, <n>24</n>, <n>24</n>, {<f>vector</f>(<n>5</n>, <n>1</n>), <f>vector</f>(<n>6</n>, <n>1</n>), <f>vector</f>(<n>7</n>, <n>1</n>), <f>vector</f>(<n>8</n>, <n>1</n>), <f>vector</f>(<n>9</n>, <n>1</n>), <f>vector</f>(<n>10</n>, <n>1</n>)}, <n>10</n>, <b>true</b>)\n<c>-- Alternative</c>\n<c> local Animation = animation(Dino, 24, 24, {5, 1, 6, 1, 7, 1, 8, 1, 9, 1, 10, 1}, 10, true)</c>\n<k>local</k> AnimFrame <k>=</k> ui.<f>newAnimatedFrame</f>(Animation, <n>128</n>, <n>128</n>)\nAnimation:<f>play</f>()";
 	["Demo"] = function()
 		local Dino = love.graphics.newImage("test_images/DinoSprites.png")

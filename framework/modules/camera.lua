@@ -125,6 +125,7 @@ local function new()
 	module.TotalCreated = module.TotalCreated + 1
 
 	local Object = {
+		["Id"] = module.TotalCreated;
 		["Position"] = vector(0, 0);
 		["Zoom"] = 1; -- zoom of 1 equals 1:1 pixels. Zoom of 2 means every game pixel takes up 2x2 screen pixels. Zoom of 0.5 means you see twice as much on the x-axis and y-axis
 		["Transform"] = love.math.newTransform();
