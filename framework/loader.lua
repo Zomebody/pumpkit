@@ -16,7 +16,7 @@ function load()
 	animation = require(getpath(here, "../framework/modules/animation"))
 	font = require(getpath(here, "../framework/modules/font"))
 	--signal = require(getpath(here, "../framework/modules/signal"))
-	callbacks = require(getpath(locale, "../framework/modules/callbacks"))
+	callbacks = require(getpath(here, "../framework/modules/callbacks"))
 	printObject = require(getpath(here, "../framework/objectPrinter"))
 	ui = require(getpath(here, "../framework/modules/ui"))
 
