@@ -103,6 +103,7 @@ end
 
 function Entity:setState(name)
 	assert(self:hasState(name), "Entity:setState(name) is being called with 'name' set to a non-existent state")
+	if self.CurrentState == name then return end -- do not change state when you are already in the same state
 	local State
 	if self.CurrentState ~= nil then -- when creating a new entity, CurrentState will be nil, so this check is needed to prevent StateLeaving from firing upon entity creation
 		-- call StateLeaving
