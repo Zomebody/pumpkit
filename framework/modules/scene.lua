@@ -171,6 +171,7 @@ function Scene:drawEntities()
 
 	for i = 1, #self.Entities do
 		Object = self.Entities[i]
+		Image, Quad = Object:getSprite()
 		x, y, w, h = Quad:getViewport()
 		-- check if the entity falls within the screen borders
 		if (Object.Position.x + (1 - Object.Pivot.x) * w >= self.Camera.Position.x - screenW / (2 * self.Camera.Zoom)) and (Object.Position.x - Object.Pivot.x * w <= self.Camera.Position.x + screenW / (2 * self.Camera.Zoom))
