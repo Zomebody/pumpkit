@@ -176,7 +176,6 @@ function Scene:drawEntities()
 		-- check if the entity falls within the screen borders
 		if (Object.Position.x + (1 - Object.Pivot.x) * w >= self.Camera.Position.x - screenW / (2 * self.Camera.Zoom)) and (Object.Position.x - Object.Pivot.x * w <= self.Camera.Position.x + screenW / (2 * self.Camera.Zoom))
 		and (Object.Position.y + (1 - Object.Pivot.y) * h >= self.Camera.Position.y - screenH / (2 * self.Camera.Zoom)) and (Object.Position.y - Object.Pivot.y * h <= self.Camera.Position.y + screenH / (2 * self.Camera.Zoom)) then
-			Image, Quad = Object:getSprite()
 			love.graphics.draw(Image, Quad, Object.Position.x, Object.Position.y, 0, 1, 1, Object.Pivot.x * w, Object.Pivot.y * h)
 		end
 	end
