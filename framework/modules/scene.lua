@@ -163,17 +163,22 @@ end
 -- only for internal use. Used by both the TiledScene and Scene to draw their entities on screen after drawing the scene's map
 -- default shader, forwards looping through entities: 170-180 fps @ 10.000 entities
 function Scene:drawEntities()
-	-- the camera transform should already be applied!
+	-- the camera transform should already be applied when this function is called!
 	local Object
 	local Image, Quad
 	local x, y, w, h
+	local screenW, screenH = love.graphics:getDimensions()
+	local drawn = 0
 
 	for i = 1, #self.Entities do
 		Object = self.Entities[i]
-		--love.graphics.draw(Object.Image, Object.Position.x, Object.Position.y, 0, Object.ImageSize.x / w, Object.ImageSize.y / h, Object.ImagePivot.x * w, Object.ImagePivot.y * h)
-		Image, Quad = Object:getSprite()
 		x, y, w, h = Quad:getViewport()
-		love.graphics.draw(Image, Quad, Object.Position.x, Object.Position.y, 0, 1, 1, Object.Pivot.x * w, Object.Pivot.y * h)
+		-- check if the entity falls within the screen borders
+		if (Object.Position.x + (1 - Object.Pivot.x) * w >= self.Camera.Position.x - screenW / (2 * self.Camera.Zoom)) and (Object.Position.x - Object.Pivot.x * w <= self.Camera.Position.x + screenW / (2 * self.Camera.Zoom))
+		and (Object.Position.y + (1 - Object.Pivot.y) * h >= self.Camera.Position.y - screenH / (2 * self.Camera.Zoom)) and (Object.Position.y - Object.Pivot.y * h <= self.Camera.Position.y + screenH / (2 * self.Camera.Zoom)) then
+			Image, Quad = Object:getSprite()
+			love.graphics.draw(Image, Quad, Object.Position.x, Object.Position.y, 0, 1, 1, Object.Pivot.x * w, Object.Pivot.y * h)
+		end
 	end
 end
 
