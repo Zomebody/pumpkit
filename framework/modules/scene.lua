@@ -259,4 +259,4 @@ end
 module.newScene = newScene
 module.newTiledScene = newTiledScene
 module.isScene = isScene
-return setmetatable(module, {__call = function(_, ...) return new(...) end})
+return setmetatable(module, {__call = function(_, ...) return newScene(...) end})
