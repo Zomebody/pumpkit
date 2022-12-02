@@ -168,7 +168,6 @@ function Scene:drawEntities()
 	local Image, Quad
 	local x, y, w, h
 	local screenW, screenH = love.graphics:getDimensions()
-	local drawn = 0
 
 	for i = 1, #self.Entities do
 		Object = self.Entities[i]
