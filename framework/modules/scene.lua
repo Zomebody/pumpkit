@@ -133,7 +133,7 @@ function Scene:draw()
 	-- draw the scene image
 	love.graphics.draw(self.SceneImage)
 
-	self:drawEntities()
+	self:drawItems()
 
 	-- reset graphics transform to previous state
 	love.graphics.pop()
@@ -153,7 +153,7 @@ function TiledScene:draw()
 	-- draw the scene image
 	love.graphics.draw(self.SpriteBatch)
 
-	self:drawEntities()
+	self:drawItems()
 
 	-- reset graphics transform to previous state
 	love.graphics.pop()
@@ -162,21 +162,30 @@ end
 
 -- only for internal use. Used by both the TiledScene and Scene to draw their entities on screen after drawing the scene's map
 -- default shader, forwards looping through entities: 170-180 fps @ 10.000 entities
-function Scene:drawEntities()
+function Scene:drawItems()
 	-- the camera transform should already be applied when this function is called!
 	local Object
-	local Image, Quad
+	--local Image, Quad
 	local x, y, w, h
 	local screenW, screenH = love.graphics:getDimensions()
 
+	-- draw all props
+	for i = 1, #self.Props do
+
+	end
+
+	local drawn = 0
+
+	-- repeat the same process, but for entities
 	for i = 1, #self.Entities do
 		Object = self.Entities[i]
-		Image, Quad = Object:getSprite()
-		x, y, w, h = Quad:getViewport()
 		-- check if the entity falls within the screen borders
-		if (Object.Position.x + (1 - Object.Pivot.x) * w >= self.Camera.Position.x - screenW / (2 * self.Camera.Zoom)) and (Object.Position.x - Object.Pivot.x * w <= self.Camera.Position.x + screenW / (2 * self.Camera.Zoom))
-		and (Object.Position.y + (1 - Object.Pivot.y) * h >= self.Camera.Position.y - screenH / (2 * self.Camera.Zoom)) and (Object.Position.y - Object.Pivot.y * h <= self.Camera.Position.y + screenH / (2 * self.Camera.Zoom)) then
-			love.graphics.draw(Image, Quad, Object.Position.x, Object.Position.y, 0, 1, 1, Object.Pivot.x * w, Object.Pivot.y * h)
+		if  (Object.Position.x + (1 - Object.Pivot.x) * Object.Size.x	>= self.Camera.Position.x - screenW / (2 * self.Camera.Zoom)) -- OOB on the left
+		and (Object.Position.x - Object.Pivot.x * Object.Size.x			<= self.Camera.Position.x + screenW / (2 * self.Camera.Zoom)) -- OOB on the right
+		and (Object.Position.y + (1 - Object.Pivot.y) * Object.Size.y	>= self.Camera.Position.y - screenH / (2 * self.Camera.Zoom)) -- OOB above
+		and (Object.Position.y - Object.Pivot.y * Object.Size.y			<= self.Camera.Position.y + screenH / (2 * self.Camera.Zoom)) then -- OOB below
+			Object:draw()
+			drawn = drawn + 1
 		end
 	end
 end
@@ -205,6 +214,7 @@ local function newScene(image, sceneCamera)
 		["SceneImage"] = image;
 		["Camera"] = sceneCamera or camera.new();
 		["Entities"] = {};
+		["Props"] = {};
 
 		-- table with arrays of event functions stored under keys named after the events
 		["Events"] = {};
@@ -245,6 +255,7 @@ function newTiledScene(atlasImage, grid, tileSize, sceneCamera)
 		["Quads"] = Quads;
 		["Camera"] = sceneCamera or camera.new();
 		["Entities"] = {};
+		["Props"] = {};
 
 		-- table with arrays of event functions stored under keys named after the events
 		["Events"] = {};

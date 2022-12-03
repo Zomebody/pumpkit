@@ -122,7 +122,7 @@ function Entity:setState(name)
 	State = self:getState()
 
 	-- update the entity Size property
-	self.Size = vector(State.Animations[1].FrameWidth, State.Animations[1].FrameHeight)
+	self.Size = vector(State.Animations[1].FrameSize)
 
 	-- play all animations in the new state
 	for i = 1, #State.Animations do
@@ -131,6 +131,17 @@ function Entity:setState(name)
 	-- call StateEntered
 	if self.Events.StateEntered ~= nil then
 		connection.doEvents(self.Events.StateEntered, self.CurrentState)
+	end
+end
+
+
+function Entity:setImageScale(x, y)
+	if vector.isVector(x) then
+		self.ImageScale = vector(x) -- vector
+	elseif y == nil then
+		self.ImageScale = vector(x, x) -- only one coordinate passed
+	else
+		self.ImageScale = vector(x, y) -- x,y coordinate
 	end
 end
 
@@ -149,6 +160,14 @@ function Entity:on(eventName, func)
 end
 
 
+-- draw the entity (does not take any transforms into consideration! So apply those first!)
+function Entity:draw()
+	local Image, Quad = self:getSprite()
+	local x, y, w, h = Quad:getViewport()
+	love.graphics.draw(Image, Quad, self.Position.x, self.Position.y, 0, self.Size.x / w * self.ImageScale.x, self.Size.y / h * self.ImageScale.y, self.Pivot.x * w, self.Pivot.y * h)
+end
+
+
 
 ----------------------------------------------------[[ == OBJECT CREATION == ]]----------------------------------------------------
 
@@ -160,7 +179,8 @@ local function new(defaultState, ...)
 		["CurrentState"] = nil; -- will be set to 'defaultState' when setState() is called later in this function. Had to be kept as 'nil' so that the StateLeaving event isn't called on entity creation
 		["Id"] = module.TotalCreated;
 		["Pivot"] = vector(0.5, 0.5);
-		["Size"] = vector(32, 32); -- TODO: set this whenever the state changes; has the same values as the animation's frame width & height
+		["Size"] = vector(32, 32); -- (read-only) the space in pixels the entity takes up on screen at a zoom of 1. This may change when the entity's state changes
+		["ImageScale"] = vector(1, 1);
 		["Position"] = vector(0, 0);
 		["Shape"] = "rectangle";
 		["ShapeSize"] = vector(1, 1);
