@@ -71,7 +71,7 @@ function animation:play()
 		return false
 	end
 	self.CurrentFrame = 1
-	self.Quad:setViewport(self.FrameCoordinates[self.CurrentFrame].x, self.FrameCoordinates[self.CurrentFrame].y, self.FrameWidth, self.FrameHeight)
+	self.Quad:setViewport(self.FrameCoordinates[self.CurrentFrame].x, self.FrameCoordinates[self.CurrentFrame].y, self.FrameSize.x, self.FrameSize.y)
 	self.State = "playing"
 	module.Active[#module.Active + 1] = self
 
@@ -148,7 +148,7 @@ function animation:update(dt)
 
 		local curFrame = math.ceil(math.min(self.FrameCount, self.TimePlayed / self.FrameDuration)) -- clamp in case TimePlayed == FrameCount * FrameDuration
 		self.CurrentFrame = curFrame
-		self.Quad:setViewport(self.FrameCoordinates[self.CurrentFrame].x, self.FrameCoordinates[self.CurrentFrame].y, self.FrameWidth, self.FrameHeight)
+		self.Quad:setViewport(self.FrameCoordinates[self.CurrentFrame].x, self.FrameCoordinates[self.CurrentFrame].y, self.FrameSize.x, self.FrameSize.y)
 		
 		-- loop through all of the animation's frames that have been reached during this frame (in order), so if you skipped a frame, you'll still call its OnFrameReached! (if marked)
 		--print(prevFramesPlayed, newFramesPlayed)
@@ -185,18 +185,18 @@ end
 
 
 function animation:getSize()
-	return self.FrameWidth, self.FrameHeight
+	return vector(self.FrameSize)
 end
 
 function animation:__tostring()
-	return ("{Animation: id = %d; state = %s; frame = %d/%d; size = %dx%d; looped = %s}"):format(self.Id, self.State, self.CurrentFrame, self.FrameCount, self.FrameWidth, self.FrameHeight, tostring(self.Looped))
+	return ("{Animation: id = %d; state = %s; frame = %d/%d; size = %dx%d; looped = %s}"):format(self.Id, self.State, self.CurrentFrame, self.FrameCount, self.FrameSize.x, self.FrameSize.y, tostring(self.Looped))
 end
 
 
 
 ----------------------------------------------------[[ == ANIMATION CREATION == ]]----------------------------------------------------
 
-local function new(refImg, width, height, coordinates, playSpeed, looped)
+local function new(refImg, frameSize, coordinates, playSpeed, looped)
 	module.TotalCreated = module.TotalCreated + 1
 	local Obj = {
 		-- properties
@@ -208,8 +208,8 @@ local function new(refImg, width, height, coordinates, playSpeed, looped)
 		["CurrentFrame"] = 1;
 		["FrameCoordinates"] = {}; -- {vector(x1, y1), vector(x2, y2), etc.}
 		["FrameCount"] = 0;
-		["FrameWidth"] = width or refImg:getWidth();
-		["FrameHeight"] = height or refImg:getHeight();
+		["FrameSize"] = frameSize == nil and vector(refImg:getWidth(), refImg:getHeight()) or vector(frameSize);
+		--["FrameHeight"] = height or refImg:getHeight();
 		["FrameDuration"] = playSpeed == nil and 8 or (1 / playSpeed);
 		["Looped"] = looped or false;
 		["MarkedFrames"] = {};
@@ -221,25 +221,25 @@ local function new(refImg, width, height, coordinates, playSpeed, looped)
 
 	-- transform coordinates into readable format for the animation
 	if coordinates == nil then
-		local framesX = math.floor(refImg:getWidth() / Obj.FrameWidth)
-		local framesY = math.floor(refImg:getHeight() / Obj.FrameHeight)
+		local framesX = math.floor(refImg:getWidth() / Obj.FrameSize.x)
+		local framesY = math.floor(refImg:getHeight() / Obj.FrameSize.y)
 		for x = 0, framesX - 1 do
 			for y = 0, framesY - 1 do
-				Obj.FrameCoordinates[#Obj.FrameCoordinates + 1] = vector(x * Obj.FrameWidth, y * Obj.FrameHeight)
+				Obj.FrameCoordinates[#Obj.FrameCoordinates + 1] = vector(x * Obj.FrameSize.x, y * Obj.FrameSize.y)
 			end
 		end
 	elseif vector.isVector(coordinates[1]) then -- table of vectors
 		for i = 1, #coordinates do
-			Obj.FrameCoordinates[i] = vector((coordinates[i].x - 1) * Obj.FrameWidth, (coordinates[i].y - 1) * Obj.FrameHeight)
+			Obj.FrameCoordinates[i] = vector((coordinates[i].x - 1) * Obj.FrameSize.x, (coordinates[i].y - 1) * Obj.FrameSize.y)
 		end
 	elseif type(coordinates[1]) == "table" then -- table of tables
 		for i = 1, #coordinates do
-			Obj.FrameCoordinates[i] = vector((coordinates[i][1] - 1) * Obj.FrameWidth, (coordinates[i][2] - 1) * Obj.FrameHeight)
+			Obj.FrameCoordinates[i] = vector((coordinates[i][1] - 1) * Obj.FrameSize.x, (coordinates[i][2] - 1) * Obj.FrameSize.y)
 		end
 	else -- number sequence table
 		local n = 1
 		for i = 1, #coordinates, 2 do
-			Obj.FrameCoordinates[n] = vector((coordinates[i] - 1) * Obj.FrameWidth, (coordinates[i + 1] - 1) * Obj.FrameHeight)
+			Obj.FrameCoordinates[n] = vector((coordinates[i] - 1) * Obj.FrameSize.x, (coordinates[i + 1] - 1) * Obj.FrameSize.y)
 			n = n + 1
 		end
 	end
@@ -247,7 +247,7 @@ local function new(refImg, width, height, coordinates, playSpeed, looped)
 	Obj.FrameCount = #Obj.FrameCoordinates
 
 	-- create a Quad to be used for drawing the animation
-	Obj.Quad = love.graphics.newQuad(Obj.FrameCoordinates[1].x, Obj.FrameCoordinates[1].y, Obj.FrameWidth, Obj.FrameHeight, Obj.ReferenceImage:getDimensions())
+	Obj.Quad = love.graphics.newQuad(Obj.FrameCoordinates[1].x, Obj.FrameCoordinates[1].y, Obj.FrameSize.x, Obj.FrameSize.y, Obj.ReferenceImage:getDimensions())
 
 	return setmetatable(Obj, animation)
 end

@@ -13,7 +13,7 @@ table.insert(content, {
 	["Demo"] = function()
 		local Dino = love.graphics.newImage("test_images/DinoSprites.png")
 		Dino:setFilter("nearest", "nearest")
-		local Animation = animation(Dino, 24, 24, {vector(5, 1), vector(6, 1), vector(7, 1), vector(8, 1), vector(9, 1), vector(10, 1)}, 10, true)
+		local Animation = animation(Dino, vector(24, 24), {vector(5, 1), vector(6, 1), vector(7, 1), vector(8, 1), vector(9, 1), vector(10, 1)}, 10, true)
 		-- Alternative
 		-- local Animation = animation(Dino, 24, 24, {5, 1, 6, 1, 7, 1, 8, 1, 9, 1, 10, 1}, 10, true)
 		local AnimFrame = ui.newAnimatedFrame(Animation, 128, 128)

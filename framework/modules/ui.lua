@@ -1852,7 +1852,7 @@ end
 function AnimatedFrame:draw()
 	if self.Hidden then return end
 
-	local imgWidth, imgHeight = self.ReferenceAnimation:getSize()
+	local imgSize = self.ReferenceAnimation:getSize()
 	local scissorX, scissorY, scissorW, scissorH = love.graphics.getScissor()
 	local img, quad = self.ReferenceAnimation:getSprite()
 
@@ -1877,7 +1877,7 @@ function AnimatedFrame:draw()
 
 		love.graphics.setColor(r, g, b, a*self.Opacity)
 		addCornerStencil(self)
-		love.graphics.draw(img, quad, -(self.AbsoluteSize.x - self.BorderWidth) * self.Pivot.x, -(self.AbsoluteSize.y - self.BorderWidth) * self.Pivot.y, 0, (self.AbsoluteSize.x - self.BorderWidth) / imgWidth, (self.AbsoluteSize.y - self.BorderWidth) / imgHeight)
+		love.graphics.draw(img, quad, -(self.AbsoluteSize.x - self.BorderWidth) * self.Pivot.x, -(self.AbsoluteSize.y - self.BorderWidth) * self.Pivot.y, 0, (self.AbsoluteSize.x - self.BorderWidth) / imgSize.x, (self.AbsoluteSize.y - self.BorderWidth) / imgSize.y)
 		clearCornerStencil(self)
 		
 		-- draw border
