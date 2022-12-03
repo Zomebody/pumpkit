@@ -54,9 +54,16 @@ end
 -- correctly re-applies the current Camera properties to its Transform
 function Camera:updateTransform()
 	self.Transform:reset()
-	self.Transform:translate(math.floor(love.graphics.getWidth() / 2), math.floor(love.graphics.getHeight() / 2)) -- center origin to middle of screen (rounded to prevent half-pixel alignments)
+	-- TODO: consider the zoom inside the math.floor()
+	self.Transform:translate(
+		math.floor(love.graphics.getWidth() / 2),
+		math.floor(love.graphics.getHeight() / 2)
+	) -- center origin to middle of screen (rounded to prevent half-pixel alignments)
 	self.Transform:scale(self.Zoom) -- apply zoom
-	self.Transform:translate(-self.Position.x, -self.Position.y) -- translations are now affected by the zoom level (so zoomed in will make camera movement appear 'faster', zoomed out 'slower')
+	self.Transform:translate(
+		math.floor(-self.Position.x * self.Zoom) / self.Zoom,
+		math.floor(-self.Position.y * self.Zoom) / self.Zoom
+	) -- translations are now affected by the zoom level (so zoomed in will make camera movement appear 'faster', zoomed out 'slower')
 end
 
 
