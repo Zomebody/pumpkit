@@ -15,20 +15,37 @@ local Entity = {}
 Entity.__index = Entity
 Entity.__tostring = function(tab) return "{Entity: " .. tostring(tab.Id) .. "}" end
 
+local Creature = {}
+Creature.__index = Creature
+Creature.__tostring = function(tab) return "{Creature: " .. tostring(tab.Id) .. "}" end
+setmetatable(Creature, Entity)
+
+local Prop = {}
+Prop.__index = Prop
+Prop.__tostring = function(tab) return "{Prop: " .. tostring(tab.Id) .. "}" end
+setmetatable(Prop, Entity)
+
 
 
 ----------------------------------------------------[[ == SHADER == ]]----------------------------------------------------
--- TODO: see Shader_Tests folder for implementation details later
+-- TODO
 
 
 ----------------------------------------------------[[ == METHODS == ]]----------------------------------------------------
 
-local function isEntity(t)
-	return getmetatable(t) == Entity
+local function isCreature(t)
+	return getmetatable(t) == Creature
 end
 
+local function isProp(t)
+	return getmetatable(t) == Prop
+end
 
-function Entity:setShape(shape)
+local function isEntity(t)
+	return isCreature(t) or isProp(t)
+end
+
+function Creature:setShape(shape)
 	assert(shape == "ellipse" or shape == "rectangle", "Entity:setShape(shape) only accepts \"ellipse\" or \"rectangle\" as its arguments")
 	self.Shape = shape
 end
@@ -45,8 +62,8 @@ each animation is assigned a function that returns a number (or 0 if no numbers 
 the animation whose function returns the largest number is displayed. In case of a tie, the first animation with the largest number is displayed
 ]]
 
-function Entity:addState(name, ...) -- Anim1, Func1, Anim2, Func2, ... (each function returns a value. Function with the highest value returned will have their animation displayed!)
-	assert(type(name) == "string", "Entity:addState(name, Anim) requires argument 'name' to be of type 'string'")
+function Creature:addState(name, ...) -- Anim1, Func1, Anim2, Func2, ... (each function returns a value. Function with the highest value returned will have their animation displayed!)
+	assert(type(name) == "string", "Creature:addState(name, Anim) requires argument 'name' to be of type 'string'")
 	if self.States[name] ~= nil then
 		error(("Cannot add state %s to entity as it already has a state with the same name"):format(name))
 	end
@@ -59,8 +76,8 @@ function Entity:addState(name, ...) -- Anim1, Func1, Anim2, Func2, ... (each fun
 	local anim, func
 	for i = 1, select("#", ...), 2 do
 		anim, func = select(i, ...)
-		assert(animation.isAnimation(anim), "Entity:addState(name, ...) requires each odd-numbered argument in the tuple to be of type 'animation'")
-		assert(type(func) == "function", "Entity:addState(name, ...) requires each even-numbered argument in the tuple to be a function")
+		assert(animation.isAnimation(anim), "Creature:addState(name, ...) requires each odd-numbered argument in the tuple to be of type 'animation'")
+		assert(type(func) == "function", "Creature:addState(name, ...) requires each even-numbered argument in the tuple to be a function")
 		table.insert(State.Animations, anim)
 		table.insert(State.Priorities, func)
 	end
@@ -71,19 +88,19 @@ end
 
 
 
-function Entity:hasState(name)
+function Creature:hasState(name)
 	return self.States[name] ~= nil
 end
 
 
 
-function Entity:getState()
+function Creature:getState()
 	return self.States[self.CurrentState]
 end
 
 
 -- returns an image and a quad on the image to draw on screen
-function Entity:getSprite()
+function Creature:getSprite()
 	local State = self:getState()
 	local curIndex, highestPriority = 1, -math.huge
 	local priority
@@ -101,8 +118,8 @@ end
 
 
 
-function Entity:setState(name)
-	assert(self:hasState(name), "Entity:setState(name) is being called with 'name' set to a non-existent state")
+function Creature:setState(name)
+	assert(self:hasState(name), "Creature:setState(name) is being called with 'name' set to a non-existent state")
 	if self.CurrentState == name then return end -- do not change state when you are already in the same state
 	local State
 	if self.CurrentState ~= nil then -- when creating a new entity, CurrentState will be nil, so this check is needed to prevent StateLeaving from firing upon entity creation
@@ -134,6 +151,84 @@ function Entity:setState(name)
 	end
 end
 
+-- return true is e1 should be displayed below e2, which is if its ZIndex is smaller, or in the case of a tie, its Position.y is smaller
+local function entityIsBelowEntity(e1, e2)
+	if e1.ZIndex == e2.ZIndex then
+		return e1.Position.y < e2.Position.y
+	else
+		return e1.ZIndex < e2.ZIndex
+	end
+end
+
+function Entity:moveTo(x, y)
+	if vector.isVector(x) then
+		y = x.y
+		x = x.x
+	end
+	-- find the location of the entity in the Entities array using log2(n) search
+	local indexSelf = self.Scene:getEntityIndex(self)
+	if indexSelf == nil then
+		error(("Entity:moveTo(x, y) cannot be called for entity %s because it cannot be found in its Scene.Entities array!"):format())
+	end
+
+	-- find the new index in the array by taking bigger and bigger steps (1, 2, 4, 8 etc.) until you overshoot, then take smaller steps
+	-- 1. take a step of size 1
+	-- 2. check if you are still in bounds & check if you didn't overshoot
+	-- 3. if you didn't overshoot or go OOB, move indexes to the left/right equal to your current step size
+	-- 4. if instead you are OOB or overshot, do not take the step and instead halve the step size
+	-- 5. if you cannot halve the step size because the step size is already 1, then you are right where you should be
+	-- 6. if where you should be is your current array index, do nothing, if it isn't, insert yourself at the current index + 1
+
+	local Entities = self.Scene.Entities
+
+	-- start taking steps
+	local currentIndex = indexSelf
+	local iterating = true
+	if y > self.Position.y then -- move towards the right in the array (positive stepSize)
+
+		local stepSize = 1
+		while iterating do
+			if Entities[currentIndex + stepSize] ~= nil and entityIsBelowEntity(self, Entities[currentIndex + stepSize]) then -- not out of bounds yet, also no overshooting
+				currentIndex = currentIndex + stepSize
+				stepSize = stepSize * 2
+			elseif stepSize > 1 then -- you either overshot or went out of bounds, so reduce the stepSize
+				stepSize = stepSize / 2
+			else -- you can no longer reduce the stepSize!
+				-- you are currently on the index you should be at! (Because the entity at currentIndex will be shifted towards the left one spot due to moving around)
+				-- however, it is also possible that you never moved, in which case you are ON the index you should be at
+				-- therefore, check your current index as well. If the current index is yourself, don't move
+				iterating = false
+				if indexSelf ~= currentIndex then
+					-- time to move!
+					for i = indexSelf, currentIndex - 1 do
+						-- swap the pair
+						Entities[i], Entities[i + 1] = Entities[i + 1], Entities[i]
+					end
+				end
+			end
+		end
+	else
+		-- this is a copy of the code above, but with a few small tweaks to work for moving to the left in the array rather than the right
+		-- all changes have been commented
+		local stepSize = 1
+		while iterating do
+			if Entities[currentIndex + stepSize] ~= nil and entityIsBelowEntity(Entities[currentIndex + stepSize], self) then -- swapped arguments in entityIsBelowEntity
+				currentIndex = currentIndex - stepSize -- minus instead of plus sign
+				stepSize = stepSize * 2
+			elseif stepSize > 1 then
+				stepSize = stepSize / 2
+			else
+				iterating = false
+				if indexSelf ~= currentIndex then
+					for i = indexSelf, currentIndex + 1, -1 do -- added iteration of -1 because indexSelf > currentIndex. Also changed currentIndex-1 to currentIndex+1
+						Entities[i], Entities[i - 1] = Entities[i - 1], Entities[i] -- swapped plus signs with minus signs
+					end
+				end
+			end
+		end
+	end
+end
+
 
 function Entity:setImageScale(x, y)
 	if vector.isVector(x) then
@@ -161,7 +256,7 @@ end
 
 
 -- draw the entity (does not take any transforms into consideration! So apply those first!)
-function Entity:draw()
+function Creature:draw()
 	local Image, Quad = self:getSprite()
 	local x, y, w, h = Quad:getViewport()
 	love.graphics.draw(Image, Quad, self.Position.x, self.Position.y, 0, self.Size.x / w * self.ImageScale.x, self.Size.y / h * self.ImageScale.y, self.Pivot.x * w, self.Pivot.y * h)
@@ -171,7 +266,7 @@ end
 
 ----------------------------------------------------[[ == OBJECT CREATION == ]]----------------------------------------------------
 
-local function new(defaultState, ...)
+local function newCreature(defaultState, ...)
 	assert(type(defaultState) == "string", "entity.new(defaultState, ...) requires argument 'defaultState' to be of type 'string'")
 	module.TotalCreated = module.TotalCreated + 1
 
@@ -204,7 +299,9 @@ end
 ----------------------------------------------------[[ == RETURN == ]]----------------------------------------------------
 
 -- pack up and return module
-module.new = new
+module.newCreature = newCreature
 module.isEntity = isEntity
-return setmetatable(module, {__call = function(_, ...) return new(...) end})
+module.isCreature = isCreature
+module.isProp = isProp
+return setmetatable(module, {__call = function(_, ...) return newCreature(...) end})
 

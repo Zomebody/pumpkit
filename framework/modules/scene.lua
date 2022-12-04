@@ -21,8 +21,9 @@ setmetatable(TiledScene, Scene)
 
 ----------------------------------------------------[[ == FUNCTIONS == ]]----------------------------------------------------
 
--- returns the location to insert 'item' into table 'tab' based on the 'Position' property, where every following element has a higher Position.y value
-local function getInsertionIndexInAscendingArray(tab, item)
+-- returns the location in the array to insert a certain object into the array at
+-- sorting is based on ZIndex, but in the case of a tied ZIndex the Position.y is used, where y is in ascending order
+local function getObjectInsertionIndex(tab, item)
 	if #tab == 0 then
 		return 1
 	end
@@ -30,16 +31,35 @@ local function getInsertionIndexInAscendingArray(tab, item)
 	local mid
 	while l ~= r do
 		mid = math.floor((l + r) / 2)
-		if tab[mid].Position.y > item.Position.y then
-			r = math.max(l, mid - 1)
+		if tab[mid].ZIndex == item.ZIndex then
+			-- in case of a ZIndex tie, compare the Position.y component instead
+			if tab[mid].Position.y > item.Position.y then
+				r = math.max(l, mid - 1)
+			else
+				l = math.min(mid + 1, r)
+			end
 		else
-			l = math.min(mid + 1, r)
+			-- otherwise, compare ZIndex property
+			if tab[mid].ZIndex > item.ZIndex then
+				r = math.max(l, mid - 1)
+			else
+				l = math.min(mid + 1, r)
+			end
 		end
 	end
-	if item.Position.y < tab[l].Position.y then
-		return l
+	-- TODO: improve this algorithm by removing this last piece down under. See :getEntityIndex() for details (which does a slightly different assignment for variable 'mid' that removes the need for the final checks)
+	if item.ZIndex == tab[l].ZIndex then
+		if item.Position.y < tab[l].Position.y then
+			return l
+		else
+			return l + 1
+		end
 	else
-		return l + 1
+		if item.ZIndex < tab[l].ZIndex then
+			return l
+		else
+			return l + 1
+		end
 	end
 end
 
@@ -70,14 +90,62 @@ function Scene:addEntity(Object)
 	assert(entity.Scene == nil, "Scene:addEntity(Entity) cannot add an entity that is already part of a different scene")
 	
 	-- log2(n) search
-	local index = getInsertionIndexInAscendingArray(self.Entities, Object)
+	local index = getObjectInsertionIndex(self.Entities, Object)
 	table.insert(self.Entities, index, Object)
 	Object.Scene = self
 end
 
 
+-- return the index of the entity in the Entities array
+function Scene:getEntityIndex(Obj)
+	-- log2(n) search!
+	if #self.Entities == 0 then
+		return nil
+	end
+
+	local l, r = 1, #self.Entities
+	local mid = math.floor((l + r) / 2) -- if #self.Entities == 2 then this causes one extra comparison (because it should be math.ceil then) but whatever
+	while l ~= r do
+		if self.Entities[mid] == Obj then
+			return mid
+		end
+		if self.Entities[mid].ZIndex == Obj.ZIndex then
+			-- in case of a ZIndex tie, compare the Position.y component instead
+			if self.Entities[mid].Position.y > Obj.Position.y then
+				r = math.max(l, mid - 1)
+				mid = math.floor((l + r) / 2)
+			else
+				l = math.min(mid, r)
+				mid = math.ceil((l + r) / 2)
+			end
+		else
+			-- otherwise, compare ZIndex property
+			if self.Entities[mid].ZIndex > Obj.ZIndex then
+				r = math.max(l, mid - 1)
+				mid = math.floor((l + r) / 2)
+			else
+				l = math.min(mid, r)
+				mid = math.ceil((l + r) / 2)
+			end
+		end
+	end
+	if self.Entities[mid] == Obj then
+		return mid
+	end
+	return nil
+end
+
+--[[
+function Scene:removeEntity()
+	-- find entity index in array
+	-- remove entity from array
+	-- set Entity.Scene to nil
+	-- call Entity.Removed event
+end
+]]
+
 -- return the entity located the given screen coordinate
-function Scene:at(x, y)
+function Scene:at(x, y, filter) -- filter is either 'nil' (no filter), "creature" (only check creature entities) or "prop" (only check prop entities)
 	if vector.isVector(x) then
 		y = x.y
 		x = x.x
@@ -91,16 +159,19 @@ function Scene:at(x, y)
 	local dx
 	local dy
 	for i = #self.Entities, 1, -1 do
-		Entity = self.Entities[i]
-		dx = Entity.Position.x - worldX
-		dy = Entity.Position.y - worldY
-		if Entity.Shape == "rectangle" then
-			if math.abs(dx) <= Entity.ShapeSize.x / 2 and math.abs(dy) <= Entity.ShapeSize.y / 2 then -- 'point within rectangle' check
-				return Entity
-			end
-		elseif Entity.Shape == "ellipse" then
-			if dx^2 / (Entity.ShapeSize.x / 2)^2 + dy^2 / (Entity.ShapeSize.y / 2)^2 <= 1 then -- 'point within ellipse' check
-				return Entity
+		-- TODO: there must be a more optimal way than executing this multi-step if-statement for potentially hundreds of creatures/props in a scene
+		if filter == nil or (entity.isCreature(self.Entities[i]) and filter == "creature") or (entity.isProp(self.Entities[i]) and filter == "prop") then
+			Entity = self.Entities[i]
+			dx = Entity.Position.x - worldX
+			dy = Entity.Position.y - worldY
+			if Entity.Shape == "rectangle" then
+				if math.abs(dx) <= Entity.ShapeSize.x / 2 and math.abs(dy) <= Entity.ShapeSize.y / 2 then -- 'point within rectangle' check
+					return Entity
+				end
+			elseif Entity.Shape == "ellipse" then
+				if dx^2 / (Entity.ShapeSize.x / 2)^2 + dy^2 / (Entity.ShapeSize.y / 2)^2 <= 1 then -- 'point within ellipse' check
+					return Entity
+				end
 			end
 		end
 	end
@@ -215,8 +286,8 @@ local function newScene(image, sceneCamera)
 		["Id"] = module.TotalCreated;
 		["SceneImage"] = image;
 		["Camera"] = sceneCamera or camera.new();
-		["Entities"] = {};
-		["Props"] = {};
+		["Entities"] = {}; -- sorted based on ZIndex first, then Position.y
+		["Props"] = {}; -- sorted based on ZIndex first, then Position.y
 
 		-- table with arrays of event functions stored under keys named after the events
 		["Events"] = {};
@@ -224,6 +295,7 @@ local function newScene(image, sceneCamera)
 
 	return setmetatable(Object, Scene)
 end
+
 
 -- atlasImage is a spritesheet / image atlas with the tiles the map consists out of.
 -- grid is a 2d array of vectors representing which sprites should be drawn on which tiles of the grid
@@ -256,8 +328,11 @@ function newTiledScene(atlasImage, grid, tileSize, sceneCamera)
 		["SpriteBatch"] = SpriteBatch;
 		["Quads"] = Quads;
 		["Camera"] = sceneCamera or camera.new();
-		["Entities"] = {};
-		["Props"] = {};
+		-- TODO: combine Entities and Props into one array. scene:at() will be slower, but drawing will be faster (which occurs more often!)
+		--["Entities"] = {}; -- sorted based on ZIndex first, then Position.y
+		--["Props"] = {}; -- sorted based on ZIndex first, then Position.y
+
+		["Entities"] = {}; -- list of both Prop and Creature instances, sorted by (primarily) ZIndex and (in case of a ZIndex tie) by Position.y
 
 		-- table with arrays of event functions stored under keys named after the events
 		["Events"] = {};
