@@ -99,7 +99,7 @@ end
 -- return the index of the entity in the Entities array
 function Scene:getEntityIndex(Obj)
 	-- log2(n) search!
-	if #self.Entities == 0 then
+	if #self.Entities == 0 or Obj.Scene ~= self then
 		return nil
 	end
 
@@ -114,9 +114,28 @@ function Scene:getEntityIndex(Obj)
 			if self.Entities[mid].Position.y > Obj.Position.y then
 				r = math.max(l, mid - 1)
 				mid = math.floor((l + r) / 2)
-			else
+			elseif self.Entities[mid].Position.y < Obj.Position.y then
 				l = math.min(mid, r)
 				mid = math.ceil((l + r) / 2)
+			else -- in case of a tie on the y-axis, do a linear search towards the left and right as a last resort effort
+
+				-- do a linear search towards the right
+				local curIndex = mid + 1
+				while self.Entities[curIndex] ~= Obj and curIndex <= #self.Entities do
+					curIndex = curIndex + 1
+				end
+				if self.Entities[curIndex] == Obj then
+					return curIndex
+				end
+				-- do a linear search towards the left
+				curIndex = mid - 1
+				while self.Entities[curIndex] ~= Obj and curIndex > 0 do
+					curIndex = curIndex - 1
+				end
+				if self.Entities[curIndex] == Obj then
+					return curIndex
+				end
+				return nil
 			end
 		else
 			-- otherwise, compare ZIndex property

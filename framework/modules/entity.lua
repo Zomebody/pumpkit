@@ -165,10 +165,19 @@ function Entity:moveTo(x, y)
 		y = x.y
 		x = x.x
 	end
-	-- find the location of the entity in the Entities array using log2(n) search
-	local indexSelf = self.Scene:getEntityIndex(self)
+	local prevX, prevY = self.Position.x, self.Position.y
+	
+	local indexSelf
+	if self.Scene == nil then
+		self.Position = vector(x, y)
+		return -- if the entity hasn't been added to a scene yet, then there is no need to update its index in the Entities array
+	else
+		indexSelf = self.Scene:getEntityIndex(self) -- find the location of the entity in the Entities array using log2(n) search
+		self.Position = vector(x, y)
+	end
+	
 	if indexSelf == nil then
-		error(("Entity:moveTo(x, y) cannot be called for entity %s because it cannot be found in its Scene.Entities array!"):format())
+		error(("Entity:moveTo(x, y) cannot be called for entity %s because it cannot be found in its Scene.Entities array!"):format(tostring(self)))
 	end
 
 	-- find the new index in the array by taking bigger and bigger steps (1, 2, 4, 8 etc.) until you overshoot, then take smaller steps
@@ -184,11 +193,11 @@ function Entity:moveTo(x, y)
 	-- start taking steps
 	local currentIndex = indexSelf
 	local iterating = true
-	if y > self.Position.y then -- move towards the right in the array (positive stepSize)
+	if y > prevY then -- move towards the right in the array (positive stepSize)
 
 		local stepSize = 1
 		while iterating do
-			if Entities[currentIndex + stepSize] ~= nil and entityIsBelowEntity(self, Entities[currentIndex + stepSize]) then -- not out of bounds yet, also no overshooting
+			if Entities[currentIndex + stepSize] ~= nil and entityIsBelowEntity(Entities[currentIndex + stepSize], self) then -- not out of bounds yet, also no overshooting
 				currentIndex = currentIndex + stepSize
 				stepSize = stepSize * 2
 			elseif stepSize > 1 then -- you either overshot or went out of bounds, so reduce the stepSize
@@ -205,14 +214,15 @@ function Entity:moveTo(x, y)
 						Entities[i], Entities[i + 1] = Entities[i + 1], Entities[i]
 					end
 				end
+				
 			end
 		end
-	else
+	elseif y < prevY then
 		-- this is a copy of the code above, but with a few small tweaks to work for moving to the left in the array rather than the right
 		-- all changes have been commented
 		local stepSize = 1
 		while iterating do
-			if Entities[currentIndex + stepSize] ~= nil and entityIsBelowEntity(Entities[currentIndex + stepSize], self) then -- swapped arguments in entityIsBelowEntity
+			if Entities[currentIndex - stepSize] ~= nil and entityIsBelowEntity(self, Entities[currentIndex - stepSize]) then -- swapped arguments in entityIsBelowEntity, also using -stepSize instead
 				currentIndex = currentIndex - stepSize -- minus instead of plus sign
 				stepSize = stepSize * 2
 			elseif stepSize > 1 then
@@ -281,11 +291,12 @@ local function newCreature(defaultState, ...)
 		["ShapeSize"] = vector(1, 1);
 		["States"] = {};
 		["Scene"] = nil;
+		["ZIndex"] = 1;
 
 		["Events"] = {}; -- list of connected events
 	}
 	-- set metatable early so that :addState() can be called
-	setmetatable(Object, Entity)
+	setmetatable(Object, Creature)
 
 	-- add the default state and set it
 	Object:addState(defaultState, ...)
