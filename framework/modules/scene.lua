@@ -1,4 +1,10 @@
 
+----------------------------------------------------[[ == IMPORTS == ]]----------------------------------------------------
+
+local connection = require("framework.connection")
+
+
+
 ----------------------------------------------------[[ == BASE OBJECTS == ]]----------------------------------------------------
 
 local module = {
@@ -93,6 +99,9 @@ function Scene:addEntity(Object)
 	local index = getObjectInsertionIndex(self.Entities, Object)
 	table.insert(self.Entities, index, Object)
 	Object.Scene = self
+	if Object.Events.Added then
+		connection.doEvents(Object.Events.Added)
+	end
 end
 
 
