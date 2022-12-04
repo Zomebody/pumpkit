@@ -175,6 +175,7 @@ end
 -- return the entity located the given screen coordinate
 function Scene:at(x, y, filter) -- filter is either 'nil' (no filter), "creature" (only check creature entities) or "prop" (only check prop entities)
 	if vector.isVector(x) then
+		filter = y
 		y = x.y
 		x = x.x
 	end

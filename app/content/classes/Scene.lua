@@ -60,14 +60,14 @@ table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "addEntity";
 	["Arguments"] = {"Entity"};
-	["Description"] = "Adds the given entity to the list of entities in the scene. An entity can only be added if it is not added to another scene yet. All entities added to a scene are drawn by default.";
+	["Description"] = "Adds the given entity to the list of entities in the scene. An entity can only be added if it is not added to another scene yet. It is recommended to move an entity to the right location before adding it to the scene to prevent assigning it an index in the Entities array multiple times.";
 })
 
 table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "at";
-	["Arguments"] = {"x", "y"};
-	["Description"] = "Returns the entity located at the given screen coordinates. The Shape and ShapeSize properties of an entity determines what space the entity covers for this method.";
+	["Arguments"] = {"x", "y", "entityType"};
+	["Description"] = "Returns the entity located at the given screen coordinates. The Shape and ShapeSize properties of an entity determines what space the entity covers for this method. 'entityType' can be nil or a string of the entity type to look for specifically, either \"creature\" or \"prop\". Instead of providing an x and y coordinate, you may also pass a vector (followed by the filter type).";
 })
 
 table.insert(content, {
@@ -81,7 +81,7 @@ table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "drawEntities";
 	["Arguments"] = {};
-	["Description"] = "FOR INTERNAL USE ONLY. This will draw the entities of a scene onto the current render target. This method is used by the draw() method to draw their entities. It should never have to be used on its own.";
+	["Description"] = "FOR INTERNAL USE ONLY. This will draw all the entities inside of the scene onto the current render target. This method is used by the draw() method to draw their entities. It should never have to be used on its own.";
 })
 
 table.insert(content, {

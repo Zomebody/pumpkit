@@ -45,9 +45,18 @@ local function isEntity(t)
 	return isCreature(t) or isProp(t)
 end
 
-function Creature:setShape(shape)
+function Entity:setShape(shape, ssX, ssY)
 	assert(shape == "ellipse" or shape == "rectangle", "Entity:setShape(shape) only accepts \"ellipse\" or \"rectangle\" as its arguments")
 	self.Shape = shape
+	if ssX ~= nil then -- a ShapeSize has also been supplied
+		if vector.isVector(ssX) then -- vector supplied
+			self.ShapeSize = vector(ssX)
+		elseif ssY == nil then -- one number supplied
+			self.ShapeSize = vector(ssX, ssX)
+		else -- two numbers supplied
+			self.ShapeSize = vector(ssX, ssY)
+		end
+	end
 end
 
 
@@ -289,7 +298,7 @@ local function newCreature(defaultState, ...)
 		["Position"] = vector(0, 0);
 		["Shape"] = "rectangle";
 		["ShapeSize"] = vector(1, 1);
-		["States"] = {};
+		["States"] = {}; -- Creature-only
 		["Scene"] = nil;
 		["ZIndex"] = 1;
 
