@@ -60,7 +60,7 @@ table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "addEntity";
 	["Arguments"] = {"Entity"};
-	["Description"] = "Adds the given entity to the list of entities in the scene. All entities added to a scene are drawn by default.";
+	["Description"] = "Adds the given entity to the list of entities in the scene. An entity can only be added if it is not added to another scene yet. All entities added to a scene are drawn by default.";
 })
 
 table.insert(content, {
@@ -89,6 +89,13 @@ table.insert(content, {
 	["Name"] = "getCamera";
 	["Arguments"] = {};
 	["Description"] = "Returns the current Camera used in the scene.";
+})
+
+table.insert(content, {
+	["Type"] = "Method";
+	["Name"] = "getEntityIndex";
+	["Arguments"] = {"Entity"};
+	["Description"] = "Returns the index of the given Entity in the scene's Entity array. Look-ups are done using binary search. If the entity is not present, this method returns nil.";
 })
 
 table.insert(content, {

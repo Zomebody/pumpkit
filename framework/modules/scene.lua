@@ -234,7 +234,7 @@ function Scene:draw()
 	-- draw the scene image
 	love.graphics.draw(self.SceneImage)
 
-	self:drawItems()
+	self:drawEntities()
 
 	-- reset graphics transform to previous state
 	love.graphics.pop()
@@ -254,7 +254,7 @@ function TiledScene:draw()
 	-- draw the scene image
 	love.graphics.draw(self.SpriteBatch)
 
-	self:drawItems()
+	self:drawEntities()
 
 	-- reset graphics transform to previous state
 	love.graphics.pop()
@@ -263,17 +263,12 @@ end
 
 -- only for internal use. Used by both the TiledScene and Scene to draw their entities on screen after drawing the scene's map
 -- default shader, forwards looping through entities: 170-180 fps @ 10.000 entities
-function Scene:drawItems()
+function Scene:drawEntities()
 	-- the camera transform should already be applied when this function is called!
 	local Object
 	--local Image, Quad
 	local x, y, w, h
 	local screenW, screenH = love.graphics:getDimensions()
-
-	-- draw all props
-	for i = 1, #self.Props do
-
-	end
 
 	local drawn = 0
 
