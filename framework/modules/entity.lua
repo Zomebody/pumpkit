@@ -185,6 +185,7 @@ local function new(defaultState, ...)
 		["Shape"] = "rectangle";
 		["ShapeSize"] = vector(1, 1);
 		["States"] = {};
+		["Scene"] = nil;
 
 		["Events"] = {}; -- list of connected events
 	}

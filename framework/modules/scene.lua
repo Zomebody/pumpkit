@@ -66,11 +66,13 @@ end
 
 
 function Scene:addEntity(Object)
-	assert(entity.isEntity(Object), "Scene:addEntity(obj) requires it argument to be of type 'entity'")
+	assert(entity.isEntity(Object), "Scene:addEntity(Entity) requires it argument to be of type 'entity'")
+	assert(entity.Scene == nil, "Scene:addEntity(Entity) cannot add an entity that is already part of a different scene")
 	
 	-- log2(n) search
 	local index = getInsertionIndexInAscendingArray(self.Entities, Object)
 	table.insert(self.Entities, index, Object)
+	Object.Scene = self
 end
 
 
