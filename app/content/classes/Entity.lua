@@ -142,6 +142,20 @@ table.insert(content, {
 	["Arguments"] = {};
 	["Description"] = "Called when the entity is added to a scene. You can check the new scene by accessing the Entity's Scene property.";
 })
+
+table.insert(content, {
+	["Type"] = "Event";
+	["Name"] = "StateEntered";
+	["Arguments"] = {"state"};
+	["Description"] = "Called when the entity has its state changed. The provided argument is a string with the name of the new state.";
+})
+
+table.insert(content, {
+	["Type"] = "Event";
+	["Name"] = "StateLeaving";
+	["Arguments"] = {"state"};
+	["Description"] = "Called when the entity is about to leave its current state. The provided argument is a string with the name of the state that is being left.";
+})
 --[[
 table.insert(content, {
 	["Type"] = "Event";
