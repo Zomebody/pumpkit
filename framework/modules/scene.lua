@@ -262,16 +262,50 @@ function TiledScene:draw()
 end
 
 
+-- outline shader shamelessly copied from https://blogs.love2d.org/content/let-it-glow-dynamically-adding-outlines-characters
+local outlineShader = love.graphics.newShader([[
+vec4 resultCol;
+uniform vec2 thickness;
+uniform vec4 outlineColor;
+number alpha = 0;
+vec4 selfColor;
+
+vec4 effect(vec4 col, Image texture, vec2 texturePos, vec2 screenPos) {
+	// get color of pixels:
+	selfColor = texture2D(texture, texturePos);
+	if (selfColor.a == 0.0f) { // pixel may only be part of outline if the pixel itself is transparent
+		alpha = 0;
+		alpha += texture2D(texture, texturePos + vec2(thickness.x, 0.0f)).a;
+		alpha += texture2D(texture, texturePos + vec2(-thickness.x, 0.0f)).a;
+		alpha += texture2D(texture, texturePos + vec2(0.0f, thickness.y)).a;
+		alpha += texture2D(texture, texturePos + vec2(0.0f, -thickness.y)).a;
+		if (alpha > 0.0f) {
+			return outlineColor;
+		} else {
+			return selfColor;
+		}
+	} else {
+		return selfColor;
+	}
+}
+]])
+
+
+
 -- only for internal use. Used by both the TiledScene and Scene to draw their entities on screen after drawing the scene's map
--- default shader, forwards looping through entities: 170-180 fps @ 10.000 entities
+-- default shader: 52 fps @ 10.000 entities
+-- outline shader, 25-35 fps @ 10.000 entities if you swap shader for every entity
+-- outline shader, 25-35 fps @ 10.000 entities if you only set the shader once before drawing, but apply the shader to every entity (35-40 fps if only half the entities have an outline)
+-- outline shader, 40 fps @ 10.000 entities w/ 50% outlined if you only set the shader when the entity has an outline
+-- outline shader, 40-ish fps @ 10.000 entities, each with an outline color from a set of 3 potential colors. Shader set once before drawing, :send() only called when the color changes
+-- take-away: only apply shader when entity has an outline, avoid sending too many variables through :send()
+
 function Scene:drawEntities()
 	-- the camera transform should already be applied when this function is called!
 	local Object
 	--local Image, Quad
 	local x, y, w, h
 	local screenW, screenH = love.graphics:getDimensions()
-
-	local drawn = 0
 
 	-- repeat the same process, but for entities
 	for i = 1, #self.Entities do
@@ -281,10 +315,18 @@ function Scene:drawEntities()
 		and (Object.Position.x - Object.Pivot.x * Object.Size.x			<= self.Camera.Position.x + screenW / (2 * self.Camera.Zoom)) -- OOB on the right
 		and (Object.Position.y + (1 - Object.Pivot.y) * Object.Size.y	>= self.Camera.Position.y - screenH / (2 * self.Camera.Zoom)) -- OOB above
 		and (Object.Position.y - Object.Pivot.y * Object.Size.y			<= self.Camera.Position.y + screenH / (2 * self.Camera.Zoom)) then -- OOB below
+			local Img, Quad = Object:getSprite()
+			if Object.OutlineThickness > 0 then
+				love.graphics.setShader(outlineShader)
+				outlineShader:send("outlineColor", Object.OutlineColor:array())
+				outlineShader:send("thickness", {Object.OutlineThickness / Img:getWidth(), Object.OutlineThickness / Img:getHeight()})
+			else
+				love.graphics.setShader()
+			end
 			Object:draw()
-			drawn = drawn + 1
 		end
 	end
+	love.graphics.setShader()
 end
 
 

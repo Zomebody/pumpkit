@@ -296,6 +296,8 @@ local function newCreature(defaultState, ...)
 		["Pivot"] = vector(0.5, 0.5);
 		["Size"] = vector(32, 32); -- (read-only) the space in pixels the entity takes up on screen at a zoom of 1. This may change when the entity's state changes
 		["ImageScale"] = vector(1, 1);
+		["OutlineColor"] = color();
+		["OutlineThickness"] = 0;
 		["Position"] = vector(0, 0);
 		["Shape"] = "rectangle";
 		["ShapeSize"] = vector(1, 1);
