@@ -347,7 +347,7 @@ local function newProp(img)
 		["OutlineThickness"] = 0;
 		["Position"] = vector(0, 0);
 		["Shape"] = "rectangle";
-		["ShapeSize"] = vector(1, 1);
+		["ShapeSize"] = vector(img:getWidth(), img:getHeight());
 		["Shear"] = vector(0, 0);
 		["Scene"] = nil;
 		["ZIndex"] = 1;
