@@ -315,7 +315,7 @@ function Scene:drawEntities()
 		and (Object.Position.x - Object.Pivot.x * Object.Size.x			<= self.Camera.Position.x + screenW / (2 * self.Camera.Zoom)) -- OOB on the right
 		and (Object.Position.y + (1 - Object.Pivot.y) * Object.Size.y	>= self.Camera.Position.y - screenH / (2 * self.Camera.Zoom)) -- OOB above
 		and (Object.Position.y - Object.Pivot.y * Object.Size.y			<= self.Camera.Position.y + screenH / (2 * self.Camera.Zoom)) then -- OOB below
-			local Img, Quad = Object:getSprite()
+			local Img, _ = Object:getSprite()
 			if Object.OutlineThickness > 0 then
 				love.graphics.setShader(outlineShader)
 				outlineShader:send("outlineColor", Object.OutlineColor:array())

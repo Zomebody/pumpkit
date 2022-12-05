@@ -282,6 +282,22 @@ function Creature:draw()
 	love.graphics.draw(Image, Quad, self.Position.x, self.Position.y, 0, self.Size.x / w * self.ImageScale.x, self.Size.y / h * self.ImageScale.y, self.Pivot.x * w, self.Pivot.y * h)
 end
 
+function Prop:draw()
+	local w, h = self.Image:getDimensions()
+	if self.Shear.x ~= 0 or self.Shear.y ~= 0 then
+		--love.graphics.push()
+		--love.graphics.shear(self.Shear.x, self.Shear.y)
+		love.graphics.draw(self.Image, self.Position.x, self.Position.y, 0, self.Size.x / w * self.ImageScale.x, self.Size.y / h * self.ImageScale.y, self.Pivot.x * w, self.Pivot.y * h, self.Shear.x, self.Shear.y)
+		--love.graphics.pop()
+	else
+		love.graphics.draw(self.Image, self.Position.x, self.Position.y, 0, self.Size.x / w * self.ImageScale.x, self.Size.y / h * self.ImageScale.y, self.Pivot.x * w, self.Pivot.y * h)
+	end
+end
+
+function Prop:getSprite()
+	return self.Image
+end
+
 
 
 ----------------------------------------------------[[ == OBJECT CREATION == ]]----------------------------------------------------
@@ -318,11 +334,37 @@ local function newCreature(defaultState, ...)
 end
 
 
+local function newProp(img)
+	module.TotalCreated = module.TotalCreated + 1
+
+	local Object = {
+		["Id"] = module.TotalCreated;
+		["Image"] = img;
+		["Pivot"] = vector(0.5, 0.5);
+		["Size"] = vector(img:getWidth(), img:getHeight()); -- not read-only :>
+		["ImageScale"] = vector(1, 1);
+		["OutlineColor"] = color();
+		["OutlineThickness"] = 0;
+		["Position"] = vector(0, 0);
+		["Shape"] = "rectangle";
+		["ShapeSize"] = vector(1, 1);
+		["Shear"] = vector(0, 0);
+		["Scene"] = nil;
+		["ZIndex"] = 1;
+
+		["Events"] = {}; -- list of connected events
+	}
+
+	return setmetatable(Object, Prop)
+end
+
+
 
 ----------------------------------------------------[[ == RETURN == ]]----------------------------------------------------
 
 -- pack up and return module
 module.newCreature = newCreature
+module.newProp = newProp
 module.isEntity = isEntity
 module.isCreature = isCreature
 module.isProp = isProp
