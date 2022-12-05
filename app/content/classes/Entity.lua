@@ -158,6 +158,20 @@ table.insert(content, {
 	["Arguments"] = {};
 	["Description"] = "Called when the entity is added to a scene. You can check the new scene by accessing the Entity's Scene property.";
 })
+
+table.insert(content, {
+	["Type"] = "Event";
+	["Name"] = "Loading";
+	["Arguments"] = {};
+	["Description"] = "Called when the entity's parent scene is being loaded, so when the scene is set as the world's active scene. This event is called after the world's CurrentScene property is set, but before the scene's Loading event is triggered.";
+})
+
+table.insert(content, {
+	["Type"] = "Event";
+	["Name"] = "Unloading";
+	["Arguments"] = {};
+	["Description"] = "Called when the entity's parent scene is being unloaded, so when the scene is no longer set as the world's active scene. This event is called after the scene's Unloading event.";
+})
 --[[
 table.insert(content, {
 	["Type"] = "Event";

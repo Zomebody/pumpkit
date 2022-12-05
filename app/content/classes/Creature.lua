@@ -9,7 +9,7 @@ local content = {}
 table.insert(content, {
 	["Type"] = "IntroHeader";
 	["Name"] = "The Creature instance";
-	["Description"] = "A Creature is a type of entity that can be added to a scene for gameplay purposes. Creatures can have multiple states with their own animations.";
+	["Description"] = "A Creature is a type of entity that can be added to a scene for gameplay purposes. Creatures can have multiple states with their own animations. Animations are automatically played and stopped when switching between states.\n\nAnimations will also play when the creature is not added to a scene, or the scene the creature is part of is not set as the world's current scene. It is recommended to remove creatures when they are not in use for a long time.";
 })
 
 table.insert(content, {

@@ -155,7 +155,7 @@ table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "pause";
 	["Arguments"] = {};
-	["Description"] = "Pauses the animation. The animation's state must be \"idle\" for it to get paused.";
+	["Description"] = "Pauses the animation. The animation's state must be \"playing\" for it to get paused.";
 })
 
 table.insert(content, {
