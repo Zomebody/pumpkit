@@ -34,6 +34,22 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Property";
+	["ValueType"] = "color";
+	["Name"] = "OutlineColor";
+	["Description"] = "The color of the outline to draw around the entity.";
+	["ReadOnly"] = false;
+})
+
+table.insert(content, {
+	["Type"] = "Property";
+	["ValueType"] = "number";
+	["Name"] = "OutlineThickness";
+	["Description"] = "The thickness of the outline to draw around the entity. If set to 0, no outline is drawn. Defaults to 0.";
+	["ReadOnly"] = false;
+})
+
+table.insert(content, {
+	["Type"] = "Property";
 	["ValueType"] = "vector";
 	["Name"] = "Pivot";
 	["Description"] = "A vector with values between 0 and 1. This is used to determine how the image is drawn in relation to its position. A pivot of (0,0) draws the top-left corner on the Entity's Position coordinate. A pivot of (1,1) is the bottom-right corner.";
@@ -141,20 +157,6 @@ table.insert(content, {
 	["Name"] = "Added";
 	["Arguments"] = {};
 	["Description"] = "Called when the entity is added to a scene. You can check the new scene by accessing the Entity's Scene property.";
-})
-
-table.insert(content, {
-	["Type"] = "Event";
-	["Name"] = "StateEntered";
-	["Arguments"] = {"state"};
-	["Description"] = "Called when the entity has its state changed. The provided argument is a string with the name of the new state.";
-})
-
-table.insert(content, {
-	["Type"] = "Event";
-	["Name"] = "StateLeaving";
-	["Arguments"] = {"state"};
-	["Description"] = "Called when the entity is about to leave its current state. The provided argument is a string with the name of the state that is being left.";
 })
 --[[
 table.insert(content, {

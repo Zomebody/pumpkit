@@ -92,6 +92,20 @@ table.insert(content, {
 	["Description"] = "";
 })
 
+table.insert(content, {
+	["Type"] = "Event";
+	["Name"] = "StateEntered";
+	["Arguments"] = {"state"};
+	["Description"] = "Called when the entity has its state changed. The provided argument is a string with the name of the new state.";
+})
+
+table.insert(content, {
+	["Type"] = "Event";
+	["Name"] = "StateLeaving";
+	["Arguments"] = {"state"};
+	["Description"] = "Called when the entity is about to leave its current state. The provided argument is a string with the name of the state that is being left.";
+})
+
 
 return {
 	["Meta"] = meta;
