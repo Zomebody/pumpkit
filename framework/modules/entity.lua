@@ -111,6 +111,7 @@ end
 -- returns an image and a quad on the image to draw on screen
 function Creature:getSprite()
 	local State = self:getState()
+	if #State.Animations == 1 then return State.Animations[1]:getSprite() end -- if there is only one state, there is no reason to call their function, because it'll always be the highest
 	local curIndex, highestPriority = 1, -math.huge
 	local priority
 	-- calculate which animation to grab the sprite from

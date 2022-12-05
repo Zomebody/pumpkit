@@ -311,7 +311,7 @@ local function newScene(image, sceneCamera)
 		["SceneImage"] = image;
 		["Camera"] = sceneCamera or camera.new();
 		["Entities"] = {}; -- sorted based on ZIndex first, then Position.y
-		["Props"] = {}; -- sorted based on ZIndex first, then Position.y
+		--["Props"] = {}; -- sorted based on ZIndex first, then Position.y
 
 		-- table with arrays of event functions stored under keys named after the events
 		["Events"] = {};

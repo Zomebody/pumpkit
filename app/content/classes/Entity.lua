@@ -94,14 +94,6 @@ table.insert(content, {
 	["Description"] = "";
 })
 
-
-table.insert(content, {
-	["Type"] = "Method";
-	["Name"] = "draw";
-	["Arguments"] = {};
-	["Description"] = "Draw the entity to the current render target. This does not take any camera manipulation into consideration.";
-})
-
 table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "moveTo";

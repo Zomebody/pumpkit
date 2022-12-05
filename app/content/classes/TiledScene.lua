@@ -47,15 +47,6 @@ table.insert(content, {
 	["Description"] = "This will draw the scene to the current render target. First the background is drawn. Then, entities are drawn on top. a TiledScene has different logic for drawing its background. It uses a SpriteBatch instead to draw many different quads to the screen at once in one draw call.";
 })
 
-table.insert(content, {
-	["Type"] = "Method";
-	["Name"] = "setCamera";
-	["Arguments"] = {"Camera"};
-	["Description"] = "Sets the scene's camera to be used to the given Camera instance.";
-})
-
-
-
 
 return {
 	["Meta"] = meta;
