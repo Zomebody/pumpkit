@@ -8,8 +8,8 @@ local content = {}
 
 table.insert(content, {
 	["Type"] = "IntroHeader";
-	["Name"] = "The Entity instance";
-	["Description"] = "An Entity is an object that can be added to a scene for gameplay purposes. There are two types of Entities, 'Creature' and 'Prop' entities. Creatures can have multiple states with their own animations, whereas props are static images.";
+	["Name"] = "The Creature instance";
+	["Description"] = "A Creature is a type of entity that can be added to a scene for gameplay purposes. Creatures can have multiple states with their own animations.";
 })
 
 table.insert(content, {
