@@ -1459,7 +1459,7 @@ local stencilCornerArg
 local cornerStencilMode, cornerStencilValue
 
 function addCornerStencil(Obj)
-	stencilCornerArg = (self.CornerRadius.Scale > 0 or self.CornerRadius.Offset > 0) and (math.min(self.AbsoluteSize.x, self.AbsoluteSize.y) * self.CornerRadius.Scale + self.CornerRadius.Offset) or nil
+	stencilCornerArg = (Obj.CornerRadius.Scale > 0 or Obj.CornerRadius.Offset > 0) and (math.min(Obj.AbsoluteSize.x, Obj.AbsoluteSize.y) * Obj.CornerRadius.Scale + Obj.CornerRadius.Offset) or nil
 	-- set stencil
 	if stencilCornerArg ~= nil then
 		-- draw stencil (rectangle with rounded corners), then the image, then remove the stencil
