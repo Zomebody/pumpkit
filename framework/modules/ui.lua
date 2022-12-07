@@ -1459,7 +1459,7 @@ local stencilCornerArg
 local cornerStencilMode, cornerStencilValue
 
 function addCornerStencil(Obj)
-	stencilCornerArg = Obj.CornerRadius ~= 0 and Obj.CornerRadius or nil
+	stencilCornerArg = (self.CornerRadius.Scale > 0 or self.CornerRadius.Offset > 0) and (math.min(self.AbsoluteSize.x, self.AbsoluteSize.y) * self.CornerRadius.Scale + self.CornerRadius.Offset) or nil
 	-- set stencil
 	if stencilCornerArg ~= nil then
 		-- draw stencil (rectangle with rounded corners), then the image, then remove the stencil
@@ -1514,7 +1514,7 @@ function Frame:draw()
 		love.graphics.translate(self.AbsolutePosition.x + self.AbsoluteSize.x * self.Pivot.x, self.AbsolutePosition.y + self.AbsoluteSize.y * self.Pivot.y)
 		love.graphics.rotate(math.rad(self.Rotation))
 
-		local cornerArg = self.CornerRadius ~= 0 and self.CornerRadius or nil
+		local cornerArg = (self.CornerRadius.Scale > 0 or self.CornerRadius.Offset > 0) and (math.min(self.AbsoluteSize.x, self.AbsoluteSize.y) * self.CornerRadius.Scale + self.CornerRadius.Offset) or nil
 		if self.BorderWidth > 0 then
 			love.graphics.setColor(self.BorderColor.r, self.BorderColor.g, self.BorderColor.b, self.BorderColor.a*self.Opacity)
 			love.graphics.setLineWidth(self.BorderWidth)
@@ -1656,7 +1656,7 @@ function ImageFrame:draw()
 		clearCornerStencil(self)
 
 		-- draw border
-		local cornerArg = self.CornerRadius ~= 0 and self.CornerRadius or nil
+		local cornerArg = (self.CornerRadius.Scale > 0 or self.CornerRadius.Offset > 0) and (math.min(self.AbsoluteSize.x, self.AbsoluteSize.y) * self.CornerRadius.Scale + self.CornerRadius.Offset) or nil
 		if self.BorderWidth > 0 then
 			love.graphics.setColor(self.BorderColor.r, self.BorderColor.g, self.BorderColor.b, self.BorderColor.a*self.Opacity)
 			love.graphics.setLineWidth(self.BorderWidth)
@@ -1763,7 +1763,7 @@ function SlicedFrame:draw()
 		clearCornerStencil(self)
 
 		-- draw border
-		local cornerArg = self.CornerRadius ~= 0 and self.CornerRadius or nil
+		local cornerArg = (self.CornerRadius.Scale > 0 or self.CornerRadius.Offset > 0) and (math.min(self.AbsoluteSize.x, self.AbsoluteSize.y) * self.CornerRadius.Scale + self.CornerRadius.Offset) or nil
 		if self.BorderWidth > 0 then
 			love.graphics.setColor(self.BorderColor.r, self.BorderColor.g, self.BorderColor.b, self.BorderColor.a*self.Opacity)
 			love.graphics.setLineWidth(self.BorderWidth)
@@ -1881,7 +1881,7 @@ function AnimatedFrame:draw()
 		clearCornerStencil(self)
 		
 		-- draw border
-		local cornerArg = self.CornerRadius ~= 0 and self.CornerRadius or nil
+		local cornerArg = (self.CornerRadius.Scale > 0 or self.CornerRadius.Offset > 0) and (math.min(self.AbsoluteSize.x, self.AbsoluteSize.y) * self.CornerRadius.Scale + self.CornerRadius.Offset) or nil
 		if self.BorderWidth > 0 then
 			love.graphics.setColor(self.BorderColor.r, self.BorderColor.g, self.BorderColor.b, self.BorderColor.a*self.Opacity)
 			love.graphics.setLineWidth(self.BorderWidth)
@@ -1936,7 +1936,10 @@ local function newBase(w, h, col)
 		["Color"] = col; -- color of the frame. For images, this adjusts the image color
 		["ColorFocus"] = col; -- color when the element is being hovered over by the cursor
 		["ColorHold"] = col; -- color when the element is being held down
-		["CornerRadius"] = 0; -- corner radius for drawing rounded corners
+		["CornerRadius"] = {
+			["Scale"] = 0; -- scale uses the min(AbsoluteSize.x, AbsoluteSize.y) multiplied by this number
+			["Offset"] = 0; -- regular pixels
+		};
 		["FitTextOnResize"] = false;
 		["Hidden"] = false;
 		["Id"] = module.TotalCreated;
