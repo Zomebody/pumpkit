@@ -87,7 +87,7 @@ table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "screenPointToWorldSpace";
 	["Arguments"] = {"x", "y"};
-	["Description"] = "Converts the given coordinate from screen space to the world's space. Instead of passing two coordinates, you may also pass a vector instead.";
+	["Description"] = "Converts the given coordinate from screen space to the world's space. Instead of passing two coordinates, you may also pass a vector.";
 })
 
 table.insert(content, {
@@ -102,6 +102,13 @@ table.insert(content, {
 	["Name"] = "updateTransform";
 	["Arguments"] = {};
 	["Description"] = "FOR INTERNAL USE ONLY. Updates the camera's transform property to reflect its properties.";
+})
+
+table.insert(content, {
+	["Type"] = "Method";
+	["Name"] = "worldPointToScreenSpace";
+	["Arguments"] = {"x", "y"};
+	["Description"] = "Converts the given coordinate from world space to the screen's space. Instead of passing two coordinates, you may also pass a vector.";
 })
 
 table.insert(content, {

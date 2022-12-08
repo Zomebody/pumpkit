@@ -111,6 +111,16 @@ function Camera:screenPointToWorldSpace(x, y)
 end
 
 
+function Camera:worldPointToScreenSpace(x, y)
+	if vector.isVector(x) then
+		y = x.y
+		x = x.x
+	end
+	local screenX, screenY = self:getTransform():transformPoint(x, y)
+	return screenX, screenY
+end
+
+
 -- eventName is the name of the event to call. All event name strings are accepted, but not all of them may trigger
 -- func is the function to link
 function Camera:on(eventName, func)
