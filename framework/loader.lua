@@ -15,7 +15,7 @@ function load()
 	tween = require(getpath(here, "../framework/modules/tween"))
 	animation = require(getpath(here, "../framework/modules/animation"))
 	font = require(getpath(here, "../framework/modules/font"))
-	--signal = require(getpath(here, "../framework/modules/signal"))
+	signal = require(getpath(here, "../framework/modules/signal"))
 	callbacks = require(getpath(here, "../framework/modules/callbacks"))
 	printObject = require(getpath(here, "../framework/objectPrinter"))
 	ui = require(getpath(here, "../framework/modules/ui"))
@@ -43,33 +43,39 @@ return load
 
 order in which the following Love2D callbacks are being used by the modules:
 
-love.update: (ui, world, tween, animation, task)
+love.update:
 	- ui -- ui should be first because it updates ui.CursorFocus which other modules might want to use the same frame!
 	- task -- task should go second
 	- tween -- tween should go after task so that a task could create a tween and that same tween can the be updated within the same frame
 	- animation
 	- world -- world goes last because it may use 
 
-love.draw: (world)
+love.draw:
 	- world
 
-love.resize: (camera, ui)
+love.resize:
+	- callbacks
 	- ui
 	- camera -- camera goes after ui because the ui updates the position and size of elements and the camera might want to read those variables on resize!
 
-love.mousemoved: (ui)
+love.mousemoved:
+	- callbacks
 	- ui
 
-love.mousepressed: (ui)
+love.mousepressed:
+	- callbacks
 	- ui
 
-love.mousereleased: (ui)
+love.mousereleased:
+	- callbacks
 	- ui
 
-love.wheelmoved: (ui)
+love.wheelmoved:
+	- callbacks
 	- ui
 
-love.keypressed: (ui)
+love.keypressed:
+	- callbacks
 	- ui
 
 

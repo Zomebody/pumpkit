@@ -192,6 +192,7 @@ function module:initialize() -- autoRender
 	-- Monkey Patching love.mousemoved (at start)
 	local mousemoved = love.mousemoved or function() end -- define new mousemoved function if it doesn't exist yet
 	love.mousemoved = function(x, y, dx, dy, istouch)
+		mousemoved(x, y, dx, dy, istouch)
 		local oldFocus = self.CursorFocus
 		self.CursorFocus = self:at(x, y)
 
@@ -230,8 +231,6 @@ function module:initialize() -- autoRender
 				end
 			end
 		end
-
-		mousemoved(x, y)
 	end
 
 	-- Monkey Patching love.update (at end)
@@ -239,8 +238,8 @@ function module:initialize() -- autoRender
 	local prevX = love.mouse.getX()
 	local prevY = love.mouse.getY()
 	local skipSpeedUpdate = false
-	love.update = function()
-		update()
+	love.update = function(...)
+		update(...)
 
 		-- call the resize event on the resized elements this frame
 		for i = 1, #resizedElements do
