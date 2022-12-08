@@ -139,23 +139,23 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Property";
-	["ValueType"] = "number";
+	["ValueType"] = "table";
 	["Name"] = "CornerRadius";
-	["Description"] = "Set to 0 by default. If this value is higher than 0, a rounded corner with a radius in pixels equal to this value will be drawn on the element.";
+	["Description"] = "A table with two keys; Scale and Offset.\n- Scale is the corner's radius in relation to the width and height of the element, where the smallest number of the two is used. A scale of 0.25 on an element that is 150 pixels by 120 pixels results in a 30 pixel corner radius.\n- Offset is simply a radius in pixels.";
 	["ReadOnly"] = false;
 	["CodeMarkup"] = nil;
 	["Demo"] = function()
 		local Container = ui.newFrame(300, 50, color(0, 0, 0, 0))
 		local f1 = ui.newFrame(140, 50, color(1, 1, 1))
-		f1.CornerRadius = 0
-		f1:setText("FiraCode.ttf", {{0, 0, 0}, "Radius = 0"}, 14)
+		f1.CornerRadius.Scale = 0.5
+		f1:setText("FiraCode.ttf", {{0, 0, 0}, "Radius.Scale = 0.5"}, 14)
 		f1.TextBlock:alignX("center")
 		f1.TextBlock:alignY("center")
 		Container:addChild(f1)
 		local f2 = ui.newFrame(140, 50, color(1, 1, 1))
-		f2.CornerRadius = 16
+		f2.CornerRadius.Offset = 16
 		f2:alignX("right")
-		f2:setText("FiraCode.ttf", {{0, 0, 0}, "Radius = 16"}, 14)
+		f2:setText("FiraCode.ttf", {{0, 0, 0}, "Radius.Offset = 16"}, 14)
 		f2.TextBlock:alignX("center")
 		f2.TextBlock:alignY("center")
 		Container:addChild(f2)
