@@ -21,9 +21,9 @@ function module:listen(eventName, func)
 		self.Events[eventName] = {}
 	end
 	local index = #self.Events[eventName] + 1
-	local Conn = connection.new(self, eventName)
-	self.Events[eventName][index] = {func, Conn}
-	return Conn
+	local con = connection.new(self, eventName)
+	self.Events[eventName][index] = {func, con}
+	return con
 end
 
 
@@ -36,6 +36,7 @@ function module:once(eventName, func)
 			func(...)
 		end
 	)
+	return con
 end
 
 
