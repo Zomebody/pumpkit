@@ -244,7 +244,7 @@ function module:initialize() -- autoRender
 		-- call the resize event on the resized elements this frame
 		for i = 1, #resizedElements do
 			if resizedElements[i].Events.Resize ~= nil then
-				connection.doEvents(resizedElements[i].Events.Resize)
+				connection.doEvents(resizedElements[i].Events.Resize, resizedElements[i].AbsoluteSize.x, resizedElements[i].AbsoluteSize.y)
 			end
 		end
 		resizedElements = {}
