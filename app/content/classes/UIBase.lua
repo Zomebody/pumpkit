@@ -812,6 +812,14 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Event";
+	["Name"] = "ChildAdded";
+	["Arguments"] = {"child"};
+	["Description"] = "Called when a UI object is added to the current object as a child through the :addChild() method.";
+})
+
+
+table.insert(content, {
+	["Type"] = "Event";
 	["Name"] = "Drag";
 	["Arguments"] = {"dx", "dy", "button", "offX", "offY"};
 	["Description"] = "Called when you drag an element. A drag is when you first press the element and then move the cursor while keeping the press active. A drag may go outside the box of the element and it will still count as an active press. dx and dy are numbers indicating the relative movement in the current frame. button is the mouse button (1 for touch drags). offX and offY are an offset in pixels relative to the starting point of the drag.";

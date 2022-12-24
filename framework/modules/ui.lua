@@ -523,6 +523,9 @@ function module:addChild(Obj)
 	self.Children[#self.Children + 1] = Obj
 	updateAbsoluteSize(Obj)
 	updateAbsolutePosition(Obj)
+	if self.Events.ChildAdded then
+		connection.doEvents(self.Events.ChildAdded, Obj)
+	end
 	self.Changed = true
 end
 
