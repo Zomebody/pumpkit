@@ -14,11 +14,11 @@ table.insert(content, {
 
 		local Img = love.graphics.newImage("test_images/hierarchy.png")
 		local Example = ui.newImageFrame(Img)
-		Example.CornerRadius = 6
+		Example.CornerRadius.Offset = 6
 		Container:addChild(Example)
 
 		local Tree = ui.newFrame(150, 200, color(1, 1, 1))
-		Tree.CornerRadius = 6
+		Tree.CornerRadius.Offset = 6
 		Tree:setPadding(10, 10)
 
 		local C1 = ui.newFrame(70, 100, color.fromHex("#D5E8D4"))
@@ -37,7 +37,7 @@ table.insert(content, {
 		L1:alignX("right")
 		C1:addChild(L1)
 		local L2 = ui.newFrame(60, 60, color.fromHex("#FFF2CC"))
-		L2.CornerRadius = 40
+		L2.CornerRadius.Offset = 40
 		L2:setBorder(color(L2.Color):darken(0.25), 5)
 		L2:alignX("right")
 		L2:alignY("bottom")
@@ -273,6 +273,13 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Method";
+	["Name"] = "on";
+	["Arguments"] = {"eventName", "function"};
+	["Description"] = "Registers a function to be called when the given event triggered. When this method is called multiple times, each function will be called in the same order as they were registered.\n\nReturns a Connection object.";
+})
+
+table.insert(content, {
+	["Type"] = "Method";
 	["Name"] = "render";
 	["Arguments"] = {};
 	["Description"] = "This method will render all UI on the screen by recursively calling :draw() on all of the UI root's children.";
@@ -310,6 +317,13 @@ table.insert(content, {
 	["Type"] = "Header";
 	["Name"] = "Events";
 	["Description"] = "UI events are processed in different ways by hooking into Love2D's events, such as e.g. love.mousemoved and love.mousepressed.\n\nWhen the UI system is first initialized by the ui:initialize() method, a process called 'Monkey Patching' takes place, which will replace the defined mousemoved, update, mousepressed and other functions with new functions that call the old ones. But those new functions will add new behavior as well. By doing this, the UI system remains isolated within its own files, meaning you only have to call ui:initialize() once for the system to run permanently.\n\nThe following love functions have received an additional boolean argument at the end to indicate if the input will take place on top of a UI element:\n- love.mousepressed()\n- love.mousereleased()\n- love.wheelmoved()";
+})
+
+table.insert(content, {
+	["Type"] = "Event";
+	["Name"] = "ChildAdded";
+	["Arguments"] = {"child"};
+	["Description"] = "Called when a UI object is added to the current object as a child through the :addChild() method.";
 })
 
 return {

@@ -57,6 +57,8 @@ local module = {
 	["Size"] = vector(love.graphics.getDimensions()); -- TODO: use getSafeArea() to ignore the mobile inset
 	["TotalCreated"] = 0; -- total number of UI elements that have been created
 	["Visible"] = true; -- if set to false, ui won't be drawn, events can still technically take place (e.g. gamepad events once support is added)
+
+	["Events"] = {}
 }
 
 local UIBase = {}
@@ -523,7 +525,7 @@ function module:addChild(Obj)
 	self.Children[#self.Children + 1] = Obj
 	updateAbsoluteSize(Obj)
 	updateAbsolutePosition(Obj)
-	if self.Events.ChildAdded then
+	if self.Events.ChildAdded ~= nil then
 		connection.doEvents(self.Events.ChildAdded, Obj)
 	end
 	self.Changed = true
@@ -766,6 +768,19 @@ function module:find(tag)
 		return {unpack(markedObjects[tag])}
 	end
 	return {}
+end
+
+
+-- eventName is the name of the event to call. All event name strings are accepted, but not all of them may trigger
+-- func is the function to link
+function module:on(eventName, func)
+	if self.Events[eventName] == nil then
+		self.Events[eventName] = {}
+	end
+	local index = #self.Events[eventName] + 1
+	local Conn = connection.new(self, eventName)
+	self.Events[eventName][index] = {func, Conn}
+	return Conn
 end
 
 

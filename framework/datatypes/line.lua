@@ -217,7 +217,7 @@ end
 
 
 -- makes a new line
-local new = function(from, to, x2, y2)
+new = function(from, to, x2, y2)
 	if type(from) == "number" then
 		from = vector(from, to)
 		to = vector(x2, y2)
