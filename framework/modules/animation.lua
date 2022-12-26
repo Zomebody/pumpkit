@@ -208,7 +208,7 @@ local function new(refImg, frameSize, coordinates, playSpeed, looped)
 		["CurrentFrame"] = 1;
 		["FrameCoordinates"] = {}; -- {vector(x1, y1), vector(x2, y2), etc.}
 		["FrameCount"] = 0;
-		["FrameSize"] = frameSize == nil and vector(refImg:getWidth(), refImg:getHeight()) or vector(frameSize);
+		["FrameSize"] = (frameSize == nil) and vector(refImg:getWidth(), refImg:getHeight()) or vector(frameSize, frameSize);
 		--["FrameHeight"] = height or refImg:getHeight();
 		["FrameDuration"] = playSpeed == nil and 8 or (1 / playSpeed);
 		["Looped"] = looped or false;
