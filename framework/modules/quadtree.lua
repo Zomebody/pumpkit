@@ -18,7 +18,7 @@ local Quadtree = {}
 Quadtree.__index = Quadtree
 
 
-function module:new(bucketSize, maxSplits, position, size)
+local function new(bucketSize, maxSplits, position, size)
 	local Obj = {
 		["Position"] = position ~= nil and vector(position) or vector(0, 0);
 		["Size"] = size ~= nil and vector(size) or vector(1000, 1000);
@@ -180,10 +180,10 @@ end
 
 -- split the quadtree into 4 quadrants of equal size
 function Quadtree:split()
-	self.Splits[1] = module:new(self.BucketSize, self.MaxSplits - 1, self.Position, self.Size / 2)
-	self.Splits[2] = module:new(self.BucketSize, self.MaxSplits - 1, self.Position + vector(self.Size.x / 2, 0), self.Size / 2)
-	self.Splits[3] = module:new(self.BucketSize, self.MaxSplits - 1, self.Position + vector(0, self.Size.y / 2), self.Size / 2)
-	self.Splits[4] = module:new(self.BucketSize, self.MaxSplits - 1, self.Position + vector(self.Size.x / 2, self.Size.y / 2), self.Size / 2)
+	self.Splits[1] = new(self.BucketSize, self.MaxSplits - 1, self.Position, self.Size / 2)
+	self.Splits[2] = new(self.BucketSize, self.MaxSplits - 1, self.Position + vector(self.Size.x / 2, 0), self.Size / 2)
+	self.Splits[3] = new(self.BucketSize, self.MaxSplits - 1, self.Position + vector(0, self.Size.y / 2), self.Size / 2)
+	self.Splits[4] = new(self.BucketSize, self.MaxSplits - 1, self.Position + vector(self.Size.x / 2, self.Size.y / 2), self.Size / 2)
 	-- moving items from the current quadtree to child quadtrees worsens performance! So just keep them in the parent quadtree :>
 end
 
@@ -203,6 +203,6 @@ function Quadtree:draw()
 end
 
 
-
-return module
+module.new = new
+return setmetatable(module, {__call = function(_, ...) return new(...) end})
 

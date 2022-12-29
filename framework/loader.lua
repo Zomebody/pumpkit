@@ -11,6 +11,9 @@ function load()
 	color = require(getpath(here, "../framework/datatypes/color"))
 	task = require(getpath(here, "../framework/modules/task"))
 
+	-- data structures
+	quadtree = require(getpath(here, "../framework/modules/quadtree"))
+
 	-- weird stuff
 	tween = require(getpath(here, "../framework/modules/tween"))
 	animation = require(getpath(here, "../framework/modules/animation"))
@@ -48,7 +51,7 @@ love.update:
 	- task -- task should go second
 	- tween -- tween should go after task so that a task could create a tween and that same tween can the be updated within the same frame
 	- animation
-	- world -- world goes last because it may use 
+	- world -- world goes last because it may use... (I forgot)
 
 love.draw:
 	- world
