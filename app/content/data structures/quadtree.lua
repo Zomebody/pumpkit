@@ -26,15 +26,76 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Header";
+	["Name"] = "Properties";
+	["Description"] = "Note that these are the properties of a quadtree, not of the module creating the quadtrees!";
+})
+
+table.insert(content, {
+	["Type"] = "Property";
+	["Name"] = "BucketSize";
+	["ValueType"] = "number";
+	["ReadOnly"] = true;
+	["Description"] = "The number of items that may be stored in the quadtree.";
+})
+
+table.insert(content, {
+	["Type"] = "Property";
+	["Name"] = "Items";
+	["ValueType"] = "array";
+	["ReadOnly"] = true;
+	["Description"] = "An array of items that are stored inside the current quadtree cell. Each item in the list has an 'Item' property which is the stored object, a 'Position' vector and a 'Radius' value.";
+})
+
+table.insert(content, {
+	["Type"] = "Property";
+	["Name"] = "MaxSplits";
+	["ValueType"] = "number";
+	["ReadOnly"] = true;
+	["Description"] = "The maximum number of splits which the current quadtree allows. When a quadtree is split, its children will have a MaxSplits value of 1 less than their parent quadtree.";
+})
+
+table.insert(content, {
+	["Type"] = "Property";
+	["Name"] = "Position";
+	["ValueType"] = "vector";
+	["ReadOnly"] = true;
+	["Description"] = "The top-left position of the current quadtree.";
+})
+
+table.insert(content, {
+	["Type"] = "Property";
+	["Name"] = "Size";
+	["ValueType"] = "vector";
+	["ReadOnly"] = true;
+	["Description"] = "The width and height of the current quadtree.";
+})
+
+table.insert(content, {
+	["Type"] = "Property";
+	["Name"] = "Splits";
+	["ValueType"] = "array";
+	["ReadOnly"] = true;
+	["Description"] = "An array with child quadtrees. This array always contains either 0 items or 4 items depending on if the quadtree has been split or not.";
+})
+
+table.insert(content, {
+	["Type"] = "Header";
 	["Name"] = "Methods";
-	["Description"] = "";
+	["Description"] = "Note that these are the methods of a quadtree, not of the module creating the quadtrees!";
 })
 
 table.insert(content, {
 	["Type"] = "Method";
-	["Name"] = "insert";
-	["Arguments"] = {"Object", "vector", "radius"};
-	["Description"] = "Insert the given object into the quadtree at the given position vector and a given radius number. If the quadtree's bucket size has been reached, the object is instead inserted into child quadtrees.";
+	["Name"] = "at";
+	["Arguments"] = {"vector"};
+	["Description"] = "Return a list of items which overlap the given position vector.";
+})
+
+table.insert(content, {
+	["Type"] = "Method";
+	["Name"] = "draw";
+	["Arguments"] = {};
+	["Description"] = "A debug method to draw the quadtree. Note that this method is INCREDIBLY SLOW for large quadtrees as items may be inserted into multiple sub-trees. As such, they may be drawn multiple times!";
 })
 
 table.insert(content, {
@@ -53,23 +114,16 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Method";
+	["Name"] = "insert";
+	["Arguments"] = {"Object", "vector", "radius"};
+	["Description"] = "Insert the given object into the quadtree at the given position vector and a given radius number. If the quadtree's bucket size has been reached, the object is instead inserted into child quadtrees.";
+})
+
+table.insert(content, {
+	["Type"] = "Method";
 	["Name"] = "split";
-	["Arguments"] = {"vector"};
-	["Description"] = "FOR INTERNAL USE ONLY. When a quadtree's bucket size has been reached when an item is inserted, this method is called to create 4 new quadtrees as children of the current quadtree. Newly inserted items are inserted into these child quadtrees instead.";
-})
-
-table.insert(content, {
-	["Type"] = "Method";
-	["Name"] = "at";
-	["Arguments"] = {"vector"};
-	["Description"] = "Return a list of items which overlap the given position vector.";
-})
-
-table.insert(content, {
-	["Type"] = "Method";
-	["Name"] = "draw";
 	["Arguments"] = {};
-	["Description"] = "A debug method to draw the quadtree. Note that this method is INCREDIBLY SLOW for large quadtrees as items may be inserted into multiple sub-trees. As such, they may be drawn multiple times!";
+	["Description"] = "FOR INTERNAL USE ONLY. When a quadtree's bucket size has been reached when an item is inserted, this method is called to create 4 new quadtrees as children of the current quadtree. Newly inserted items are inserted into these child quadtrees instead.";
 })
 
 return {
