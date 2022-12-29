@@ -36,7 +36,7 @@ end
 
 -- returns the length of a line
 function line:getLength()
-	return (self.to - self.from):getmag()
+	return (self.to - self.from):getMag()
 end
 
 
