@@ -111,6 +111,38 @@ function polygon:unpack()
 end
 
 
+-- TODO: this calls encloses() and closestTo() but closestTo() also calls encloses() again. That's kind of inefficient don't you think?
+-- return the distance from the given vector to the closest point on the polygon
+function polygon:dist(vec)
+	assert(vector.isVector(vec), "polygon:dist(vec) expects argument 'vec' to be of type <vector>")
+	if self:encloses(vec) then
+		return 0
+	end
+	local closestPoint = self:closestTo(vec)
+	return closestPoint:dist(vec)
+end
+
+
+-- return the location on the polygon closest to the given vector
+function polygon:closestTo(vec)
+	assert(vector.isVector(vec), "polygon:closestTo(vec) expects argument 'vec' to be of type <vector>")
+	if self:encloses(vec) then
+		return vector(vec)
+	end
+	local closestPoint = self.Lines[1]:closestTo(vec)
+	local closestDis = vec:dist(closestPoint)
+	for i = 2, #self.Lines do
+		local point = self.Lines[i]:closestTo(vec)
+		local dis = vec:dist(point)
+		if dis < closestDis then
+			closestPoint = point
+			closestDis = dis
+		end
+	end
+	return closestPoint
+end
+
+
 -- returns true if the given vector is inside the polygon (TODO: what about on the edge of the polygon?)
 function polygon:encloses(v)
 	assert(vector.isVector(v), "polygon:encloses(v) takes one argument of type <vector>, given: " .. tostring(v))
