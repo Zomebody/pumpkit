@@ -49,7 +49,7 @@ end
 
 -- makes a new vector from an angle
 local function fromAngle(theta)
-	return new(math.cos(theta), -math.sin(theta))
+	return new(math.cos(theta), math.sin(theta))
 end
 
 -- makes a vector with a random direction
@@ -222,7 +222,7 @@ end
 
 -- get the heading (direction) of a vector
 function vector:heading()
-	return -math.atan2(self.y, self.x) -- the negative sign here is because a positive Y in Love2D is down!!
+	return math.atan2(self.y, self.x) -- the negative sign here is because a positive Y in Love2D is down!!
 end
 
 -- returns the smallest angle between the two vectors
@@ -259,7 +259,7 @@ end
 
 -- rotate a vector by a certain number of radians
 function vector:rotate(theta) -- edited to pull from: https://github.com/themousery/vector.lua/pull/3/commits/5ac47a29456a6f89939347f6b3b4d3160d732d3c
-	theta = -theta -- make theta negative because the Y-direction in Love2D is DOWN rather than UP
+	--theta = -theta -- make theta negative because the Y-direction in Love2D is DOWN rather than UP
 	local s = math.sin(theta)
 	local c = math.cos(theta)
 	local v = new(

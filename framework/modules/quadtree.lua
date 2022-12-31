@@ -125,8 +125,9 @@ end
 -- the reason for a dictionary is because an item may be inserted into multiple sub-trees, so using a dictionary prevents duplicates!
 function Quadtree:findInRange(position, radius, dict)
 	-- add items in the current quadtree if they are in range
+	local Item = nil
 	for i = 1, #self.Items do
-		local Item = self.Items[i]
+		Item = self.Items[i]
 		if (Item.Position - position):getMag() - Item.Radius <= radius then
 			--itemsInRange[#itemsInRange + 1] = Item.Item
 			dict[Item.Item] = true
@@ -134,8 +135,9 @@ function Quadtree:findInRange(position, radius, dict)
 	end
 
 	-- check sub-trees
+	local Split = nil
 	for i = 1, #self.Splits do
-		local Split = self.Splits[i]
+		Split = self.Splits[i]
 		-- check if any position in the given quadtree is within range, otherwise skip the whole quadtree!
 		if circleIntersectsRectangle(position, radius, Split.Position, Split.Position + Split.Size) then
 			Split:findInRange(position, radius, dict)
@@ -161,19 +163,61 @@ end
 
 function Quadtree:findAt(position, dict)
 	-- check children
+	local Item = nil
 	for i = 1, #self.Items do
-		local Item = self.Items[i]
+		Item = self.Items[i]
 		if (Item.Position - position):getMag() <= Item.Radius then
 			dict[Item.Item] = true
 		end
 	end
 	-- check sub-splits
+	local Split = nil
 	for i = 1, #self.Splits do
-		local Split = self.Splits[i]
+		Split = self.Splits[i]
 		-- check if the position falls within the bounds of the sub-split
 		if position.x >= Split.Position.x and position.x <= Split.Position.x + Split.Size.x and position.y >= Split.Position.y and position.y <= Split.Position.y + Split.Size.y then
 			Split:findAt(position, dict)
 		end
+	end
+end
+
+
+-- THIS FUNCTION IS INCREDIBLY SLOW FOR LARGE QUADTREES!
+function Quadtree:remove(Obj)
+	-- check if the object is in the current tree and if so, remove it
+	local deleted = false
+	for i = 1, #self.Items do
+		if self.Items[i] == Obj then
+			table.remove(self.Items, i)
+			deleted = true
+			break
+		end
+	end
+	-- if not removed, check all sub-trees
+	if not deleted then
+		for i = 1, #self.Splits do
+			self.Splits[i]:remove(Obj)
+		end
+	end
+end
+
+
+function Quadtree:getItems()
+	local dict = {}
+	self:getSubItems(dict)
+	local arr = {}
+	for k, v in pairs(dict) do
+		arr[#arr + 1] = k
+	end
+	return arr
+end
+
+function Quadtree:getSubItems(dict)
+	for i = 1, #self.Items do
+		dict[self.Items[i].Item] = true
+	end
+	for i = 1, #self.Splits do
+		self.Splits[i]:getSubItems(dict)
 	end
 end
 
