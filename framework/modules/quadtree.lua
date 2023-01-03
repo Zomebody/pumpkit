@@ -187,7 +187,7 @@ function Quadtree:remove(Obj)
 	-- check if the object is in the current tree and if so, remove it
 	local deleted = false
 	for i = 1, #self.Items do
-		if self.Items[i] == Obj then
+		if self.Items[i].Item == Obj then
 			table.remove(self.Items, i)
 			deleted = true
 			break
@@ -196,9 +196,14 @@ function Quadtree:remove(Obj)
 	-- if not removed, check all sub-trees
 	if not deleted then
 		for i = 1, #self.Splits do
-			self.Splits[i]:remove(Obj)
+			local del = false
+			del = self.Splits[i]:remove(Obj)
+			if del then
+				deleted = true
+			end
 		end
 	end
+	return deleted
 end
 
 
