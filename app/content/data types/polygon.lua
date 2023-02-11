@@ -40,6 +40,20 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Method";
+	["Name"] = "closestTo";
+	["Arguments"] = {"vector"};
+	["Description"] = "Returns the point on the polygon closest to the given vector. If the given vector is inside of the polygon, the returned vector will share the same coordinates.";
+})
+
+table.insert(content, {
+	["Type"] = "Method";
+	["Name"] = "dist";
+	["Arguments"] = {"vector"};
+	["Description"] = "Returns the distance between the given vector and the point on the polygon closest to the given vector. If the vector is inside the polygon, the distance is 0.";
+})
+
+table.insert(content, {
+	["Type"] = "Method";
 	["Name"] = "encloses";
 	["Arguments"] = {"vector"};
 	["Description"] = "Returns true if the given vector is inside of the polygon. This works on both convex and concave polygons.";

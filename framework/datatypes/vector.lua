@@ -98,7 +98,6 @@ end
 function vector:reflect(normal, multiplier)
 	multiplier = multiplier == nil and 1 or multiplier
 	local n = normal:clone():norm()
-	--self:replace(self - (1 + multiplier) * (self:dot(n)) * n)
 	self:replace(self - (1 + multiplier) * (self:dot(n) * n))
 	return self
 end
