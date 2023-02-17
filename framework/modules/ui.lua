@@ -91,7 +91,7 @@ local OP = nil -- Obj.Parent
 local function updateAbsolutePosition(Obj, wX, wY, wWidth, wHeight, ignoreParentPosition) -- ignoreParentPosition is used in combination with :renderTo() to correctly position children that are rendered without parent
 	if Obj == nil or Obj == module then
 		for i = 1, #module.Children do
-			updateAbsolutePosition(module.Children[i], wX, wY, wWidth, wHeight, ignoreParentPosition)
+			updateAbsolutePosition(module.Children[i], wX, wY, wWidth, wHeight)
 		end
 		return
 	end
@@ -122,7 +122,7 @@ local function updateAbsolutePosition(Obj, wX, wY, wWidth, wHeight, ignoreParent
 	local absY = wY + contentOffsetY + Obj.Position.Offset.y + math.floor(Obj.Position.Scale.y * wHeight) - math.floor(Obj.AbsoluteSize.y * Obj.Center.y)
 	Obj.AbsolutePosition:set(math.floor(absX), math.floor(absY))
 	for i = 1, #Obj.Children do
-		updateAbsolutePosition(Obj.Children[i], absX, absY, Obj.AbsoluteSize.x, Obj.AbsoluteSize.y, ignoreParentPosition)
+		updateAbsolutePosition(Obj.Children[i], absX, absY, Obj.AbsoluteSize.x, Obj.AbsoluteSize.y)
 	end
 end
 
