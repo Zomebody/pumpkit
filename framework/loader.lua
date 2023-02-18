@@ -9,6 +9,7 @@ function load()
 	line = require(getpath(here, "../framework/datatypes/line"))
 	polygon = require(getpath(here, "../framework/datatypes/polygon"))
 	color = require(getpath(here, "../framework/datatypes/color"))
+	gradient = require(getpath(here, "../framework/datatypes/gradient"))
 	task = require(getpath(here, "../framework/modules/task"))
 
 	-- data structures
