@@ -132,7 +132,11 @@ local function interpolate(from, to, x)
 	local h = h1 + v * x
 	local s = s1 + (s2 - s1) * x
 	local l = l1 + (l2 - l1) * x
-	return fromHSL(h, s, l)
+	local interpolated = fromHSL(h, s, l)
+	-- alpha channel is interpolated linearly
+	interpolated.a = from.a + (to.a - from.a) * x
+	return interpolated
+	--return fromHSL(h, s, l)
 end
 
 -- return an array representing the color
