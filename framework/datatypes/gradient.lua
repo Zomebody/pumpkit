@@ -53,7 +53,7 @@ end
 
 
 function gradient:clone()
-	return new(self.nodes)
+	return new(unpack(self.nodes))
 end
 
 
