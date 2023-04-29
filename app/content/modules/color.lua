@@ -72,6 +72,13 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Constructor";
+	["Name"] = "fromNormal";
+	["Arguments"] = {"x", "y", "z"};
+	["Description"] = "Constructs a color from a normal vector. Use this constructor to convert a 3D normalized normal vector in tangent space to an RGB color in OpenGL normal map format.";
+})
+
+table.insert(content, {
+	["Type"] = "Constructor";
 	["Name"] = "new";
 	["Arguments"] = {"r", "g", "b", "a"};
 	["Description"] = "Constructs a color from red, green and blue components and an alpha value, all optional and between 0 and 1. If r is a string instead, it is interpreted as a Hex value.\n\nIf the module itself is called, this method will be called instead.";

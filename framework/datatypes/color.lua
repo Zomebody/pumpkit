@@ -32,9 +32,11 @@ local function new(r, g, b, a)
 	return setmetatable(col, color)
 end
 
+
 local function fromRGB(r, g, b)
 	return new(r/255, g/255, b/255)
 end
+
 
 local function fromHex(hexString)
 	if hexString:sub(1, 1) == "#" then
@@ -45,6 +47,11 @@ local function fromHex(hexString)
 		numbers[#numbers + 1] = tonumber(component, 16) / 255
 	end
 	return new(unpack(numbers))
+end
+
+
+local function fromNormal(nx, ny, nz) -- x, y and z coordinate of a tangent space normalized normal vector
+	return new((nx + 1) / 2, (1 - ny) / 2, (nz + 1) / 2)
 end
 
 
@@ -313,6 +320,7 @@ module.fromRGB = fromRGB
 module.fromHSV = fromHSV
 module.fromHSL = fromHSL
 module.fromHex = fromHex
+module.fromNormal = fromNormal
 module.random = random
 module.isColor = isColor
 module.isHex = isHex
