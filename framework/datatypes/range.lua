@@ -49,7 +49,7 @@ function range:clamp(x)
 	return x
 end
 
-function range:get(x)
+function range:interpolate(x)
 	return self.min + (self.max - self.min) * x
 end
 
