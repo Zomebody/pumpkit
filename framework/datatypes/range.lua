@@ -130,6 +130,6 @@ end
 
 module.new = new
 module.isRange = isRange
-return setmetatable(module, {__call = function(_, ...) new(...) end})
+return setmetatable(module, {__call = function(_, ...) return new(...) end})
 
 
