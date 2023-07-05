@@ -49,6 +49,10 @@ function range:clamp(x)
 	return x
 end
 
+function range:get(x)
+	return self.min + (self.max - self.min) * x
+end
+
 function range:contains(x)
 	return self.min >= x and self.max <= x
 end
