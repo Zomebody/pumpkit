@@ -200,7 +200,7 @@ end
 
 -- meta function to change how lines appear as string
 function line:__tostring()
-	return "{" .. self.from .. ", " .. self.to .. "}"
+	return "{" .. tostring(self.from) .. ", " .. tostring(self.to) .. "}"
 end
 
 
