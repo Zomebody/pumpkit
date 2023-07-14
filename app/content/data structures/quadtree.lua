@@ -121,6 +121,13 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Method";
+	["Name"] = "remove";
+	["Arguments"] = {"Object", "vector", "radius"};
+	["Description"] = "Removes the given object from the quadtree. The 'vector' and 'radius' arguments are optional but will speed up the removal process a lot if you can supply the circular region in which the object is found!";
+})
+
+table.insert(content, {
+	["Type"] = "Method";
 	["Name"] = "split";
 	["Arguments"] = {};
 	["Description"] = "FOR INTERNAL USE ONLY. When a quadtree's bucket size has been reached when an item is inserted, this method is called to create 4 new quadtrees as children of the current quadtree. Newly inserted items are inserted into these child quadtrees instead.";

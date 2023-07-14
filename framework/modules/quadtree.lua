@@ -182,8 +182,9 @@ function Quadtree:findAt(position, dict)
 end
 
 
--- THIS FUNCTION IS INCREDIBLY SLOW FOR LARGE QUADTREES!
-function Quadtree:remove(Obj)
+-- THIS FUNCTION IS INCREDIBLY SLOW FOR LARGE QUADTREES! (if no position and radius is supplied)
+function Quadtree:remove(Obj, position, radius)
+	radius = radius == nil and 0 or radius
 	-- check if the object is in the current tree and if so, remove it
 	local deleted = false
 	for i = 1, #self.Items do
@@ -196,8 +197,15 @@ function Quadtree:remove(Obj)
 	-- if not removed, check all sub-trees
 	if not deleted then
 		for i = 1, #self.Splits do
+			local Split = self.Splits[i]
 			local del = false
-			del = self.Splits[i]:remove(Obj)
+			if position ~= nil then
+				if circleIntersectsRectangle(position, radius, Split.Position, Split.Position + Split.Size) then
+					del = Split:remove(Obj, position, radius)
+				end
+			else
+				del = Split:remove()
+			end
 			if del then
 				deleted = true
 			end

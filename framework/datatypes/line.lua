@@ -111,6 +111,9 @@ end
 
 -- returns the distance between the point on the line closest to vector v, and v itself. If inf == true, treat the line as if it extends infinitely on both sides
 function line:dist(v, inf)
+	if self.from.x == self.to.x and self.from.y == self.to.y then
+		return self.from:dist(v)
+	end
 	local closestPoint = self:closestTo(v, inf)
 	return v:dist(closestPoint)
 end
