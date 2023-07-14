@@ -92,7 +92,7 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Method";
-	["Name"] = "disTo";
+	["Name"] = "dist";
 	["Arguments"] = {"vector"};
 	["Description"] = "Returns the distance between the given vector and the point on the line closest to that vector.";
 })
