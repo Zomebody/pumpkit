@@ -204,7 +204,7 @@ function Quadtree:remove(Obj, position, radius)
 					del = Split:remove(Obj, position, radius)
 				end
 			else
-				del = Split:remove()
+				del = Split:remove(Obj)
 			end
 			if del then
 				deleted = true
