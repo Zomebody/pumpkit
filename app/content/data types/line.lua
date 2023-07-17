@@ -64,8 +64,8 @@ table.insert(content, {
 table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "closestTo";
-	["Arguments"] = {"vector"};
-	["Description"] = "Returns a position on the line that is closest to the given vector.";
+	["Arguments"] = {"vector", "inf"};
+	["Description"] = "Returns a position on the line that is closest to the given vector. The second argument is a boolean indicating if the line should be treated as a line of infinite length in both directions.";
 	["CodeMarkup"] = "<k>local</k> l <k>=</k> <f>line</f>(<n>20</n>, <n>20</n>, <n>130</n>, <n>80</n>)\n<k>local</k> p <k>=</k> <f>vector</f>(<n>40</n>, <n>70</n>)\n<k>local</k> c <k>=</k> l:<f>closestTo</f>(p)\nlove.graphics.<f>line</f>(l:<f>unpack</f>())\nlove.graphics.<f>setColor</f>(<n>1</n>, <n>0</n>, <n>0</n>)\nlove.graphics.<f>circle</f>(<s>\"fill\"</s>, p.x, p.y, <n>6</n>)\nlove.graphics.<f>setColor</f>(<n>0</n>, <n>0.5</n>, <n>1</n>)\nlove.graphics.<f>circle</f>(<s>\"fill\"</s>, c.x, c.y, <n>6</n>)";
 	["Demo"] = function()
 		local Canvas = love.graphics.newCanvas(150, 90)
