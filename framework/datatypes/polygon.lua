@@ -20,7 +20,7 @@ local function new(...) -- list of points
 	local points = {...}
 	local pol = nil
 	if isPolygon(points[1]) then
-		return new(points[1]:getPoints())
+		return new(unpack(points[1]:getPoints()))
 	else -- arguments are vectors
 		pol = {
 			["Lines"] = {};
@@ -96,7 +96,7 @@ end
 
 -- return an identical copy of the given polygon
 function polygon:clone()
-	return new(self:getPoints())
+	return new(unpack(self:getPoints()))
 end
 
 
