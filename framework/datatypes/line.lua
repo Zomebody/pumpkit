@@ -201,6 +201,20 @@ function line.__eq(a,b)
 end
 
 
+-- meta function to add a vector to a line
+function line.__add(a, b)
+	assert(isLine(a) and vector.isVector(b), "add: wrong argument types: (expected <line> and <vector>)")
+	return new(a.from + b, a.to + b)
+end
+
+
+-- meta function to subtract a vector from a line
+function line.__sub(a, b)
+	assert(isLine(a) and vector.isVector(b), "add: wrong argument types: (expected <line> and <vector>)")
+	return new(a.from - b, a.to - b)
+end
+
+
 -- meta function to change how lines appear as string
 function line:__tostring()
 	return "{" .. tostring(self.from) .. ", " .. tostring(self.to) .. "}"

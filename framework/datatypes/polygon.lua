@@ -53,6 +53,13 @@ function polygon:getPoints()
 end
 
 
+function polygon:shift(x, y)
+	for i = 1, #self.Lines do
+		self.Lines[i]:shift(x, y)
+	end
+end
+
+
 -- get the total circumference length of the polygon
 function polygon:getPerimeter()
 	local size = 0
