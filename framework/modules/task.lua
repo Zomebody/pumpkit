@@ -28,27 +28,6 @@ function module:initialize()
 	end
 end
 
--- update all tasks
---[[
-function module:update()
-	local dt = love.timer.getDelta()
-	local i = 0
-	local curTime = love.timer.getTime()
-	while i < #self.Active do
-		i = i + 1
-		if curTime >= module.Active[i].LastRun + module.Active[i].Interval then
-			module.Active[i].Function(dt)
-			-- increase LastRun by self.Interval instead of setting it to love.timer.getTime() to prevent rounding errors from stacking up on low frame-rates!
-			module.Active[i].LastRun = module.Active[i].LastRun + module.Active[i].Interval
-			module.Active[i].TimesRan = module.Active[i].TimesRan + 1
-			if module.Active[i].TimesRan >= module.Active[i].Repeats then
-				table.remove(self.Active, i)
-				i = i - 1
-			end
-		end
-	end
-end
-]]
 
 
 function module:update()
@@ -61,7 +40,7 @@ function module:update()
 	end
 	for i = 1, #CopiedTasks do
 		if curTime >= CopiedTasks[i].LastRun + CopiedTasks[i].Interval and CopiedTasks[i].Active then
-			CopiedTasks[i].Function(dt)
+			CopiedTasks[i].Function(dt, curTime - CopiedTasks[i].ActivatedAt)
 			CopiedTasks[i].LastRun = CopiedTasks[i].LastRun + CopiedTasks[i].Interval
 			CopiedTasks[i].TimesRan = CopiedTasks[i].TimesRan + 1
 			if CopiedTasks[i].TimesRan >= CopiedTasks[i].Repeats then

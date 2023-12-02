@@ -98,7 +98,7 @@ table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "unpack";
 	["Arguments"] = {};
-	["Description"] = "Returns an array of numbers in the form {x1, y1, x2, y2, ...} where each xy pair is a corner of the polygon.";
+	["Description"] = "Returns a tuple of numbers in the form x1, y1, x2, y2, ..., where each xy pair is a corner of the polygon.";
 })
 
 table.insert(content, {
