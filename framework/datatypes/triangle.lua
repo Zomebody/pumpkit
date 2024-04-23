@@ -89,9 +89,9 @@ function triangle:closestTo(vec)
 	if self:encloses(vec) then
 		return vector(vec)
 	end
-	local dis1 = vec:dist(self.Line1)
-	local dis2 = vec:dist(self.Line2)
-	local dis3 = vec:dist(self.Line3)
+	local dis1 = self.Line1:dist(vec)
+	local dis2 = self.Line2:dist(vec)
+	local dis3 = self.Line3:dist(vec)
 	if dis1 < dis2 and dis1 < dis3 then
 		return self.Line1:closestTo(vec)
 	elseif dis2 < dis3 then
@@ -121,7 +121,10 @@ end
 
 
 
-function triangle:intersectLine(l)
+function triangle:intersectLine(l, margin) -- margin argument should normally be used because floating points are a problem :<
+	if margin == nil then
+		margin = 0.1^8
+	end
 	assert(line.isLine(l), "triangle:intersectLine(l) takes one argument of type <line>, given: " .. tostring(v))
 
 	-- try to have the line intersect all 3 sides of the triangle and store the intersection in an array
@@ -131,7 +134,9 @@ function triangle:intersectLine(l)
 	table.insert(intersections, self.Line2:intersect(l))
 	table.insert(intersections, self.Line3:intersect(l))
 	
-	if #intersections == 2 then
+	if #intersections == 1 then -- you intersected only one of the lines, so you went from inside the triangle to outside, or from outside the triangle to inside!
+		return intersections[1]
+	elseif #intersections == 2 then
 		-- there is an edge-case where you hit *exactly* the corner of the triangle, in which case there are two intersections counted
 		-- if that happens, compare if exactly either the starting point or end point is inside the triangle, in which case there was only really one intersection point
 		local startEnclosed = self:encloses(l.from)
@@ -148,7 +153,7 @@ function triangle:intersectLine(l)
 	elseif #intersections == 3 then -- three points only ever happens when you hit at least one corner exactly! That means at least two of the points are the exact same location
 		-- it also means you pierced through the triangle, going from outside to inside back to outside the triangle
 		-- so all that's needed now is to find one duplicate position, remove it, then return the other two positions (in the right order)
-		if intersections[2]:dist(intersections[3]) == 0 then -- if 2 and 3 are the same, that means 1 and 2 must be different points
+		if intersections[2]:dist(intersections[3]) < margin then -- if 2 and 3 are the same, that means that point 1 is different from both!
 			if intersections[1]:dist(l.from) < intersections[2]:dist(l.from) then
 				return intersections[1], intersections[2]
 			else
@@ -163,6 +168,22 @@ function triangle:intersectLine(l)
 		end
 	end
 	return nil
+end
+
+
+
+function triangle:circumcenter()
+	local v1 = self.Line1.from
+	local v2 = self.Line2.from
+	local v3 = self.Line3.from
+
+	local d = 2 * (v1.x * (v2.y - v3.y) + v2.x * (v3.y - v1.y) + v3.x * (v1.y - v2.y))
+
+	local ux = ((v1.x^2 + v1.y^2) * (v2.y - v3.y) + (v2.x^2 + v2.y^2) * (v3.y - v1.y) + (v3.x^2 + v3.y^2) * (v1.y - v2.y)) / d
+	local uy = ((v1.x^2 + v1.y^2) * (v3.x - v2.x) + (v2.x^2 + v2.y^2) * (v1.x - v3.x) + (v3.x^2 + v3.y^2) * (v2.x - v1.x)) / d
+
+	local center = vector(ux, uy)
+	return vector(ux, uy), center:dist(self.Line1.from)
 end
 
 

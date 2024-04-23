@@ -54,7 +54,7 @@ function range:interpolate(x)
 end
 
 function range:contains(x)
-	return self.min >= x and self.max <= x
+	return self.min <= x and self.max >= x
 end
 
 function range:clone()

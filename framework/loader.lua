@@ -11,10 +11,12 @@ function load()
 	triangle = require(getpath(here, "../framework/datatypes/triangle"))
 	color = require(getpath(here, "../framework/datatypes/color"))
 	gradient = require(getpath(here, "../framework/datatypes/gradient"))
+	numbercurve = require(getpath(here, "../framework/datatypes/numbercurve"))
 	task = require(getpath(here, "../framework/modules/task"))
 
 	-- data structures
 	quadtree = require(getpath(here, "../framework/modules/quadtree"))
+	navmesh = require(getpath(here, "../framework/modules/navmesh"))
 
 	-- weird stuff
 	tween = require(getpath(here, "../framework/modules/tween"))
