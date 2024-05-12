@@ -36,33 +36,33 @@ local function random()
 end
 
 -- set the values of the vector to something new
-function vector:set(x, y, z)
+function vector3:set(x, y, z)
 	if isVector3(x) then self.x, self.y, self.z = x.x, x.y, x.z;return self end
 	self.x, self.y, self.z = x or self.x, y or self.y, z or self.z
 	return self
 end
 
 -- replace the values of a vector with the values of another vector
-function vector:replace(v)
+function vector3:replace(v)
 	assert(isVector3(v), "replace: wrong argument type: (expected <vector3>, got "..type(v)..")")
 	self.x, self.y, self.z = v.x, v.y, v.z
 	return self
 end
 
 -- returns a copy of a vector
-function vector:clone()
+function vector3:clone()
 	return new(self.x, self.y, self.z)
 end
 
 -- get the magnitude of a vector
-function vector:getMag()
+function vector3:getMag()
 	return math.sqrt(self.x^2 + self.y^2 + self.z^2)
 end
 
 
 
 -- set the magnitude of a vector
-function vector:setMag(mag)
+function vector3:setMag(mag)
 	self:norm()
 	local v = self * mag
 	self:replace(v)
@@ -73,25 +73,25 @@ end
 
 -- meta function to make vectors negative
 -- ex: (negative) -vector(5,6) is the same as vector(-5,-6)
-function vector.__unm(v)
+function vector3.__unm(v)
 	return new(-v.x, -v.y, -v.z)
 end
 
 -- meta function to add vectors together
 -- ex: (vector(5,6) + vector(6,5)) is the same as vector(11,11)
-function vector.__add(a, b)
+function vector3.__add(a, b)
 	assert(isVector(a) and isVector(b), "add: wrong argument types: (expected <vector3> and <vector3>)")
 	return new(a.x + b.x, a.y + b.y, a.z + b.z)
 end
 
 -- meta function to subtract vectors
-function vector.__sub(a, b)
+function vector3.__sub(a, b)
 	assert(isVector3(a) and isVector3(b), "sub: wrong argument types: (expected <vector3> and <vector3>)")
 	return new(a.x - b.x, a.y - b.y, a.z - b.z)
 end
 
 -- meta function to multiply vectors
-function vector.__mul(a, b)
+function vector3.__mul(a, b)
 	if type(a) == 'number' then 
 		return new(a * b.x, a * b.y, a * b.z)
 	elseif type(b) == 'number' then
@@ -103,25 +103,25 @@ function vector.__mul(a, b)
 end
 
 -- meta function to divide vectors
-function vector.__div(a, b)
+function vector3.__div(a, b)
 	assert(isVector3(a) and type(b) == "number", "div: wrong argument types (expected <vector3> and <number>)")
 	return new(a.x / b, a.y / b, a.z / b)
 end
 
 -- meta function to check if vectors have the same values
-function vector.__eq(a, b)
+function vector3.__eq(a, b)
 	assert(isVector3(a) and isVector3(b), "eq: wrong argument types (expected <vector3> and <vector3>)")
 	return a.x == b.x and a.y == b.y and a.z == b.z
 end
 
 -- meta function to change how vectors appear as string
 -- ex: print(vector(2,8)) - this prints '(2,8)'
-function vector:__tostring()
+function vector3:__tostring()
 	return "(" .. self.x .. ", " .. self.y .. ", " .. self.z .. ")"
 end
 
 -- get the distance between two vectors
-function vector.dist(a, b)
+function vector3.dist(a, b)
 	assert(isVector3(a) and isVector3(b), "dist: wrong argument types (expected <vector3> and <vector3>)")
 	local dx = b.x - a.x
 	local dy = b.y - a.y
@@ -130,14 +130,14 @@ function vector.dist(a, b)
 end
 
 -- return the dot product of the vector
-function vector:dot(v)
+function vector3:dot(v)
 	assert(isVector3(v), "dot: wrong argument type (expected <vector3>, got "..type(v)..")")
 	return self.x * v.x + self.y * v.y + self.z * v.z
 end
 
 
 -- normalize the vector (give it a magnitude of 1)
-function vector:norm()
+function vector3:norm()
 	local m = self:getMag()
 	if m ~= 0 then
 		self:replace(self / m)
@@ -146,7 +146,7 @@ function vector:norm()
 end
 
 -- limit the vector to a certain magnitude
-function vector:limit(max)
+function vector3:limit(max)
 	assert(type(max) == 'number', "limit: wrong argument type (expected <number>)")
 	local mSq = self:magSq()
 	if mSq > max^2 then
@@ -156,7 +156,7 @@ function vector:limit(max)
 end
 
 -- Clamp each axis between max and min's corresponding axis
-function vector:clamp(min3, max3)
+function vector3:clamp(min3, max3)
 	assert(isVector(min) and isVector(max), "clamp: wrong argument type (expected <vector3> and <vector3>)")
 	local x = math.min( math.max( self.x, min.x ), max.x )
 	local y = math.min( math.max( self.y, min.y ), max.y )
@@ -167,7 +167,7 @@ end
 
 
 -- returns the smallest angle between the two vectors
-function vector:angleDiff(v)
+function vector3:angleDiff(v)
 	assert(isVector3(v), "angleDiff: wrong argument type (expected <vector3>, got " .. type(v) .. ")")
 	local dot = self:dot(v)
 	local mag1 = self:getMag()
@@ -181,12 +181,12 @@ end
 
 
 -- return x and y of vector as a regular array
-function vector:array()
+function vector3:array()
 	return {self.x, self.y, self.z}
 end
 
 -- return x and y of vector, unpacked from table
-function vector:unpack()
+function vector3:unpack()
 	return self.x, self.y, self.z
 end
 
