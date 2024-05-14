@@ -42,19 +42,19 @@ function vector3:set(x, y, z)
 	return self
 end
 
--- replace the values of a vector with the values of another vector
+-- replace the values of a vector with the values of another vector3
 function vector3:replace(v)
 	assert(isVector3(v), "replace: wrong argument type: (expected <vector3>, got "..type(v)..")")
 	self.x, self.y, self.z = v.x, v.y, v.z
 	return self
 end
 
--- returns a copy of a vector
+-- returns a copy of a vector3
 function vector3:clone()
 	return new(self.x, self.y, self.z)
 end
 
--- get the magnitude of a vector
+-- get the magnitude of a vector3
 function vector3:getMag()
 	return math.sqrt(self.x^2 + self.y^2 + self.z^2)
 end
@@ -148,20 +148,10 @@ end
 -- limit the vector to a certain magnitude
 function vector3:limit(max)
 	assert(type(max) == 'number', "limit: wrong argument type (expected <number>)")
-	local mSq = self:magSq()
-	if mSq > max^2 then
+	local m = self:getMag()
+	if m > max then
 		self:setMag(max)
 	end
-	return self
-end
-
--- Clamp each axis between max and min's corresponding axis
-function vector3:clamp(min3, max3)
-	assert(isVector(min) and isVector(max), "clamp: wrong argument type (expected <vector3> and <vector3>)")
-	local x = math.min( math.max( self.x, min.x ), max.x )
-	local y = math.min( math.max( self.y, min.y ), max.y )
-	local z = math.min( math.max( self.z, min.z ), max.z )
-	self:set(x, y, z)
 	return self
 end
 

@@ -6,7 +6,7 @@ numbercurve.__index = numbercurve
 
 
 -- check if an object is a numbercurve
-local function isnumbercurve(t)
+local function isNumbercurve(t)
 	return getmetatable(t) == numbercurve
 end
 
@@ -80,5 +80,5 @@ end
 
 -- pack up and return module
 module.new = new
-module.isnumbercurve = isnumbercurve
+module.isnumbercurve = isNumbercurve
 return setmetatable(module, {__call = function(_, ...) return new(...) end})

@@ -172,7 +172,7 @@ table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "set";
 	["Arguments"] = {"x", "y"};
-	["Description"] = "Sets the x and y value of the vector. If a is a vector, that vector's values will be copied instead.";
+	["Description"] = "Sets the x and y value of the vector. If 'x' is a vector, that vector's values will be copied instead.";
 })
 
 table.insert(content, {
@@ -240,7 +240,7 @@ table.insert(content, {
 	["Type"] = "Constructor";
 	["Name"] = "__tostring";
 	["Arguments"] = {};
-	["Description"] = "Prints the color in the form (r,g,b) where r, g and b are values from 0 to 255.";
+	["Description"] = "Prints the color in the form (x,y,z).";
 })
 
 table.insert(content, {
