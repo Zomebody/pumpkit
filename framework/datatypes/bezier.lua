@@ -65,10 +65,20 @@ new = function(...)
 	}
 	for i = 1, #t do
 		assert(vector.isVector(t[i]), "bezier.new(...) only accepts vectors or a table of vectors (got " .. type(t[i]) .. ")")
-		Obj.Points[i] = vector(t[i])
+		Obj.Points[i] = vector(t[i].x, t[i].y)
 	end
 
 	return setmetatable(Obj, bezier)
+end
+
+-- meta function to add a vector to a bezier to offset the bezier
+function bezier.__add(a, b)
+	assert(isBezier(a) and vector.isVector(b), "add: wrong argument types: (expected <bezier> and <vector>)")
+	local points = {}
+	for i = 1, #a.Points do
+		points[i] = a.Points[i] + b
+	end
+	return new(points)
 end
 
 

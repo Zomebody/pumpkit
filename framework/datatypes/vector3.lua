@@ -80,7 +80,7 @@ end
 -- meta function to add vectors together
 -- ex: (vector(5,6) + vector(6,5)) is the same as vector(11,11)
 function vector3.__add(a, b)
-	assert(isVector(a) and isVector(b), "add: wrong argument types: (expected <vector3> and <vector3>)")
+	assert(isVector3(a) and isVector3(b), "add: wrong argument types: (expected <vector3> and <vector3>)")
 	return new(a.x + b.x, a.y + b.y, a.z + b.z)
 end
 
@@ -135,6 +135,13 @@ function vector3:dot(v)
 	return self.x * v.x + self.y * v.y + self.z * v.z
 end
 
+function vector3:cross(v)
+	return new(
+		self.y * v.z - self.z * v.y,
+		self.z * v.x - self.x * v.z,
+		self.x * v.y - self.y * v.x
+	)
+end
 
 -- normalize the vector (give it a magnitude of 1)
 function vector3:norm()

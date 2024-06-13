@@ -49,6 +49,13 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Method";
+	["Name"] = "circumcenter";
+	["Arguments"] = {};
+	["Description"] = "Returns the middle point of the triangle followed by the radius of the circle from that point which perfectly encloses the triangle.";
+})
+
+table.insert(content, {
+	["Type"] = "Method";
 	["Name"] = "clone";
 	["Arguments"] = {};
 	["Description"] = "Creates and returns a new triangle with the same structure.";
