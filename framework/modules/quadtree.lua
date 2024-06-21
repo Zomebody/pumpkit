@@ -79,7 +79,7 @@ function Quadtree:findClosestItem(position, closestDis)
 	local closestDistance = closestDis
 	-- first check current quadtree's items
 	for i = 1, #self.Items do
-		local dis = (self.Items[i].Position - position):getMag()
+		local dis = position:dist(self.Items[i].Position) --(self.Items[i].Position - position):getMag()
 		if dis < closestDistance then
 			closestItem = self.Items[i]
 			closestDistance = dis
@@ -92,7 +92,7 @@ function Quadtree:findClosestItem(position, closestDis)
 		if circleIntersectsRectangle(position, closestDistance, self.Splits[i].Position, self.Splits[i].Position + self.Splits[i].Size) then
 			local closestChildItem = self.Splits[i]:findClosestItem(position, closestDistance)
 			if closestChildItem ~= nil then
-				local splitDistance = (closestChildItem.Position - position):getMag()
+				local splitDistance = position:dist(closestChildItem.Position) --(closestChildItem.Position - position):getMag()
 				if splitDistance < closestDistance then
 					closestItem = closestChildItem
 					closestDistance = splitDistance
@@ -128,7 +128,7 @@ function Quadtree:findInRange(position, radius, dict)
 	local Item = nil
 	for i = 1, #self.Items do
 		Item = self.Items[i]
-		if (Item.Position - position):getMag() - Item.Radius <= radius then
+		if position:dist(Item.Position) - Item.Radius <= radius then
 			--itemsInRange[#itemsInRange + 1] = Item.Item
 			dict[Item.Item] = true
 		end
@@ -166,7 +166,7 @@ function Quadtree:findAt(position, dict)
 	local Item = nil
 	for i = 1, #self.Items do
 		Item = self.Items[i]
-		if (Item.Position - position):getMag() <= Item.Radius then
+		if position:dist(Item.Position) <= Item.Radius then
 			dict[Item.Item] = true
 		end
 	end
