@@ -40,6 +40,9 @@ end
 
 ----------------------------------------------------[[ == METHODS == ]]----------------------------------------------------
 
+-- TODO: theScene must be a scene of scene3
+-- also: create a 3d shader for if you're using a scene3
+
 function module:setScene(theScene)
 	assert(scene.isScene(theScene) or theScene == nil, "world:setScene(obj) only accepts a scene instance or nil.")
 	
@@ -97,13 +100,11 @@ end
 
 
 function module:render()
-	--if self.Background.Image ~= nil then
-		-- if quad, draw quad
-		-- otherwise, draw image and stretch to screen bounds
-	--end
 	if self.CurrentScene ~= nil then
 		-- draw the scene
+		-- if it's a scene3, set the shader here to a 3d shader
 		self.CurrentScene:draw()
+		-- if it's a scene3, clear the shader here
 	end
 end
 

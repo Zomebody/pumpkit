@@ -34,6 +34,7 @@ function load()
 	scene = require(getpath(here, "../framework/modules/scene"))
 	camera = require(getpath(here, "../framework/modules/camera"))
 	entity = require(getpath(here, "../framework/modules/entity"))
+	network = require(getpath(here, "../framework/modules/network"))
 
 	-- initialization
 	callbacks:initialize()
