@@ -38,12 +38,9 @@ function network:startServer(ip, slots)
 			local socket = require("socket")
 			local ip, clientSlot = ...
 
-			print("ip and client slot", ip, clientSlot)
-
 			local serverSocket = socket.tcp()
 			serverSocket:bind(ip, 0)
 			serverSocket:listen(1)
-			--serverSocket:setoption("tcp-nodelay", true)
 
 			local _, port = serverSocket:getsockname()
 			love.thread.getChannel("socket_port"):push(port)
@@ -51,10 +48,12 @@ function network:startServer(ip, slots)
 			local client = serverSocket:accept()
 			local username = client:receive("*l") -- the first thing a client always sends is their username!
 			love.thread.getChannel("username" .. clientSlot):push(username)
+			love.thread.getChannel("client_sent" .. clientSlot):push("connect")
+			love.thread.getChannel("client_sent" .. clientSlot):push("|")
 
-			--client:settimeout(0)
-			--serverSocket:settimeout(0)
-			while true do
+			local clientWantsDisconnect = false
+
+			while not clientWantsDisconnect do
 				-- check if you need to break out of the server loop
 				local event = love.thread.getChannel("alive" .. tostring(port)):pop()
 				if event ~= nil then
@@ -70,8 +69,13 @@ function network:startServer(ip, slots)
 				repeat
 					counter = counter + 1
 					readData, err = client:receive("*l")
+
+					if readData ~= nil and readData == "disconnect" then
+						clientWantsDisconnect = true
+						love.thread.getChannel("alive" .. tostring(port)):release()
+					end
 					
-					if readData ~= nil then
+					if readData ~= nil and (not clientWantsDisconnect) then
 						for word in string.gmatch(readData, "([^|]+)") do -- split string on a 'pipe' character
 							love.thread.getChannel("client_sent" .. clientSlot):push(word) -- push individual arguments into the queue
 						end
@@ -93,8 +97,11 @@ function network:startServer(ip, slots)
 			end
 
 			love.thread.getChannel("username" .. clientSlot):pop() -- pop the username to indicate to the outside world that this client has disconnected from the given socket
-			client:send("disconnect" .. string.char(10)) -- inform the client of the connection loss
+			if not clientWantsDisconnect then
+				client:send("disconnect" .. string.char(10)) -- inform the client of the connection loss
+			end
 
+			print("closing client")
 			client:close()
 		]=])
 
@@ -194,7 +201,6 @@ function network:connect(ip, port, username, callback)
 					if isFirst then
 						isFirst = false
 						if word == "disconnect" then
-							print("setting disconnected to true")
 							disconnected = true
 						end
 					end
@@ -253,7 +259,7 @@ function network:connect(ip, port, username, callback)
 					end
 					isFirst = false
 					if item ~= nil then
-						if item == "|" and #args > 1 then -- #args should always be at least 2, but just in case it's no issue in putting this here
+						if item == "|" and #args >= 1 then -- #args should always be at least 2, but just in case it's no issue in putting this here
 							ended = true
 							local eventName = table.remove(args, 1)
 							if Obj.Events[eventName] ~= nil then
@@ -407,11 +413,12 @@ end
 function client:send(eventName, ...)
 	assert(type(eventName) == "string", "client:send(eventName, ...) expects 'eventName' to be a string.")
 	assert(eventName ~= "disconnect", "client:send(\"disconnect\") is a reserved event and cannot be used.")
+	assert(eventName ~= "connect", "client:send(\"connect\") is a reserved event and cannot be used.")
 	assert(eventName:find("|") == nil, "client:send(eventName, ...) expects 'eventName' to contain no '|' characters.")
 	local args = {...}
 	local argsString = eventName .. "|"
 	for i = 1, #args do
-		assert(tostring(args[i]):find("|") == nil, "client:send(username, eventName, ...) expects all arguments to contain no '|' character.")
+		assert(tostring(args[i]):find("|") == nil, "client:send(eventName, ...) expects all arguments to contain no '|' character.")
 		if i ~= #args then
 			argsString = argsString .. tostring(args[i]) .. "|"
 		else
@@ -449,8 +456,9 @@ love.update = function(...)
 				local args = {}
 				repeat
 					item = love.thread.getChannel(argsChannel):pop()
+					print(item)
 					if item ~= nil then
-						if item == "|" and #args > 1 then -- #args should always be at least 2, but just in case it's no issue in putting this here
+						if item == "|" and #args >= 1 then -- #args should always be at least 2, but just in case it's no issue in putting this here
 							ended = true
 							local eventName = table.remove(args, 1)
 							if ActiveServers[i].Events[eventName] ~= nil then
