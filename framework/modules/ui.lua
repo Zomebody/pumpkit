@@ -1,6 +1,7 @@
 
 ----------------------------------------------------[[ == IMPORTS == ]]----------------------------------------------------
 
+local initialized = false
 local connection = require("framework.connection")
 local getpath = require("framework.getpath")
 --local path = ... -- path is now a string representing the path to the current directory
@@ -31,7 +32,7 @@ local resizedElementsCache = {} -- cache with resized elements in case an elemen
 	- obj: a list of elements to focus the keyboard on
 	- focusMode: 'key' / 'click' / nil
 		> 'key': keep keyboard focus until one of the keys in 'modeArg' is pressed down
-			> modeArg: the keycode string (the key does not trigger OnKeyPressed)
+			> modeArg: the keycode string (the key does not trigger KeyEntered)
 		> 'click': keep keyboard focus until the mouse is pressed down
 			> modeArg: 'self', 'other', nil
 				- self: keep keyboardFocus until you click on a focused element
@@ -183,6 +184,8 @@ end
 
 -- connects love2d events to UI element events
 function module:initialize() -- autoRender
+	if initialized then return end
+	initialized = true
 	--if autoRender == nil then autoRender = true end
 	--[[
 	if not self.Initialized then
@@ -481,10 +484,10 @@ function module:initialize() -- autoRender
 				end
 			elseif self.KeyboardFocusMode[2] == scancode then
 				self:focusKeyboard() -- release the keyboard
-				return -- return early to prevent OnKeyEntered from triggering (not that KeyboardFocus would have any indexes anyway but oh well)
+				return -- return early to prevent KeyEntered from triggering (not that KeyboardFocus would have any indexes anyway but oh well)
 			end
 		end
-		-- trigger OnKeyEntered for all focused UI elements
+		-- trigger KeyEntered for all focused UI elements
 		for i = 1, #self.KeyboardFocus do
 			if self.KeyboardFocus[i].Events.KeyEntered ~= nil then
 				connection.doEvents(self.KeyboardFocus[i].Events.KeyEntered, key, scancode)
@@ -1442,7 +1445,7 @@ function UIBase:hasTag(tag)
 end
 
 
--- return true if this element has keyboard focus (listening to OnKeyPressed)
+-- return true if this element has keyboard focus (listening to KeyEntered)
 function UIBase:hasKeyboardFocus()
 	for i = 1, #module.KeyboardFocus do
 		if module.KeyboardFocus[i] == self then

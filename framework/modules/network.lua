@@ -6,11 +6,11 @@ network.__index = network
 
 
 local client = {}
-client.__index = {}
+client.__index = client
 
 
 local server = {}
-server.__index = {}
+server.__index = server
 
 
 
@@ -19,9 +19,9 @@ local serversCreated = 0
 
 
 function network:startServer(ip, slots)
-	assert(type(ip) == "string", "network:startServer(ip, port, slots) expects 'ip' to be of type 'string'.")
-	assert(type(slots) == "number", "network:startServer(ip, port, slots) expects 'slots' to be of type 'number'.")
-	assert(slots > 0, "network:startServer(ip, port, slots) expects 'slots' to be at least 1 or higher.")
+	assert(type(ip) == "string", "network:startServer(ip, slots) expects 'ip' to be of type 'string'.")
+	assert(type(slots) == "number", "network:startServer(ip, slots) expects 'slots' to be of type 'number'.")
+	assert(slots > 0, "network:startServer(ip, slots) expects 'slots' to be at least 1 or higher.")
 
 	serversCreated = serversCreated + 1
 
@@ -38,17 +38,17 @@ function network:startServer(ip, slots)
 			local socket = require("socket")
 			local ip, clientSlot = ...
 
+			print("ip and client slot", ip, clientSlot)
+
 			local serverSocket = socket.tcp()
 			serverSocket:bind(ip, 0)
 			serverSocket:listen(1)
 
-			server:settimeout(0)
-			client:settimeout(0)
-
 			local _, port = serverSocket:getsockname()
-			love.thread.getChannel("socket_port"):push()
+			love.thread.getChannel("socket_port"):push(port)
 
 			local client = serverSocket:accept()
+			--client:settimeout(2)
 			local username = client:receive("*l") -- the first thing a client always sends is their username!
 			love.thread.getChannel("username" .. clientSlot):push(username)
 
@@ -61,15 +61,19 @@ function network:startServer(ip, slots)
 				end
 
 				-- keep receiving data from the client until there is no more data to read or too much data has been read temporarily
+				serverSocket:settimeout(2)
 				local readData = nil
 				local counter = 0
 				repeat
 					counter = counter + 1
-					readData = client:receive("*l")
+					readData, err = client:receive("*l")
+					print(err)
 				until readData == nil or counter >= 10
 
 				if readData ~= nil then
-					for word in string.gmatch(str, "([^|]+)") do -- split string on a 'pipe' character
+					print("readData:", readData)
+					for word in string.gmatch(readData, "([^|]+)") do -- split string on a 'pipe' character
+					print(word)
 						love.thread.getChannel("client_sent" .. clientSlot):push(word) -- push individual arguments into the queue
 					end
 					love.thread.getChannel("client_sent" .. clientSlot):push("|") -- signal the end of the data transmission from the client
@@ -119,19 +123,20 @@ function network:startServer(ip, slots)
 		)
 	end
 
-	
-
 	setmetatable(Obj, server)
 	table.insert(ActiveServers, Obj)
 	return Obj
 end
 
 
-
-function network:connect(ip, port, username)
+local totalConnectionsAttempted = 0
+function network:connect(ip, port, username, callback)
 	assert(type(ip) == "string", "network:connect(ip, port, username) expects 'ip' to be of type 'string'.")
-	assert(type(ip) == "number", "network:connect(ip, port, username) expects 'port' to be of type 'number'.")
-	assert(type(ip) == "string", "network:connect(ip, port, username) expects 'username' to be of type 'string'.")
+	assert(type(port) == "number", "network:connect(ip, port, username) expects 'port' to be of type 'number'.")
+	assert(type(username) == "string", "network:connect(ip, port, username) expects 'username' to be of type 'string'.")
+
+	totalConnectionsAttempted = totalConnectionsAttempted + 1
+	local curAttempt = totalConnectionsAttempted
 
 	local Obj = {
 		["Username"] = username;
@@ -140,12 +145,23 @@ function network:connect(ip, port, username)
 
 	local clientThread = love.thread.newThread([=[
 		local socket = require("socket")
-		local ip, port, username = ...
+		local ip, port, username, totConAttempt = ...
+		local client = socket.tcp()
 
-		local success = client:connect(ip, port)
+		local success, err = client:connect(ip, port)
+		print("connected:", success)
+		if success == 1 then
+			love.thread.getChannel("server_connect_status" .. tostring(totConAttempt)):push(true)
+		else
+			love.thread.getChannel("server_connect_status" .. tostring(totConAttempt)):push(err)
+			return
+		end
+
 		client:setoption("tcp-nodelay", true)
 
 		client:send(username)
+
+		print("entering client while loop")
 
 		while true do
 			-- send any client event data over to the server
@@ -154,6 +170,7 @@ function network:connect(ip, port, username)
 			repeat
 				sendData = love.thread.getChannel("client_send"):pop()
 				if sendData ~= nil then
+					print("sendData:", sendData)
 					client:send(sendData .. string.char(10))
 					if sendData == "disconnect" then
 						disconnected = true
@@ -172,7 +189,19 @@ function network:connect(ip, port, username)
 		end
 	]=])
 
-	clientThread:start(ip, port, username)
+	local t
+	t = task.spawn(
+		function()
+			local conStatus = love.thread.getChannel("server_connect_status" .. tostring(curAttempt)):pop()
+			if conStatus ~= nil then
+				callback(conStatus) -- either 'true' or a string with the error
+				t:stop()
+			end
+			
+		end,
+		0, math.huge, 0
+	)
+	clientThread:start(ip, port, username, totalConnectionsAttempted)
 
 	return setmetatable(Obj, client)
 end
@@ -215,6 +244,12 @@ function server:getOpenPorts()
 		t[i] = self.OpenPorts[i]
 	end
 	return t
+end
+
+
+
+function server:nextOpenPort()
+	return self.OpenPorts[1]
 end
 
 
@@ -295,6 +330,7 @@ function client:send(eventName, ...)
 			argsString = argsString .. tostring(args[i])
 		end
 	end
+	print(argsString)
 	love.thread.getChannel("client_send"):push(argsString)
 end
 
@@ -311,6 +347,7 @@ local oldUpdate = love.update or function() end
 
 love.update = function(...)
 	oldUpdate(...)
+
 	for i = 1, #ActiveServers do
 		-- look into the queue of event arguments of every individual client connected to that server
 		for slot, username in pairs(ActiveServers[i].ClientToName) do
