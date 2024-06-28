@@ -35,81 +35,113 @@ function network:startServer(ip, slots)
 	-- for each slot, create a thread that accepts one client on that slot/port and listens to information they send over, and sends them information back when needed
 	for i = 1, slots do
 		local slotThread = love.thread.newThread([=[
+			require("love.timer")
 			local socket = require("socket")
 			local ip, clientSlot = ...
 
 			local serverSocket = socket.tcp()
-			serverSocket:bind(ip, 0)
+			local s, e = serverSocket:bind(ip, 0)
 			serverSocket:listen(1)
 
 			local _, port = serverSocket:getsockname()
 			love.thread.getChannel("socket_port"):push(port)
 
-			local client = serverSocket:accept()
-			local username = client:receive("*l") -- the first thing a client always sends is their username!
-			love.thread.getChannel("username" .. clientSlot):push(username)
-			love.thread.getChannel("client_sent" .. clientSlot):push("connect")
-			love.thread.getChannel("client_sent" .. clientSlot):push("|")
+			local portIsOpen = true
 
-			local clientWantsDisconnect = false
+			while portIsOpen do
 
-			while not clientWantsDisconnect do
-				-- check if you need to break out of the server loop
-				local event = love.thread.getChannel("alive" .. tostring(port)):pop()
-				if event ~= nil then
+				-- wait for a client to connect or until the server is closed
+				local client = nil
+				serverSocket:settimeout(0.5)
+				repeat
+					client = serverSocket:accept()
+				until client ~= nil or love.thread.getChannel("alive" .. tostring(port)):peek() ~= nil
+
+				if love.thread.getChannel("alive" .. tostring(port)):peek() ~= nil or client == nil then -- stop the thread because the server got killed before a player (re)connected to this slot
+					portIsOpen = false
 					love.thread.getChannel("alive" .. tostring(port)):release()
-					break
 				end
 
-				-- keep receiving data from the client until there is no more data to read or too much data has been read temporarily
 				
-				local readData = nil
-				local counter = 0
-				client:settimeout(0.1)
-				repeat
-					counter = counter + 1
-					readData, err = client:receive("*l")
+				local username
+				local clientWantsDisconnect = false
 
-					if readData ~= nil and readData == "disconnect" then
-						clientWantsDisconnect = true
+				if portIsOpen then
+					username = client:receive("*l") -- the first thing a client always sends is their username!
+					love.thread.getChannel("username" .. clientSlot):pop() -- there may be an empty placeholder string in the channel to keep the task active that sets ClientToName
+					love.thread.getChannel("username" .. clientSlot):push(username)
+					love.thread.getChannel("client_sent" .. clientSlot):push("connect")
+					love.thread.getChannel("client_sent" .. clientSlot):push("|")
+				end
+				
+
+				while (not clientWantsDisconnect) and portIsOpen do
+					love.timer.sleep(1/1000)
+					-- check if you need to break out of the server loop
+					local event = love.thread.getChannel("alive" .. tostring(port)):pop()
+					if event ~= nil then
+						portIsOpen = false
 						love.thread.getChannel("alive" .. tostring(port)):release()
+						break
 					end
+
+					-- keep receiving data from the client until there is no more data to read or too much data has been read temporarily
 					
-					if readData ~= nil and (not clientWantsDisconnect) then
-						for word in string.gmatch(readData, "([^|]+)") do -- split string on a 'pipe' character
-							love.thread.getChannel("client_sent" .. clientSlot):push(word) -- push individual arguments into the queue
+					local readData = nil
+					local counter = 0
+					client:settimeout(0.1)
+					repeat
+						counter = counter + 1
+						readData, err = client:receive("*l")
+
+						if readData ~= nil and readData == "disconnect" then
+							clientWantsDisconnect = true
+							love.thread.getChannel("alive" .. tostring(port)):release()
 						end
-						love.thread.getChannel("client_sent" .. clientSlot):push("|") -- signal the end of the data transmission from the client
-					end
-				until readData == nil or counter >= 10
+						
+						if readData ~= nil and (not clientWantsDisconnect) then
+							for word in string.gmatch(readData, "([^|]+)") do -- split string on a 'pipe' character
+								love.thread.getChannel("client_sent" .. clientSlot):push(word) -- push individual arguments into the queue
+							end
+							love.thread.getChannel("client_sent" .. clientSlot):push("|") -- signal the end of the data transmission from the client
+						end
+					until readData == nil or counter >= 10 or clientWantsDisconnect
 
-				
+					
 
-				-- send any server event data over to the client
-				local sendData = nil
-				repeat
-					sendData = love.thread.getChannel("server_send" .. clientSlot):pop()
-					if sendData ~= nil then
-						client:send(sendData .. string.char(10))
-					end
-				until sendData == nil
+					-- send any server event data over to the client
+					local sendData = nil
+					repeat
+						sendData = love.thread.getChannel("server_send" .. clientSlot):pop()
+						if sendData ~= nil then
+							client:send(sendData .. string.char(10))
+						end
+					until sendData == nil
 
+				end
+
+				if portIsOpen then
+					love.thread.getChannel("username" .. clientSlot):push("") -- push an empty string to keep the channel active to signal that this thread is still running
+				end
+				love.thread.getChannel("username" .. clientSlot):pop() -- pop the username to indicate to the outside world that this client has disconnected from the given socket
+				if (not clientWantsDisconnect) and client ~= nil then
+					client:send("disconnect" .. string.char(10)) -- inform the client of the connection loss
+				end
+
+				if client ~= nil then
+					client:close()
+				end
 			end
-
-			love.thread.getChannel("username" .. clientSlot):pop() -- pop the username to indicate to the outside world that this client has disconnected from the given socket
-			if not clientWantsDisconnect then
-				client:send("disconnect" .. string.char(10)) -- inform the client of the connection loss
-			end
-
-			print("closing client")
-			client:close()
 		]=])
 
 		-- run the server thread. A port is chosen automatically, which is stored in a channel. Fetch it from the channel to store it on this side
 		local slot = tostring(i)
 		slotThread:start(ip, slot)
 		local port = love.thread.getChannel("socket_port"):demand()
-		love.thread.getChannel("socket_port"):release()
+		local topItem = love.thread.getChannel("socket_port"):peek()
+		if topItem == nil then
+			love.thread.getChannel("socket_port"):release()
+		end
 		Obj.OpenPorts[i] = port
 		
 		-- spawn a task that awaits until a client has connected to the socket in the thread
@@ -118,11 +150,13 @@ function network:startServer(ip, slots)
 		local t
 		t = task.spawn(
 			function()
-				-- while the player is connected on slot 'X', the usernameX channel will contain their username. Once it's empty, the player disconnected
+				-- while the player is connected on slot 'X', the usernameX channel will contain their username. Once it's an empty string, the player disconnected. If the channel is empty, the server closed
 				local username = love.thread.getChannel("username" .. slot):peek()
 				if username ~= nil then
 					Obj.ClientToName[i] = username
 					nameInitialized = true
+				elseif nameInitialized and username == "" then
+					Obj.ClientToName[i] = nil -- player disconnected but port is still open, no remove the name but don't stop the task yet
 				elseif nameInitialized then
 					Obj.ClientToName[i] = nil
 					t:stop()
@@ -146,6 +180,7 @@ function network:connect(ip, port, username, callback)
 	assert(type(ip) == "string", "network:connect(ip, port, username) expects 'ip' to be of type 'string'.")
 	assert(type(port) == "number", "network:connect(ip, port, username) expects 'port' to be of type 'number'.")
 	assert(type(username) == "string", "network:connect(ip, port, username) expects 'username' to be of type 'string'.")
+	assert(username ~= "", "network:connect(ip, port, username) expects 'username' to be at least 1 or more characters long.")
 
 	totalConnectionsAttempted = totalConnectionsAttempted + 1
 	local curAttempt = totalConnectionsAttempted
@@ -156,6 +191,7 @@ function network:connect(ip, port, username, callback)
 	}
 
 	local clientThread = love.thread.newThread([=[
+		local timer = require("love.timer")
 		local socket = require("socket")
 		local ip, port, username, totConAttempt = ...
 		local client = socket.tcp()
@@ -174,6 +210,7 @@ function network:connect(ip, port, username, callback)
 		client:settimeout(0)
 
 		while true do
+			love.timer.sleep(1/1000)
 			-- send any client event data over to the server
 			local sendData = nil
 			local disconnected = false
@@ -350,8 +387,10 @@ function server:broadcast(eventName, ...)
 	end
 
 	for slot, username in pairs(self.ClientToName) do
-		local argsChannel = "server_send" .. tostring(slot)
-		love.thread.getChannel(argsChannel):push(argsString)
+		if username ~= "" then -- empty string as username indicates the thread for a slot is running because a player once connected, but they disconnected and are now waiting for a new client
+			local argsChannel = "server_send" .. tostring(slot)
+			love.thread.getChannel(argsChannel):push(argsString)
+		end
 	end
 	return true
 end
@@ -456,7 +495,6 @@ love.update = function(...)
 				local args = {}
 				repeat
 					item = love.thread.getChannel(argsChannel):pop()
-					print(item)
 					if item ~= nil then
 						if item == "|" and #args >= 1 then -- #args should always be at least 2, but just in case it's no issue in putting this here
 							ended = true
