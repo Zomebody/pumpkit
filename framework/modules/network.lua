@@ -97,6 +97,8 @@ function network:startServer(ip, slots)
 						if readData ~= nil and readData == "disconnect" then
 							clientWantsDisconnect = true
 							love.thread.getChannel("alive" .. tostring(port)):release()
+							love.thread.getChannel("client_sent" .. clientSlot):push("disconnect")
+							love.thread.getChannel("client_sent" .. clientSlot):push("|")
 						end
 						
 						if readData ~= nil and (not clientWantsDisconnect) then
@@ -338,7 +340,7 @@ function server:on(eventName, func)
 end
 
 
-
+-- TODO: what happens to any connected events? do they leak memory?
 function server:close()
 	-- remove self from ActiveServers
 	for i = 1, #ActiveServers do
@@ -366,8 +368,14 @@ end
 
 
 
-function server:nextOpenPort()
-	return self.OpenPorts[1]
+function server:nextFreePort()
+	for i = 1, #self.OpenPorts do
+		local username = love.thread.getChannel("username" .. tostring(i)):peek()
+		if username == nil or username == "" then
+			return self.OpenPorts[i]
+		end
+	end
+	return nil
 end
 
 
@@ -429,6 +437,9 @@ function server:kick(username)
 		if uname == username then
 			local argsChannel = "server_send" .. tostring(slot)
 			love.thread.getChannel(argsChannel):push("disconnect")
+			if self.Events["disconnect"] ~= nil then
+				connection.doEvents(self.Events["disconnect"], username)
+			end
 			return true
 		end
 	end
@@ -487,30 +498,31 @@ love.update = function(...)
 	for i = 1, #ActiveServers do
 		-- look into the queue of event arguments of every individual client connected to that server
 		for slot, username in pairs(ActiveServers[i].ClientToName) do
-			-- empty the queue and call the server events
-			local argsChannel = "client_sent" .. tostring(slot)
-			while love.thread.getChannel(argsChannel):peek() ~= nil do -- there's something in the channel, time to read it until the end-of-event argument is found
-				local ended = false
-				local item = nil
-				local args = {}
-				repeat
-					item = love.thread.getChannel(argsChannel):pop()
-					if item ~= nil then
-						if item == "|" and #args >= 1 then -- #args should always be at least 2, but just in case it's no issue in putting this here
-							ended = true
-							local eventName = table.remove(args, 1)
-							if ActiveServers[i].Events[eventName] ~= nil then
-								connection.doEvents(ActiveServers[i].Events[eventName], username, unpack(args)) -- fire event on the server
+			if username ~= "" then -- prevents an edge-case where a new user connects, sends the 'connect' event but their username is not updated until the next frame
+				-- empty the queue and call the server events
+				local argsChannel = "client_sent" .. tostring(slot)
+				while love.thread.getChannel(argsChannel):peek() ~= nil do -- there's something in the channel, time to read it until the end-of-event argument is found
+					local ended = false
+					local item = nil
+					local args = {}
+					repeat
+						item = love.thread.getChannel(argsChannel):pop()
+						if item ~= nil then
+							if item == "|" and #args >= 1 then -- #args should always be at least 2, but just in case it's no issue in putting this here
+								ended = true
+								local eventName = table.remove(args, 1)
+								if ActiveServers[i].Events[eventName] ~= nil then
+									connection.doEvents(ActiveServers[i].Events[eventName], username, unpack(args)) -- fire event on the server
+								end
+								-- clear arguments to prepare it for the next event
+								args = {}
+							else
+								args[#args + 1] = item
 							end
-							-- clear arguments to prepare it for the next event
-							args = {}
-						else
-							args[#args + 1] = item
 						end
-					end
-				until ended
+					until ended
+				end
 			end
-
 		end
 	end
 end

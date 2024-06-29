@@ -1,6 +1,6 @@
 
 local meta = {
-	["Name"] = "Scene";
+	["Name"] = "Camera";
 }
 
 local content = {}
