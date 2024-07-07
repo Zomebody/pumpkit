@@ -67,6 +67,20 @@ function Camera:updateTransform()
 end
 
 
+function Camera:move(x, y)
+	if vector.isVector(x) then
+		y = x.y
+		x = x.x
+	end
+	self.Position = self.Position + vector(x, y)
+	self:updateTransform()
+
+	if self.Events.Moved then
+		connection.doEvents(self.Events.Moved, x, y)
+	end
+end
+
+
 function Camera:moveTo(x, y)
 	if vector.isVector(x) then
 		y = x.y

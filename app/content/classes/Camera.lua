@@ -64,6 +64,13 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Method";
+	["Name"] = "move";
+	["Arguments"] = {"x", "y"};
+	["Description"] = "Translate the camera in world-space coordinates. You may also pass a vector instead of two separate coordinates.";
+})
+
+table.insert(content, {
+	["Type"] = "Method";
 	["Name"] = "moveTo";
 	["Arguments"] = {"x", "y"};
 	["Description"] = "Move the camera to the given world-space coordinates. You may also pass a vector instead of two separate coordinates.";

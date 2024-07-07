@@ -26,6 +26,13 @@ table.insert(content, {
 })
 
 table.insert(content, {
+	["Type"] = "Constructor";
+	["Name"] = "newProp";
+	["Arguments"] = {"image"};
+	["Description"] = "Creates a new Prop instance. Props are similar to entities except they have no states. As such, they have an 'Image' property containing the prop's image. They may have other properties too.";
+})
+
+table.insert(content, {
 	["Type"] = "Header";
 	["Name"] = "Methods";
 	["Description"] = "";

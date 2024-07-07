@@ -191,14 +191,22 @@ function Scene:at(x, y, filter) -- filter is either 'nil' (no filter), "creature
 		-- TODO: there must be a more optimal way than executing this multi-step if-statement for potentially hundreds of creatures/props in a scene
 		if filter == nil or (entity.isCreature(self.Entities[i]) and filter == "creature") or (entity.isProp(self.Entities[i]) and filter == "prop") then
 			Entity = self.Entities[i]
-			dx = Entity.Position.x - worldX
-			dy = Entity.Position.y - worldY
+			local pivotAdjustedPosX = Entity.Position.x - Entity.Pivot.x * Entity.ShapeSize.x
+			local pivotAdjustedPosY = Entity.Position.y - Entity.Pivot.y * Entity.ShapeSize.y
+			dx = worldX - pivotAdjustedPosX
+			dy = worldY - pivotAdjustedPosY
 			if Entity.Shape == "rectangle" then
-				if math.abs(dx) <= Entity.ShapeSize.x / 2 and math.abs(dy) <= Entity.ShapeSize.y / 2 then -- 'point within rectangle' check
+				if dx >= 0 and dx <= Entity.ShapeSize.x and dy >= 0 and dy <= Entity.ShapeSize.y then -- 'point within rectangle' check
 					return Entity
 				end
 			elseif Entity.Shape == "ellipse" then
-				if dx^2 / (Entity.ShapeSize.x / 2)^2 + dy^2 / (Entity.ShapeSize.y / 2)^2 <= 1 then -- 'point within ellipse' check
+				local rx = Entity.ShapeSize.x / 2
+				local ry = Entity.ShapeSize.y / 2
+				local cx = pivotAdjustedPosX + rx
+				local cy = pivotAdjustedPosY + ry
+				local ellipseDx = worldX - cx
+				local ellipseDy = worldY - cy
+				if (ellipseDx * ellipseDx) / (rx * rx) + (ellipseDy * ellipseDy) / (ry * ry) <= 1 then -- 'point within ellipse' check
 					return Entity
 				end
 			end
@@ -232,10 +240,14 @@ function Scene:draw()
 	love.graphics.origin()
 	love.graphics.applyTransform(trans)
 
-	-- draw the scene image
-	love.graphics.draw(self.SceneImage)
-
+	-- draw the scene
+	if self.Background ~= nil then
+		love.graphics.draw(self.Background)
+	end
 	self:drawEntities()
+	if self.Foreground ~= nil then
+		love.graphics.draw(self.Foreground)
+	end
 
 	-- reset graphics transform to previous state
 	love.graphics.pop()
@@ -344,13 +356,15 @@ end
 
 
 -- creates a new Scene object with the base properties of a Scene
-local function newScene(image, sceneCamera)
+local function newScene(sceneCamera, bgImage, fgImage)
 	assert(camera.isCamera(sceneCamera) or sceneCamera == nil, "scene.newScene(image, sceneCamera) only accepts a camera instance or nil for 'sceneCamera'")
 	module.TotalCreated = module.TotalCreated + 1
 
 	local Object = {
 		["Id"] = module.TotalCreated;
-		["SceneImage"] = image;
+		--["SceneImage"] = image;
+		["Background"] = bgImage;
+		["Foreground"] = fgImage;
 		["Camera"] = sceneCamera or camera.new();
 		["Entities"] = {}; -- sorted based on ZIndex first, then Position.y
 		--["Props"] = {}; -- sorted based on ZIndex first, then Position.y
@@ -365,9 +379,9 @@ end
 
 -- atlasImage is a spritesheet / image atlas with the tiles the map consists out of.
 -- grid is a 2d array of vectors representing which sprites should be drawn on which tiles of the grid
-function newTiledScene(atlasImage, grid, tileSize, sceneCamera)
-	assert(camera.isCamera(sceneCamera) or sceneCamera == nil, "scene.newTiledScene(atlasImage, grid, sceneCamera) only accepts a camera instance or nil for 'sceneCamera'")
-	assert(type(grid) == "table" and type(grid[1]) == "table" and vector.isVector(grid[1][1]), "scene.newTiledScene(atlasImage, grid, tileSize, sceneCamera) requires argument 'grid' to be a 2d array of vectors")
+function newTiledScene(sceneCamera, atlasImage, grid, tileSize)
+	assert(camera.isCamera(sceneCamera) or sceneCamera == nil, "scene.newTiledScene(sceneCamera, atlasImage, grid, tileSize) only accepts a camera instance or nil for 'sceneCamera'")
+	assert(type(grid) == "table" and type(grid[1]) == "table" and vector.isVector(grid[1][1]), "scene.newTiledScene(sceneCamera, atlasImage, grid, tileSize) requires argument 'grid' to be a 2d array of vectors")
 	module.TotalCreated = module.TotalCreated + 1
 
 	-- for each tile in the atlasImage, create a Quad and store it in a 2D array.
