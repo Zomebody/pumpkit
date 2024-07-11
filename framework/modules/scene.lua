@@ -284,7 +284,7 @@ vec4 selfColor;
 
 vec4 effect(vec4 col, Image texture, vec2 texturePos, vec2 screenPos) {
 	// get color of pixels:
-	selfColor = texture2D(texture, texturePos);
+	selfColor = texture2D(texture, texturePos) * col;
 	if (selfColor.a == 0.0f) { // pixel may only be part of outline if the pixel itself is transparent
 		alpha = 0;
 		alpha += texture2D(texture, texturePos + vec2(thickness.x, 0.0f)).a;

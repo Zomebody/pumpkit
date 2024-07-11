@@ -7,6 +7,8 @@ function load()
 	-- data types
 	vector = require(getpath(here, "../framework/datatypes/vector"))
 	vector3 = require(getpath(here, "../framework/datatypes/vector3"))
+	matrix3 = require(getpath(here, "../framework/datatypes/matrix3"))
+	matrix4 = require(getpath(here, "../framework/datatypes/matrix4"))
 	line = require(getpath(here, "../framework/datatypes/line"))
 	polygon = require(getpath(here, "../framework/datatypes/polygon"))
 	triangle = require(getpath(here, "../framework/datatypes/triangle"))

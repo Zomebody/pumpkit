@@ -60,13 +60,39 @@ function vector3:getMag()
 end
 
 
-
 -- set the magnitude of a vector
 function vector3:setMag(mag)
 	self:norm()
 	local v = self * mag
 	self:replace(v)
 	return self
+end
+
+
+-- rotate the vector3 along the x-axis, then y-axis, then z-axis
+function vector3:rotate(rx, ry, rz)
+	-- x-axis rotation
+	local cosX = math.cos(rx)
+	local sinX = math.sin(rx)
+	local y = cosX * self.y - sinX * self.z
+	local z = sinX * self.y + cosX * self.z
+	local result = new(self.x, y, z)
+
+	-- y-axis rotation
+	local cosY = math.cos(ry)
+	local sinY = math.sin(ry)
+	local x = cosY * result.x + sinY * result.z
+	z = -sinY * result.x + cosY * result.z
+	result = new(x, result.y, z) -- TODO: probably just set the properties instead of creating a new vector
+
+	-- z-axis rotation
+	local cosZ = math.cos(rz)
+	local sinZ = math.sin(rz)
+	x = cosZ * result.x - sinZ * result.y
+	y = sinZ * result.x + cosZ * result.y
+	result = new(x, y, result.z) -- TODO: probably just set the properties instead of creating a new vector
+
+	return result
 end
 
 

@@ -1,43 +1,11 @@
 
 ----------------------------------------------------[[ == BASE OBJECTS == ]]----------------------------------------------------
 
-local module = {
-	["TotalCreated"] = 0;
-	["AllCameras"] = {}; -- list of all cameras that have been created
-}
+local module = {}
 
-local Camera = {}
-Camera.__index = Camera
-Camera.__tostring = function(tab) return "{Camera: " .. tostring(tab.Id) .. "}" end
-
-
-
-----------------------------------------------------[[ == HELPER FUNCTIONS == ]]----------------------------------------------------
-
-local function rotateVec3(v, rotation)
-	-- apply yaw
-	local cy = math.cos(rotation.y)
-	local sy = math.sin(rotation.y)
-	local x1 = cy * v.x + sy * v.z
-	local z1 = cy * v.z - sy * v.x
-	local y1 = v.y
-
-	-- apply pitch
-	local cx = math.cos(rotation.x)
-	local sx = math.sin(rotation.x)
-	local y2 = cx * y1 - sx * z1
-	local z2 = sx * y1 + cx * z1
-	local x2 = x1
-
-	-- apply roll
-	local cz = math.cos(rotation.z)
-	local sz = math.sin(rotation.z)
-	local x3 = cz * x2 - sz * y2
-	local y3 = sz * x2 + cz * y2
-	local z3 = z2
-
-	return vector3(x3, y3, z3)
-end
+local Camera3 = {}
+Camera3.__index = Camera3
+Camera3.__tostring = function(tab) return "{Camera3: " .. tostring(tab.Id) .. "}" end
 
 
 
@@ -50,7 +18,40 @@ end
 
 
 
-function Camera:move(x, y, z)
+
+function Camera3:moveTo(x, y, z, rx, ry, rz)
+	-- init parameters
+	local pos = nil
+	local rot = nil
+	if type(x) == "number" then
+		pos = vector3(x, y, z)
+		if type(rx) == "number" then
+			rot = vector3(rx, ry, rz)
+		elseif vector3.isVector3(rx) then
+			rot = vector3(rx)
+		else
+			rot = nil
+		end
+	else
+		pos = vector3(x)
+		if type(y) == "number" then
+			rot = vector3(y, z, rx)
+		elseif vector3.isVector3(y) then
+			rot = vector3(y)
+		else
+			rot = nil
+		end
+	end
+
+	self.Position = pos
+	if rot ~= nil then
+		self.Rotation = rot
+	end
+end
+
+
+-- move the camera in world-space
+function Camera3:move(x, y, z)
 	if type(x) == "number" then
 		x = vector3(x, y, z)
 	end
@@ -59,61 +60,38 @@ function Camera:move(x, y, z)
 end
 
 
-
-function Camera:moveTo(x, y, z, rx, ry, rz)
-	-- init parameters
-	local pos = nil
-	local rot = nil
-	if type(x) == "number" then
-		pos = vector3(x, y, z)
-		if type(rx) == "number" then
-			rot = vector3(rx, ry, rz)
-		else
-			rot = vector3(rx)
-		end
-	else
-		pos = vector3(x)
-		if type(y) == "number" then
-			rot = vector3(y, z, rx)
-		else
-			rot = vector3(y)
-		end
-	end
-
-	self.Position = pos
-	self.Rotation = rot
-end
-
-
-
-function Camera:moveLocal(x, y, z)
+-- move the camera in local space, so respecting the current rotation that is applied
+function Camera3:moveLocal(x, y, z)
 	if type(x) == "number" then
 		x = vector3(x, y, z)
 	end
 
-	local rotatedTranslation = rotateVec3(vector3(x), self.Rotation)
-	self.Position = self.Position + rotatedTranslation
+	x = x:rotate(self.Rotation.x, self.Rotation.y, self.Rotation.z)
+	self.Position = self.Position + x
 end
 
 
 
-function Camera:rotate(rx, ry, rz)
-	if type(x) == "number" then
+-- rotate the camera in world-space, so along the world-axes instead of the local axes
+function Camera3:rotate(rx, ry, rz)
+	if type(rx) == "number" then
 		rx = vector3(rx, ry, rz)
 	end
 
-	self.Rotation = self.Rotation + vector3(rx)
+	self.Rotation = self.Rotation + rx
 end
 
 
-
-function Camera:rotateLocal(rx, ry, rz)
-	if type(x) == "number" then
+-- rotate the camera in local space, so relative to the camera view instead of the world view
+function Camera3:rotateLocal(rx, ry, rz)
+	if type(rx) == "number" then
 		rx = vector3(rx, ry, rz)
 	end
 
-	local rotatedRotation = rotateVec3(vector3(rx), self.Rotation)
-	self.Rotation = self.Rotation + rotatedRotation
+	-- convert local to world
+	rx = rx:rotate(self.Rotation.x, self.Rotation.y, self.Rotation.z)
+
+	self.Rotation = self.Rotation + rx
 end
 
 
@@ -127,21 +105,25 @@ local function new(x, y, z, rx, ry, rz)
 		pos = vector3(x, y, z)
 		if type(rx) == "number" then
 			rot = vector3(rx, ry, rz)
-		else
+		elseif vector3.isVector3(rx) then
 			rot = vector3(rx)
+		else
+			rot = vector3(0, 0, 0)
 		end
 	else
 		pos = vector3(x)
 		if type(y) == "number" then
 			rot = vector3(y, z, rx)
-		else
+		elseif vector3.isVector3(y) then
 			rot = vector3(y)
+		else
+			rot = vector3(0, 0, 0)
 		end
 	end
 
 	local Obj = {
 		["Position"] = pos;
-		["Rotation"] = rot;
+		["Rotation"] = rot; -- rotation in radians
 		["FieldOfView"] = math.rad(70); -- vertical FoV
 	}
 

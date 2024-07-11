@@ -19,6 +19,14 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Property";
+	["ValueType"] = "color";
+	["Name"] = "Color";
+	["Description"] = "The color to multiply the entity's visuals by.";
+	["ReadOnly"] = false;
+})
+
+table.insert(content, {
+	["Type"] = "Property";
 	["ValueType"] = "number";
 	["Name"] = "Id";
 	["ReadOnly"] = true;

@@ -279,11 +279,14 @@ end
 function Creature:draw()
 	local Image, Quad = self:getSprite()
 	local x, y, w, h = Quad:getViewport()
+	love.graphics.setColor(self.Color:components())
 	love.graphics.draw(Image, Quad, self.Position.x, self.Position.y, 0, self.Size.x / w * self.ImageScale.x, self.Size.y / h * self.ImageScale.y, self.Pivot.x * w, self.Pivot.y * h)
+	love.graphics.setColor(1, 1, 1)
 end
 
 function Prop:draw()
 	local w, h = self.Image:getDimensions()
+	love.graphics.setColor(self.Color:components())
 	if self.Shear.x ~= 0 or self.Shear.y ~= 0 then
 		--love.graphics.push()
 		--love.graphics.shear(self.Shear.x, self.Shear.y)
@@ -292,6 +295,7 @@ function Prop:draw()
 	else
 		love.graphics.draw(self.Image, self.Position.x, self.Position.y, 0, self.Size.x / w * self.ImageScale.x, self.Size.y / h * self.ImageScale.y, self.Pivot.x * w, self.Pivot.y * h)
 	end
+	love.graphics.setColor(1, 1, 1)
 end
 
 function Prop:getSprite()
@@ -309,6 +313,7 @@ local function newCreature(defaultState, ...)
 	local Object = {
 		["CurrentState"] = nil; -- will be set to 'defaultState' when setState() is called later in this function. Had to be kept as 'nil' so that the StateLeaving event isn't called on entity creation
 		["Id"] = module.TotalCreated;
+		["Color"] = color(1, 1, 1);
 		["Pivot"] = vector(0.5, 0.5);
 		["Size"] = vector(32, 32); -- (read-only) the space in pixels the entity takes up on screen at a zoom of 1. This may change when the entity's state changes
 		["ImageScale"] = vector(1, 1);
@@ -340,6 +345,7 @@ local function newProp(img)
 	local Object = {
 		["Id"] = module.TotalCreated;
 		["Image"] = img;
+		["Color"] = color(1, 1, 1);
 		["Pivot"] = vector(0.5, 0.5);
 		["Size"] = vector(img:getWidth(), img:getHeight()); -- not read-only :>
 		["ImageScale"] = vector(1, 1);
