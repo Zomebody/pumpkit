@@ -79,19 +79,122 @@ local function new(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, 
 	return setmetatable(Obj, matrix4)
 end
 
+
+local function rotationX(angle)
+	local c = math.cos(angle)
+	local s = math.sin(angle)
+	return new(
+		1, 0, 0, 0,
+		0, c, -s, 0,
+		0, s, c, 0,
+		0, 0, 0, 1
+	)
+end
+
+
+local function rotationY(angle)
+	local c = math.cos(angle)
+	local s = math.sin(angle)
+	return new(
+		c, 0, s, 0,
+		0, 1, 0, 0,
+		-s, 0, c, 0,
+		0, 0, 0, 1
+	)
+end
+
+
+local function rotationZ(angle)
+	local c = math.cos(angle)
+	local s = math.sin(angle)
+	return new(
+		c, -s, 0, 0,
+		s, c, 0, 0,
+		0, 0, 1, 0,
+		0, 0, 0, 1
+	)
+end
+
+
+-- from euler angles and specify the euler order
+local function fromEuler(euler, order)
+	local rotX = rotationX(euler.x)
+	local rotY = rotationY(euler.y)
+	local rotZ = rotationZ(euler.z)
+
+	if order == "xyz" then
+		return rotZ * rotY * rotX
+	elseif order == "yxz" then
+		return rotZ * rotX * rotY
+	elseif order == "zyx" then
+		return rotX * rotY * rotZ
+	elseif order == "xzy" then
+		return rotY * rotZ * rotX
+	elseif order == "yzx" then
+		return rotX * rotZ * rotY
+	elseif order == "zxy" then
+		return rotY * rotX * rotZ
+	else
+		error("Invalid rotation order supplied in fromEuler")
+	end
+end
+
+
+-- TODO: THIS METHOD IS PROBABLY WRONG
+function matrix4:toEuler(order)
+	local euler = vector3(0, 0, 0)
+
+	if order == 'xyz' then
+		euler.y = math.asin(math.min(math.max(self[9], -1), 1))
+		if math.abs(self[9]) < 0.99999 then
+			euler.x = math.atan2(-self[10], self[11])
+			euler.z = math.atan2(-self[5], self[1])
+		else
+			euler.x = math.atan2(self[7], self[6])
+			euler.z = 0
+		end
+	elseif order == 'yxz' then
+		euler.x = math.asin(-math.min(math.max(self[10], -1), 1))
+		if math.abs(self[10]) < 0.99999 then
+			euler.y = math.atan2(self[9], self[11])
+			euler.z = math.atan2(self[2], self[6])
+		else
+			euler.y = math.atan2(-self[8], self[1])
+			euler.z = 0
+		end
+	elseif order == 'zyx' then
+		euler.x = math.asin(math.min(math.max(self[10], -1), 1))
+		if math.abs(self[10]) < 0.99999 then
+			euler.y = math.atan2(-self[9], self[11])
+			euler.z = math.atan2(-self[2], self[6])
+		else
+			euler.y = 0
+			euler.z = math.atan2(self[5], self[1])
+		end
+	else
+		error("Invalid rotation order")
+	end
+
+	return euler
+end
+
+
 -- returns the rows of the matrix4 as a tuple
 function matrix4:rows()
 	return {self[1], self[2], self[3], self[4]}, {self[5], self[6], self[7], self[8]}, {self[9], self[10], self[11], self[12]}, {self[13], self[14], self[15], self[16]}
 end
+
 
 -- returns the columns of the matrix4 as a tuple
 function matrix4:columns()
 	return {self[1], self[5], self[9], self[13]}, {self[2], self[6], self[10], self[14]}, {self[3], self[7], self[11], self[15]}, {self[4], self[8], self[12], self[16]}
 end
 
+
 function matrix4:unpack()
 	return self[1], self[2], self[3], self[4], self[5], self[6], self[7], self[8], self[9], self[10], self[11], self[12], self[13], self[14], self[15], self[16]
 end
+
 
 -- sets the matrix4 to the identity matrix
 function matrix4:identity()
@@ -259,6 +362,13 @@ function matrix4.__mul(a, b)
 			a[13] * b[3] + a[14] * b[7] + a[15] * b[11] + a[16] * b[15],
 			a[13] * b[4] + a[14] * b[8] + a[15] * b[12] + a[16] * b[16]
 		)
+	elseif vector4.isVector4(b) then
+		return vector4(
+			a[1] * b.x + a[2] * b.y + a[3] * b.z + a[4] * b.w,
+			a[5] * b.x + a[6] * b.y + a[7] * b.z + a[8] * b.w,
+			a[9] * b.x + a[10] * b.y + a[11] * b.z + a[12] * b.w,
+			a[13] * b.x + a[14] * b.y + a[15] * b.z + a[16] * b.w
+		)
 	else
 		error("matrix4 multiplication only works between two matrix4 instances or a matrix4 and a scalar.")
 	end
@@ -279,5 +389,9 @@ end
 
 -- pack up and return module
 module.new = new
+module.rotationX = rotationX
+module.rotationY = rotationY
+module.rotationZ = rotationZ
+module.fromEuler = fromEuler
 module.isMatrix4 = isMatrix4
 return setmetatable(module, {__call = function(_, ...) return new(...) end})

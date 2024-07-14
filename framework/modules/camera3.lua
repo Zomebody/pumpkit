@@ -19,111 +19,97 @@ end
 
 
 
-function Camera3:moveTo(x, y, z, rx, ry, rz)
-	-- init parameters
+function Camera3:moveTo(x, y, z)
 	local pos = nil
-	local rot = nil
 	if type(x) == "number" then
 		pos = vector3(x, y, z)
-		if type(rx) == "number" then
-			rot = vector3(rx, ry, rz)
-		elseif vector3.isVector3(rx) then
-			rot = vector3(rx)
-		else
-			rot = nil
-		end
-	else
-		pos = vector3(x)
-		if type(y) == "number" then
-			rot = vector3(y, z, rx)
-		elseif vector3.isVector3(y) then
-			rot = vector3(y)
-		else
-			rot = nil
-		end
+	elseif vector3.isVector3(x) then
+		pos = x
 	end
-
-	self.Position = pos
-	if rot ~= nil then
-		self.Rotation = rot
-	end
+	self.Position = pos or self.Position
 end
 
 
 -- move the camera in world-space
 function Camera3:move(x, y, z)
+	local displacement = nil
 	if type(x) == "number" then
-		x = vector3(x, y, z)
+		displacement = vector3(x, y, z)
+	elseif vector3.isVector3(x) then
+		displacement = x
 	end
 
-	self.Position = self.Position + x
+	self.Position = self.Position + displacement
 end
 
 
 -- move the camera in local space, so respecting the current rotation that is applied
-function Camera3:moveLocal(x, y, z)
+function Camera3:moveLocal(x, y, z, order)
+	local displacement = nil
 	if type(x) == "number" then
-		x = vector3(x, y, z)
+		displacement = vector3(x, y, z)
+	elseif vector3.isVector3(x) then
+		displacement = x
 	end
 
-	x = x:rotate(self.Rotation.x, self.Rotation.y, self.Rotation.z)
-	self.Position = self.Position + x
+	local rotationMatrix = self:getRotationMatrix(order)
+	local v4 = vector4(displacement.x, displacement.y, displacement.z, 0)
+	local transformedDisplacement = rotationMatrix * v4
+	self.Position = self.Position + vector3(transformedDisplacement.x, transformedDisplacement.y, transformedDisplacement.z)
 end
 
 
 
 -- rotate the camera in world-space, so along the world-axes instead of the local axes
 function Camera3:rotate(rx, ry, rz)
+	local rotation = nil
 	if type(rx) == "number" then
-		rx = vector3(rx, ry, rz)
+		rotation = vector3(rx, ry, rz)
+	elseif vector3.isVector3(rx) then
+		rotation = rx
 	end
-
-	self.Rotation = self.Rotation + rx
+	self.Rotation = self.Rotation + rotation
 end
 
 
 -- rotate the camera in local space, so relative to the camera view instead of the world view
-function Camera3:rotateLocal(rx, ry, rz)
+--[[
+function Camera3:rotateLocal(rx, ry, rz, order)
 	if type(rx) == "number" then
-		rx = vector3(rx, ry, rz)
+		local localRotation = vector3(rx, ry, rz)
+		local rotationMatrix = self:getRotationMatrix(order)
+		local localRotationMatrix = matrix4.fromEuler(localRotation, order) -- or 'XYZ', 'ZYX', etc. depending on your needs
+		local newRotationMatrix = rotationMatrix * localRotationMatrix
+
+		self.Rotation = newRotationMatrix:toEuler(order) -- Convert back to Euler angles
+	elseif vector3.isVector3(rx) then
+		local rotationMatrix = self:getRotationMatrix(order)
+		local localRotationMatrix = matrix4.fromEuler(rx, order) -- or 'XYZ', 'ZYX', etc. depending on your needs
+		local newRotationMatrix = rotationMatrix * localRotationMatrix
+
+		self.Rotation = newRotationMatrix:toEuler(order) -- Convert back to Euler angles
 	end
+end
+]]
 
-	-- convert local to world
-	rx = rx:rotate(self.Rotation.x, self.Rotation.y, self.Rotation.z)
 
-	self.Rotation = self.Rotation + rx
+function Camera3:getRotationMatrix(order)
+	return matrix4.fromEuler(self.Rotation, order) -- or 'XYZ', 'ZYX', etc. depending on your needs
 end
 
 
-
-local function new(x, y, z, rx, ry, rz)
-
+local function new(x, y, z)
 	-- init parameters
 	local pos = nil
-	local rot = nil
 	if type(x) == "number" then
 		pos = vector3(x, y, z)
-		if type(rx) == "number" then
-			rot = vector3(rx, ry, rz)
-		elseif vector3.isVector3(rx) then
-			rot = vector3(rx)
-		else
-			rot = vector3(0, 0, 0)
-		end
 	else
 		pos = vector3(x)
-		if type(y) == "number" then
-			rot = vector3(y, z, rx)
-		elseif vector3.isVector3(y) then
-			rot = vector3(y)
-		else
-			rot = vector3(0, 0, 0)
-		end
 	end
 
 	local Obj = {
 		["Position"] = pos;
-		["Rotation"] = rot; -- rotation in radians
+		["Rotation"] = vector3(0, 0, 0); -- rotation in radians
 		["FieldOfView"] = math.rad(70); -- vertical FoV
 	}
 

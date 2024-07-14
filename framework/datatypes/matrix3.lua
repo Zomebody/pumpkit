@@ -167,8 +167,8 @@ function matrix3.__sub(a, b)
 end
 
 
-function matrix3.__unm(a, b)
-	local Obj = new(self:unpack())
+function matrix3.__unm(a)
+	local Obj = new(a:unpack())
 	Obj:invert()
 	return Obj
 end
@@ -201,9 +201,9 @@ function matrix3.__mul(a, b)
 		)
 	elseif vector3.isVector3(b) then
 		return vector3(
-			self[1] * b.x + self[2] * b.x + self[3] * b.x,
-			self[4] * b.y + self[5] * b.y + self[6] * b.y,
-			self[7] * b.z + self[8] * b.z + self[9] * b.z
+			a[1] * b.x + a[2] * b.y + a[3] * b.z,
+			a[4] * b.x + a[5] * b.y + a[6] * b.z,
+			a[7] * b.x + a[8] * b.y + a[9] * b.z
 		)
 	else
 		error("matrix3 multiplication only works between two matrix3 instances or a matrix3 and a scalar or a matrix3 and a vector3.")
