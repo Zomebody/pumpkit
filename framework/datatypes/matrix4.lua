@@ -140,6 +140,7 @@ local function fromEuler(euler, order)
 end
 
 
+
 -- TODO: THIS METHOD IS PROBABLY WRONG
 function matrix4:toEuler(order)
 	local euler = vector3(0, 0, 0)
@@ -216,18 +217,19 @@ function matrix4:identity()
 	self[16] = 1
 end
 
--- calculate the determinant of the matrix4
+
+
+-- calculate the determinant of the matrix4: https://semath.info/src/determinant-four-by-four.html
 function matrix4:determinant()
 	local a = self
-	return a[1]*a[6]*a[11]*a[16] + a[1]*a[7]*a[12]*a[14] + a[1]*a[8]*a[10]*a[15]
-		- a[1]*a[6]*a[12]*a[15] - a[1]*a[7]*a[10]*a[16] - a[1]*a[8]*a[11]*a[14]
-		- a[2]*a[5]*a[11]*a[16] - a[2]*a[7]*a[9]*a[15] - a[2]*a[8]*a[10]*a[13]
-		+ a[2]*a[5]*a[12]*a[15] + a[2]*a[7]*a[10]*a[13] + a[2]*a[8]*a[9]*a[16]
-		+ a[3]*a[5]*a[10]*a[16] + a[3]*a[6]*a[12]*a[13] + a[3]*a[8]*a[9]*a[14]
-		- a[3]*a[5]*a[12]*a[14] - a[3]*a[6]*a[9]*a[16] - a[3]*a[8]*a[10]*a[13]
-		- a[4]*a[5]*a[10]*a[15] - a[4]*a[6]*a[11]*a[13] - a[4]*a[7]*a[9]*a[14]
-		+ a[4]*a[5]*a[11]*a[14] + a[4]*a[6]*a[9]*a[15] + a[4]*a[7]*a[10]*a[13]
+	local det = a[1] * (a[6] * a[11] * a[16]     +     a[7] * a[12] * a[14]     +     a[8] * a[10] * a[15]     -     a[8] * a[11] * a[14]     -     a[7] * a[10] * a[16]     -     a[6] * a[12] * a[15])
+				- a[5] * (a[2] * a[11] * a[16]     +     a[3] * a[12] * a[14]     +     a[4] * a[10] * a[15]     -     a[4] * a[11] * a[14]     -     a[3] * a[10] * a[16]     -     a[2] * a[12] * a[15])
+				+ a[9] * (a[2] * a[7] * a[16]     +     a[3] * a[8] * a[14]     +     a[4] * a[6] * a[15]     -     a[4] * a[7] * a[14]     -     a[3] * a[6] * a[16]     -     a[2] * a[8] * a[15])
+				- a[13] * (a[2] * a[7] * a[12]     +     a[3] * a[8] * a[10]     +     a[4] * a[6] * a[11]     -     a[4] * a[7] * a[10]     -     a[3] * a[6] * a[12]     -     a[2] * a[8] * a[11])
+	return det
 end
+
+
 
 -- invert the matrix4
 function matrix4:invert()
@@ -259,7 +261,7 @@ function matrix4:invert()
 		(a[1]*a[6]*a[11] - a[1]*a[7]*a[10] - a[5]*a[2]*a[11] + a[5]*a[3]*a[10] + a[9]*a[2]*a[7] - a[9]*a[3]*a[6]) * invDet
 	}
 
-	return new(inv)
+	return new(unpack(inv))
 end
 
 -- add two matrices together
