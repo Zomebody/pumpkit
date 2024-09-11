@@ -357,7 +357,7 @@ end
 
 -- creates a new Scene object with the base properties of a Scene
 local function newScene(sceneCamera, bgImage, fgImage)
-	assert(camera.isCamera(sceneCamera) or sceneCamera == nil, "scene.newScene(image, sceneCamera) only accepts a camera instance or nil for 'sceneCamera'")
+	assert(camera.isCamera(sceneCamera) or sceneCamera == nil, "scene.newScene(sceneCamera, bgImage, fgImage) only accepts a camera instance or nil for 'sceneCamera'")
 	module.TotalCreated = module.TotalCreated + 1
 
 	local Object = {

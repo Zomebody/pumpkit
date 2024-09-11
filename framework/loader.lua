@@ -31,11 +31,13 @@ function load()
 	signal = require(getpath(here, "../framework/modules/signal"))
 	callbacks = require(getpath(here, "../framework/modules/callbacks"))
 	printObject = require(getpath(here, "../framework/objectPrinter"))
+	importMesh = require(getpath(here, "../framework/meshimporter"))
 	ui = require(getpath(here, "../framework/modules/ui"))
 
 	-- world stuff
 	world = require(getpath(here, "../framework/modules/world"))
 	scene = require(getpath(here, "../framework/modules/scene"))
+	scene3 = require(getpath(here, "../framework/modules/scene3"))
 	camera = require(getpath(here, "../framework/modules/camera"))
 	camera3 = require(getpath(here, "../framework/modules/camera3"))
 	entity = require(getpath(here, "../framework/modules/entity"))
