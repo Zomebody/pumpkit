@@ -1,6 +1,7 @@
 
 ----------------------------------------------------[[ == IMPORTS == ]]----------------------------------------------------
 
+local here = ...
 local connection = require("framework.connection")
 
 --[[
@@ -30,7 +31,7 @@ local connection = require("framework.connection")
 ----------------------------------------------------[[ == VARIABLES == ]]----------------------------------------------------
 
 local MAX_LIGHTS_PER_SCENE = 8
-local SHADER_PATH = "shaders.shader3d.c"
+local SHADER_PATH = "framework/shaders/shader3d.c"
 
 
 
@@ -62,31 +63,11 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 	if self.Camera3 == nil then
 		return
 	end
-	
 
-	-- update aspect ratio if it isn't up-to-date
-	local aspectRatio
-	if renderTarget ~= nil then
-		local width, height = renderTarget.getDimensions()
-		aspectRatio = width / height
-		if self.Width ~= width or self.Height ~= height then
-			self:rescaleCanvas(nil, width, height)
-		end
-	else
-		local width, height = love.graphics.getDimensions()
-		aspectRatio = width / height
-		if self.Width ~= width or self.Height ~= height then
-			self:rescaleCanvas(nil, width, height)
-		end
-	end
-	if aspectRatio ~= self.AspectRatio then
-		self.AspectRatio = aspectRatio
-		self.Shader:send("aspectRatio", aspectRatio)
-	end
-
-
-
+	local prevCanvas = love.graphics.getCanvas()
 	love.graphics.setCanvas(renderTarget)
+	love.graphics.clear()
+	love.graphics.setShader()
 
 	-- draw the background
 	if self.Background then
@@ -95,29 +76,31 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 
 	-- set the canvas to draw to the render canvas, and the shader to draw in 3d
 	love.graphics.setCanvas({self.RenderCanvas, ["depthstencil"] = self.DepthCanvas})
-	love.graphics.setShader(shader3d)
+	love.graphics.clear()
+	love.graphics.setShader(self.Shader)
 
 	-- draw all of the scene's meshes
 	local Mesh = nil
 	for i = 1, #self.Meshes do
 		Mesh = self.Meshes[i]
-		shader3d:send("meshPosition", Mesh.Position:array())
-		shader3d:send("meshRotation", Mesh.Rotation:array())
-		shader3d:send("meshScale", Mesh.Scale:array())
+		self.Shader:send("meshPosition", Mesh.Position:array()) -- Mesh.Position:array()
+		self.Shader:send("meshRotation", Mesh.Rotation:array()) -- Mesh.Rotation:array()
+		self.Shader:send("meshScale", Mesh.Scale:array()) -- Mesh.Scale:array()
+		love.graphics.draw(Mesh.Mesh)
 	end
 
 	-- reset the canvas to the render target & render the scene
 	love.graphics.setCanvas(renderTarget)
-	love.graphics.draw(self.RenderCanvas, 0, 0, 0, 1 / self.MSAA, 1 / self.MSAA)
+	love.graphics.setShader()
+	love.graphics.draw(self.RenderCanvas, 0, self.RenderCanvas:getHeight() / self.MSAA, 0, 1 / self.MSAA, -1 / self.MSAA)
 
 
 	-- draw the foreground
-	love.graphics.setShader()
 	if self.Foreground then
 		love.graphics.draw(self.Foreground)
 	end
 
-	love.graphics.setCanvas()
+	love.graphics.setCanvas(prevCanvas)
 end
 
 
@@ -129,16 +112,19 @@ function Scene3:setCamera(theCamera)
 	end
 
 	theCamera:attach(self)
+end
 
 
+function Scene3:getCamera()
+	return self.Camera3
 end
 
 
 
 -- updates the aspect ratio, render canvas and depth canvas
-function Scene3:rescaleCanvas(msaa, width, height)
+function Scene3:rescaleCanvas(width, height, msaa)
 	if msaa == nil then
-		msaa = 4
+		msaa = self.MSAA
 	end
 
 	if width == nil or height == nil then
@@ -157,44 +143,15 @@ function Scene3:rescaleCanvas(msaa, width, height)
 
 	self.RenderCanvas = renderCanvas
 	self.DepthCanvas = depthCanvas
-	self.Width = width
-	self.Height = height
 	self.MSAA = msaa
+
+	-- update aspect ratio of the scene
+	local aspectRatio = width / height
+	self.Shader:send("aspectRatio", aspectRatio)
 end
 
 
--- should only be called when the Scene3 instance is being created
---[[
-function Scene3:initLights()
-	local positions = {}
-	local colors = {}
-	local ranges = {}
-	local strengths = {}
 
-	-- init lights
-	local Light = nil
-	for i = 1, #self.Lights do
-		Light = self.Lights[i]
-		table.insert(positions, Light.Position:array())
-		table.insert(colors, Light.Color:array())
-		table.insert(ranges, Light.Range)
-		table.insert(strengths, Light.Strength)
-	end
-
-	-- fill the rest of the lights with dummy lights that don't do anything
-	for k = #self.Lights + 1, MAX_LIGHTS_PER_SCENE do
-		table.insert(positions, {0, 0, 0})
-		table.insert(colors, {1, 1, 1})
-		table.insert(ranges, 0)
-		table.insert(strengths, 0)
-	end
-
-	self.Shader:send(lightPositions, unpack(positions))
-	self.Shader:send(lightColors, unpack(colors))
-	self.Shader:send(lightRanges, unpack(ranges))
-	self.Shader:send(lightStrengths, unpack(strengths))
-end
-]]
 
 function Scene3:addLight(position, col, range, strength)
 	local index = nil
@@ -219,17 +176,42 @@ function Scene3:addLight(position, col, range, strength)
 	self.Lights[index] = Light
 	local shaderIndex = tostring(index - 1)
 
-	self.Shader:send("lightPositions[" .. shaderIndex .. "]", {position.x, position.y, position.z})
-	self.Shader:send("lightColors[" .. shaderIndex .. "]", {col.r, col.g, col.b})
-	self.Shader:send("lightRanges[" .. shaderIndex .. "]", range)
-	self.Shader:send("lightStrengths[" .. shaderIndex .. "]", strength)
+	-- TODO: re-enable later
+	--self.Shader:send("lightPositions[" .. shaderIndex .. "]", {position.x, position.y, position.z})
+	--self.Shader:send("lightColors[" .. shaderIndex .. "]", {col.r, col.g, col.b})
+	--self.Shader:send("lightRanges[" .. shaderIndex .. "]", range)
+	--self.Shader:send("lightStrengths[" .. shaderIndex .. "]", strength)
+end
+
+
+
+function Scene3:addMesh(mesh, position, rotation, scale)
+	if position == nil then
+		position = vector3(0, 0, 0)
+	end
+	if rotation == nil then
+		rotation = vector3(0, 0, 0)
+	end
+	if scale == nil then
+		scale = vector3(1, 1, 1)
+	end
+
+	table.insert(
+		self.Meshes,
+		{
+			["Mesh"] = mesh;
+			["Position"] = position;
+			["Rotation"] = rotation;
+			["Scale"] = scale;
+		}
+	)
 end
 
 
 
 -- eventName is the name of the event to call. All event name strings are accepted, but not all of them may trigger
 -- func is the function to link
-function Scene:on(eventName, func)
+function Scene3:on(eventName, func)
 	if self.Events[eventName] == nil then
 		self.Events[eventName] = {}
 	end
@@ -253,7 +235,6 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 	module.TotalCreated = module.TotalCreated + 1
 
 	local gWidth, gHeight = love.graphics.getWidth(), love.graphics.getHeight()
-	local aspectRatio = gWidth / gHeight
 	
 	local renderCanvas = love.graphics.newCanvas(gWidth * msaa, gHeight * msaa)
 	local depthCanvas = love.graphics.newCanvas(
@@ -271,8 +252,9 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 
 		["Shader"] = love.graphics.newShader(SHADER_PATH); -- create one shader per scene so you can potentially 
 
-		["Width"] = gWidth; -- (screen width) UPDATES AUTOMATICALLY, DO NOT TOUCH
-		["Height"] = gHeight; -- (screen height) UPDATES AUTOMATICALLY, DO NOT TOUCH
+		-- canvas properties, update whenever you change the render target
+		["RenderCanvas"] = renderCanvas;
+		["DepthCanvas"] = depthCanvas;
 		["MSAA"] = msaa;
 
 		-- render variables
@@ -288,7 +270,43 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 		["Events"] = {};
 	}
 
-	return setmetatable(Object, Scene3)
+	setmetatable(Object, Scene3)
+
+	Object.Camera3:attach(Object)
+
+	Object.Shader:send("cameraPosition", Object.Camera3.Position:array())
+	Object.Shader:send("cameraTilt", Object.Camera3.Tilt)
+	Object.Shader:send("cameraRotation", Object.Camera3.Rotation)
+	Object.Shader:send("cameraOffset", Object.Camera3.Offset)
+	local aspectRatio = gWidth / gHeight
+	Object.Shader:send("aspectRatio", aspectRatio)
+	print(Object.Camera3.FieldOfView)
+	Object.Shader:send("fieldOfView", Object.Camera3.FieldOfView)
+	print("sent position, tilt, rotation, offset, aspectratio, fov")
+
+	
+
+
+
+	-- TODO: init lights with 0-strength white lights (re-enable this later when lights are enabled in the shader)
+	--[[
+	local positions = {}
+	local colors = {}
+	local ranges = {}
+	local strengths = {}
+	for i = 1, MAX_LIGHTS_PER_SCENE do
+		positions[i] = {0,0,0}
+		colors[i] = {0,0,0}
+		ranges[i] = 0
+		strengths[i] = 0
+	end
+	self.Shader:send("lightPositions", positions)
+	self.Shader:send("lightColors", colors)
+	self.Shader:send("lightRanges", ranges)
+	self.Shader:send("lightStrengths", strengths)
+	]]
+
+	return Object
 end
 
 

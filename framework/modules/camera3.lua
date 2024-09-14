@@ -99,6 +99,15 @@ function Camera3:tilt(amount)
 end
 
 
+function Camera3:offset(amount)
+	self.Offset = self.Offset + amount
+	print(self.Scene3)
+	if self.Scene3 ~= nil then
+		self.Scene3.Shader:send("cameraOffset", self.Offset)
+	end
+end
+
+
 
 function Camera3:attach(theScene)
 	assert(scene3.isScene3(theScene), "Camera3:attach(scene3) requires the first argument to be a scene3")
@@ -112,8 +121,12 @@ function Camera3:attach(theScene)
 
 	self.Scene3 = theScene
 	theScene.Camera3 = self
-	connection.doEvents(self.Events.Attached, theScene)
-	connection.doEvents(theScene.Events.CameraAttached, self)
+	if self.Events.Attached then
+		connection.doEvents(self.Events.Attached, theScene)
+	end
+	if theScene.Events.CameraAttached then
+		connection.doEvents(theScene.Events.CameraAttached, self)
+	end
 end
 
 
@@ -123,8 +136,23 @@ function Camera3:detach()
 		local theScene = self.Scene3
 		theScene.Camera3 = nil
 		self.Scene3 = nil
-		connection.doEvents(self.Events.Detached, theScene)
-		connection.doEvents(theScene.Events.CameraDetached, self)
+		if self.Events.Detached then
+			connection.doEvents(self.Events.Detached, theScene)
+		end
+		if theScene.Events.CameraDetached then
+			connection.doEvents(theScene.Events.CameraDetached, self)
+		end
+	end
+end
+
+
+
+function Camera3:setFOV(fov)
+	self.FieldOfView = fov
+
+	-- update the scene's field-of-view if this camera is attached to one
+	if self.Scene3 ~= nil then
+		self.Scene3.Shader:send("fieldOfView", fov)
 	end
 end
 
@@ -198,6 +226,9 @@ for now the only camera type is a 'pivot camera', which is located at a given co
 ]]
 
 local function new(p)
+	if p == nil then
+		p = vector3(0, 0, 0)
+	end
 	assert(vector3.isVector3(p), "camera3.new(pos) expects 'pos' to be a vector3.")
 
 	local Obj = {

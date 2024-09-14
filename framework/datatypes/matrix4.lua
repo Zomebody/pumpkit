@@ -116,6 +116,22 @@ local function rotationZ(angle)
 end
 
 
+
+local function translation(x, y, z)
+	if vector3.isVector3(x) then
+		z = x.z
+		y = x.y
+		x = x.x
+	end
+	return new(
+		0, 0, 0, x,
+		0, 0, 0, y,
+		0, 0, 0, z,
+		0, 0, 0, 1
+	)
+end
+
+
 -- from euler angles and specify the euler order
 local function fromEuler(euler, order)
 	local rotX = rotationX(euler.x)
@@ -215,6 +231,14 @@ function matrix4:identity()
 	self[14] = 0
 	self[15] = 0
 	self[16] = 1
+end
+
+
+
+function matrix4:translate(x, y, z)
+	self[13] = self[13] + x
+	self[14] = self[14] + y
+	self[15] = self[15] + z
 end
 
 
@@ -394,6 +418,7 @@ module.new = new
 module.rotationX = rotationX
 module.rotationY = rotationY
 module.rotationZ = rotationZ
+module.translation = translation
 module.fromEuler = fromEuler
 module.isMatrix4 = isMatrix4
 return setmetatable(module, {__call = function(_, ...) return new(...) end})
