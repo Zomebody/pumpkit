@@ -32,14 +32,16 @@ uniform vec3 meshScale;
 
 
 
+// I DON'T KNOW WHY, BUT THE FUNCTIONS GETROTATIONMATRIX AND GETSCALEMATRIX AND GETTRANSLATIONMATRIX ARE ALL TRANSPOSED AND IT JUST KIND OF WORKS
+
 // Function to create a rotation matrix around the X axis
 mat4 getRotationMatrixX(float angle) {
 	float c = cos(angle);
 	float s = sin(angle);
 	return mat4(
 		1.0, 0.0, 0.0, 0.0,
-		0.0, c,   -s,  0.0,
-		0.0, s,    c,  0.0,
+		0.0, c,   s,  0.0,
+		0.0, -s,    c,  0.0,
 		0.0, 0.0, 0.0, 1.0
 	);
 }
@@ -51,9 +53,9 @@ mat4 getRotationMatrixY(float angle) {
 	float c = cos(angle);
 	float s = sin(angle);
 	return mat4(
-		c,   0.0, s,   0.0,
+		c,   0.0, -s,   0.0,
 		0.0, 1.0, 0.0, 0.0,
-		-s,  0.0, c,   0.0,
+		s,  0.0, c,   0.0,
 		0.0, 0.0, 0.0, 1.0
 	);
 }
@@ -65,8 +67,8 @@ mat4 getRotationMatrixZ(float angle) {
 	float c = cos(angle);
 	float s = sin(angle);
 	return mat4(
-		c,   -s,   0.0, 0.0,
-		s,    c,   0.0, 0.0,
+		c,   s,   0.0, 0.0,
+		-s,    c,   0.0, 0.0,
 		0.0,  0.0, 1.0, 0.0,
 		0.0,  0.0, 0.0, 1.0
 	);
@@ -168,7 +170,7 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 	// get the scale matrix
 	mat4 scaleMatrix = getScaleMatrix(meshScale);
 	// get the rotation matrix in YXZ order
-	mat4 rotationMatrix = getRotationMatrixY(meshRotation.y) * getRotationMatrixX(meshRotation.x) * getRotationMatrixZ(meshRotation.z);
+	mat4 rotationMatrix = getRotationMatrixZ(meshRotation.z) * getRotationMatrixY(meshRotation.y) * getRotationMatrixX(meshRotation.x);
 	// get the translation matrix
 	mat4 translationMatrix = getTranslationMatrix(meshPosition);
 	// combine transformations. Transformations are applied from right to left. First scale, then rotate, then translate
