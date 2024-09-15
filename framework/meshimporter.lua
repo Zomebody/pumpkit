@@ -32,7 +32,7 @@ function createMeshFromFile(filename, image)
 		},
 		triangles,
 		"triangles",
-		"dynamic"
+		"static"
 	)
 
 	if image ~= nil then

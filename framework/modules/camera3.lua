@@ -101,7 +101,6 @@ end
 
 function Camera3:offset(amount)
 	self.Offset = self.Offset + amount
-	print(self.Scene3)
 	if self.Scene3 ~= nil then
 		self.Scene3.Shader:send("cameraOffset", self.Offset)
 	end

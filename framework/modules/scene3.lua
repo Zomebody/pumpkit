@@ -153,19 +153,7 @@ end
 
 
 
-function Scene3:addLight(position, col, range, strength)
-	local index = nil
-	for i = 1, MAX_LIGHTS_PER_SCENE do
-		if self.Lights[i] == nil then
-			index = i
-			break
-		end
-	end
-
-	if index == nil then
-		return nil -- operation failed
-	end
-
+function Scene3:setLight(index, position, col, range, strength)
 	local Light = {
 		["Position"] = vector3(position);
 		["Color"] = color(col);
@@ -174,13 +162,32 @@ function Scene3:addLight(position, col, range, strength)
 	}
 
 	self.Lights[index] = Light
-	local shaderIndex = tostring(index - 1)
+	self:sendLights()
+end
 
-	-- TODO: re-enable later
-	--self.Shader:send("lightPositions[" .. shaderIndex .. "]", {position.x, position.y, position.z})
-	--self.Shader:send("lightColors[" .. shaderIndex .. "]", {col.r, col.g, col.b})
-	--self.Shader:send("lightRanges[" .. shaderIndex .. "]", range)
-	--self.Shader:send("lightStrengths[" .. shaderIndex .. "]", strength)
+
+function Scene3:setAmbient(col)
+	self.Shader:send("ambientColor", {col.r, col.g, col.b})
+end
+
+
+function Scene3:sendLights()
+	local positions = {}
+	local colors = {}
+	local ranges = {}
+	local strengths = {}
+	for i = 1, MAX_LIGHTS_PER_SCENE do
+		positions[i] = self.Lights[i].Position:array()
+		colors[i] = {self.Lights[i].Color.r, self.Lights[i].Color.g, self.Lights[i].Color.b}
+		ranges[i] = self.Lights[i].Range
+		strengths[i] = self.Lights[i].Strength
+	end
+
+	
+	self.Shader:send("lightPositions", unpack(positions))
+	self.Shader:send("lightColors", unpack(colors))
+	self.Shader:send("lightRanges", unpack(ranges))
+	self.Shader:send("lightStrengths", unpack(strengths))
 end
 
 
@@ -264,7 +271,7 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 		-- scene elements
 		["Camera3"] = sceneCamera or camera3.new();
 		["Meshes"] = {}; -- any number of meshes, dictionaries with properties: Position, Rotation (applied in order ZXY), Scale
-		["Lights"] = {}; -- up to 8 dictionaries with properties: Position, Color, Range, Strength
+		["Lights"] = {}; -- array with lights that have a Position, Color, Range and Strength
 
 		-- table with arrays of event functions stored under keys named after the events
 		["Events"] = {};
@@ -274,37 +281,30 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 
 	Object.Camera3:attach(Object)
 
+	-- init camera shadeer variables
 	Object.Shader:send("cameraPosition", Object.Camera3.Position:array())
 	Object.Shader:send("cameraTilt", Object.Camera3.Tilt)
 	Object.Shader:send("cameraRotation", Object.Camera3.Rotation)
 	Object.Shader:send("cameraOffset", Object.Camera3.Offset)
 	local aspectRatio = gWidth / gHeight
 	Object.Shader:send("aspectRatio", aspectRatio)
-	print(Object.Camera3.FieldOfView)
 	Object.Shader:send("fieldOfView", Object.Camera3.FieldOfView)
-	print("sent position, tilt, rotation, offset, aspectratio, fov")
-
-	
 
 
-
-	-- TODO: init lights with 0-strength white lights (re-enable this later when lights are enabled in the shader)
-	--[[
-	local positions = {}
-	local colors = {}
-	local ranges = {}
-	local strengths = {}
+	-- init lights with 0-strength white lights (re-enable this later when lights are enabled in the shader)
 	for i = 1, MAX_LIGHTS_PER_SCENE do
-		positions[i] = {0,0,0}
-		colors[i] = {0,0,0}
-		ranges[i] = 0
-		strengths[i] = 0
+		Object.Lights[i] = {
+			["Position"] = vector3(0, 0, 0);
+			["Color"] = color(0, 0, 0);
+			["Range"] = 0;
+			["Strength"] = 0;
+		}
 	end
-	self.Shader:send("lightPositions", positions)
-	self.Shader:send("lightColors", colors)
-	self.Shader:send("lightRanges", ranges)
-	self.Shader:send("lightStrengths", strengths)
-	]]
+	
+	Object:sendLights()
+
+	-- set a default ambience
+	Object.Shader:send("ambientColor", {1, 1, 1, 1})
 
 	return Object
 end

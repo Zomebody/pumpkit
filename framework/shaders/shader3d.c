@@ -1,6 +1,8 @@
 
 #ifdef VERTEX
+
 // camera variables
+// TODO: calculate camera's matrix and inverse matrix on the Lua side so it doesn't have to be recalculated every time in here
 uniform vec3 cameraPosition;
 uniform float cameraRotation;
 uniform float cameraTilt;
@@ -8,6 +10,10 @@ uniform float cameraOffset;
 
 uniform float aspectRatio;
 uniform float fieldOfView;
+
+// attributes
+attribute vec3 VertexNormal;
+
 
 const float zNear = 0.1;
 const float zFar = 1000.0;
@@ -18,17 +24,11 @@ uniform vec3 meshPosition;
 uniform vec3 meshRotation;
 uniform vec3 meshScale;
 
-// TODO: light variables
-//uniform vec3 lightPositions[8]; // input world positions of lights
-//uniform vec3 lightColors[8]; // input colors of lights
-//uniform float lightRanges[8]; // input ranges of lights
-//uniform float lightStrengths[8]; // input strengths of lights
-//uniform vec3 ambientColorClose;
-//uniform float ambientClose;
-//uniform vec3 ambientColorFar;
-//uniform float ambientFar;
-//varying vec3 fragWorldPosition; // output automatically interpolated fragment world position
+// TODO: fragment variables
+varying vec3 fragWorldPosition; // output automatically interpolated fragment world position
 //varying float fragDistanceToCamera; // used for fog
+//varying vec3 fragNormal; // used for backface culling
+//varying vec3 cameraViewDirection;
 
 
 
@@ -194,7 +194,8 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 	mat4 cameraSpaceMatrix = viewMatrix *  modelWorldMatrix;
 
 	// TODO: set the world position variable to pass onto the fragment shader
-	//fragWorldPosition = (modelWorldMatrix * vertex_position).xyz; // sets the world position of this vertex. In the fragment shader this gets interpolated correctly automatically
+	fragWorldPosition = (modelWorldMatrix * vertex_position).xyz; // sets the world position of this vertex. In the fragment shader this gets interpolated correctly automatically
+	//fragNormal = VertexNormal;
 	// TODO: calculate distance to camera for any fog applied in the fragment shader
 	//fragDistanceToCamera = length(fragWorldPosition - cameraMatrix[3].xyz); // convert camera matrix to vec3 containing only the position
 
@@ -204,6 +205,12 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 
 	// Apply the view-projection transformation
 	vec4 result = projectionMatrix * cameraSpaceMatrix * vertex_position;
+
+
+
+	// set variables for backface culling
+	//cameraViewDirection = normalize(vec3(viewMatrix[3]) - fragWorldPosition);
+
 	return result;
 }
 
@@ -211,23 +218,178 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 
 
 
+
+
+
+
+
+
 // Fragment Shader
 #ifdef PIXEL
 
+varying vec3 fragWorldPosition; // output automatically interpolated fragment world position
+//varying float fragDistanceToCamera; // used for fog
+//varying vec3 fragNormal; // used for backface culling
+//varying vec3 cameraViewDirection;
+
+// lights
+uniform vec3 lightPositions[8]; // non-transformed!
+uniform vec3 lightColors[8];
+uniform float lightRanges[8];
+uniform float lightStrengths[8];
+uniform vec3 ambientColor;
+
+// TODO: I don't like the normal, additive lighting blending. I prefer a system where lights will overwrite the ambient lighting, and overlapping lights will be interpolated of sorts
+
+
+
+// Function to convert RGB to HSL
+/*
+vec3 rgbToHsl(vec3 color) {
+	float maxVal = max(max(color.r, color.g), color.b);
+	float minVal = min(min(color.r, color.g), color.b);
+	float delta = maxVal - minVal;
+	
+	// Lightness
+	float l = (maxVal + minVal) / 2.0;
+	
+	// Saturation
+	float s;
+	if (delta == 0.0) {
+		s = 0.0;
+	} else {
+		s = delta / (1.0 - abs(2.0 * l - 1.0));
+	}
+	
+	// Hue
+	float h;
+	if (delta == 0.0) {
+		h = 0.0;
+	} else if (maxVal == color.r) {
+		h = mod(((color.g - color.b) / delta), 6.0);
+	} else if (maxVal == color.g) {
+		h = ((color.b - color.r) / delta) + 2.0;
+	} else {
+		h = ((color.r - color.g) / delta) + 4.0;
+	}
+	h /= 6.0;
+	
+	return vec3(h, s, l);
+}
+
+
+
+vec3 hslToRgb(vec3 hsl) {
+	float h = hsl.x;
+	float s = hsl.y;
+	float l = hsl.z;
+
+	float c = (1.0 - abs(2.0 * l - 1.0)) * s;
+	float x = c * (1.0 - abs(mod(h * 6.0, 2.0) - 1.0));
+	float m = l - c / 2.0;
+	
+	vec3 rgb;
+	
+	if (h < 1.0 / 6.0) {
+		rgb = vec3(c, x, 0.0);
+	} else if (h < 2.0 / 6.0) {
+		rgb = vec3(x, c, 0.0);
+	} else if (h < 3.0 / 6.0) {
+		rgb = vec3(0.0, c, x);
+	} else if (h < 4.0 / 6.0) {
+		rgb = vec3(0.0, x, c);
+	} else if (h < 5.0 / 6.0) {
+		rgb = vec3(x, 0.0, c);
+	} else {
+		rgb = vec3(c, 0.0, x);
+	}
+
+	return rgb + vec3(m);
+}
+
+
+
+vec3 blendColorsHSL(vec3 color1, vec3 color2, float amount) {
+	vec3 hsl1 = rgbToHsl(color1);
+	vec3 hsl2 = rgbToHsl(color2);
+
+	// Interpolate hue, ensuring it's circular
+	float h1 = hsl1.x;
+	float h2 = hsl2.x;
+	if (abs(h2 - h1) > 0.5) {
+		if (h2 > h1) {
+			h1 += 1.0;
+		} else {
+			h2 += 1.0;
+		}
+	}
+	float h = mix(h1, h2, amount);
+	h = mod(h, 1.0);  // Wrap hue around 1.0
+
+	// Interpolate saturation and lightness linearly
+	float s = mix(hsl1.y, hsl2.y, amount);
+	float l = mix(hsl1.z, hsl2.z, amount);
+
+	vec3 hslInterpolated = vec3(h, s, l);
+
+	// Convert back to RGB
+	return hslToRgb(hslInterpolated);
+}
+*/
+
+
 vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
+	// TODO: apply backface culling
+	//if (dot(normalize(fragNormal), cameraViewDirection) > 0.0) {
+	//	discard;
+	//}
+
 	// Check if a texture is applied by sampling from it
 	vec4 texColor = Texel(tex, texture_coords);
 
 	// Check if the alpha of the texture color is below a threshold
-	//if (texColor.a < 0.1) {
-	//	discard;  // Discard fully transparent pixels
-	//}
+	if (texColor.a < 0.01) {
+		discard;  // Discard fully transparent pixels
+	}
 
 	// lighting is done this way:
-	// first calculate surface lighting on the fragment through adding the different point light colors at that fragment together
-	// then calculate the ambient color at that fragment
-	// finally multiply the two to get the resulting lighting at that fragment
-	// then multiply the lighting with the surface color calculated below (vertex color and mesh image thing)
+	// 1. calculate the sum of lighting on a surface pixel
+	// 2. calculate the sum of lighting strengths on a surface pixel
+	// 3. if the sum of strengths is at least 1 or bigger, use the sum of lighting as the final lighting on that surface pixel
+	// 4. if the sum of strengths is less than 1, interpolate the lighting with the ambient lighting based on the sum of strengths
+	// 5. multiply the lighting with the vertex color and the surface's applied texture
+	// the reason why lighting is done this way is to make it more 'stylized' and give more control to the lighting emitted by point lights, but overlapping lights becomes trickier to handle
+
+
+	vec3 lighting = vec3(0.0, 0.0, 0.0); // start with just ambient lighting on the surface
+	float totalInfluence = 0;
+
+	// add the lighting contribution of all lights to the surface
+	for (int i = 0; i < 8; ++i) {
+		if (lightStrengths[i] > 0) { // only consider lights with a strength above 0
+			// distance to the light
+			float distance = length(lightPositions[i] - fragWorldPosition);
+			// attenuation factor
+			float attenuation = clamp(1.0 - pow(distance / lightRanges[i], 1), 0.0, 1.0); // TODO: add a uniform for the power
+			// sum up the light contributions
+			lighting += lightColors[i] * lightStrengths[i] * attenuation;
+			totalInfluence = totalInfluence + attenuation;
+		}
+	}
+
+	vec3 finalColor = lighting;
+	if (totalInfluence < 1.0) {
+		finalColor = vec3(
+			ambientColor.r * (1.0 - totalInfluence) + lighting.r * totalInfluence,
+			ambientColor.g * (1.0 - totalInfluence) + lighting.g * totalInfluence,
+			ambientColor.b * (1.0 - totalInfluence) + lighting.b * totalInfluence
+		);
+	}
+
+	// TODO: interpolate the lighting towards the fog color depending on the fog thickness and how far the fragment is from the camera
+
+	// Final color calculation
+	//vec3 finalColor = lighting * texColor.rgb * color.rgb;
 
 
 	// If the texture is effectively white (no texture) or the mesh has no texture applied
@@ -239,7 +401,7 @@ vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
 	// calculate surface lighting based on ambient and surrounding lights in range
 
 	// Return the texture color multiplied by the input color
-	return texColor * color;
+	return texColor * color * vec4(finalColor.x, finalColor.y, finalColor.z, 1.0);
 	//return texColor;
 }
 
