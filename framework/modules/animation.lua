@@ -185,7 +185,7 @@ end
 
 
 function animation:getSize()
-	return vector(self.FrameSize)
+	return vector2(self.FrameSize)
 end
 
 function animation:__tostring()
@@ -208,7 +208,7 @@ local function new(refImg, frameSize, coordinates, playSpeed, looped)
 		["CurrentFrame"] = 1;
 		["FrameCoordinates"] = {}; -- {vector(x1, y1), vector(x2, y2), etc.}
 		["FrameCount"] = 0;
-		["FrameSize"] = (frameSize == nil) and vector(refImg:getWidth(), refImg:getHeight()) or vector(frameSize, frameSize);
+		["FrameSize"] = (frameSize == nil) and vector2(refImg:getWidth(), refImg:getHeight()) or vector2(frameSize, frameSize);
 		--["FrameHeight"] = height or refImg:getHeight();
 		["FrameDuration"] = playSpeed == nil and 8 or (1 / playSpeed);
 		["Looped"] = looped or false;
@@ -225,21 +225,21 @@ local function new(refImg, frameSize, coordinates, playSpeed, looped)
 		local framesY = math.floor(refImg:getHeight() / Obj.FrameSize.y)
 		for x = 0, framesX - 1 do
 			for y = 0, framesY - 1 do
-				Obj.FrameCoordinates[#Obj.FrameCoordinates + 1] = vector(x * Obj.FrameSize.x, y * Obj.FrameSize.y)
+				Obj.FrameCoordinates[#Obj.FrameCoordinates + 1] = vector2(x * Obj.FrameSize.x, y * Obj.FrameSize.y)
 			end
 		end
-	elseif vector.isVector(coordinates[1]) then -- table of vectors
+	elseif vector2.isVector2(coordinates[1]) then -- table of vectors
 		for i = 1, #coordinates do
-			Obj.FrameCoordinates[i] = vector((coordinates[i].x - 1) * Obj.FrameSize.x, (coordinates[i].y - 1) * Obj.FrameSize.y)
+			Obj.FrameCoordinates[i] = vector2((coordinates[i].x - 1) * Obj.FrameSize.x, (coordinates[i].y - 1) * Obj.FrameSize.y)
 		end
 	elseif type(coordinates[1]) == "table" then -- table of tables
 		for i = 1, #coordinates do
-			Obj.FrameCoordinates[i] = vector((coordinates[i][1] - 1) * Obj.FrameSize.x, (coordinates[i][2] - 1) * Obj.FrameSize.y)
+			Obj.FrameCoordinates[i] = vector2((coordinates[i][1] - 1) * Obj.FrameSize.x, (coordinates[i][2] - 1) * Obj.FrameSize.y)
 		end
 	else -- number sequence table
 		local n = 1
 		for i = 1, #coordinates, 2 do
-			Obj.FrameCoordinates[n] = vector((coordinates[i] - 1) * Obj.FrameSize.x, (coordinates[i + 1] - 1) * Obj.FrameSize.y)
+			Obj.FrameCoordinates[n] = vector2((coordinates[i] - 1) * Obj.FrameSize.x, (coordinates[i + 1] - 1) * Obj.FrameSize.y)
 			n = n + 1
 		end
 	end

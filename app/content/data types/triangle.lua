@@ -8,7 +8,7 @@ local content = {}
 table.insert(content, {
 	["Type"] = "IntroHeader";
 	["Name"] = "The triangle data type";
-	["Description"] = "An object representing a 2D triangle. Internally, a triangle is constructed from a 3 line variables.";
+	["Description"] = "An object representing a 2D triangle. Internally, a triangle is constructed from 3 line2 variables.";
 })
 
 table.insert(content, {
@@ -20,7 +20,7 @@ table.insert(content, {
 table.insert(content, {
 	["Type"] = "Property";
 	["Name"] = "Line1";
-	["ValueType"] = "line";
+	["ValueType"] = "line2";
 	["ReadOnly"] = true;
 	["Description"] = "The first edge of the triangle.";
 })
@@ -28,7 +28,7 @@ table.insert(content, {
 table.insert(content, {
 	["Type"] = "Property";
 	["Name"] = "Line2";
-	["ValueType"] = "line";
+	["ValueType"] = "line2";
 	["ReadOnly"] = true;
 	["Description"] = "The second edge of the triangle.";
 })
@@ -36,7 +36,7 @@ table.insert(content, {
 table.insert(content, {
 	["Type"] = "Property";
 	["Name"] = "Line3";
-	["ValueType"] = "line";
+	["ValueType"] = "line2";
 	["ReadOnly"] = true;
 	["Description"] = "The third edge of the triangle.";
 })
@@ -64,22 +64,22 @@ table.insert(content, {
 table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "closestTo";
-	["Arguments"] = {"vector"};
-	["Description"] = "Returns the point on the triangle closest to the given vector. If the given vector is inside of the triangle, the returned vector will share the same coordinates.";
+	["Arguments"] = {"vector2"};
+	["Description"] = "Returns the point on the triangle closest to the given vector2. If the given vector2 is inside of the triangle, the returned vector2 will share the same coordinates.";
 })
 
 table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "dist";
-	["Arguments"] = {"vector"};
-	["Description"] = "Returns the distance between the given vector and the point on the triangle closest to the given vector. If the vector is inside the triangle, the distance is 0.";
+	["Arguments"] = {"vector2"};
+	["Description"] = "Returns the distance between the given vector2 and the point on the triangle closest to the given vector2. If the vector2 is inside the triangle, the distance is 0.";
 })
 
 table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "encloses";
-	["Arguments"] = {"vector"};
-	["Description"] = "Returns true if the given vector is inside of the triangle.";
+	["Arguments"] = {"vector2"};
+	["Description"] = "Returns true if the given vector2 is inside of the triangle.";
 })
 
 table.insert(content, {
@@ -93,7 +93,7 @@ table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "getPoints";
 	["Arguments"] = {};
-	["Description"] = "Returns an array of vector values that represent the corners of the triangle.";
+	["Description"] = "Returns an array of vector2 values that represent the corners of the triangle.";
 })
 
 table.insert(content, {
@@ -106,11 +106,11 @@ table.insert(content, {
 table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "intersectLine";
-	["Arguments"] = {"line"};
-	["Description"] = "Returns the points at which the triangle intersects the given line. If there were no intersections, this returns nil. Otherwise it returns one or two vectors depending on where the triangle was intersected.";
+	["Arguments"] = {"line2"};
+	["Description"] = "Returns the points at which the triangle intersects the given line2. If there were no intersections, this returns nil. Otherwise it returns one or two vector2s depending on where the triangle was intersected.";
 	["Demo"] = function()
-		local tri = triangle(vector(16, 84), vector(51, 12), vector(84, 60))
-		local l = line(vector(11, 36), vector(85, 80))
+		local tri = triangle(vector2(16, 84), vector2(51, 12), vector2(84, 60))
+		local l = line2(vector2(11, 36), vector2(85, 80))
 		local v1, v2 = tri:intersectLine(l)
 		local Screen = love.graphics.newCanvas(100, 100)
 		Screen:renderTo(
@@ -145,12 +145,12 @@ table.insert(content, {
 table.insert(content, {
 	["Type"] = "Constructor";
 	["Name"] = "__add";
-	["Arguments"] = {"vector"};
-	["Description"] = "Move the triangle along the x and y axis by the given vector.";
-	["CodeMarkup"] = "<k>local</k> p1 <k>=</k> <f>triangle</f>(<f>vector</f>(<n>60</n>, <n>15</n>), <f>vector</f>(<n>20</n>, <n>70</n>), <f>vector</f>(<n>90</n>, <n>45</n>))\n<k>local</k> p2 <k>=</k> p1 <k>+</k> <f>vector</f>(<n>50</n>, <n>15</n>)\nlove.graphics.<f>polygon</f>(<s>\"line\"</s>, p1:<f>unpack</f>())\nlove.graphics.<f>polygon</f>(<s>\"line\"</s>, p2:<f>unpack</f>())";
+	["Arguments"] = {"vector2"};
+	["Description"] = "Move the triangle along the x and y axis by the given vector2.";
+	["CodeMarkup"] = "<k>local</k> p1 <k>=</k> <f>triangle</f>(<f>vector2</f>(<n>60</n>, <n>15</n>), <f>vector2</f>(<n>20</n>, <n>70</n>), <f>vector2</f>(<n>90</n>, <n>45</n>))\n<k>local</k> p2 <k>=</k> p1 <k>+</k> <f>vector2</f>(<n>50</n>, <n>15</n>)\nlove.graphics.<f>polygon</f>(<s>\"line\"</s>, p1:<f>unpack</f>())\nlove.graphics.<f>polygon</f>(<s>\"line\"</s>, p2:<f>unpack</f>())";
 	["Demo"] = function()
-		local p1 = triangle(vector(60, 15), vector(20, 70), vector(90, 45))
-		local p2 = p1 + vector(50, 15)
+		local p1 = triangle(vector2(60, 15), vector2(20, 70), vector2(90, 45))
+		local p2 = p1 + vector2(50, 15)
 		local Screen = love.graphics.newCanvas(150, 100)
 		Screen:renderTo(
 			function()
@@ -170,8 +170,8 @@ table.insert(content, {
 table.insert(content, {
 	["Type"] = "Constructor";
 	["Name"] = "__sub";
-	["Arguments"] = {"vector"};
-	["Description"] = "Move the triangle along the x and y axis by the inverse of the given vector.";
+	["Arguments"] = {"vector2"};
+	["Description"] = "Move the triangle along the x and y axis by the inverse of the given vector2.";
 })
 
 table.insert(content, {

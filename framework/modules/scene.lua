@@ -174,7 +174,7 @@ end
 
 -- return the entity located the given screen coordinate
 function Scene:at(x, y, filter) -- filter is either 'nil' (no filter), "creature" (only check creature entities) or "prop" (only check prop entities)
-	if vector.isVector(x) then
+	if vector2.isVector2(x) then
 		filter = y
 		y = x.y
 		x = x.x
@@ -381,7 +381,7 @@ end
 -- grid is a 2d array of vectors representing which sprites should be drawn on which tiles of the grid
 function newTiledScene(sceneCamera, atlasImage, grid, tileSize)
 	assert(camera.isCamera(sceneCamera) or sceneCamera == nil, "scene.newTiledScene(sceneCamera, atlasImage, grid, tileSize) only accepts a camera instance or nil for 'sceneCamera'")
-	assert(type(grid) == "table" and type(grid[1]) == "table" and vector.isVector(grid[1][1]), "scene.newTiledScene(sceneCamera, atlasImage, grid, tileSize) requires argument 'grid' to be a 2d array of vectors")
+	assert(type(grid) == "table" and type(grid[1]) == "table" and vector2.isVector2(grid[1][1]), "scene.newTiledScene(sceneCamera, atlasImage, grid, tileSize) requires argument 'grid' to be a 2d array of vector2s")
 	module.TotalCreated = module.TotalCreated + 1
 
 	-- for each tile in the atlasImage, create a Quad and store it in a 2D array.

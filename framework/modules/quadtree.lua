@@ -20,8 +20,8 @@ Quadtree.__index = Quadtree
 
 local function new(bucketSize, maxSplits, position, size)
 	local Obj = {
-		["Position"] = position ~= nil and vector(position) or vector(0, 0);
-		["Size"] = size ~= nil and vector(size) or vector(1000, 1000);
+		["Position"] = position ~= nil and vector2(position) or vector2(0, 0);
+		["Size"] = size ~= nil and vector2(size) or vector2(1000, 1000);
 		["BucketSize"] = bucketSize;
 		["MaxSplits"] = maxSplits;
 		["Items"] = {};
@@ -43,7 +43,7 @@ function Quadtree:insert(Object, position, radius)
 	if #self.Items < self.BucketSize or self.MaxSplits == 0 then
 		self.Items[#self.Items + 1] = {
 			["Item"] = Object;
-			["Position"] = vector(position);
+			["Position"] = vector2(position);
 			["Radius"] = radius;
 		}
 		return true
@@ -238,9 +238,9 @@ end
 -- split the quadtree into 4 quadrants of equal size
 function Quadtree:split()
 	self.Splits[1] = new(self.BucketSize, self.MaxSplits - 1, self.Position, self.Size / 2)
-	self.Splits[2] = new(self.BucketSize, self.MaxSplits - 1, self.Position + vector(self.Size.x / 2, 0), self.Size / 2)
-	self.Splits[3] = new(self.BucketSize, self.MaxSplits - 1, self.Position + vector(0, self.Size.y / 2), self.Size / 2)
-	self.Splits[4] = new(self.BucketSize, self.MaxSplits - 1, self.Position + vector(self.Size.x / 2, self.Size.y / 2), self.Size / 2)
+	self.Splits[2] = new(self.BucketSize, self.MaxSplits - 1, self.Position + vector2(self.Size.x / 2, 0), self.Size / 2)
+	self.Splits[3] = new(self.BucketSize, self.MaxSplits - 1, self.Position + vector2(0, self.Size.y / 2), self.Size / 2)
+	self.Splits[4] = new(self.BucketSize, self.MaxSplits - 1, self.Position + vector2(self.Size.x / 2, self.Size.y / 2), self.Size / 2)
 	-- moving items from the current quadtree to child quadtrees worsens performance! So just keep them in the parent quadtree :>
 end
 

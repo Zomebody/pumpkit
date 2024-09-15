@@ -106,7 +106,7 @@ table.insert(content, {
 	["Name"] = "on";
 	["Arguments"] = {"eventName", "function"};
 	["Description"] = "Registers a function to be called when the given event triggered. When this method is called multiple times, each function will be called in the same order as they were registered.\n\nReturns a Connection object.";
-	["CodeMarkup"] = "<k>local</k> frame <k>=</k> ui.<f>newFrame</f>(<n>100</n>, <n>100</n>, <f>color</f>(<n>0.1</n>, <n>0.25</n>, <n>0.8</n>))\nframe:<f>alignX</f>(<s>\"left\"</s>)\n<k>local</k> tweenInfo <k>=</k> {[<s>\"Progress\"</s>] = <n>0</n>)\n<k>local</k> tweenObj <k>=</k> <f>tween</f>(tweenInfo, <s>\"sine\"</s>, <n>2</n>, {[<s>\"Progress\"</s>] = <n>1</n>})\ntweenObj:<f>on</f>(<s>\"Update\"</s>, <f>function</f>()\n\tframe:<f>reposition</f>(<f>vector</f>(tweenInfo.Progress, <n>0.5</n>), <f>vector</f>(<n>0</n>, <n>0</n>))\n\tframe.Center = <f>vector</f>(tweenInfo.Progress, <n>0.5</n>)\n<k>end</k>)\ntweenObj:<f>on</f>(<s>\"Stop\"</s>, <f>function</f>(<a>state</a>)\n\t<k>if</k> state <k>==</k> <s>\"complete\"</s> <k>then</k>\n\t\ttweenObj:<f>play</f>(<k>not</k> tweenObj.Reversed)\n\t<k>end</k>\n<k>end</k>)\ntweenObj:<f>play</f>()";
+	["CodeMarkup"] = "<k>local</k> frame <k>=</k> ui.<f>newFrame</f>(<n>100</n>, <n>100</n>, <f>color</f>(<n>0.1</n>, <n>0.25</n>, <n>0.8</n>))\nframe:<f>alignX</f>(<s>\"left\"</s>)\n<k>local</k> tweenInfo <k>=</k> {[<s>\"Progress\"</s>] = <n>0</n>)\n<k>local</k> tweenObj <k>=</k> <f>tween</f>(tweenInfo, <s>\"sine\"</s>, <n>2</n>, {[<s>\"Progress\"</s>] = <n>1</n>})\ntweenObj:<f>on</f>(<s>\"Update\"</s>, <f>function</f>()\n\tframe:<f>reposition</f>(<f>vector2</f>(tweenInfo.Progress, <n>0.5</n>), <f>vector2</f>(<n>0</n>, <n>0</n>))\n\tframe.Center = <f>vector2</f>(tweenInfo.Progress, <n>0.5</n>)\n<k>end</k>)\ntweenObj:<f>on</f>(<s>\"Stop\"</s>, <f>function</f>(<a>state</a>)\n\t<k>if</k> state <k>==</k> <s>\"complete\"</s> <k>then</k>\n\t\ttweenObj:<f>play</f>(<k>not</k> tweenObj.Reversed)\n\t<k>end</k>\n<k>end</k>)\ntweenObj:<f>play</f>()";
 	["Demo"] = function()
 		local Container = ui.newFrame(350, 120, color(0, 0, 0))
 		Container:setPadding(10)
@@ -115,8 +115,8 @@ table.insert(content, {
 		local tweenInfo = {["Progress"] = 0}
 		local tweenObj = tween(tweenInfo, "sine", 2, {["Progress"] = 1})
 		tweenObj:on("Update", function()
-			frame:reposition(vector(tweenInfo.Progress, 0.5), vector(0, 0))
-			frame.Center = vector(tweenInfo.Progress, 0.5)
+			frame:reposition(vector2(tweenInfo.Progress, 0.5), vector2(0, 0))
+			frame.Center = vector2(tweenInfo.Progress, 0.5)
 		end)
 		tweenObj:on("Stop", function(state)
 			if state == "complete" then

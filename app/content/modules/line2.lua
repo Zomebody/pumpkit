@@ -1,14 +1,14 @@
 
 local meta = {
-	["Name"] = "line";
+	["Name"] = "line2";
 }
 
 local content = {}
 
 table.insert(content, {
 	["Type"] = "IntroHeader";
-	["Name"] = "The line Module";
-	["Description"] = "A module used to construct lines.";
+	["Name"] = "The line2 Module";
+	["Description"] = "A module used to construct line2s.";
 })
 
 table.insert(content, {
@@ -21,7 +21,7 @@ table.insert(content, {
 	["Type"] = "Constructor";
 	["Name"] = "new";
 	["Arguments"] = {"from", "to"};
-	["Description"] = "Constructs a line starting at the vector 'from' with the end point at vector 'to'. Alternatively, 4 numbers can be passed (x1,y1,x2,y2) to construct a line. The example below illustrates a line and its normal pointing out of its center.";
+	["Description"] = "Constructs a line2 starting at the vector2 'from' with the end point at vector2 'to'. Alternatively, 4 numbers can be passed (x1,y1,x2,y2) to construct a line2. The example below illustrates a line2 and its normal pointing out of its center.";
 	["Demo"] = function()
 		local Canvas = love.graphics.newCanvas(120, 100)
 		Canvas:renderTo(
@@ -30,7 +30,7 @@ table.insert(content, {
 				love.graphics.setColor(0, 0, 0)
 				love.graphics.rectangle("fill", 0, 0, 150, 90)
 				love.graphics.setColor(1, 1, 1)
-				local l = line(20, 20, 100, 80)
+				local l = line2(20, 20, 100, 80)
 				love.graphics.line(l:unpack())
 				love.graphics.setColor(0, 0.5, 1)
 				local c = l:getCenter()
@@ -50,9 +50,9 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Constructor";
-	["Name"] = "isLine";
+	["Name"] = "isLine2";
 	["Arguments"] = {"Object"};
-	["Description"] = "Checks if the given object is a line instance. Returns true if so.";
+	["Description"] = "Checks if the given object is a line2 instance. Returns true if so.";
 })
 
 return {

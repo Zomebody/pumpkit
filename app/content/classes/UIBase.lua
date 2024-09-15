@@ -19,7 +19,7 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Property";
-	["ValueType"] = "vector";
+	["ValueType"] = "vector2";
 	["Name"] = "AbsolutePosition";
 	["Description"] = "The exact location of the object on screen, in pixels. This property is updated whenever any method or event is called that manipulates positions or sizes. The computed values will be rounded down to prevent blurriness in the resulting draw calls.";
 	["ReadOnly"] = true;
@@ -29,7 +29,7 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Property";
-	["ValueType"] = "vector";
+	["ValueType"] = "vector2";
 	["Name"] = "AbsoluteSize";
 	["Description"] = "The exact size of the element in pixels. This property is updates whenever any method or event is called that manipulates positions or sizes. The computed values will be rounded down to prevent blurriness in the resulting draw calls.";
 	["ReadOnly"] = true;
@@ -59,9 +59,9 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Property";
-	["ValueType"] = "vector";
+	["ValueType"] = "vector2";
 	["Name"] = "Center";
-	["Description"] = "Similar to Roblox's AnchorPoint property. This will set the center point of the element for positioning. If this is vector(0, 0), the top left corner is used, vector(0.5, 0.5) is the middle, vector(1, 0) is the top right corner, and so on.";
+	["Description"] = "Similar to Roblox's AnchorPoint property. This will set the center point of the element for positioning. If this is vector2(0, 0), the top left corner is used, vector2(0.5, 0.5) is the middle, vector2(1, 0) is the top right corner, and so on.";
 	["ReadOnly"] = false;
 	["CodeMarkup"] = nil;
 	["Demo"] = nil;
@@ -99,9 +99,9 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Property";
-	["ValueType"] = "vector";
+	["ValueType"] = "vector2";
 	["Name"] = "ContentOffset";
-	["Description"] = "A vector that indicates an offset in pixels for child elements. You can edit this property with UIBase:shiftContent(x,y). This property is useful to implement scrolling frames or minimaps.";
+	["Description"] = "A vector2 that indicates an offset in pixels for child elements. You can edit this property with UIBase:shiftContent(x,y). This property is useful to implement scrolling frames or minimaps.";
 	["ReadOnly"] = true;
 	["CodeMarkup"] = nil;
 	["Demo"] = nil;
@@ -173,7 +173,7 @@ table.insert(content, {
 	["Demo"] = function()
 		local Container = ui.newFrame(200, 50, color(0, 0, 0, 0))
 		local SpeechImg = love.graphics.newImage("test_images/speechbubble1616x2424.png")
-		local LargeSpeech = ui.newSlicedFrame(SpeechImg, vector(16, 16), vector(24, 24), 200, 200)
+		local LargeSpeech = ui.newSlicedFrame(SpeechImg, vector2(16, 16), vector2(24, 24), 200, 200)
 		LargeSpeech.FitTextOnResize = true
 		LargeSpeech:setPadding(4)
 		LargeSpeech:setText("FiraCode.ttf", {{0, 0, 0}, "Speech"}, 12)
@@ -181,7 +181,7 @@ table.insert(content, {
 		LargeSpeech.TextBlock:alignY("center")
 		LargeSpeech:resize(0, 0, 100, 50)
 		Container:addChild(LargeSpeech)
-		local SmallSpeech = ui.newSlicedFrame(SpeechImg, vector(16, 16), vector(24, 24), 200, 200, nil, 7/10)
+		local SmallSpeech = ui.newSlicedFrame(SpeechImg, vector2(16, 16), vector2(24, 24), 200, 200, nil, 7/10)
 		SmallSpeech.FitTextOnResize = true
 		SmallSpeech:setPadding(4)
 		SmallSpeech:setText("FiraCode.ttf", {{0, 0, 0}, "Speech"}, 12)
@@ -236,7 +236,7 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Property";
-	["ValueType"] = "vector";
+	["ValueType"] = "vector2";
 	["Name"] = "Padding";
 	["Description"] = "Adds a padding to the UIBase.\n\n- Padding.x determines the padding in pixels on the left and right.\n- Padding.y determines the padding in pixels at the top and bottom.\n\nThis property applies to child elements and the UIBase's TextBlock. This value can be changed with :setPadding().";
 	["ReadOnly"] = true;
@@ -256,9 +256,9 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Property";
-	["ValueType"] = "vector";
+	["ValueType"] = "vector2";
 	["Name"] = "Pivot";
-	["Description"] = "Determines the point within the element to rotate around when a rotation is applied. vector(0,0) it the top left corner. vector(1,1) is the bottom right corner.";
+	["Description"] = "Determines the point within the element to rotate around when a rotation is applied. vector2(0,0) it the top left corner. vector2(1,1) is the bottom right corner.";
 	["ReadOnly"] = false;
 	["CodeMarkup"] = nil;
 	["Demo"] = nil;
@@ -268,7 +268,7 @@ table.insert(content, {
 	["Type"] = "Property";
 	["ValueType"] = "Object";
 	["Name"] = "Position";
-	["Description"] = "This determines the location of the UI element relative to its parent. Position.Scale is a vector whose x and y are between 0 and 1, where (0,0) is the top left and (1,1) is the bottom right. Position.Offset is a position in absolute pixels. The two can be mixed to create UI that is scalable with the window's size. Setting this property can be done with the :reposition(scale,offset) method.";
+	["Description"] = "This determines the location of the UI element relative to its parent. Position.Scale is a vector2 whose x and y are between 0 and 1, where (0,0) is the top left and (1,1) is the bottom right. Position.Offset is a position in absolute pixels. The two can be mixed to create UI that is scalable with the window's size. Setting this property can be done with the :reposition(scale,offset) method.";
 	["ReadOnly"] = true;
 	["CodeMarkup"] = nil;
 	["Demo"] = nil;
@@ -291,7 +291,7 @@ table.insert(content, {
 		Rotato:setBorder(8)
 		Rotato.Rotation = 20
 		--Rotato.Color = color(0.3, 0.8, 0.7)
-		Rotato.Pivot = vector(0.5, 0.5)
+		Rotato.Pivot = vector2(0.5, 0.5)
 		Rotato:setText("FiraCode.ttf", "Rotated text!", 16)
 		Rotato.TextBlock:alignX("left")
 		Rotato.TextBlock:alignY("bottom")
@@ -306,7 +306,7 @@ table.insert(content, {
 	["Type"] = "Property";
 	["ValueType"] = "Object";
 	["Name"] = "Size";
-	["Description"] = "An object with two properties: Scale and Offset. Both are vectors.\n\n- Scale determines the size as a fraction of its parent (while respecting padding). So a scale of 0.5 is half its parents size if no padding is present in the parent.\n- Offset is an additional size in absolute pixels, independent of its parent.";
+	["Description"] = "An object with two properties: Scale and Offset. Both are vector2s.\n\n- Scale determines the size as a fraction of its parent (while respecting padding). So a scale of 0.5 is half its parents size if no padding is present in the parent.\n- Offset is an additional size in absolute pixels, independent of its parent.";
 	["ReadOnly"] = true;
 	["CodeMarkup"] = nil;
 	["Demo"] = nil;
@@ -632,14 +632,14 @@ table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "reposition";
 	["Arguments"] = {"sx", "sy", "ox", "oy"};
-	["Description"] = "Sets the Position property and updates the AbsolutePosition of the elements and its descendants. sx and sy are the scale, ox and oy are the offset. Alternatively, two vectors can be passed for sx and sy instead.";
+	["Description"] = "Sets the Position property and updates the AbsolutePosition of the elements and its descendants. sx and sy are the scale, ox and oy are the offset. Alternatively, two vector2s can be passed for sx and sy instead.";
 })
 
 table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "resize";
 	["Arguments"] = {"a", "b", "c", "d"};
-	["Description"] = "Resizes the element. This also updates the AbsolutePosition and AbsoluteSize of the element and its children. There are multiple ways of calling this method:\n\n1. The first two arguments are numbers. This will only set the Offset part of the Size property and the Scale part will be zero.\n\n2. The first two arguments are vectors. This will set the Scale property of the element to the first vector and the Offset property to the second vector.\n\n3. All four arguments are numbers. This will set the Scale property to a vector using the first two numbers and the Offset property to a vector using the last two numbers.";
+	["Description"] = "Resizes the element. This also updates the AbsolutePosition and AbsoluteSize of the element and its children. There are multiple ways of calling this method:\n\n1. The first two arguments are numbers. This will only set the Offset part of the Size property and the Scale part will be zero.\n\n2. The first two arguments are vector2s. This will set the Scale property of the element to the first vector2 and the Offset property to the second vector2.\n\n3. All four arguments are numbers. This will set the Scale property to a vector2 using the first two numbers and the Offset property to a vector2 using the last two numbers.";
 	["CodeMarkup"] = "<k>local</k> Frame1 <k>=</k> ui.<f>newFrame</f>(<n>100</n>, <n>100</n>, <f>color</f>(<n>0</n>, <n>0</n>, <n>0</n>))\nFrame1:<f>setText</f>(<s>\"FiraCode.ttf\"</s>, <s>\"Frame 1\"</s>, <n>18</n>)\n<k>local</k> Frame2 <k>=</k> ui.<f>newFrame</f>(<n>100</n>, <n>100</n>, <f>color</f>(<n>0</n>, <n>0</n>, <n>0</n>))\nFrame2:<f>setText</f>(<s>\"FiraCode.ttf\"</s>, <s>\"Frame 2\"</s>, <n>18</n>)\nFrame2:<f>resize</f>(<n>130</n>, <n>80</n>)";
 	["Demo"] = function() -- function that creates and returns an element to be placed right below the code example
 		local Container = ui.newFrame(300, 100)
@@ -680,14 +680,14 @@ table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "setCenter";
 	["Arguments"] = {"x", "y"};
-	["Description"] = "Sets the center of the element. The center property is similar to Roblox's AnchorPoint property. X and y are numbers between 0 and 1. X can also be a vector.";
+	["Description"] = "Sets the center of the element. The center property is similar to Roblox's AnchorPoint property. X and y are numbers between 0 and 1. X can also be a vector2.";
 })
 
 table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "setPadding";
 	["Arguments"] = {"x", "y"};
-	["Description"] = "Sets the horizontal and vertical padding of an element. If the second argument is missing, the first argument replaces it. Additionally, a vector can be passed instead of two numbers. Horizontal and vertical padding applies on both of their edges. Padding will apply to the object's childrens' positions and the object's TextBlock.";
+	["Description"] = "Sets the horizontal and vertical padding of an element. If the second argument is missing, the first argument replaces it. Additionally, a vector2 can be passed instead of two numbers. Horizontal and vertical padding applies on both of their edges. Padding will apply to the object's childrens' positions and the object's TextBlock.";
 	["CodeMarkup"] = "<k>local</k> Container <k>=</k> ui.<f>newFrame</f>(<n>300</n>, <n>100</n>, <f>color</f>(<n>0</n>, <n>0</n>, <n>0</n>))\nContainer:<f>setPadding</f>(<n>20</n>, <n>10</n>)\nContainer:<f>setText</f>(<s>\"FiraCode.ttf\"</s>, <s>\"Hello World\"</s>, <n>18</n>)\n<k>local</k> Child <k>=</k> ui.<f>newFrame</f>(<n>60</n>, <n>60</n>, <f>color</f>(<n>1</n>, <n>1</n>, <n>1</n>))\nChild:<f>alignX</f>(<s>\"right\"</s>)\nChild:<f>alignY</f>(<s>\"bottom\"</s>)\nContainer:<f>addChild</f>(Child)";
 	["Demo"] = function()
 		local Container = ui.newFrame(300, 100, color(0, 0, 0))
@@ -725,7 +725,7 @@ table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "shiftContent";
 	["Arguments"] = {"offsetX", "offsetY"};
-	["Description"] = "Changes the ContentOffset property by the specified amount on the x-axis and y-axis. This can be used to program scrollable elements.\n\nOptionally, a vector can be passed instead of two numbers.";
+	["Description"] = "Changes the ContentOffset property by the specified amount on the x-axis and y-axis. This can be used to program scrollable elements.\n\nOptionally, a vector2 can be passed instead of two numbers.";
 	["CodeMarkup"] = "<k>local</k> Container <k>=</k> ui.<f>newFrame</f>(<n>250</n>, <n>100</n>, <f>color</f>(<n>0</n>, <n>0</n>, <n>0</n>))\n<k>local</k> Child <k>=</k> ui.<f>newFrame</f>(<n>100</n>, <n>100</n>, <f>color</f>(<n>1</n>, <n>1</n>, <n>1</n>))\nChild:<f>on</f>(<s>\"FullPress\"</s>, <f>function</f>()\n\t<k>if</k> Container.ContentOffset.x <k><</k> <n>150</n> <k>then</k>\n\t\tContainer:<f>shiftContent</f>(<n>25</n>, <n>0</n>)\n\t<k>else</k>\n\t\tContainer:<f>shiftContent</f>(<n>-150</n>, <n>0</n>)\n\t<k>end</k>\n<k>end</k>)\nContainer:<f>addChild</f>(Child)";
 	["Demo"] = function()
 		local Container = ui.newFrame(250, 100, color(0, 0, 0))

@@ -12,7 +12,7 @@ table.insert(content, {
 	["Demo"] = function()
 		local Driller = love.graphics.newImage("test_images/drillanim.png")
 		Driller:setFilter("nearest", "nearest")
-		local Animation = animation(Driller, vector(16, 16), nil, 16, true)
+		local Animation = animation(Driller, vector2(16, 16), nil, 16, true)
 		-- Alternative
 		-- local Animation = animation(Driller, 24, 24, {5, 1, 6, 1, 7, 1, 8, 1, 9, 1, 10, 1}, 10, true)
 		local AnimFrame = ui.newAnimatedFrame(Animation, 98, 98)
@@ -38,9 +38,9 @@ table.insert(content, {
 table.insert(content, {
 	["Type"] = "Property";
 	["Name"] = "FrameCoordinates";
-	["ValueType"] = "Vector array";
+	["ValueType"] = "Vector2 array";
 	["ReadOnly"] = true;
-	["Description"] = "An array of vectors containing (in order) the top left pixel coordinates where each frame is located in the reference image.";
+	["Description"] = "An array of vector2s containing (in order) the top left pixel coordinates where each frame is located in the reference image.";
 })
 
 table.insert(content, {
@@ -62,7 +62,7 @@ table.insert(content, {
 table.insert(content, {
 	["Type"] = "Property";
 	["Name"] = "FrameSize";
-	["ValueType"] = "vector";
+	["ValueType"] = "vector2";
 	["ReadOnly"] = true;
 	["Description"] = "The width and height of the animation in pixels.";
 })

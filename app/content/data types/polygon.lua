@@ -8,7 +8,7 @@ local content = {}
 table.insert(content, {
 	["Type"] = "IntroHeader";
 	["Name"] = "The polygon data type";
-	["Description"] = "An object representing a 2D polygon. A polygon must have at least 3 points. Internally, polygons are constructed from a collection of line variables.";
+	["Description"] = "An object representing a 2D polygon. A polygon must have at least 3 points. Internally, polygons are constructed from a collection of line2 variables.";
 })
 
 table.insert(content, {
@@ -22,7 +22,7 @@ table.insert(content, {
 	["Name"] = "Lines";
 	["ValueType"] = "array";
 	["ReadOnly"] = true;
-	["Description"] = "The lines that make up the polygon.";
+	["Description"] = "The line2s that make up the polygon.";
 })
 
 table.insert(content, {
@@ -41,36 +41,36 @@ table.insert(content, {
 table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "closestTo";
-	["Arguments"] = {"vector"};
-	["Description"] = "Returns the point on the polygon closest to the given vector. If the given vector is inside of the polygon, the returned vector will share the same coordinates.";
+	["Arguments"] = {"vector2"};
+	["Description"] = "Returns the point on the polygon closest to the given vector2. If the given vector2 is inside of the polygon, the returned vector2 will share the same coordinates.";
 })
 
 table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "dist";
-	["Arguments"] = {"vector"};
-	["Description"] = "Returns the distance between the given vector and the point on the polygon closest to the given vector. If the vector is inside the polygon, the distance is 0.";
+	["Arguments"] = {"vector2"};
+	["Description"] = "Returns the distance between the given vector2 and the point on the polygon closest to the given vector2. If the vector2 is inside the polygon, the distance is 0.";
 })
 
 table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "encloses";
-	["Arguments"] = {"vector"};
-	["Description"] = "Returns true if the given vector is inside of the polygon. This works on both convex and concave polygons.";
+	["Arguments"] = {"vector2"};
+	["Description"] = "Returns true if the given vector2 is inside of the polygon. This works on both convex and concave polygons.";
 })
 
 table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "getPerimeter";
 	["Arguments"] = {};
-	["Description"] = "Returns the total length of all line segments in the polygon.";
+	["Description"] = "Returns the total length of all line2 segments in the polygon.";
 })
 
 table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "getPoints";
 	["Arguments"] = {};
-	["Description"] = "Returns an array of vector values that represent the corners of the polygon.";
+	["Description"] = "Returns an array of vector2 values that represent the corners of the polygon.";
 })
 
 table.insert(content, {
@@ -104,12 +104,12 @@ table.insert(content, {
 table.insert(content, {
 	["Type"] = "Constructor";
 	["Name"] = "__add";
-	["Arguments"] = {"vector"};
-	["Description"] = "Move the polygon along the x and y axis by the given vector.";
-	["CodeMarkup"] = "<k>local</k> p1 <k>=</k> <f>polygon</f>(<f>vector</f>(<n>60</n>, <n>15</n>), <f>vector</f>(<n>20</n>, <n>70</n>), <f>vector</f>(<n>90</n>, <n>45</n>))\n<k>local</k> p2 <k>=</k> p1 <k>+</k> <f>vector</f>(<n>50</n>, <n>15</n>)\nlove.graphics.<f>polygon</f>(<s>\"line\"</s>, p1:<f>unpack</f>())\nlove.graphics.<f>polygon</f>(<s>\"line\"</s>, p2:<f>unpack</f>())";
+	["Arguments"] = {"vector2"};
+	["Description"] = "Move the polygon along the x and y axis by the given vector2.";
+	["CodeMarkup"] = "<k>local</k> p1 <k>=</k> <f>polygon</f>(<f>vector2</f>(<n>60</n>, <n>15</n>), <f>vector2</f>(<n>20</n>, <n>70</n>), <f>vector2</f>(<n>90</n>, <n>45</n>))\n<k>local</k> p2 <k>=</k> p1 <k>+</k> <f>vector2</f>(<n>50</n>, <n>15</n>)\nlove.graphics.<f>polygon</f>(<s>\"line\"</s>, p1:<f>unpack</f>())\nlove.graphics.<f>polygon</f>(<s>\"line\"</s>, p2:<f>unpack</f>())";
 	["Demo"] = function()
-		local p1 = polygon(vector(60, 15), vector(20, 70), vector(90, 45))
-		local p2 = p1 + vector(50, 15)
+		local p1 = polygon(vector2(60, 15), vector2(20, 70), vector2(90, 45))
+		local p2 = p1 + vector2(50, 15)
 		local Screen = love.graphics.newCanvas(150, 100)
 		Screen:renderTo(
 			function()
@@ -129,8 +129,8 @@ table.insert(content, {
 table.insert(content, {
 	["Type"] = "Constructor";
 	["Name"] = "__sub";
-	["Arguments"] = {"vector"};
-	["Description"] = "Move the polygon along the x and y axis by the inverse of the given vector.";
+	["Arguments"] = {"vector2"};
+	["Description"] = "Move the polygon along the x and y axis by the inverse of the given vector2.";
 })
 
 table.insert(content, {

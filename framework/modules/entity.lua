@@ -49,12 +49,12 @@ function Entity:setShape(shape, ssX, ssY)
 	assert(shape == "ellipse" or shape == "rectangle", "Entity:setShape(shape) only accepts \"ellipse\" or \"rectangle\" as its arguments")
 	self.Shape = shape
 	if ssX ~= nil then -- a ShapeSize has also been supplied
-		if vector.isVector(ssX) then -- vector supplied
-			self.ShapeSize = vector(ssX)
+		if vector2.isVector2(ssX) then -- vector supplied
+			self.ShapeSize = vector2(ssX)
 		elseif ssY == nil then -- one number supplied
-			self.ShapeSize = vector(ssX, ssX)
+			self.ShapeSize = vector2(ssX, ssX)
 		else -- two numbers supplied
-			self.ShapeSize = vector(ssX, ssY)
+			self.ShapeSize = vector2(ssX, ssY)
 		end
 	end
 end
@@ -149,7 +149,7 @@ function Creature:setState(name)
 	State = self:getState()
 
 	-- update the entity Size property
-	self.Size = vector(State.Animations[1].FrameSize)
+	self.Size = vector2(State.Animations[1].FrameSize)
 
 	-- play all animations in the new state
 	for i = 1, #State.Animations do
@@ -171,7 +171,7 @@ local function entityIsBelowEntity(e1, e2)
 end
 
 function Entity:moveTo(x, y)
-	if vector.isVector(x) then
+	if vector2.isVector2(x) then
 		y = x.y
 		x = x.x
 	end
@@ -179,11 +179,11 @@ function Entity:moveTo(x, y)
 	
 	local indexSelf
 	if self.Scene == nil then
-		self.Position = vector(x, y)
+		self.Position = vector2(x, y)
 		return -- if the entity hasn't been added to a scene yet, then there is no need to update its index in the Entities array
 	else
 		indexSelf = self.Scene:getEntityIndex(self) -- find the location of the entity in the Entities array using log2(n) search
-		self.Position = vector(x, y)
+		self.Position = vector2(x, y)
 	end
 	
 	if indexSelf == nil then
@@ -251,12 +251,12 @@ end
 
 
 function Entity:setImageScale(x, y)
-	if vector.isVector(x) then
-		self.ImageScale = vector(x) -- vector
+	if vector2.isVector2(x) then
+		self.ImageScale = vector2(x) -- vector
 	elseif y == nil then
-		self.ImageScale = vector(x, x) -- only one coordinate passed
+		self.ImageScale = vector2(x, x) -- only one coordinate passed
 	else
-		self.ImageScale = vector(x, y) -- x,y coordinate
+		self.ImageScale = vector2(x, y) -- x,y coordinate
 	end
 end
 
@@ -314,14 +314,14 @@ local function newCreature(defaultState, ...)
 		["CurrentState"] = nil; -- will be set to 'defaultState' when setState() is called later in this function. Had to be kept as 'nil' so that the StateLeaving event isn't called on entity creation
 		["Id"] = module.TotalCreated;
 		["Color"] = color(1, 1, 1);
-		["Pivot"] = vector(0.5, 0.5);
-		["Size"] = vector(32, 32); -- (read-only) the space in pixels the entity takes up on screen at a zoom of 1. This may change when the entity's state changes
-		["ImageScale"] = vector(1, 1);
+		["Pivot"] = vector2(0.5, 0.5);
+		["Size"] = vector2(32, 32); -- (read-only) the space in pixels the entity takes up on screen at a zoom of 1. This may change when the entity's state changes
+		["ImageScale"] = vector2(1, 1);
 		["OutlineColor"] = color();
 		["OutlineThickness"] = 0;
-		["Position"] = vector(0, 0);
+		["Position"] = vector2(0, 0);
 		["Shape"] = "rectangle";
-		["ShapeSize"] = vector(1, 1);
+		["ShapeSize"] = vector2(1, 1);
 		["States"] = {}; -- Creature-only
 		["Scene"] = nil;
 		["ZIndex"] = 1;
@@ -346,15 +346,15 @@ local function newProp(img)
 		["Id"] = module.TotalCreated;
 		["Image"] = img;
 		["Color"] = color(1, 1, 1);
-		["Pivot"] = vector(0.5, 0.5);
-		["Size"] = vector(img:getWidth(), img:getHeight()); -- not read-only :>
-		["ImageScale"] = vector(1, 1);
+		["Pivot"] = vector2(0.5, 0.5);
+		["Size"] = vector2(img:getWidth(), img:getHeight()); -- not read-only :>
+		["ImageScale"] = vector2(1, 1);
 		["OutlineColor"] = color();
 		["OutlineThickness"] = 0;
-		["Position"] = vector(0, 0);
+		["Position"] = vector2(0, 0);
 		["Shape"] = "rectangle";
-		["ShapeSize"] = vector(img:getWidth(), img:getHeight());
-		["Shear"] = vector(0, 0);
+		["ShapeSize"] = vector2(img:getWidth(), img:getHeight());
+		["Shear"] = vector2(0, 0);
 		["Scene"] = nil;
 		["ZIndex"] = 1;
 

@@ -1,6 +1,6 @@
 
 local getpath = require("framework.getpath")
-local vector = require(getpath(..., "vector"))
+local vector2 = require(getpath(..., "vector2"))
 
 local module = {}
 -- create the module
@@ -45,7 +45,7 @@ function bezier:getPoint(t)
 			local p2 = points[i + 1]
 			local x = (1 - t) * p1.x + t * p2.x
 			local y = (1 - t) * p1.y + t * p2.y
-			table.insert(newPoints, vector(x, y))
+			table.insert(newPoints, vector2(x, y))
 		end
 		points = newPoints
 	end
@@ -57,15 +57,15 @@ end
 new = function(...)
 	local t = {...}
 	assert(#t > 0, "bezier.new(...) expects at least one argument, given is 0.")
-	if type(t[1]) == "table" and not vector.isVector(t[1]) then
+	if type(t[1]) == "table" and not vector2.isVector2(t[1]) then
 		t = t[1]
 	end
 	local Obj = {
 		["Points"] = {};
 	}
 	for i = 1, #t do
-		assert(vector.isVector(t[i]), "bezier.new(...) only accepts vectors or a table of vectors (got " .. type(t[i]) .. ")")
-		Obj.Points[i] = vector(t[i].x, t[i].y)
+		assert(vector2.isVector2(t[i]), "bezier.new(...) only accepts vector2s or a table of vector2s (got " .. type(t[i]) .. ")")
+		Obj.Points[i] = vector2(t[i].x, t[i].y)
 	end
 
 	return setmetatable(Obj, bezier)
@@ -73,7 +73,7 @@ end
 
 -- meta function to add a vector to a bezier to offset the bezier
 function bezier.__add(a, b)
-	assert(isBezier(a) and vector.isVector(b), "add: wrong argument types: (expected <bezier> and <vector>)")
+	assert(isBezier(a) and vector2.isVector2(b), "add: wrong argument types: (expected <bezier> and <vector2>)")
 	local points = {}
 	for i = 1, #a.Points do
 		points[i] = a.Points[i] + b

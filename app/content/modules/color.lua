@@ -74,7 +74,7 @@ table.insert(content, {
 	["Type"] = "Constructor";
 	["Name"] = "fromNormal";
 	["Arguments"] = {"x", "y", "z"};
-	["Description"] = "Constructs a color from a normal vector. Use this constructor to convert a 3D normalized normal vector in tangent space to an RGB color in OpenGL normal map format.";
+	["Description"] = "Constructs a color from a normal vector3. Use this constructor to convert a 3D normalized normal vector3 in tangent space to an RGB color in OpenGL normal map format.";
 })
 
 table.insert(content, {

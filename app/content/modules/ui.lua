@@ -41,7 +41,7 @@ table.insert(content, {
 		L2:setBorder(color(L2.Color):darken(0.25), 5)
 		L2:alignX("right")
 		L2:alignY("bottom")
-		L2.Center = vector(0.6, 0.6)
+		L2.Center = vector2(0.6, 0.6)
 		C1:addChild(L2)
 		local L3 = ui.newFrame(40, 40, color.fromHex("#F8CECC"))
 		L3:setBorder(color(L3.Color):darken(0.25), 5)
@@ -104,9 +104,9 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Property";
-	["ValueType"] = "vector";
+	["ValueType"] = "vector2";
 	["Name"] = "DragStart";
-	["Description"] = "A vector describing the x and y location of the cursor where it was on screen when the drag first started.";
+	["Description"] = "A vector2 describing the x and y location of the cursor where it was on screen when the drag first started.";
 	["ReadOnly"] = true;
 	["CodeMarkup"] = nil;
 	["Demo"] = nil;
@@ -174,9 +174,9 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Property";
-	["ValueType"] = "vector";
+	["ValueType"] = "vector2";
 	["Name"] = "Size";
-	["Description"] = "A vector describing the size of the viewport in which UI can be rendered. This property is used internally to update the AbsolutePosition of UI elements.";
+	["Description"] = "A vector2 describing the size of the viewport in which UI can be rendered. This property is used internally to update the AbsolutePosition of UI elements.";
 	["ReadOnly"] = true;
 	["CodeMarkup"] = nil;
 	["Demo"] = nil;
@@ -194,7 +194,7 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Property";
-	["ValueType"] = "vector";
+	["ValueType"] = "vector2";
 	["Name"] = "Visible";
 	["Description"] = "If true, UI is rendered. If false, no UI is rendered. This property can be used to disable UI during cutscenes or to add a 'screenshot mode'.";
 	["ReadOnly"] = true;
@@ -261,7 +261,7 @@ table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "getCursorSpeed";
 	["Arguments"] = {"frameCount = 20"};
-	["Description"] = "Returns a vector of the average speed of the cursor (in pixels per second) during the last few frames. If no argument is passed, the average speed of the last 20 is used. The maximum is 30.";
+	["Description"] = "Returns a vector2 of the average speed of the cursor (in pixels per second) during the last few frames. If no argument is passed, the average speed of the last 20 is used. The maximum is 30.";
 })
 
 table.insert(content, {

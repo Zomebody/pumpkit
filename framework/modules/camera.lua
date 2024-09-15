@@ -68,11 +68,11 @@ end
 
 
 function Camera:move(x, y)
-	if vector.isVector(x) then
+	if vector2.isVector2(x) then
 		y = x.y
 		x = x.x
 	end
-	self.Position = self.Position + vector(x, y)
+	self.Position = self.Position + vector2(x, y)
 	self:updateTransform()
 
 	if self.Events.Moved then
@@ -82,11 +82,11 @@ end
 
 
 function Camera:moveTo(x, y)
-	if vector.isVector(x) then
+	if vector2.isVector2(x) then
 		y = x.y
 		x = x.x
 	end
-	self.Position = vector(x, y)
+	self.Position = vector2(x, y)
 	self:updateTransform()
 
 	if self.Events.Moved then
@@ -114,9 +114,9 @@ function Camera:remove()
 end
 
 
--- given an x and y coordinate in screen space (a pixel on the screen), return a vector describing that location in world space (so with transforms etc. applied)
+-- given an x and y coordinate in screen space (a pixel on the screen), return a vector2 describing that location in world space (so with transforms etc. applied)
 function Camera:screenPointToWorldSpace(x, y)
-	if vector.isVector(x) then
+	if vector2.isVector2(x) then
 		y = x.y
 		x = x.x
 	end
@@ -126,7 +126,7 @@ end
 
 
 function Camera:worldPointToScreenSpace(x, y)
-	if vector.isVector(x) then
+	if vector2.isVector2(x) then
 		y = x.y
 		x = x.x
 	end
@@ -157,7 +157,7 @@ local function new()
 
 	local Object = {
 		["Id"] = module.TotalCreated;
-		["Position"] = vector(0, 0);
+		["Position"] = vector2(0, 0);
 		["Zoom"] = 1; -- zoom of 1 equals 1:1 pixels. Zoom of 2 means every game pixel takes up 2x2 screen pixels. Zoom of 0.5 means you see twice as much on the x-axis and y-axis
 		["Transform"] = love.math.newTransform();
 

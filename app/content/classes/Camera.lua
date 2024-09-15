@@ -27,7 +27,7 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Property";
-	["ValueType"] = "vector";
+	["ValueType"] = "vector2";
 	["Name"] = "Position";
 	["Description"] = "The position of the camera in the scene. Note that the camera will always center its Position coordinate to the middle of the screen.";
 	["ReadOnly"] = true;
@@ -66,14 +66,14 @@ table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "move";
 	["Arguments"] = {"x", "y"};
-	["Description"] = "Translate the camera in world-space coordinates. You may also pass a vector instead of two separate coordinates.";
+	["Description"] = "Translate the camera in world-space coordinates. You may also pass a vector2 instead of two separate coordinates.";
 })
 
 table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "moveTo";
 	["Arguments"] = {"x", "y"};
-	["Description"] = "Move the camera to the given world-space coordinates. You may also pass a vector instead of two separate coordinates.";
+	["Description"] = "Move the camera to the given world-space coordinates. You may also pass a vector2 instead of two separate coordinates.";
 })
 
 table.insert(content, {
@@ -94,7 +94,7 @@ table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "screenPointToWorldSpace";
 	["Arguments"] = {"x", "y"};
-	["Description"] = "Converts the given coordinate from screen space to the world's space. Instead of passing two coordinates, you may also pass a vector.";
+	["Description"] = "Converts the given coordinate from screen space to the world's space. Instead of passing two coordinates, you may also pass a vector2.";
 })
 
 table.insert(content, {
@@ -115,7 +115,7 @@ table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "worldPointToScreenSpace";
 	["Arguments"] = {"x", "y"};
-	["Description"] = "Converts the given coordinate from world space to the screen's space. Instead of passing two coordinates, you may also pass a vector.";
+	["Description"] = "Converts the given coordinate from world space to the screen's space. Instead of passing two coordinates, you may also pass a vector2.";
 })
 
 table.insert(content, {

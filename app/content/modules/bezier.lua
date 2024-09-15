@@ -20,16 +20,16 @@ table.insert(content, {
 table.insert(content, {
 	["Type"] = "Constructor";
 	["Name"] = "new";
-	["Arguments"] = {"vector1", "vector2", "vector3", "..."};
-	["Description"] = "Constructs a bezier curve between the given list of points. Either a tuple of vectors or an array of numbers can be passed. At least 1 argument must be passed.";
+	["Arguments"] = {"vector2A", "vector2B", "vector2C", "..."};
+	["Description"] = "Constructs a bezier curve between the given list of points. Either a tuple of vector2s or an array of numbers can be passed. At least 1 argument must be passed.";
 	["Demo"] = function()
 		local Canvas = love.graphics.newCanvas(120, 100, {["msaa"] = 4})
 		Canvas:renderTo(
 			function()
-				local v1 = vector(10, 10)
-				local v2 = vector(110, 10)
-				local v3 = vector(110, 70)
-				local v4 = vector(50, 90)
+				local v1 = vector2(10, 10)
+				local v2 = vector2(110, 10)
+				local v3 = vector2(110, 70)
+				local v4 = vector2(50, 90)
 
 				love.graphics.setLineWidth(2)
 

@@ -1,7 +1,7 @@
 
 local getpath = require("framework.getpath")
-local vector = require(getpath(..., "vector"))
-local line = require(getpath(..., "line"))
+local vector2 = require(getpath(..., "vector2"))
+local line2 = require(getpath(..., "line2"))
 
 local module = {}
 
@@ -21,9 +21,9 @@ local function new(v1, v2, v3) -- list of points
 		return new(unpack(v1:getPoints()))
 	else -- arguments are vectors
 		local tri = {
-			["Line1"] = line(v1, v2);
-			["Line2"] = line(v2, v3);
-			["Line3"] = line(v3, v1);
+			["Line1"] = line2(v1, v2);
+			["Line2"] = line2(v2, v3);
+			["Line3"] = line2(v3, v1);
 		}
 		return setmetatable(tri, triangle)
 	end
@@ -32,7 +32,7 @@ end
 
 -- returns a copy of all points making up the triangle
 function triangle:getPoints()
-	return {vector(self.Line1.from), vector(self.Line2.from), vector(self.Line3.from)}
+	return {vector2(self.Line1.from), vector2(self.Line2.from), vector2(self.Line3.from)}
 end
 
 
@@ -74,7 +74,7 @@ end
 -- TODO: this calls encloses() and closestTo() but closestTo() also calls encloses() again. That's kind of inefficient don't you think?
 -- return the distance from the given vector to the closest point on the triangle
 function triangle:dist(vec)
-	assert(vector.isVector(vec), "triangle:dist(vec) expects argument 'vec' to be of type <vector>")
+	assert(vector2.isVector2(vec), "triangle:dist(vec) expects argument 'vec' to be of type <vector2>, given: " .. tostring(vec))
 	if self:encloses(vec) then
 		return 0
 	end
@@ -85,9 +85,9 @@ end
 
 -- return the location on the triangle closest to the given vector
 function triangle:closestTo(vec)
-	assert(vector.isVector(vec), "triangle:closestTo(vec) expects argument 'vec' to be of type <vector>")
+	assert(vector2.isVector2(vec), "triangle:closestTo(vec) expects argument 'vec' to be of type <vector2>, given: " .. tostring(vec))
 	if self:encloses(vec) then
-		return vector(vec)
+		return vector2(vec)
 	end
 	local dis1 = self.Line1:dist(vec)
 	local dis2 = self.Line2:dist(vec)
@@ -104,7 +104,7 @@ end
 
 -- returns true if the given vector is inside the triangle (TODO: what about on the edge of the triangle?)
 function triangle:encloses(v)
-	assert(vector.isVector(v), "triangle:encloses(v) takes one argument of type <vector>, given: " .. tostring(v))
+	assert(vector2.isVector2(v), "triangle:encloses(v) takes one argument of type <vector>, given: " .. tostring(v))
 	-- Calculate barycentric coordinates
 	-- with some help from ChatGPT
 	local v1 = self.Line1.from
@@ -125,7 +125,7 @@ function triangle:intersectLine(l, margin) -- margin argument should normally be
 	if margin == nil then
 		margin = 0.1^8
 	end
-	assert(line.isLine(l), "triangle:intersectLine(l) takes one argument of type <line>, given: " .. tostring(v))
+	assert(line2.isLine2(l), "triangle:intersectLine(l) takes one argument of type <line2>, given: " .. tostring(v))
 
 	-- try to have the line intersect all 3 sides of the triangle and store the intersection in an array
 	local intersections = {}
@@ -182,8 +182,8 @@ function triangle:circumcenter()
 	local ux = ((v1.x^2 + v1.y^2) * (v2.y - v3.y) + (v2.x^2 + v2.y^2) * (v3.y - v1.y) + (v3.x^2 + v3.y^2) * (v1.y - v2.y)) / d
 	local uy = ((v1.x^2 + v1.y^2) * (v3.x - v2.x) + (v2.x^2 + v2.y^2) * (v1.x - v3.x) + (v3.x^2 + v3.y^2) * (v2.x - v1.x)) / d
 
-	local center = vector(ux, uy)
-	return vector(ux, uy), center:dist(self.Line1.from)
+	local center = vector2(ux, uy)
+	return vector2(ux, uy), center:dist(self.Line1.from)
 end
 
 
@@ -191,7 +191,7 @@ end
 
 -- meta function to add a vector to a triangle
 function triangle.__add(a, b)
-	assert(isTriangle(a) and vector.isVector(b), "add: wrong argument types: (expected <triangle> and <vector>)")
+	assert(isTriangle(a) and vector2.isVector2(b), "add: wrong argument types: (expected <triangle> and <vector2>)")
 	local points = a:getPoints()
 	for i = 1, #points do
 		points[i] = points[i] + b
@@ -202,7 +202,7 @@ end
 
 -- meta function to subtract a vector from a triangle
 function triangle.__sub(a, b)
-	assert(isTriangle(a) and vector.isVector(b), "add: wrong argument types: (expected <triangle> and <vector>)")
+	assert(isTriangle(a) and vector2.isVector2(b), "add: wrong argument types: (expected <triangle> and <vector2>)")
 	local points = a:getPoints()
 	for i = 1, #points do
 		points[i] = points[i] - b

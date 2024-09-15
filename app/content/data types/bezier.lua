@@ -22,7 +22,7 @@ table.insert(content, {
 	["Name"] = "Points";
 	["ValueType"] = "array";
 	["ReadOnly"] = true;
-	["Description"] = "An array of vector instances that make up the bezier curve.";
+	["Description"] = "An array of vector2 instances that make up the bezier curve.";
 })
 
 

@@ -1,7 +1,7 @@
 
 local getpath = require("framework.getpath")
-local vector = require(getpath(..., "vector"))
-local line = require(getpath(..., "line"))
+local vector2 = require(getpath(..., "vector2"))
+local line2 = require(getpath(..., "line2"))
 
 local module = {}
 
@@ -26,14 +26,14 @@ local function new(...) -- list of points
 			["Lines"] = {};
 		}
 		if #points < 3 then
-			error("Polygon must be constructed from at least 3 vectors")
+			error("Polygon must be constructed from at least 3 vector2s")
 		else
 			local n = #points
 			for i = 1, n do
 				if i == n then
-					pol.Lines[#pol.Lines + 1] = line(points[i], points[1])
+					pol.Lines[#pol.Lines + 1] = line2(points[i], points[1])
 				else
-					pol.Lines[#pol.Lines + 1] = line(points[i], points[i + 1])
+					pol.Lines[#pol.Lines + 1] = line2(points[i], points[i + 1])
 				end
 			end
 		end
@@ -47,7 +47,7 @@ end
 function polygon:getPoints()
 	local points = {}
 	for i = 1, #self.Lines do
-		points[#points + 1] = vector(self.Lines[i].from)
+		points[#points + 1] = vector2(self.Lines[i].from)
 	end
 	return points
 end
@@ -121,7 +121,7 @@ end
 -- TODO: this calls encloses() and closestTo() but closestTo() also calls encloses() again. That's kind of inefficient don't you think?
 -- return the distance from the given vector to the closest point on the polygon
 function polygon:dist(vec)
-	assert(vector.isVector(vec), "polygon:dist(vec) expects argument 'vec' to be of type <vector>")
+	assert(vector2.isVector2(vec), "polygon:dist(vec) expects argument 'vec' to be of type <vector2>, given: " .. tostring(vec))
 	if self:encloses(vec) then
 		return 0
 	end
@@ -132,9 +132,9 @@ end
 
 -- return the location on the polygon closest to the given vector
 function polygon:closestTo(vec)
-	assert(vector.isVector(vec), "polygon:closestTo(vec) expects argument 'vec' to be of type <vector>")
+	assert(vector2.isVector2(vec), "polygon:closestTo(vec) expects argument 'vec' to be of type <vector2>, given: " .. tostring(vec))
 	if self:encloses(vec) then
-		return vector(vec)
+		return vector2(vec)
 	end
 	local closestPoint = self.Lines[1]:closestTo(vec)
 	local closestDis = vec:dist(closestPoint)
@@ -152,7 +152,7 @@ end
 
 -- returns true if the given vector is inside the polygon (TODO: what about on the edge of the polygon?)
 function polygon:encloses(v)
-	assert(vector.isVector(v), "polygon:encloses(v) takes one argument of type <vector>, given: " .. tostring(v))
+	assert(vector2.isVector2(v), "polygon:encloses(v) takes one argument of type <vector2>, given: " .. tostring(v))
 	-- vars
 	local left = self.Lines[1].from.x
 	local right = self.Lines[1].from.x
@@ -210,7 +210,7 @@ end
 
 -- meta function to add a vector to a polygon
 function polygon.__add(a, b)
-	assert(isPolygon(a) and vector.isVector(b), "add: wrong argument types: (expected <polygon> and <vector>)")
+	assert(isPolygon(a) and vector2.isVector2(b), "add: wrong argument types: (expected <polygon> and <vector2>)")
 	local points = a:getPoints()
 	for i = 1, #points do
 		points[i] = points[i] + b
@@ -221,7 +221,7 @@ end
 
 -- meta function to subtract a vector from a polygon
 function polygon.__sub(a, b)
-	assert(isPolygon(a) and vector.isVector(b), "add: wrong argument types: (expected <polygon> and <vector>)")
+	assert(isPolygon(a) and vector2.isVector2(b), "add: wrong argument types: (expected <polygon> and <vector2>)")
 	local points = a:getPoints()
 	for i = 1, #points do
 		points[i] = points[i] - b

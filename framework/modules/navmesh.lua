@@ -33,7 +33,7 @@ local function new(trisAndLines)
 		-- check if 'from' is already in the vectors array. If not, add it
 		local indexFrom = mesh:getVectorIndex(l.from)
 		if indexFrom == nil then
-			mesh.Vectors[#mesh.Vectors + 1] = vector(l.from)
+			mesh.Vectors[#mesh.Vectors + 1] = vector2(l.from)
 			indexFrom = #mesh.Vectors
 			mesh.Connections[indexFrom] = {}
 		end
@@ -41,7 +41,7 @@ local function new(trisAndLines)
 		-- check if 'to' is already in the vectors array. If not, add it
 		local indexTo = mesh:getVectorIndex(l.to)
 		if indexTo == nil then
-			mesh.Vectors[#mesh.Vectors + 1] = vector(l.to)
+			mesh.Vectors[#mesh.Vectors + 1] = vector2(l.to)
 			indexTo = #mesh.Vectors
 			mesh.Connections[indexTo] = {}
 		end
@@ -86,7 +86,7 @@ local function new(trisAndLines)
 	end
 
 	-- then, use that to create the quadtree
-	mesh.Quadtree = quadtree(3, 10, vector(minX - 1, minY - 1), vector((maxX - minX) + 2, (maxY - minY) + 2));
+	mesh.Quadtree = quadtree(3, 10, vector2(minX - 1, minY - 1), vector2((maxX - minX) + 2, (maxY - minY) + 2));
 
 	-- then, finally insert all the triangles into the quadtree. Lines can be ignored because the quadtree is only used for finding the triangles points are inside of
 	for i = 1, #trisAndLines do
@@ -142,7 +142,7 @@ function navmesh:pathfind(from, to)
 	end
 
 	if startTriangle == endTriangle then
-		return {vector(from), vector(to)} -- if the starting point and end point fall within the same triangle, there must be a direct line of sight!
+		return {vector2(from), vector2(to)} -- if the starting point and end point fall within the same triangle, there must be a direct line of sight!
 	end
 
 	print("start triangle & end triangle")
@@ -152,8 +152,8 @@ function navmesh:pathfind(from, to)
 	-- for the starting point and the end point, create a new node which you connect to the three corners of the triangle you are inside of!
 	local indexStart = #self.Vectors + 1
 	local indexEnd = #self.Vectors + 2
-	self.Vectors[indexStart] = vector(from)
-	self.Vectors[indexEnd] = vector(to)
+	self.Vectors[indexStart] = vector2(from)
+	self.Vectors[indexEnd] = vector2(to)
 	self.Connections[indexStart] = {}
 	self.Connections[indexEnd] = {}
 

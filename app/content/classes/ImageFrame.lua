@@ -53,7 +53,7 @@ table.insert(content, {
 	["Demo"] = function()
 		local img = love.graphics.newImage("test_images/pumpky_small.png")
 		img:setWrap("repeat", "repeat")
-		local TiledImage = ui.newImageFrame(img, vector(1, 0), vector(-30, 300))
+		local TiledImage = ui.newImageFrame(img, vector2(1, 0), vector2(-30, 300))
 		return TiledImage
 	end
 })

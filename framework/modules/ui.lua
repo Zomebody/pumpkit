@@ -48,14 +48,14 @@ local module = {
 	["Children"] = {};
 	["CursorFocus"] = nil; -- current element the mouse is hovering over
 	["DragActive"] = false; -- whether or not DragTarget is experiencing a drag
-	["DragStart"] = vector();
+	["DragStart"] = vector2();
 	["DragTarget"] = nil; -- the element that is currently being dragged
 	["KeyboardFocus"] = {}; -- list of UI elements that have keyboard focus at the moment
 	["KeyboardFocusMode"] = {}; -- table with two indexes, tab[1] = mode, tab[2] = mode argument
 	["KeyboardFocusState"] = 0; -- keeps track of how often the keyboard focus changes
 	["PressedButton"] = nil;
 	["PressedElement"] = nil; -- the element that is currently being pressed / held down
-	["Size"] = vector(love.graphics.getDimensions()); -- TODO: use getSafeArea() to ignore the mobile inset
+	["Size"] = vector2(love.graphics.getDimensions()); -- TODO: use getSafeArea() to ignore the mobile inset
 	["TotalCreated"] = 0; -- total number of UI elements that have been created
 	["Visible"] = true; -- if set to false, ui won't be drawn, events can still technically take place (e.g. gamepad events once support is added)
 
@@ -292,7 +292,7 @@ function module:initialize() -- autoRender
 
 		self.Changed = true
 		local screenW, screenH = self.Size.x, self.Size.y
-		self.Size = vector(love.graphics.getDimensions())
+		self.Size = vector2(love.graphics.getDimensions())
 		if self.Size.x ~= screenW or self.Size.y ~= screenH then
 			screenW = self.Size.x
 			screenH = self.Size.y
@@ -578,7 +578,7 @@ function module:getCursorSpeed(frameCount)
 		sumX = sumX + speedHistoryX[i]
 		sumY = sumY + speedHistoryY[i]
 	end
-	return vector((sumX / frameCount) / love.timer.getDelta(), (sumY / frameCount) / love.timer.getDelta())
+	return vector2((sumX / frameCount) / love.timer.getDelta(), (sumY / frameCount) / love.timer.getDelta())
 end
 
 -- return the current word at a given location on the screen
@@ -810,12 +810,12 @@ function UIBase:renderTo(canv, mipmap)
 	local canvasX, canvasY = canv:getDimensions()
 	local curWidth, curHeight = module.Size.x, module.Size.y
 	local curCanvas = love.graphics.getCanvas()
-	module.Size = vector(canvasX, canvasY)
+	module.Size = vector2(canvasX, canvasY)
 	love.graphics.setCanvas(canv, mipmap or 1)
 	updateAbsoluteSize(self, true) -- update size while ignoring the parent's position and size
 	updateAbsolutePosition(self, nil, nil, nil, nil, true) -- update position while ignoring the parent's position and size
 	self:draw() -- UIBase has no draw function, but its metatable should always have one! (draw the UI onto the canvas)
-	module.Size = vector(curWidth, curHeight)
+	module.Size = vector2(curWidth, curHeight)
 	love.graphics.setCanvas(curCanvas)
 	updateAbsoluteSize(self)
 	updateAbsolutePosition(self)
@@ -965,7 +965,7 @@ end
 -- resize the UI element to (w, h)
 function UIBase:resize(sw, sh, ow, oh)
 	
-	if vector.isVector(sw) then -- 2 vector arguments: scale, offset
+	if vector2.isVector2(sw) then -- 2 vector arguments: scale, offset
 		self.Size.Scale:set(sw.x, sw.y)
 		self.Size.Offset:set(sh.x, sh.y)
 	elseif ow ~= nil and oh ~= nil then -- 4 arguments: scale.x, scale.y, offset.x, offset.y
@@ -995,7 +995,7 @@ end
 
 -- reposition the UI element to another location
 function UIBase:reposition(sx, sy, ox, oy)
-	if vector.isVector(sx) then
+	if vector2.isVector2(sx) then
 		self.Position.Scale:set(sx)
 		self.Position.Offset:set(sy)
 	elseif ox == nil then
@@ -1015,28 +1015,28 @@ function UIBase:putNextTo(Obj, side, offset)
 	offset = offset == nil and 0 or offset
 	self:setCenter(Obj.Center.x, Obj.Center.y)
 	if side == "left" then
-		self:reposition(Obj.Position.Scale, Obj.Position.Offset + vector(-self.AbsoluteSize.x - offset, 0))
+		self:reposition(Obj.Position.Scale, Obj.Position.Offset + vector2(-self.AbsoluteSize.x - offset, 0))
 	elseif side == "right" then
-		self:reposition(Obj.Position.Scale, Obj.Position.Offset + vector(Obj.AbsoluteSize.x + offset, 0))
+		self:reposition(Obj.Position.Scale, Obj.Position.Offset + vector2(Obj.AbsoluteSize.x + offset, 0))
 	elseif side == "top" or side == "above" then
-		self:reposition(Obj.Position.Scale, Obj.Position.Offset + vector(0, -self.AbsoluteSize.y - offset))
+		self:reposition(Obj.Position.Scale, Obj.Position.Offset + vector2(0, -self.AbsoluteSize.y - offset))
 	elseif side == "bottom" or side == "under" or side == "below" then
-		self:reposition(Obj.Position.Scale, Obj.Position.Offset + vector(0, Obj.AbsoluteSize.y + offset))
+		self:reposition(Obj.Position.Scale, Obj.Position.Offset + vector2(0, Obj.AbsoluteSize.y + offset))
 	end
 end
 
 -- increase the offset of a UI element by offsetX and offsetY
 function UIBase:shift(offsetX, offsetY)
-	if vector.isVector(offsetX) then
+	if vector2.isVector2(offsetX) then
 		self:reposition(self.Position.Scale, self.Position.Offset + offsetX)
 	else
-		self:reposition(self.Position.Scale, self.Position.Offset + vector(offsetX, offsetY))
+		self:reposition(self.Position.Scale, self.Position.Offset + vector2(offsetX, offsetY))
 	end
 end
 
 -- increase the ContentOffset of a UI element by offsetX and offsetY
 function UIBase:shiftContent(offsetX, offsetY)
-	if vector.isVector(offsetX) then
+	if vector2.isVector2(offsetX) then
 		self.ContentOffset:set(self.ContentOffset.x + offsetX.x, self.ContentOffset.y + offsetX.y)
 	else
 		self.ContentOffset:set(self.ContentOffset.x + offsetX, self.ContentOffset.y + offsetY)
@@ -1047,7 +1047,7 @@ end
 
 -- set the ContentOffset of a UI element to offsetX, offsetY
 function UIBase:positionContent(offsetX, offsetY)
-	if vector.isVector(offsetX) then
+	if vector2.isVector2(offsetX) then
 		self.ContentOffset:set(offsetX.x, offsetX.y)
 	else
 		self.ContentOffset:set(offsetX, offsetY)
@@ -1139,7 +1139,7 @@ end
 
 -- create an invisible border of a certain thickness in pixels, used to offset inner elements and text
 function UIBase:setPadding(sizeX, sizeY)
-	if vector.isVector(sizeX) then
+	if vector2.isVector2(sizeX) then
 		self.Padding:set(sizeX.x, sizeX.y)
 	elseif sizeY == nil then
 		self.Padding:set(sizeX, sizeX)
@@ -1705,14 +1705,14 @@ function SlicedFrame:setReference(img)
 	local oldW, oldH = oldReference:getDimensions()
 	local newW, newH = img:getDimensions()
 
-	self:setSlice(vector(self.TopLeftSlice), self.BottomRightSlice + vector(newW - oldW, newH - oldH))
+	self:setSlice(vector2(self.TopLeftSlice), self.BottomRightSlice + vector2(newW - oldW, newH - oldH))
 end
 
 
 -- sets the top left and top right corner used to chop the image into 9 quads that are used for the drawing operation
 function SlicedFrame:setSlice(topLeft, bottomRight)
 	if bottomRight == nil then
-		bottomRight = vector(self.ReferenceImage:getDimensions()) - topLeft
+		bottomRight = vector2(self.ReferenceImage:getDimensions()) - topLeft
 	end
 	self.TopLeftSlice = topLeft
 	self.BottomRightSlice = bottomRight
@@ -1926,7 +1926,7 @@ end
 -- the base properties of each UIBase
 local function newBase(w, h, col)
 	local sw, sh, ow, oh
-	if vector.isVector(w) and vector.isVector(h) then
+	if vector2.isVector2(w) and vector2.isVector2(h) then
 		sw = w.x
 		sh = w.y
 		ow = h.x
@@ -1944,15 +1944,15 @@ local function newBase(w, h, col)
 	module.TotalCreated = module.TotalCreated + 1
 	local Obj = {
 		-- properties
-		["AbsolutePosition"] = vector(0, 0); -- position in absolute pixels
-		["AbsoluteSize"] = vector(ow, oh);
+		["AbsolutePosition"] = vector2(0, 0); -- position in absolute pixels
+		["AbsoluteSize"] = vector2(ow, oh);
 		["BorderColor"] = color(col):darken(0.4); -- color of the inner border of the frame
 		["BorderWidth"] = 0; -- border thickness in pixels
-		["Center"] = vector(0, 0); -- AnchorPoint from Roblox
+		["Center"] = vector2(0, 0); -- AnchorPoint from Roblox
 		["Children"] = {};
 		["Class"] = "Frame";
 		["ClipContent"] = true; -- children and text will be cut off if it falls outside of the frame
-		["ContentOffset"] = vector();
+		["ContentOffset"] = vector2();
 		["Color"] = col; -- color of the frame. For images, this adjusts the image color
 		["ColorFocus"] = col; -- color when the element is being hovered over by the cursor
 		["ColorHold"] = col; -- color when the element is being held down
@@ -1967,18 +1967,18 @@ local function newBase(w, h, col)
 		["Opacity"] = 1; -- if 0, this object is not drawn (but children are!)
 		--["PaddingX"] = 0; -- an invisible border that creates a smaller inner-window to contain children and text.
 		--["PaddingY"] = 0;
-		["Padding"] = vector(0, 0); -- an invisible border that creates a smaller inner-window to contain children and text. If 0 < padding < 1, then it's interpreted as a percentage / ratio
+		["Padding"] = vector2(0, 0); -- an invisible border that creates a smaller inner-window to contain children and text. If 0 < padding < 1, then it's interpreted as a percentage / ratio
 		["Parent"] = nil;
-		["Pivot"] = vector(0.5, 0.5); -- when working with rotations, pivot determines where rotation is applied, 0,0 = top left, 1,1 = bottom right
+		["Pivot"] = vector2(0.5, 0.5); -- when working with rotations, pivot determines where rotation is applied, 0,0 = top left, 1,1 = bottom right
 		["Position"] = { -- works similar to Roblox's UDim2
-			["Scale"] = vector(0, 0);
-			["Offset"] = vector(0, 0);
+			["Scale"] = vector2(0, 0);
+			["Offset"] = vector2(0, 0);
 		};
 		["Rotation"] = 0;
 		--["Size"] = vector(w, h);
 		["Size"] = { -- works similar to Roblox's UDim2
-			["Scale"] = vector(sw, sh);
-			["Offset"] = vector(ow, oh);
+			["Scale"] = vector2(sw, sh);
+			["Offset"] = vector2(ow, oh);
 		};
 		["Tags"] = {}; -- list of tags assigned to this object
 		["TextBlock"] = nil;
@@ -2041,7 +2041,7 @@ local function newSlicedFrame(img, topLeft, bottomRight, w, h, col, corScale)
 	-- create and initialize main object
 	local imgPixelWidth, imgPixelHeight = img:getDimensions()
 	if bottomRight == nil then
-		bottomRight = vector(imgPixelWidth, imgPixelHeight) - topLeft
+		bottomRight = vector2(imgPixelWidth, imgPixelHeight) - topLeft
 	end
 	local Obj = newBase(w or imgPixelWidth, h or imgPixelHeight, col)
 	Obj["Class"] = "SlicedFrame"

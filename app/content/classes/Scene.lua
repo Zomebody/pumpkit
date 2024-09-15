@@ -67,7 +67,7 @@ table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "at";
 	["Arguments"] = {"x", "y", "entityType"};
-	["Description"] = "Returns the entity located at the given screen coordinates. The Shape and ShapeSize properties of an entity determines what space the entity covers for this method. 'entityType' can be nil or a string of the entity type to look for specifically, either \"creature\" or \"prop\". Instead of providing an x and y coordinate, you may also pass a vector (followed by the filter type).";
+	["Description"] = "Returns the entity located at the given screen coordinates. The Shape and ShapeSize properties of an entity determines what space the entity covers for this method. 'entityType' can be nil or a string of the entity type to look for specifically, either \"creature\" or \"prop\". Instead of providing an x and y coordinate, you may also pass a vector2 (followed by the filter type).";
 })
 
 table.insert(content, {

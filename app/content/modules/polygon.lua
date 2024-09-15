@@ -20,8 +20,8 @@ table.insert(content, {
 table.insert(content, {
 	["Type"] = "Constructor";
 	["Name"] = "new";
-	["Arguments"] = {"vector1, vector2, vector3, ..."};
-	["Description"] = "Constructs a polygon from at least 3 vectors.";
+	["Arguments"] = {"vector2A, vector2B, vector2C, ..."};
+	["Description"] = "Constructs a polygon from at least 3 vector2s.";
 })
 
 table.insert(content, {
