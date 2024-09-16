@@ -233,112 +233,73 @@ varying vec3 fragWorldPosition; // output automatically interpolated fragment wo
 //varying vec3 cameraViewDirection;
 
 // lights
-uniform vec3 lightPositions[8]; // non-transformed!
-uniform vec3 lightColors[8];
-uniform float lightRanges[8];
-uniform float lightStrengths[8];
+uniform vec3 lightPositions[16]; // non-transformed!
+uniform vec3 lightColors[16];
+uniform float lightRanges[16];
+uniform float lightStrengths[16];
+uniform vec3 meshColor;
 uniform vec3 ambientColor;
 
-// TODO: I don't like the normal, additive lighting blending. I prefer a system where lights will overwrite the ambient lighting, and overlapping lights will be interpolated of sorts
+// TODO: texture mode for regular textures or triplanar blending for terrain meshes
+//uniform bool doTriplanarBlend;
+//uniform float triplanarTexSize; // the size of the texture in world coordinates (e.g. 4 units by 4 units, or 1 unit by 1 unit)
 
 
 
-// Function to convert RGB to HSL
-/*
-vec3 rgbToHsl(vec3 color) {
-	float maxVal = max(max(color.r, color.g), color.b);
-	float minVal = min(min(color.r, color.g), color.b);
-	float delta = maxVal - minVal;
-	
-	// Lightness
-	float l = (maxVal + minVal) / 2.0;
-	
-	// Saturation
-	float s;
-	if (delta == 0.0) {
-		s = 0.0;
-	} else {
-		s = delta / (1.0 - abs(2.0 * l - 1.0));
-	}
-	
-	// Hue
-	float h;
-	if (delta == 0.0) {
-		h = 0.0;
-	} else if (maxVal == color.r) {
-		h = mod(((color.g - color.b) / delta), 6.0);
-	} else if (maxVal == color.g) {
-		h = ((color.b - color.r) / delta) + 2.0;
-	} else {
-		h = ((color.r - color.g) / delta) + 4.0;
-	}
-	h /= 6.0;
-	
-	return vec3(h, s, l);
+
+// The MIT License
+// Copyright © 2020 Inigo Quilez
+// Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+// The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software. THE SOFTWARE IS PROVIDED "AS IS",
+// WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+// IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+// ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+// Optimized linear-rgb color mix in oklab space, useful
+// when our software operates in rgb space but we still
+// we want to have intuitive color mixing.
+//
+// Now, when mixing linear rgb colors in oklab space, the
+// linear transform from cone to Lab space and back can be
+// omitted, saving three 3x3 transformation per blend!
+//
+// oklab was invented by Björn Ottosson: https://bottosson.github.io/posts/oklab
+//
+// More oklab on Shadertoy: https://www.shadertoy.com/view/WtccD7
+vec3 oklabMix(vec3 colA, vec3 colB, float h)
+{
+	// https://bottosson.github.io/posts/oklab
+	const mat3 kCONEtoLMS = mat3(                
+		 0.4121656120,  0.2118591070,  0.0883097947,
+		 0.5362752080,  0.6807189584,  0.2818474174,
+		 0.0514575653,  0.1074065790,  0.6302613616
+	);
+	const mat3 kLMStoCONE = mat3(
+		 4.0767245293, -1.2681437731, -0.0041119885,
+		-3.3072168827,  2.6093323231, -0.7034763098,
+		 0.2307590544, -0.3411344290,  1.7068625689
+	);
+	// rgb to cone (arg of pow can't be negative)
+	vec3 lmsA = pow(kCONEtoLMS * colA, vec3(1.0 / 3.0));
+	vec3 lmsB = pow(kCONEtoLMS * colB, vec3(1.0 / 3.0));
+	// lerp
+	vec3 lms = mix(lmsA, lmsB, h);
+	// gain in the middle (no oaklab anymore, but looks better?)
+	// lms *= 1.0+0.2*h*(1.0-h);
+	// cone to rgb
+	return kLMStoCONE * (lms * lms * lms);
 }
 
 
 
-vec3 hslToRgb(vec3 hsl) {
-	float h = hsl.x;
-	float s = hsl.y;
-	float l = hsl.z;
-
-	float c = (1.0 - abs(2.0 * l - 1.0)) * s;
-	float x = c * (1.0 - abs(mod(h * 6.0, 2.0) - 1.0));
-	float m = l - c / 2.0;
-	
-	vec3 rgb;
-	
-	if (h < 1.0 / 6.0) {
-		rgb = vec3(c, x, 0.0);
-	} else if (h < 2.0 / 6.0) {
-		rgb = vec3(x, c, 0.0);
-	} else if (h < 3.0 / 6.0) {
-		rgb = vec3(0.0, c, x);
-	} else if (h < 4.0 / 6.0) {
-		rgb = vec3(0.0, x, c);
-	} else if (h < 5.0 / 6.0) {
-		rgb = vec3(x, 0.0, c);
-	} else {
-		rgb = vec3(c, 0.0, x);
-	}
-
-	return rgb + vec3(m);
-}
 
 
-
-vec3 blendColorsHSL(vec3 color1, vec3 color2, float amount) {
-	vec3 hsl1 = rgbToHsl(color1);
-	vec3 hsl2 = rgbToHsl(color2);
-
-	// Interpolate hue, ensuring it's circular
-	float h1 = hsl1.x;
-	float h2 = hsl2.x;
-	if (abs(h2 - h1) > 0.5) {
-		if (h2 > h1) {
-			h1 += 1.0;
-		} else {
-			h2 += 1.0;
-		}
-	}
-	float h = mix(h1, h2, amount);
-	h = mod(h, 1.0);  // Wrap hue around 1.0
-
-	// Interpolate saturation and lightness linearly
-	float s = mix(hsl1.y, hsl2.y, amount);
-	float l = mix(hsl1.z, hsl2.z, amount);
-
-	vec3 hslInterpolated = vec3(h, s, l);
-
-	// Convert back to RGB
-	return hslToRgb(hslInterpolated);
-}
-*/
-
-
+// fragment shader
 vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
+	color = vec4(color.x * meshColor.x, color.y * meshColor.y, color.z * meshColor.z, color.w);
+
 	// TODO: apply backface culling
 	//if (dot(normalize(fragNormal), cameraViewDirection) > 0.0) {
 	//	discard;
@@ -352,17 +313,13 @@ vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
 		discard;  // Discard fully transparent pixels
 	}
 
-	// lighting is done this way:
-	// 1. calculate the sum of lighting on a surface pixel
-	// 2. calculate the sum of lighting strengths on a surface pixel
-	// 3. if the sum of strengths is at least 1 or bigger, use the sum of lighting as the final lighting on that surface pixel
-	// 4. if the sum of strengths is less than 1, interpolate the lighting with the ambient lighting based on the sum of strengths
-	// 5. multiply the lighting with the vertex color and the surface's applied texture
-	// the reason why lighting is done this way is to make it more 'stylized' and give more control to the lighting emitted by point lights, but overlapping lights becomes trickier to handle
 
 
-	vec3 lighting = vec3(0.0, 0.0, 0.0); // start with just ambient lighting on the surface
-	float totalInfluence = 0;
+	// ended up implementing a very basic naive additive lighting system because it doesn't have any weird edge-cases
+
+
+	vec3 lighting = ambientColor; // start with just ambient lighting on the surface
+	//float totalInfluence = 0;
 
 	// add the lighting contribution of all lights to the surface
 	for (int i = 0; i < 8; ++i) {
@@ -373,35 +330,13 @@ vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
 			float attenuation = clamp(1.0 - pow(distance / lightRanges[i], 1), 0.0, 1.0); // TODO: add a uniform for the power
 			// sum up the light contributions
 			lighting += lightColors[i] * lightStrengths[i] * attenuation;
-			totalInfluence = totalInfluence + attenuation;
+			//totalInfluence = totalInfluence + attenuation;
 		}
 	}
+	
+	return texColor * color * vec4(lighting.x, lighting.y, lighting.z, 1.0);
+	
 
-	vec3 finalColor = lighting;
-	if (totalInfluence < 1.0) {
-		finalColor = vec3(
-			ambientColor.r * (1.0 - totalInfluence) + lighting.r * totalInfluence,
-			ambientColor.g * (1.0 - totalInfluence) + lighting.g * totalInfluence,
-			ambientColor.b * (1.0 - totalInfluence) + lighting.b * totalInfluence
-		);
-	}
-
-	// TODO: interpolate the lighting towards the fog color depending on the fog thickness and how far the fragment is from the camera
-
-	// Final color calculation
-	//vec3 finalColor = lighting * texColor.rgb * color.rgb;
-
-
-	// If the texture is effectively white (no texture) or the mesh has no texture applied
-	// I don't think this is necessary?
-	//if (texColor == vec4(1.0, 1.0, 1.0, 1.0)) {
-	//	return color;  // Return the input color without modifying it
-	//}
-
-	// calculate surface lighting based on ambient and surrounding lights in range
-
-	// Return the texture color multiplied by the input color
-	return texColor * color * vec4(finalColor.x, finalColor.y, finalColor.z, 1.0);
 	//return texColor;
 }
 

@@ -30,7 +30,7 @@ local connection = require("framework.connection")
 
 ----------------------------------------------------[[ == VARIABLES == ]]----------------------------------------------------
 
-local MAX_LIGHTS_PER_SCENE = 8
+local MAX_LIGHTS_PER_SCENE = 16
 local SHADER_PATH = "framework/shaders/shader3d.c"
 
 
@@ -64,6 +64,54 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 		return
 	end
 
+	local width, height
+	if renderTarget == nil then
+		width, height = love.graphics:getDimensions()
+	else
+		width, height = renderTarget:getDimensions()
+	end
+
+
+	-- update positions of lights in the shader if any of the lights moved
+	if self.QueuedShaderVars.LightPositions then
+		self.QueuedShaderVars.LightPositions = false
+		local positions = {}
+		for i = 1, MAX_LIGHTS_PER_SCENE do
+			positions[i] = self.Lights[i].Position:array()
+		end
+		self.Shader:send("lightPositions", unpack(positions))
+	end
+	-- update colors of lights in the shader if any of the lights changed color
+	if self.QueuedShaderVars.LightColors then
+		self.QueuedShaderVars.LightColors = false
+		local colors = {}
+		for i = 1, MAX_LIGHTS_PER_SCENE do
+			colors[i] = {self.Lights[i].Color.r, self.Lights[i].Color.g, self.Lights[i].Color.b}
+		end
+		self.Shader:send("lightColors", unpack(colors))
+	end
+	-- update ranges of lights in the shader if any of the lights changed their range
+	if self.QueuedShaderVars.LightRanges then
+		self.QueuedShaderVars.LightRanges = false
+		local ranges = {}
+		for i = 1, MAX_LIGHTS_PER_SCENE do
+			ranges[i] = self.Lights[i].Range
+		end
+		self.Shader:send("lightRanges", unpack(ranges))
+	end
+	-- update strengths of lights in the shader if any of the lights changed strength
+	if self.QueuedShaderVars.LightStrengths then
+		self.QueuedShaderVars.LightStrengths = false
+		local strengths = {}
+		for i = 1, MAX_LIGHTS_PER_SCENE do
+			strengths[i] = self.Lights[i].Strength
+		end
+		self.Shader:send("lightStrengths", unpack(strengths))
+	end
+
+
+
+
 	local prevCanvas = love.graphics.getCanvas()
 	love.graphics.setCanvas(renderTarget)
 	love.graphics.clear()
@@ -71,7 +119,8 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 
 	-- draw the background
 	if self.Background then
-		love.graphics.draw(self.Background)
+		local imgWidth, imgHeight = self.Background:getDimensions()
+		love.graphics.draw(self.Background, 0, 0, 0, width / imgWidth, height / imgHeight)
 	end
 
 	-- set the canvas to draw to the render canvas, and the shader to draw in 3d
@@ -83,9 +132,10 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 	local Mesh = nil
 	for i = 1, #self.Meshes do
 		Mesh = self.Meshes[i]
-		self.Shader:send("meshPosition", Mesh.Position:array()) -- Mesh.Position:array()
-		self.Shader:send("meshRotation", Mesh.Rotation:array()) -- Mesh.Rotation:array()
-		self.Shader:send("meshScale", Mesh.Scale:array()) -- Mesh.Scale:array()
+		self.Shader:send("meshPosition", Mesh.Position:array())
+		self.Shader:send("meshRotation", Mesh.Rotation:array())
+		self.Shader:send("meshScale", Mesh.Scale:array())
+		self.Shader:send("meshColor", Mesh.Color:array())
 		love.graphics.draw(Mesh.Mesh)
 	end
 
@@ -97,7 +147,8 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 
 	-- draw the foreground
 	if self.Foreground then
-		love.graphics.draw(self.Foreground)
+		local imgWidth, imgHeight = self.Background:getDimensions()
+		love.graphics.draw(self.Foreground, 0, 0, 0, width / imgWidth, height / imgHeight)
 	end
 
 	love.graphics.setCanvas(prevCanvas)
@@ -154,6 +205,11 @@ end
 
 
 function Scene3:setLight(index, position, col, range, strength)
+	local currentPosition = self.Lights[index].Position
+	local currentColor = self.Lights[index].Color
+	local currentRange = self.Lights[index].Range
+	local currentStrength = self.Lights[index].Strength
+
 	local Light = {
 		["Position"] = vector3(position);
 		["Color"] = color(col);
@@ -162,8 +218,22 @@ function Scene3:setLight(index, position, col, range, strength)
 	}
 
 	self.Lights[index] = Light
-	self:sendLights()
+
+	if self.QueuedShaderVars.LightPositions == false and currentPosition ~= position then
+		self.QueuedShaderVars.LightPositions = true
+	end
+	if self.QueuedShaderVars.LightColors == false and currentColor ~= col then
+		self.QueuedShaderVars.LightColors = true
+	end
+	if self.QueuedShaderVars.LightRanges == false and currentRange ~= range then
+		self.QueuedShaderVars.LightRanges = true
+	end
+	if self.QueuedShaderVars.LightStrengths == false and currentStrength ~= strength then
+		self.QueuedShaderVars.LightStrengths = true
+	end
+	--self:sendLights()
 end
+
 
 
 function Scene3:setAmbient(col)
@@ -171,28 +241,9 @@ function Scene3:setAmbient(col)
 end
 
 
-function Scene3:sendLights()
-	local positions = {}
-	local colors = {}
-	local ranges = {}
-	local strengths = {}
-	for i = 1, MAX_LIGHTS_PER_SCENE do
-		positions[i] = self.Lights[i].Position:array()
-		colors[i] = {self.Lights[i].Color.r, self.Lights[i].Color.g, self.Lights[i].Color.b}
-		ranges[i] = self.Lights[i].Range
-		strengths[i] = self.Lights[i].Strength
-	end
-
-	
-	self.Shader:send("lightPositions", unpack(positions))
-	self.Shader:send("lightColors", unpack(colors))
-	self.Shader:send("lightRanges", unpack(ranges))
-	self.Shader:send("lightStrengths", unpack(strengths))
-end
 
 
-
-function Scene3:addMesh(mesh, position, rotation, scale)
+function Scene3:addMesh(mesh, position, rotation, scale, col)
 	if position == nil then
 		position = vector3(0, 0, 0)
 	end
@@ -210,6 +261,7 @@ function Scene3:addMesh(mesh, position, rotation, scale)
 			["Position"] = position;
 			["Rotation"] = rotation;
 			["Scale"] = scale;
+			["Color"] = color(col);
 		}
 	)
 end
@@ -258,6 +310,12 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 		["Id"] = module.TotalCreated;
 
 		["Shader"] = love.graphics.newShader(SHADER_PATH); -- create one shader per scene so you can potentially 
+		["QueuedShaderVars"] = { -- whether during the next :draw() call the scene should update the shader variables below. These variables are introduced to minimize traffic to the shader!
+			["LightPositions"] = true; -- initialize to true to force the variables to be sent on the very first frame
+			["LightColors"] = true; -- same as above
+			["LightRanges"] = true; -- same as above
+			["LightStrengths"] = true; -- same as above
+		};
 
 		-- canvas properties, update whenever you change the render target
 		["RenderCanvas"] = renderCanvas;
@@ -300,8 +358,6 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 			["Strength"] = 0;
 		}
 	end
-	
-	Object:sendLights()
 
 	-- set a default ambience
 	Object.Shader:send("ambientColor", {1, 1, 1, 1})
