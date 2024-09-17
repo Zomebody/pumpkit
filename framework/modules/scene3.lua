@@ -130,13 +130,19 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 
 	-- draw all of the scene's meshes
 	local Mesh = nil
-	for i = 1, #self.Meshes do
-		Mesh = self.Meshes[i]
+	self.Shader:send("isInstanced", false) -- tell the shader to use the meshPosition, meshRotation, meshScale and meshColor uniforms to calculate the model matrices
+	for i = 1, #self.BasicMeshes do
+		Mesh = self.BasicMeshes[i]
 		self.Shader:send("meshPosition", Mesh.Position:array())
 		self.Shader:send("meshRotation", Mesh.Rotation:array())
 		self.Shader:send("meshScale", Mesh.Scale:array())
 		self.Shader:send("meshColor", Mesh.Color:array())
 		love.graphics.draw(Mesh.Mesh)
+	end
+	self.Shader:send("isInstanced", true) -- tell the shader to use the attributes to calculate the model matrices
+	for i = 1, #self.InstancedMeshes do
+		Mesh = self.InstancedMeshes[i]
+		love.graphics.drawInstanced(Mesh.Mesh, Mesh.Count)
 	end
 
 	-- reset the canvas to the render target & render the scene
@@ -242,26 +248,81 @@ end
 
 
 
+function Scene3:addBasicMesh(mesh, position, rotation, scale, col)
+	assert(vector3.isVector3(position), "Scene3:addBasicMesh(mesh, position, rotation, scale, col) requires argument 'position' to be a vector3")
+	local Mesh = {
+		["Mesh"] = mesh;
+		["Position"] = vector3(position);
+		["Rotation"] = vector3(rotation) or vector3(0, 0, 0);
+		["Scale"] = vector3(scale) or vector3(1, 1, 1);
+		["Color"] = color(col) or color(1, 1, 1);
+	}
+	table.insert(self.BasicMeshes, Mesh)
+end
 
-function Scene3:addMesh(mesh, position, rotation, scale, col)
-	if position == nil then
-		position = vector3(0, 0, 0)
+
+
+function Scene3:addInstancedMesh(mesh, positions, rotations, scales, cols)
+	assert(type(positions) == "table", "Scene3:addInstancedMesh(mesh, positions, rotations, scales, cols) requires argument 'positions' to be a table of vector3s, given is nil")
+	if rotations == nil then
+		rotations = {}
+		for i = 1, #positions do
+			rotations[i] = vector3(0, 0, 0)
+		end
+	else
+		assert(type(rotations) == "table" and #rotations == #positions,
+			"Scene3:addInstancedMesh(mesh, positions, rotations, scales, cols) requires argument 'rotations' to be nil or a table with vector3s of the same length as 'positions'")
 	end
-	if rotation == nil then
-		rotation = vector3(0, 0, 0)
+	if scales == nil then
+		scales = {}
+		for i = 1, #positions do
+			scales[i] = vector3(1, 1, 1)
+		end
+	else
+		assert(type(scales) == "table" and #scales == #positions,
+			"Scene3:addInstancedMesh(mesh, positions, rotations, scales, cols) requires argument 'scales' to be nil or a table with vector3s of the same length as 'positions'")
 	end
-	if scale == nil then
-		scale = vector3(1, 1, 1)
+	if cols == nil then
+		cols = {}
+		for i = 1, #positions do
+			cols[i] = color(1, 1, 1)
+		end
+	else
+		assert(type(scales) == "table" and #cols == #positions,
+			"Scene3:addInstancedMesh(mesh, positions, rotations, scales, cols) requires argument 'cols' to be nil or a table with colors of the same length as 'positions'")
 	end
+
+	local instancesData = {}
+	for i = 1, #positions do
+		table.insert(
+			instancesData,
+			{positions[i].x, positions[i].y, positions[i].z, rotations[i].x, rotations[i].y, rotations[i].z, scales[i].x, scales[i].y, scales[i].z, cols[i].r, cols[i].g, cols[i].b}
+		)
+	end
+
+
+	local instanceMesh = love.graphics.newMesh(
+		{
+			{"instancePosition", "float", 3},
+			{"instanceRotation", "float", 3},
+			{"instanceScale", "float", 3},
+			{"instanceColor", "float", 3}
+		},
+		instancesData,
+		"triangles",
+		"static"
+	)
+
+	mesh:attachAttribute("instancePosition", instanceMesh, "perinstance")
+	mesh:attachAttribute("instanceRotation", instanceMesh, "perinstance")
+	mesh:attachAttribute("instanceScale", instanceMesh, "perinstance")
+	mesh:attachAttribute("instanceColor", instanceMesh, "perinstance")
 
 	table.insert(
-		self.Meshes,
+		self.InstancedMeshes,
 		{
 			["Mesh"] = mesh;
-			["Position"] = position;
-			["Rotation"] = rotation;
-			["Scale"] = scale;
-			["Color"] = color(col);
+			["Count"] = #positions;
 		}
 	)
 end
@@ -328,7 +389,8 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 
 		-- scene elements
 		["Camera3"] = sceneCamera or camera3.new();
-		["Meshes"] = {}; -- any number of meshes, dictionaries with properties: Position, Rotation (applied in order ZXY), Scale
+		["InstancedMeshes"] = {}; -- simply an array of Love2D mesh objects
+		["BasicMeshes"] = {}; -- dictionary with properties: Mesh, Position, Rotation, Scale, Color
 		["Lights"] = {}; -- array with lights that have a Position, Color, Range and Strength
 
 		-- table with arrays of event functions stored under keys named after the events

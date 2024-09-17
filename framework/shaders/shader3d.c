@@ -23,6 +23,12 @@ const float zFar = 1000.0;
 uniform vec3 meshPosition;
 uniform vec3 meshRotation;
 uniform vec3 meshScale;
+attribute vec3 instancePosition;
+attribute vec3 instanceRotation;
+attribute vec3 instanceScale;
+attribute vec3 instanceColor;
+varying vec3 instColor;
+uniform bool isInstanced;
 
 // TODO: fragment variables
 varying vec3 fragWorldPosition; // output automatically interpolated fragment world position
@@ -168,13 +174,25 @@ mat4 inverse(mat4 m) {
 vec4 position(mat4 transform_projection, vec4 vertex_position) {
 	// model transformations
 	// get the scale matrix
-	mat4 scaleMatrix = getScaleMatrix(meshScale);
-	// get the rotation matrix in YXZ order
-	mat4 rotationMatrix = getRotationMatrixZ(meshRotation.z) * getRotationMatrixY(meshRotation.y) * getRotationMatrixX(meshRotation.x);
-	// get the translation matrix
-	mat4 translationMatrix = getTranslationMatrix(meshPosition);
-	// combine transformations. Transformations are applied from right to left. First scale, then rotate, then translate
+	mat4 scaleMatrix;
+	mat4 rotationMatrix;
+	mat4 translationMatrix;
+
+	// get the scale matrix, then the rotation matrix in YXZ order, then the translation matrix
+	if (isInstanced) {
+		scaleMatrix = getScaleMatrix(instanceScale);
+		rotationMatrix = getRotationMatrixZ(instanceRotation.z) * getRotationMatrixY(instanceRotation.y) * getRotationMatrixX(instanceRotation.x);
+		translationMatrix = getTranslationMatrix(instancePosition);
+		instColor = instanceColor; // pass color attribute from vertex shader to the fragment shader since the fragment shader doesn't support attributes for some reason?
+	} else {
+		scaleMatrix = getScaleMatrix(meshScale);
+		rotationMatrix = getRotationMatrixZ(meshRotation.z) * getRotationMatrixY(meshRotation.y) * getRotationMatrixX(meshRotation.x);
+		translationMatrix = getTranslationMatrix(meshPosition);
+	}
+	
+	// construct the model's world matrix, i.e. where in the world is each vertex of this mesh located
 	mat4 modelWorldMatrix = translationMatrix * rotationMatrix * scaleMatrix;
+
 	//vec4 vertexWorldPosition = translationMatrix * rotationMatrix * scaleMatrix * vertex_position;
 
 	// camera transformations
@@ -237,8 +255,12 @@ uniform vec3 lightPositions[16]; // non-transformed!
 uniform vec3 lightColors[16];
 uniform float lightRanges[16];
 uniform float lightStrengths[16];
-uniform vec3 meshColor;
 uniform vec3 ambientColor;
+
+// colors
+uniform vec3 meshColor;
+varying vec3 instColor;
+uniform bool isInstanced;
 
 // TODO: texture mode for regular textures or triplanar blending for terrain meshes
 //uniform bool doTriplanarBlend;
@@ -298,12 +320,14 @@ vec3 oklabMix(vec3 colA, vec3 colB, float h)
 
 // fragment shader
 vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
-	color = vec4(color.x * meshColor.x, color.y * meshColor.y, color.z * meshColor.z, color.w);
+	if (isInstanced) {
+		color = vec4(color.x * instColor.x, color.y * instColor.y, color.z * instColor.z, color.w);
+	} else {
+		color = vec4(color.x * meshColor.x, color.y * meshColor.y, color.z * meshColor.z, color.w);
+	}
+	
 
 	// TODO: apply backface culling
-	//if (dot(normalize(fragNormal), cameraViewDirection) > 0.0) {
-	//	discard;
-	//}
 
 	// Check if a texture is applied by sampling from it
 	vec4 texColor = Texel(tex, texture_coords);
@@ -316,8 +340,6 @@ vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
 
 
 	// ended up implementing a very basic naive additive lighting system because it doesn't have any weird edge-cases
-
-
 	vec3 lighting = ambientColor; // start with just ambient lighting on the surface
 	//float totalInfluence = 0;
 
