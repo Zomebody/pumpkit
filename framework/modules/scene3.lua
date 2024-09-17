@@ -58,19 +58,24 @@ end
 
 
 function Scene3:draw(renderTarget) -- nil or a canvas
+	-- get some graphics settings so they can be reverted later
+	local prevCanvas = love.graphics.getCanvas()
+	local prevDepthMode, prevWrite = love.graphics.getDepthMode()
+
+
 	
 	-- no camera? don't draw anything!
 	if self.Camera3 == nil then
 		return
 	end
-
+	--[[
 	local width, height
 	if renderTarget == nil then
 		width, height = love.graphics:getDimensions()
 	else
 		width, height = renderTarget:getDimensions()
 	end
-
+	]]
 
 	-- update positions of lights in the shader if any of the lights moved
 	if self.QueuedShaderVars.LightPositions then
@@ -112,21 +117,29 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 
 
 
-	local prevCanvas = love.graphics.getCanvas()
-	love.graphics.setCanvas(renderTarget)
+	
+	--love.graphics.setCanvas(renderTarget)
+	--love.graphics.clear()
+	--love.graphics.setShader()
+
+	-- set render canvas as target and clear it so a normal image can be drawn to it
+	love.graphics.setCanvas({self.RenderCanvas, ["depthstencil"] = self.DepthCanvas})
 	love.graphics.clear()
-	love.graphics.setShader()
+
+	local renderWidth, renderHeight = self.RenderCanvas:getDimensions()
 
 	-- draw the background
 	if self.Background then
+		love.graphics.setShader()
+		love.graphics.setDepthMode("always", false)
 		local imgWidth, imgHeight = self.Background:getDimensions()
-		love.graphics.draw(self.Background, 0, 0, 0, width / imgWidth, height / imgHeight)
+		love.graphics.draw(self.Background, 0, 0, 0, renderWidth / imgWidth, renderHeight / imgHeight)
 	end
 
 	-- set the canvas to draw to the render canvas, and the shader to draw in 3d
-	love.graphics.setCanvas({self.RenderCanvas, ["depthstencil"] = self.DepthCanvas})
-	love.graphics.clear()
+	--love.graphics.setCanvas({self.RenderCanvas, ["depthstencil"] = self.DepthCanvas})
 	love.graphics.setShader(self.Shader)
+	love.graphics.setDepthMode("less", true)
 
 	-- draw all of the scene's meshes
 	local Mesh = nil
@@ -145,19 +158,23 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 		love.graphics.drawInstanced(Mesh.Mesh, Mesh.Count)
 	end
 
-	-- reset the canvas to the render target & render the scene
-	love.graphics.setCanvas(renderTarget)
+	-- setShader() can be called here since if self.Foreground ~= nil then setting setShader() in there makes no sense since the shader will be set to nil anyway right after when drawing the canvas to the screen
 	love.graphics.setShader()
-	love.graphics.draw(self.RenderCanvas, 0, self.RenderCanvas:getHeight() / self.MSAA, 0, 1 / self.MSAA, -1 / self.MSAA)
-
 
 	-- draw the foreground
 	if self.Foreground then
-		local imgWidth, imgHeight = self.Background:getDimensions()
-		love.graphics.draw(self.Foreground, 0, 0, 0, width / imgWidth, height / imgHeight)
+		love.graphics.setDepthMode("always", false)
+		local imgWidth, imgHeight = self.Foreground:getDimensions()
+		love.graphics.draw(self.Foreground, 0, 0, 0, renderWidth / imgWidth, renderHeight / imgHeight)
 	end
 
+	-- reset the canvas to the render target & render the scene
+	love.graphics.setCanvas(renderTarget)
+	love.graphics.draw(self.RenderCanvas, 0, self.RenderCanvas:getHeight() / self.MSAA, 0, 1 / self.MSAA, -1 / self.MSAA)
+
+	-- revert some graphics settings
 	love.graphics.setCanvas(prevCanvas)
+	love.graphics.setDepthMode(prevDepthMode, prevWrite)
 end
 
 
