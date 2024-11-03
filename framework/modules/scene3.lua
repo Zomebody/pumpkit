@@ -335,13 +335,15 @@ function Scene3:addInstancedMesh(mesh, positions, rotations, scales, cols)
 	mesh:attachAttribute("instanceScale", instanceMesh, "perinstance")
 	mesh:attachAttribute("instanceColor", instanceMesh, "perinstance")
 
-	table.insert(
-		self.InstancedMeshes,
-		{
-			["Mesh"] = mesh;
-			["Count"] = #positions;
-		}
-	)
+	local Data = {
+		["Mesh"] = mesh;
+		["Instances"] = instanceMesh;
+		["Count"] = #positions;
+	}
+
+	table.insert(self.InstancedMeshes, Data)
+	
+	return Data
 end
 
 
