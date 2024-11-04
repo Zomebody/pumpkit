@@ -330,14 +330,14 @@ function Scene3:addInstancedMesh(mesh, positions, rotations, scales, cols)
 		"static"
 	)
 
-	mesh:attachAttribute("instancePosition", instanceMesh, "perinstance")
-	mesh:attachAttribute("instanceRotation", instanceMesh, "perinstance")
-	mesh:attachAttribute("instanceScale", instanceMesh, "perinstance")
-	mesh:attachAttribute("instanceColor", instanceMesh, "perinstance")
+	mesh:attachAttribute("instancePosition", instanceMesh, "perinstance") -- first vertex attribute
+	mesh:attachAttribute("instanceRotation", instanceMesh, "perinstance") -- second vertex attribute
+	mesh:attachAttribute("instanceScale", instanceMesh, "perinstance") -- third vertex attribute
+	mesh:attachAttribute("instanceColor", instanceMesh, "perinstance") -- fourth vertex attribute
 
 	local Data = {
 		["Mesh"] = mesh;
-		["Instances"] = instanceMesh;
+		["Instances"] = instanceMesh; -- the reason for exposing the instances is so that setVertexAttribute() can be used on individual instances to update them after batching
 		["Count"] = #positions;
 	}
 
