@@ -196,6 +196,28 @@ function matrix4:toEuler(order)
 end
 
 
+
+-- given is a local directional vector. Calculate a new vector that describes the same direction, but in world space rather than relative to the camera
+function matrix4:toWorldVector(vec)
+	local right = vector3(self[1], self[2], self[3])
+	local up = vector3(self[5], self[6], self[7])
+	local forward = vector3(self[9], self[10], self[11])
+
+	local deltaRight = vector3(right.x * vec.x, right.y * vec.x, right.z * vec.x)
+	local deltaUp = vector3(up.x * vec.y, up.y * vec.y, up.z * vec.y)
+	local deltaForward = vector3(forward.x * vec.z, forward.y * vec.z, forward.z * vec.z)
+
+	local deltaVector = vector3(
+		deltaRight.x + deltaUp.x + deltaForward.x,
+		deltaRight.y + deltaUp.y + deltaForward.y,
+		deltaRight.z + deltaUp.z + deltaForward.z
+	)
+
+	return deltaVector
+end
+
+
+
 -- returns the rows of the matrix4 as a tuple
 function matrix4:rows()
 	return {self[1], self[2], self[3], self[4]}, {self[5], self[6], self[7], self[8]}, {self[9], self[10], self[11], self[12]}, {self[13], self[14], self[15], self[16]}

@@ -69,6 +69,15 @@ function Camera3:move(vec3)
 end
 
 
+function Camera3:moveLocal(vec3)
+	local localVector = matrix4():rotateX(self.Rotation.x):rotateY(self.Rotation.y):rotateZ(self.Rotation.z):toWorldVector(vec3)
+	self.Position = self.Position + localVector
+	if self.Scene3 ~= nil then
+		self:updateCameraMatrix()
+	end
+end
+
+
 --[[
 function Camera3:set(vec3, rotZ, tilt, offset)
 	self.Position = vector3(vec3)
