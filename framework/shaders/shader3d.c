@@ -3,10 +3,11 @@
 
 // camera variables
 // TODO: calculate camera's matrix and inverse matrix on the Lua side so it doesn't have to be recalculated every time in here
-uniform vec3 cameraPosition;
-uniform float cameraRotation;
-uniform float cameraTilt;
-uniform float cameraOffset;
+//uniform vec3 cameraPosition;
+//uniform float cameraRotation;
+//uniform float cameraTilt;
+//uniform float cameraOffset;
+uniform mat4 camMatrix;
 
 uniform float aspectRatio;
 uniform float fieldOfView;
@@ -38,7 +39,7 @@ varying vec3 fragWorldPosition; // output automatically interpolated fragment wo
 
 
 
-// I DON'T KNOW WHY, BUT THE FUNCTIONS GETROTATIONMATRIX AND GETSCALEMATRIX AND GETTRANSLATIONMATRIX ARE ALL TRANSPOSED AND IT JUST KIND OF WORKS
+// I DON'T KNOW WHY, BUT THE FUNCTIONS GETROTATIONMATRIX AND GETSCALEMATRIX AND GETTRANSLATIONMATRIX ARE ALL TRANSPOSED AND IT JUST KIND OF WORKS (probably because of row/column major order shenanigans?)
 
 // Function to create a rotation matrix around the X axis
 mat4 getRotationMatrixX(float angle) {
@@ -197,13 +198,14 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 
 	// camera transformations
 	// camera translation
-	mat4 camTranslationMatrix = getTranslationMatrix(cameraPosition);
+	//				mat4 camTranslationMatrix = getTranslationMatrix(cameraPosition);
 	// camera rotation
-	mat4 camRotationMatrix = getRotationMatrixZ(cameraRotation) * getRotationMatrixX(cameraTilt);
+	//				mat4 camRotationMatrix = getRotationMatrixZ(cameraRotation) * getRotationMatrixX(cameraTilt);
 	// camera offset
-	mat4 camOffsetMatrix = getTranslationMatrix(vec3(0, 0, cameraOffset));
+	//				mat4 camOffsetMatrix = getTranslationMatrix(vec3(0, 0, cameraOffset));
 	// combine it all to get the camera matrix
-	mat4 cameraWorldMatrix = camTranslationMatrix * camRotationMatrix * camOffsetMatrix; // offset first to create a pivot point to rotate around, then rotate, then translate to the right position
+	//				mat4 cameraWorldMatrix = camTranslationMatrix * camRotationMatrix * camOffsetMatrix; // offset first to create a pivot point to rotate around, then rotate, then translate to the right position
+	mat4 cameraWorldMatrix = camMatrix;
 
 
 	mat4 viewMatrix = inverse(cameraWorldMatrix);

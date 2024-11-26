@@ -421,10 +421,11 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 	Object.Camera3:attach(Object)
 
 	-- init camera shadeer variables
-	Object.Shader:send("cameraPosition", Object.Camera3.Position:array())
-	Object.Shader:send("cameraTilt", Object.Camera3.Tilt)
-	Object.Shader:send("cameraRotation", Object.Camera3.Rotation)
-	Object.Shader:send("cameraOffset", Object.Camera3.Offset)
+	--Object.Shader:send("cameraPosition", Object.Camera3.Position:array())
+	--Object.Shader:send("cameraTilt", Object.Camera3.Tilt)
+	--Object.Shader:send("cameraRotation", Object.Camera3.Rotation)
+	--Object.Shader:send("cameraOffset", Object.Camera3.Offset)
+	Object.Camera3:updateCameraMatrix()
 	local aspectRatio = gWidth / gHeight
 	Object.Shader:send("aspectRatio", aspectRatio)
 	Object.Shader:send("fieldOfView", Object.Camera3.FieldOfView)

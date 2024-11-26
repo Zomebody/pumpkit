@@ -3,6 +3,13 @@
 
 -- camera3 is a top-down camera that rotates using a rotation along the Z-axis, and has a tilt along the local X-axis
 
+-- TODO: replace how this works. Instead of 'tilt' and 'rotation' floats, add a rotation vector3
+-- keep 'offset'
+-- camera transform is applied in the order: first zoom -> then rotation x -> then rotation y -> then rotation z
+-- whenever the camera's rotation/position changes, calculate a matrix4 which is then sent to the shader
+-- the reason for doing all this is to reduce work-load on the GPU side (since the camera won't be moving every frame!). So now instead of calculating the matrix on the GPU each frame, we simply have it computed already
+-- another reason for doing it this way is to make it easier to implement particles! Particles will be facing the camera, so we can simply copy the camera's matrix and replace the position component for particles
+
 local connection = require("framework.connection")
 
 local module = {}
@@ -37,8 +44,14 @@ local function isCamera3(t)
 	return getmetatable(t) == Camera3
 end
 
+function Camera3:updateCameraMatrix()
+	local camMatrix = matrix4():translate(0, 0, self.Offset):rotateX(self.Rotation.x):rotateY(self.Rotation.y):rotateZ(self.Rotation.z):translate(self.Position.x, self.Position.y, self.Position.z)
+	local c1, c2, c3, c4 = camMatrix:columns()
+	self.Scene3.Shader:send("camMatrix", {c1, c2, c3, c4})
+end
 
 
+--[[
 function Camera3:move(vec3)
 	self.Position = self.Position + vec3
 	-- update shader variables
@@ -46,9 +59,17 @@ function Camera3:move(vec3)
 		self.Scene3.Shader:send("cameraPosition", self.Position:array())
 	end
 end
+]]
+function Camera3:move(vec3)
+	self.Position = self.Position + vec3
+	-- update shader variables
+	if self.Scene3 ~= nil then
+		self:updateCameraMatrix()
+	end
+end
 
 
-
+--[[
 function Camera3:set(vec3, rotZ, tilt, offset)
 	self.Position = vector3(vec3)
 	self.Rotation = rotZ
@@ -68,9 +89,34 @@ function Camera3:set(vec3, rotZ, tilt, offset)
 		end
 	end
 end
+]]
+
+function Camera3:set(pos, rot, offset)
+	self.Position = vector3(pos)
+	if rot ~= nil then
+		self.Rotation = vector3(rot)
+	end
+	if offset ~= nil then
+		self.Offset = offset
+	end
 
 
+	-- update shader variables
+	if self.Scene3 ~= nil then
+		self:updateCameraMatrix()
+		--[[
+		self.Scene3.Shader:send("cameraPosition", self.Position:array())
+		self.Scene3.Shader:send("cameraRotation", self.Rotation)
+		self.Scene3.Shader:send("cameraTilt", self.Tilt)
+		if offset ~= nil then
+			self.Scene3.Shader:send("cameraOffset", self.Offset)
+		end
+		]]
+	end
+end
 
+
+--[[
 function Camera3:moveFlat(vec3)
 	local absX = vec3.x * math.cos(self.Rotation) - vec3.y * math.sin(self.Rotation)
 	local absY = vec3.x * math.sin(self.Rotation) + vec3.y * math.cos(self.Rotation)
@@ -97,12 +143,35 @@ function Camera3:tilt(amount)
 		self.Scene3.Shader:send("cameraTilt", self.Tilt)
 	end
 end
+]]
+function Camera3:pitch(angle)
+	self.Rotation = self.Rotation + vector3(angle, 0, 0)
+	self:updateCameraMatrix()
+end
 
+function Camera3:yaw(angle)
+	self.Rotation = self.Rotation + vector3(0, angle, 0)
+	self:updateCameraMatrix()
+end
 
+function Camera3:roll(angle)
+	self.Rotation = self.Rotation + vector3(0, 0, angle)
+	self:updateCameraMatrix()
+end
+
+--[[
 function Camera3:offset(amount)
 	self.Offset = self.Offset + amount
 	if self.Scene3 ~= nil then
 		self.Scene3.Shader:send("cameraOffset", self.Offset)
+	end
+end
+]]
+
+function Camera3:offset(amount)
+	self.Offset = self.Offset + amount
+	if self.Scene3 ~= nil then
+		self:updateCameraMatrix()
 	end
 end
 
@@ -232,9 +301,10 @@ local function new(p)
 
 	local Obj = {
 		["Position"] = vector3(p);
-		["Rotation"] = 0; -- rotation in radians along the Z-axis
-		["Tilt"] = 0; -- 0 = top-down, -90 = looking from the side
-		["Offset"] = 0;
+		--["Rotation"] = 0; -- rotation in radians along the Z-axis
+		--["Tilt"] = 0; -- 0 = top-down, -90 = looking from the side
+		["Rotation"] = vector3(); -- euler angles rotation. Gets converted to a matrix and sent to the shader each time it's updated
+		["Offset"] = 0; -- this also gets incorporated into that same matrix and sent to the shader
 		["FieldOfView"] = math.rad(70); -- vertical FoV
 
 		["Scene3"] = nil; -- reference to the scene3 that has this camera attached to it

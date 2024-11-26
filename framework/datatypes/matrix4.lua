@@ -85,8 +85,8 @@ local function rotationX(angle)
 	local s = math.sin(angle)
 	return new(
 		1, 0, 0, 0,
-		0, c, -s, 0,
-		0, s, c, 0,
+		0, c, s, 0,
+		0, -s, c, 0,
 		0, 0, 0, 1
 	)
 end
@@ -96,9 +96,9 @@ local function rotationY(angle)
 	local c = math.cos(angle)
 	local s = math.sin(angle)
 	return new(
-		c, 0, s, 0,
+		c, 0, -s, 0,
 		0, 1, 0, 0,
-		-s, 0, c, 0,
+		s, 0, c, 0,
 		0, 0, 0, 1
 	)
 end
@@ -108,8 +108,8 @@ local function rotationZ(angle)
 	local c = math.cos(angle)
 	local s = math.sin(angle)
 	return new(
-		c, -s, 0, 0,
-		s, c, 0, 0,
+		c, s, 0, 0,
+		-s, c, 0, 0,
 		0, 0, 1, 0,
 		0, 0, 0, 1
 	)
@@ -231,6 +231,7 @@ function matrix4:identity()
 	self[14] = 0
 	self[15] = 0
 	self[16] = 1
+	return self
 end
 
 
@@ -239,7 +240,52 @@ function matrix4:translate(x, y, z)
 	self[13] = self[13] + x
 	self[14] = self[14] + y
 	self[15] = self[15] + z
+	return self
 end
+
+
+-- rotate a matrix along the X-axis by a certain angle
+function matrix4:rotateX(angle)
+	local rx = rotationX(angle)
+	local newMatrix = self * rx
+	for i = 1, 16 do
+		self[i] = newMatrix[i]
+	end
+	return self
+end
+
+-- rotate a matrix along the Y-axis by a certain angle
+function matrix4:rotateY(angle)
+	local ry = rotationY(angle)
+	local newMatrix = self * ry
+	for i = 1, 16 do
+		self[i] = newMatrix[i]
+	end
+	return self
+end
+
+-- rotate a matrix along the Z-axis by a certain angle
+function matrix4:rotateZ(angle)
+	local rz = rotationZ(angle)
+	local newMatrix = self * rz
+	for i = 1, 16 do
+		self[i] = newMatrix[i]
+	end
+	return self
+end
+
+
+-- transpose the matrix
+function matrix4:transpose()
+	self[2], self[5] = self[5], self[2]
+	self[3], self[9] = self[9], self[3]
+	self[7], self[10] = self[10], self[7]
+	self[4], self[13] = self[13], self[4]
+	self[8], self[14] = self[14], self[8]
+	self[12], self[15] = self[15], self[12]
+	return self
+end
+
 
 
 
