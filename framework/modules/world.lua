@@ -112,9 +112,11 @@ end
 function module:render()
 	if self.CurrentScene ~= nil then
 		-- draw the scene
-		-- if it's a scene3, set the shader here to a 3d shader
+		for i = 1, #self.CurrentScene.Particles do
+			self.CurrentScene.Particles[i]:update()
+		end
 		self.CurrentScene:draw()
-		-- if it's a scene3, clear the shader here
+		
 	end
 end
 

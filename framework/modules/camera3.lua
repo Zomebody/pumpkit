@@ -48,18 +48,11 @@ function Camera3:updateCameraMatrix()
 	local camMatrix = matrix4():translate(0, 0, self.Offset):rotateX(self.Rotation.x):rotateY(self.Rotation.y):rotateZ(self.Rotation.z):translate(self.Position.x, self.Position.y, self.Position.z)
 	local c1, c2, c3, c4 = camMatrix:columns()
 	self.Scene3.Shader:send("camMatrix", {c1, c2, c3, c4})
+	self.Scene3.ParticlesShader:send("camMatrix", {c1, c2, c3, c4})
 end
 
 
---[[
-function Camera3:move(vec3)
-	self.Position = self.Position + vec3
-	-- update shader variables
-	if self.Scene3 ~= nil then
-		self.Scene3.Shader:send("cameraPosition", self.Position:array())
-	end
-end
-]]
+
 function Camera3:move(vec3)
 	self.Position = self.Position + vec3
 	-- update shader variables
@@ -78,27 +71,6 @@ function Camera3:moveLocal(vec3)
 end
 
 
---[[
-function Camera3:set(vec3, rotZ, tilt, offset)
-	self.Position = vector3(vec3)
-	self.Rotation = rotZ
-	self.Tilt = tilt
-	if offset ~= nil then
-		self.Offset = offset
-	end
-
-
-	-- update shader variables
-	if self.Scene3 ~= nil then
-		self.Scene3.Shader:send("cameraPosition", self.Position:array())
-		self.Scene3.Shader:send("cameraRotation", self.Rotation)
-		self.Scene3.Shader:send("cameraTilt", self.Tilt)
-		if offset ~= nil then
-			self.Scene3.Shader:send("cameraOffset", self.Offset)
-		end
-	end
-end
-]]
 
 function Camera3:set(pos, rot, offset)
 	self.Position = vector3(pos)
@@ -113,14 +85,6 @@ function Camera3:set(pos, rot, offset)
 	-- update shader variables
 	if self.Scene3 ~= nil then
 		self:updateCameraMatrix()
-		--[[
-		self.Scene3.Shader:send("cameraPosition", self.Position:array())
-		self.Scene3.Shader:send("cameraRotation", self.Rotation)
-		self.Scene3.Shader:send("cameraTilt", self.Tilt)
-		if offset ~= nil then
-			self.Scene3.Shader:send("cameraOffset", self.Offset)
-		end
-		]]
 	end
 end
 
@@ -135,23 +99,6 @@ function Camera3:moveFlat(vec3)
 	end
 end
 
-
-
-function Camera3:rotate(amount)
-	self.Rotation = self.Rotation + amount
-	if self.Scene3 ~= nil then
-		self.Scene3.Shader:send("cameraRotation", self.Rotation)
-	end
-end
-
-
-
-function Camera3:tilt(amount)
-	self.Tilt = self.Tilt + amount
-	if self.Scene3 ~= nil then
-		self.Scene3.Shader:send("cameraTilt", self.Tilt)
-	end
-end
 ]]
 function Camera3:pitch(angle)
 	self.Rotation = self.Rotation + vector3(angle, 0, 0)
@@ -168,14 +115,6 @@ function Camera3:roll(angle)
 	self:updateCameraMatrix()
 end
 
---[[
-function Camera3:offset(amount)
-	self.Offset = self.Offset + amount
-	if self.Scene3 ~= nil then
-		self.Scene3.Shader:send("cameraOffset", self.Offset)
-	end
-end
-]]
 
 function Camera3:offset(amount)
 	self.Offset = self.Offset + amount

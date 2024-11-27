@@ -18,6 +18,7 @@ function load()
 	color = require(getpath(here, "../framework/datatypes/color"))
 	gradient = require(getpath(here, "../framework/datatypes/gradient"))
 	numbercurve = require(getpath(here, "../framework/datatypes/numbercurve"))
+	range = require(getpath(here, "../framework/datatypes/range"))
 	task = require(getpath(here, "../framework/modules/task"))
 
 	-- data structures
@@ -41,6 +42,7 @@ function load()
 	camera = require(getpath(here, "../framework/modules/camera"))
 	camera3 = require(getpath(here, "../framework/modules/camera3"))
 	entity = require(getpath(here, "../framework/modules/entity"))
+	particles3 = require(getpath(here, "../framework/modules/particles3"))
 	network = require(getpath(here, "../framework/modules/network"))
 
 	-- initialization

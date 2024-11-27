@@ -1,7 +1,6 @@
 
 ----------------------------------------------------[[ == IMPORTS == ]]----------------------------------------------------
 
-local here = ...
 local connection = require("framework.connection")
 
 --[[
@@ -32,6 +31,7 @@ local connection = require("framework.connection")
 
 local MAX_LIGHTS_PER_SCENE = 16
 local SHADER_PATH = "framework/shaders/shader3d.c"
+local SHADER_PARTICLES_PATH = "framework/shaders/particles3d.c"
 
 
 
@@ -68,14 +68,6 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 	if self.Camera3 == nil then
 		return
 	end
-	--[[
-	local width, height
-	if renderTarget == nil then
-		width, height = love.graphics:getDimensions()
-	else
-		width, height = renderTarget:getDimensions()
-	end
-	]]
 
 	-- update positions of lights in the shader if any of the lights moved
 	if self.QueuedShaderVars.LightPositions then
@@ -86,6 +78,7 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 		end
 		self.Shader:send("lightPositions", unpack(positions))
 	end
+
 	-- update colors of lights in the shader if any of the lights changed color
 	if self.QueuedShaderVars.LightColors then
 		self.QueuedShaderVars.LightColors = false
@@ -95,6 +88,7 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 		end
 		self.Shader:send("lightColors", unpack(colors))
 	end
+
 	-- update ranges of lights in the shader if any of the lights changed their range
 	if self.QueuedShaderVars.LightRanges then
 		self.QueuedShaderVars.LightRanges = false
@@ -104,6 +98,7 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 		end
 		self.Shader:send("lightRanges", unpack(ranges))
 	end
+
 	-- update strengths of lights in the shader if any of the lights changed strength
 	if self.QueuedShaderVars.LightStrengths then
 		self.QueuedShaderVars.LightStrengths = false
@@ -114,13 +109,6 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 		self.Shader:send("lightStrengths", unpack(strengths))
 	end
 
-
-
-
-	
-	--love.graphics.setCanvas(renderTarget)
-	--love.graphics.clear()
-	--love.graphics.setShader()
 
 	-- set render canvas as target and clear it so a normal image can be drawn to it
 	love.graphics.setCanvas({self.RenderCanvas, ["depthstencil"] = self.DepthCanvas})
@@ -156,6 +144,14 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 	for i = 1, #self.InstancedMeshes do
 		Mesh = self.InstancedMeshes[i]
 		love.graphics.drawInstanced(Mesh.Mesh, Mesh.Count)
+	end
+
+	-- now draw all the particles in the scene
+	-- don't need to send any info to the shader because the particles when they update themselves, also update the mesh attributes that encodes any required info
+	love.graphics.setShader(self.ParticlesShader)
+	for i = 1, #self.Particles do
+		print("drawing " .. tostring(#self.Particles[i].Spawned) .. " particles")
+		love.graphics.drawInstanced(self.Particles[i].Mesh, #self.Particles[i].Spawned)
 	end
 
 	-- setShader() can be called here since if self.Foreground ~= nil then setting setShader() in there makes no sense since the shader will be set to nil anyway right after when drawing the canvas to the screen
@@ -348,6 +344,14 @@ end
 
 
 
+function Scene3:addParticles(particles)
+	assert(particles3.isParticles3(particles), "Scene3:addParticles(particles) expects argument 'particles' to be of type particles3")
+
+	table.insert(self.Particles, particles)
+end
+
+
+
 -- eventName is the name of the event to call. All event name strings are accepted, but not all of them may trigger
 -- func is the function to link
 function Scene3:on(eventName, func)
@@ -390,6 +394,7 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 		["Id"] = module.TotalCreated;
 
 		["Shader"] = love.graphics.newShader(SHADER_PATH); -- create one shader per scene so you can potentially 
+		["ParticlesShader"] = love.graphics.newShader(SHADER_PARTICLES_PATH);
 		["QueuedShaderVars"] = { -- whether during the next :draw() call the scene should update the shader variables below. These variables are introduced to minimize traffic to the shader!
 			["LightPositions"] = true; -- initialize to true to force the variables to be sent on the very first frame
 			["LightColors"] = true; -- same as above
@@ -410,6 +415,7 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 		["Camera3"] = sceneCamera or camera3.new();
 		["InstancedMeshes"] = {}; -- simply an array of Love2D mesh objects
 		["BasicMeshes"] = {}; -- dictionary with properties: Mesh, Position, Rotation, Scale, Color
+		["Particles"] = {}; -- array of particle emitter instances. Particle emitters are always instanced for performance reasons
 		["Lights"] = {}; -- array with lights that have a Position, Color, Range and Strength
 
 		-- table with arrays of event functions stored under keys named after the events

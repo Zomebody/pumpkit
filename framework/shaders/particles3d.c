@@ -15,15 +15,14 @@ const float zFar = 1000.0;
 
 // IMPORTANT: in our world we apply rotation in the order Z, X, Y
 // mesh variables
-uniform vec3 meshPosition;
-uniform vec3 meshRotation;
-uniform vec3 meshScale;
+//uniform vec3 meshPosition;
+//uniform vec3 meshRotation;
+//uniform vec3 meshScale;
 attribute vec3 instancePosition;
-attribute vec3 instanceRotation;
-attribute vec3 instanceScale;
+attribute float instanceRotation; // particles only rotate along one axis (the axis they face, i.e. the camera)
+attribute float instanceScale;
 attribute vec3 instanceColor;
 varying vec3 instColor;
-uniform bool isInstanced;
 
 // TODO: fragment variables
 varying vec3 fragWorldPosition; // output automatically interpolated fragment world position
@@ -166,6 +165,30 @@ mat4 inverse(mat4 m) {
 
 
 
+// for a given camera matrix and particle instance position, calculate the rotation matrix to apply to the particle for it to display 'billboard behavior'
+mat4 getBillboardMatrix(mat4 cMatrix, vec3 iPosition) {
+	// get the camera's forward and up vectors
+	vec3 cameraFront = -normalize(vec3(cMatrix[2][0], cMatrix[2][1], cMatrix[2][2])); // negative Z-axis
+	vec3 cameraUp = normalize(vec3(cMatrix[1][0], cMatrix[1][1], cMatrix[1][2])); // Y-axis
+
+	// get the right-vector
+	vec3 right = normalize(cross(cameraUp, cameraFront));
+
+	// get the up-vector
+	vec3 up = cross(cameraFront, right);
+
+	// create rotation matrix from the front, right and upvector
+	mat4 billboardMatrix = mat4(1.0);
+	billboardMatrix[0] = vec4(right, 0.0);
+	billboardMatrix[1] = vec4(up, 0.0);
+	billboardMatrix[2] = vec4(cameraFront, 0.0);
+
+	return billboardMatrix;
+}
+
+
+
+
 vec4 position(mat4 transform_projection, vec4 vertex_position) {
 	// model transformations
 	// get the scale matrix
@@ -174,33 +197,18 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 	mat4 translationMatrix;
 
 	// get the scale matrix, then the rotation matrix in YXZ order, then the translation matrix
-	if (isInstanced) {
-		scaleMatrix = getScaleMatrix(instanceScale);
-		rotationMatrix = getRotationMatrixZ(instanceRotation.z) * getRotationMatrixY(instanceRotation.y) * getRotationMatrixX(instanceRotation.x);
-		translationMatrix = getTranslationMatrix(instancePosition);
-		instColor = instanceColor; // pass color attribute from vertex shader to the fragment shader since the fragment shader doesn't support attributes for some reason?
-	} else {
-		scaleMatrix = getScaleMatrix(meshScale);
-		rotationMatrix = getRotationMatrixZ(meshRotation.z) * getRotationMatrixY(meshRotation.y) * getRotationMatrixX(meshRotation.x);
-		translationMatrix = getTranslationMatrix(meshPosition);
-	}
 	
-	// construct the model's world matrix, i.e. where in the world is each vertex of this mesh located
+	scaleMatrix = getScaleMatrix(vec3(instanceScale, instanceScale, instanceScale));
+	//rotationMatrix = getBillboardMatrix(camMatrix, instancePosition);
+	rotationMatrix = getRotationMatrixX(0);
+	translationMatrix = getTranslationMatrix(instancePosition);
+	instColor = instanceColor; // pass color attribute from vertex shader to the fragment shader since the fragment shader doesn't support attributes for some reason?
+	
+	
+	// construct the model's world matrix, i.e. where in the world is each vertex of this particle located
 	mat4 modelWorldMatrix = translationMatrix * rotationMatrix * scaleMatrix;
 
-	//vec4 vertexWorldPosition = translationMatrix * rotationMatrix * scaleMatrix * vertex_position;
-
-	// camera transformations
-	// camera translation
-	//				mat4 camTranslationMatrix = getTranslationMatrix(cameraPosition);
-	// camera rotation
-	//				mat4 camRotationMatrix = getRotationMatrixZ(cameraRotation) * getRotationMatrixX(cameraTilt);
-	// camera offset
-	//				mat4 camOffsetMatrix = getTranslationMatrix(vec3(0, 0, cameraOffset));
-	// combine it all to get the camera matrix
-	//				mat4 cameraWorldMatrix = camTranslationMatrix * camRotationMatrix * camOffsetMatrix; // offset first to create a pivot point to rotate around, then rotate, then translate to the right position
 	mat4 cameraWorldMatrix = camMatrix;
-
 
 	mat4 viewMatrix = inverse(cameraWorldMatrix);
 
@@ -220,10 +228,6 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 	// Apply the view-projection transformation
 	vec4 result = projectionMatrix * cameraSpaceMatrix * vertex_position;
 
-
-
-	// set variables for backface culling
-	//cameraViewDirection = normalize(vec3(viewMatrix[3]) - fragWorldPosition);
 
 	return result;
 }
@@ -247,16 +251,16 @@ varying vec3 fragWorldPosition; // output automatically interpolated fragment wo
 //varying vec3 cameraViewDirection;
 
 // lights
+/*
 uniform vec3 lightPositions[16]; // non-transformed!
 uniform vec3 lightColors[16];
 uniform float lightRanges[16];
 uniform float lightStrengths[16];
 uniform vec3 ambientColor;
+*/
 
 // colors
-uniform vec3 meshColor;
 varying vec3 instColor;
-uniform bool isInstanced;
 
 // TODO: texture mode for regular textures or triplanar blending for terrain meshes
 //uniform bool doTriplanarBlend;
@@ -265,62 +269,10 @@ uniform bool isInstanced;
 
 
 
-// The MIT License
-// Copyright © 2020 Inigo Quilez
-// Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"),
-// to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
-// and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-// The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software. THE SOFTWARE IS PROVIDED "AS IS",
-// WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-// IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
-// ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-// Optimized linear-rgb color mix in oklab space, useful
-// when our software operates in rgb space but we still
-// we want to have intuitive color mixing.
-//
-// Now, when mixing linear rgb colors in oklab space, the
-// linear transform from cone to Lab space and back can be
-// omitted, saving three 3x3 transformation per blend!
-//
-// oklab was invented by Björn Ottosson: https://bottosson.github.io/posts/oklab
-//
-// More oklab on Shadertoy: https://www.shadertoy.com/view/WtccD7
-vec3 oklabMix(vec3 colA, vec3 colB, float h)
-{
-	// https://bottosson.github.io/posts/oklab
-	const mat3 kCONEtoLMS = mat3(                
-		 0.4121656120,  0.2118591070,  0.0883097947,
-		 0.5362752080,  0.6807189584,  0.2818474174,
-		 0.0514575653,  0.1074065790,  0.6302613616
-	);
-	const mat3 kLMStoCONE = mat3(
-		 4.0767245293, -1.2681437731, -0.0041119885,
-		-3.3072168827,  2.6093323231, -0.7034763098,
-		 0.2307590544, -0.3411344290,  1.7068625689
-	);
-	// rgb to cone (arg of pow can't be negative)
-	vec3 lmsA = pow(kCONEtoLMS * colA, vec3(1.0 / 3.0));
-	vec3 lmsB = pow(kCONEtoLMS * colB, vec3(1.0 / 3.0));
-	// lerp
-	vec3 lms = mix(lmsA, lmsB, h);
-	// gain in the middle (no oaklab anymore, but looks better?)
-	// lms *= 1.0+0.2*h*(1.0-h);
-	// cone to rgb
-	return kLMStoCONE * (lms * lms * lms);
-}
-
-
-
-
-
 // fragment shader
 vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
-	if (isInstanced) {
-		color = vec4(color.x * instColor.x, color.y * instColor.y, color.z * instColor.z, color.w);
-	} else {
-		color = vec4(color.x * meshColor.x, color.y * meshColor.y, color.z * meshColor.z, color.w);
-	}
+	color = vec4(color.x * instColor.x, color.y * instColor.y, color.z * instColor.z, color.w);
+
 	
 
 	// TODO: apply backface culling
@@ -329,12 +281,14 @@ vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
 	vec4 texColor = Texel(tex, texture_coords);
 
 	// Check if the alpha of the texture color is below a threshold
+	/*
 	if (texColor.a < 0.01) {
 		discard;  // Discard fully transparent pixels
 	}
+	*/
 
 
-
+	/*
 	// ended up implementing a very basic naive additive lighting system because it doesn't have any weird edge-cases
 	vec3 lighting = ambientColor; // start with just ambient lighting on the surface
 	//float totalInfluence = 0;
@@ -351,8 +305,9 @@ vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
 			//totalInfluence = totalInfluence + attenuation;
 		}
 	}
+	*/
 	
-	return texColor * color * vec4(lighting.x, lighting.y, lighting.z, 1.0);
+	return texColor * color;// * vec4(lighting.x, lighting.y, lighting.z, 1.0);
 	
 
 	//return texColor;
