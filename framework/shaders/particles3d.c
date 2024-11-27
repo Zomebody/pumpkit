@@ -194,19 +194,21 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 	// get the scale matrix
 	mat4 scaleMatrix;
 	mat4 rotationMatrix;
+	mat4 billboardMatrix;
 	mat4 translationMatrix;
 
 	// get the scale matrix, then the rotation matrix in YXZ order, then the translation matrix
 	
 	scaleMatrix = getScaleMatrix(vec3(instanceScale, instanceScale, instanceScale));
-	//rotationMatrix = getBillboardMatrix(camMatrix, instancePosition);
-	rotationMatrix = getRotationMatrixX(0);
+	rotationMatrix = getRotationMatrixZ(instanceRotation);
+	billboardMatrix = getBillboardMatrix(camMatrix, instancePosition);
+	//rotationMatrix = getRotationMatrixX(0);
 	translationMatrix = getTranslationMatrix(instancePosition);
 	instColor = instanceColor; // pass color attribute from vertex shader to the fragment shader since the fragment shader doesn't support attributes for some reason?
 	
 	
 	// construct the model's world matrix, i.e. where in the world is each vertex of this particle located
-	mat4 modelWorldMatrix = translationMatrix * rotationMatrix * scaleMatrix;
+	mat4 modelWorldMatrix = translationMatrix * billboardMatrix * rotationMatrix * scaleMatrix;
 
 	mat4 cameraWorldMatrix = camMatrix;
 
@@ -281,11 +283,11 @@ vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
 	vec4 texColor = Texel(tex, texture_coords);
 
 	// Check if the alpha of the texture color is below a threshold
-	/*
+	
 	if (texColor.a < 0.01) {
 		discard;  // Discard fully transparent pixels
 	}
-	*/
+	
 
 
 	/*

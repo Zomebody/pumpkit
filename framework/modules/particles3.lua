@@ -129,14 +129,11 @@ function Particles3:update()
 			local newColor = self.Gradient:getColor(x)
 
 			-- TODO: set the mesh attributes here to new values. It should look something like this:
-			--self.Instances:setVertexAttribute(index, 1, newPosition.x, newPosition.y, newPosition.z)
-			--self.Instances:setVertexAttribute(index, 2, newRotation)
-			--self.Instances:setVertexAttribute(index, 3, newSize)
-			--self.Instances:setVertexAttribute(index, 4, newColor.r, newColor.g, newColor.b)
-			print("position: " .. tostring(newPosition))
-			print("rotation: " .. tostring(newRotation))
-			print("size: " .. tostring(newSize))
-			print("color: " .. tostring(newColor))
+			self.Instances:setVertexAttribute(index, 1, newPosition.x, newPosition.y, newPosition.z)
+			self.Instances:setVertexAttribute(index, 2, newRotation)
+			self.Instances:setVertexAttribute(index, 3, newSize)
+			self.Instances:setVertexAttribute(index, 4, newColor.r, newColor.g, newColor.b)
+
 
 			index = index + 1 -- item was not removed, so move the index one further
 		end
@@ -157,12 +154,12 @@ local function new(img, maxParticles)
 			{"VertexNormal", "float", 3}
 		},
 		{
-			{-0.5, -0.5, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1},
-			{ 0.5, -0.5, 0, 1, 0, 1, 1, 1, 1, 0, 0, 1},
-			{-0.5,  0.5, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1},
-			{-0.5,  0.5, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1},
-			{ 0.5, -0.5, 0, 1, 0, 1, 1, 1, 1, 0, 0, 1},
-			{ 0.5,  0.5, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1}
+			{0.5, 0.5, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1},
+			{-0.5, 0.5, 0, 1, 0, 1, 1, 1, 1, 0, 0, 1},
+			{0.5, -0.5, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1},
+			{0.5, -0.5, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1},
+			{-0.5, 0.5, 0, 1, 0, 1, 1, 1, 1, 0, 0, 1},
+			{-0.5, -0.5, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1}
 		},
 		"triangles",
 		"static"

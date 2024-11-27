@@ -150,7 +150,6 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 	-- don't need to send any info to the shader because the particles when they update themselves, also update the mesh attributes that encodes any required info
 	love.graphics.setShader(self.ParticlesShader)
 	for i = 1, #self.Particles do
-		print("drawing " .. tostring(#self.Particles[i].Spawned) .. " particles")
 		love.graphics.drawInstanced(self.Particles[i].Mesh, #self.Particles[i].Spawned)
 	end
 
@@ -218,6 +217,7 @@ function Scene3:rescaleCanvas(width, height, msaa)
 	-- update aspect ratio of the scene
 	local aspectRatio = width / height
 	self.Shader:send("aspectRatio", aspectRatio)
+	self.ParticlesShader:send("aspectRatio", aspectRatio)
 end
 
 
@@ -435,6 +435,8 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 	local aspectRatio = gWidth / gHeight
 	Object.Shader:send("aspectRatio", aspectRatio)
 	Object.Shader:send("fieldOfView", Object.Camera3.FieldOfView)
+	Object.ParticlesShader:send("aspectRatio", aspectRatio)
+	Object.ParticlesShader:send("fieldOfView", Object.Camera3.FieldOfView)
 
 
 	-- init lights with 0-strength white lights (re-enable this later when lights are enabled in the shader)
