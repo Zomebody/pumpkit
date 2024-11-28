@@ -132,6 +132,25 @@ local function translation(x, y, z)
 end
 
 
+local function perspective(aspectRatio, fov, far, near)
+	if far == nil then far = 1000 end
+	if near == nil then near = 0.1 end
+
+	local m11 = 1 / (aspectRatio * math.tan(fov / 2))
+	local m22 = 1 / math.tan(fov / 2)
+	local m33 = -(far + near) / (far - near)
+	local m43 = -(2 * far * near) / (far - near)
+	local m34 = -1
+
+	return new(
+		m11, 0, 0, 0,
+		0, m22, 0, 0,
+		0, 0, m33, m34,
+		0, 0, m43, 0
+	)
+end
+
+
 -- from euler angles and specify the euler order
 local function fromEuler(euler, order)
 	local rotX = rotationX(euler.x)
@@ -486,6 +505,7 @@ module.new = new
 module.rotationX = rotationX
 module.rotationY = rotationY
 module.rotationZ = rotationZ
+module.perspective = perspective
 module.translation = translation
 module.fromEuler = fromEuler
 module.isMatrix4 = isMatrix4

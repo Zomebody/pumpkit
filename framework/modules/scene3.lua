@@ -267,7 +267,14 @@ function Scene3:rescaleCanvas(width, height, msaa)
 	local aspectRatio = width / height
 	self.Shader:send("aspectRatio", aspectRatio)
 	self.ParticlesShader:send("aspectRatio", aspectRatio)
-	self.SSAOShader:send("aspectRatio", aspectRatio)
+	--self.SSAOShader:send("aspectRatio", aspectRatio)
+
+	-- calculate perspective matrix for the SSAO shader
+	if self.Camera3 ~= nil then
+		local persp = matrix4.perspective(aspectRatio, self.Camera3.FieldOfView, 1000, 0.1)
+		local c1, c2, c3, c4 = persp:columns()
+		self.SSAOShader:send("perspectiveMatrix", {c1, c2, c3, c4})
+	end
 end
 
 
@@ -421,7 +428,7 @@ end
 -- creates a new Scene3 object with the base properties of a Scene3
 local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 	if msaa == nil then
-		msaa = 4
+		msaa = 2
 	end
 
 	--assert(camera.isCamera(sceneCamera) or sceneCamera == nil, "scene3.newScene3(image, sceneCamera) only accepts a camera instance or nil for 'sceneCamera'")
@@ -483,19 +490,19 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 
 	Object.Camera3:attach(Object)
 
-	-- init camera shadeer variables
-	--Object.Shader:send("cameraPosition", Object.Camera3.Position:array())
-	--Object.Shader:send("cameraTilt", Object.Camera3.Tilt)
-	--Object.Shader:send("cameraRotation", Object.Camera3.Rotation)
-	--Object.Shader:send("cameraOffset", Object.Camera3.Offset)
-	Object.Camera3:updateCameraMatrix()
+	-- init camera shader variables
+	Object.Camera3:updateCameraMatrices()
 	local aspectRatio = gWidth / gHeight
 	Object.Shader:send("aspectRatio", aspectRatio)
 	Object.Shader:send("fieldOfView", Object.Camera3.FieldOfView)
 	Object.ParticlesShader:send("aspectRatio", aspectRatio)
 	Object.ParticlesShader:send("fieldOfView", Object.Camera3.FieldOfView)
-	Object.SSAOShader:send("aspectRatio", aspectRatio)
-	Object.SSAOShader:send("fieldOfView", Object.Camera3.FieldOfView)
+	--Object.SSAOShader:send("aspectRatio", aspectRatio)
+	--Object.SSAOShader:send("fieldOfView", Object.Camera3.FieldOfView)
+	-- calculate perspective matrix for the SSAO shader
+	local persp = matrix4.perspective(aspectRatio, Object.Camera3.FieldOfView, 1000, 0.1)
+	local c1, c2, c3, c4 = persp:columns()
+	Object.SSAOShader:send("perspectiveMatrix", {c1, c2, c3, c4})
 
 
 	-- init lights with 0-strength white lights (re-enable this later when lights are enabled in the shader)

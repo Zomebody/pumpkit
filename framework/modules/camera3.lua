@@ -44,7 +44,7 @@ local function isCamera3(t)
 	return getmetatable(t) == Camera3
 end
 
-function Camera3:updateCameraMatrix()
+function Camera3:updateCameraMatrices()
 	local camMatrix = matrix4():translate(0, 0, self.Offset):rotateX(self.Rotation.x):rotateY(self.Rotation.y):rotateZ(self.Rotation.z):translate(self.Position.x, self.Position.y, self.Position.z)
 	local c1, c2, c3, c4 = camMatrix:columns()
 	self.Scene3.Shader:send("camMatrix", {c1, c2, c3, c4})
@@ -57,7 +57,7 @@ function Camera3:move(vec3)
 	self.Position = self.Position + vec3
 	-- update shader variables
 	if self.Scene3 ~= nil then
-		self:updateCameraMatrix()
+		self:updateCameraMatrices()
 	end
 end
 
@@ -66,7 +66,7 @@ function Camera3:moveLocal(vec3)
 	local localVector = matrix4():rotateX(self.Rotation.x):rotateY(self.Rotation.y):rotateZ(self.Rotation.z):toWorldVector(vec3)
 	self.Position = self.Position + localVector
 	if self.Scene3 ~= nil then
-		self:updateCameraMatrix()
+		self:updateCameraMatrices()
 	end
 end
 
@@ -84,7 +84,7 @@ function Camera3:set(pos, rot, offset)
 
 	-- update shader variables
 	if self.Scene3 ~= nil then
-		self:updateCameraMatrix()
+		self:updateCameraMatrices()
 	end
 end
 
@@ -102,24 +102,24 @@ end
 ]]
 function Camera3:pitch(angle)
 	self.Rotation = self.Rotation + vector3(angle, 0, 0)
-	self:updateCameraMatrix()
+	self:updateCameraMatrices()
 end
 
 function Camera3:yaw(angle)
 	self.Rotation = self.Rotation + vector3(0, angle, 0)
-	self:updateCameraMatrix()
+	self:updateCameraMatrices()
 end
 
 function Camera3:roll(angle)
 	self.Rotation = self.Rotation + vector3(0, 0, angle)
-	self:updateCameraMatrix()
+	self:updateCameraMatrices()
 end
 
 
 function Camera3:offset(amount)
 	self.Offset = self.Offset + amount
 	if self.Scene3 ~= nil then
-		self:updateCameraMatrix()
+		self:updateCameraMatrices()
 	end
 end
 
@@ -169,6 +169,15 @@ function Camera3:setFOV(fov)
 	-- update the scene's field-of-view if this camera is attached to one
 	if self.Scene3 ~= nil then
 		self.Scene3.Shader:send("fieldOfView", fov)
+		self.Scene3.ParticlesShader:send("fieldOfView", fov)
+
+		self:updateCameraMatrices()
+
+		local aspectRatio = self.Scene3.RenderCanvas.getWidth() / self.Scene3.RenderCanvas.getHeight()
+		local persp = matrix4.perspective(aspectRatio, fov, 1000, 0.1)
+		local c1, c2, c3, c4 = persp:columns()
+		Object.SSAOShader:send("perspectiveMatrix", {c1, c2, c3, c4})
+
 	end
 end
 
@@ -177,56 +186,14 @@ end
 
 
 
--- returns a line3
+-- returns a line3 with a length of 1, starting at the camera's position and pointing towards the given coordinate in world space
+-- xFactor and yFactor are how far on the x-axis and y-axis you clicked, as numbers from 0 to 1
 --[[
-function Camera3:screenToRay(cameraWidth, cameraHeight, cameraOffset, screenX, screenY, worldZ)
-	screenY = cameraHeight - screenY
+function Camera3:screenPointToRay(xFactor, yFactor)
+	-- calculate the camera's matrix4
+	local camMatrix = matrix4():translate(0, 0, self.Offset):rotateX(self.Rotation.x):rotateY(self.Rotation.y):rotateZ(self.Rotation.z):translate(self.Position.x, self.Position.y, self.Position.z)
 
-	-- Calculate the view-projection matrix
-	local viewProjectionMatrix = calculatePerspectiveViewProjectionMatrix(self.Position, self.Rotation, self.Tilt, cameraWidth, cameraHeight, self.FieldOfView, cameraOffset)
-	
-	-- Invert the view-projection matrix
-	local inverseViewProjectionMatrix = viewProjectionMatrix:invert()
-
-	-- Convert screen coordinates to NDC
-	local ndcX = 2 * (screenX / cameraWidth) - 1
-	local ndcY = 1 - 2 * (screenY / cameraHeight)
-	local ndcZ = 1 -- We're considering the far plane for the ray direction
-
-	-- Create a 4D vector in NDC space (homogeneous coordinates)
-	local ndcPos = vector4(ndcX, ndcY, ndcZ, 1)
-
-	-- Transform the NDC position by the inverse view-projection matrix
-	local worldPos4D = inverseViewProjectionMatrix * ndcPos
-
-	-- Divide by w to get the 3D world position
-	local worldPos = vector3(
-		worldPos4D.x / worldPos4D.w,
-		worldPos4D.y / worldPos4D.w,
-		worldPos4D.z / worldPos4D.w
-	)
-
-	-- The worldPos represents a point on the ray from the camera through the screen point.
-	-- To find where it intersects the z=0 plane, we'll do a ray-plane intersection.
-	
-	-- Ray start point (camera position)
-	local viewDirection = getViewDirection(self.Rotation, self.Tilt)
-
-	local rayStart = self.Position - viewDirection * cameraOffset
-	
-	-- Ray direction
-	local rayDir = vector3(
-		worldPos.x - rayStart.x,
-		worldPos.y - rayStart.y,
-		worldPos.z - rayStart.z
-	)
-	
-	-- Calculate intersection with the z = 0 plane
-	local t = (worldZ - rayStart.z) / rayDir.z
-	local worldX = rayStart.x + t * rayDir.x
-	local worldY = rayStart.y + t * rayDir.y
-	
-	return vector3(worldX, worldY, worldZ)
+	-- TODO: calculate the rest
 end
 ]]
 
@@ -235,11 +202,6 @@ end
 
 
 
---[[
-
-for now the only camera type is a 'pivot camera', which is located at a given coordinate looking down, then rotates along the Z-axis, then the X-axis, and then moves backwards by some number of units
-
-]]
 
 local function new(p)
 	if p == nil then
@@ -249,8 +211,6 @@ local function new(p)
 
 	local Obj = {
 		["Position"] = vector3(p);
-		--["Rotation"] = 0; -- rotation in radians along the Z-axis
-		--["Tilt"] = 0; -- 0 = top-down, -90 = looking from the side
 		["Rotation"] = vector3(); -- euler angles rotation. Gets converted to a matrix and sent to the shader each time it's updated
 		["Offset"] = 0; -- this also gets incorporated into that same matrix and sent to the shader
 		["FieldOfView"] = math.rad(70); -- vertical FoV

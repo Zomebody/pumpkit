@@ -3,8 +3,9 @@
 
 // camera variables
 //uniform mat4 camMatrix;
-uniform float aspectRatio;
-uniform float fieldOfView;
+//uniform float aspectRatio;
+//uniform float fieldOfView;
+uniform mat4 perspectiveMatrix;
 
 const float zNear = 0.1;
 const float zFar = 1000.0;
@@ -54,6 +55,7 @@ const vec3 kernel[sampleCount] = vec3[]( // list of 16 samples. Samples were gen
 
 
 // vertical field-of-view is used
+/*
 mat4 getPerspectiveMatrix(float fieldOfView, float aspect) {
 	float tanHalfFov = tan(fieldOfView / 2.0);
 
@@ -67,7 +69,7 @@ mat4 getPerspectiveMatrix(float fieldOfView, float aspect) {
 
 	return perspectiveMatrix;
 }
-
+*/
 
 
 mat4 inverse(mat4 m) {
@@ -124,7 +126,7 @@ mat4 inverse(mat4 m) {
 vec3 reconstructPosition(float depth, vec2 uv) {
 	vec4 clipSpace = vec4(uv * 2.0 - 1.0, depth, 1.0);
 
-	mat4 perspectiveMatrix = getPerspectiveMatrix(fieldOfView, aspectRatio);
+	//mat4 perspectiveMatrix = getPerspectiveMatrix(fieldOfView, aspectRatio);
 	mat4 invPerspective = inverse(perspectiveMatrix);
 	vec4 viewSpace = invPerspective * clipSpace;
 
@@ -138,7 +140,8 @@ float calculateAmbientOcclusion(vec3 fragPos, vec3 normal, Image depthTexture) {
 	float occlusion = 0.0;
 	for (int i = 0; i < sampleCount; i++) {
 		vec3 samplePos = fragPos + kernel[i];
-		vec4 sampleProj = getPerspectiveMatrix(fieldOfView, aspectRatio) * vec4(samplePos, 1.0);
+		//vec4 sampleProj = getPerspectiveMatrix(fieldOfView, aspectRatio) * vec4(samplePos, 1.0);
+		vec4 sampleProj = perspectiveMatrix * vec4(samplePos, 1.0);
 		vec2 sampleUV = (sampleProj.xy / sampleProj.w) * 0.5 + 0.5;
 
 		float sampleDepth = Texel(depthTexture, sampleUV).r;
