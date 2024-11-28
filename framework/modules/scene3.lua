@@ -32,6 +32,8 @@ local connection = require("framework.connection")
 local MAX_LIGHTS_PER_SCENE = 16
 local SHADER_PATH = "framework/shaders/shader3d.c"
 local SHADER_PARTICLES_PATH = "framework/shaders/particles3d.c"
+local SHADER_SSAO_PATH = "framework/shaders/ssao3d.c"
+local SHADER_SSAOBLEND_PATH = "framework/shaders/ssaoBlend.c"
 
 
 
@@ -48,11 +50,46 @@ Scene3.__tostring = function(tab) return "{Scene3: " .. tostring(tab.Id) .. "}" 
 
 
 
+
 ----------------------------------------------------[[ == FUNCTIONS == ]]----------------------------------------------------
 
 -- check if an object is a scene
 local function isScene3(t)
 	return getmetatable(t) == Scene3
+end
+
+
+
+function Scene3:applyAmbientOcclusion()
+	local prevCanvas = love.graphics.getCanvas()
+	local prevShader = love.graphics.getShader()
+
+	-- set ambient occlusion canvas as render target, and draw ambient occlusion data to the AO canvas
+	love.graphics.setCanvas(self.AOCanvas)
+	love.graphics.clear()
+	love.graphics.setShader(self.SSAOShader)
+	love.graphics.draw(self.DepthCanvas) -- set the ambient occlusion shader in motion
+
+	-- now blend the ambient occlusion result with whatever has been drawn already
+	love.graphics.setCanvas(self.AOBlendCanvas)
+	love.graphics.clear()
+	love.graphics.setShader(self.SSAOBlendShader) -- set the blend shader so we can apply ambient occlusion to the render canvas
+	self.SSAOBlendShader:send("aoTexture", self.AOCanvas) -- send over the rendered result from the ambient occlusion shader so we can sample it in the blend shader
+	love.graphics.draw(self.RenderCanvas) -- idk how this works out exactly since we're drawing what's on the canvas already to the canvas
+
+	-- copy result to render canvas
+	love.graphics.setShader()
+	love.graphics.setCanvas(self.RenderCanvas)
+	love.graphics.clear()
+	love.graphics.setShader()
+	love.graphics.draw(self.AOBlendCanvas)
+
+	love.graphics.setCanvas()
+	love.graphics.draw(self.RenderCanvas)
+
+	love.graphics.setShader(prevShader)
+	love.graphics.setCanvas(prevCanvas)
+
 end
 
 
@@ -125,7 +162,6 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 	end
 
 	-- set the canvas to draw to the render canvas, and the shader to draw in 3d
-	--love.graphics.setCanvas({self.RenderCanvas, ["depthstencil"] = self.DepthCanvas})
 	love.graphics.setShader(self.Shader)
 	love.graphics.setDepthMode("less", true)
 
@@ -145,6 +181,15 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 		Mesh = self.InstancedMeshes[i]
 		love.graphics.drawInstanced(Mesh.Mesh, Mesh.Count)
 	end
+
+	-- TODO: somewhere in here we need to apply (screen-space) ambient occlusion
+	-- what we do is we take the depth canvas and use that to determine where 'corners' are that should be dark
+	-- we render the dark spots to a separate canvas, if I understand ambient occlusion correctly
+	-- then we draw that canvas to the current render target (don't forget to temporarily change depth testing so it just works)
+	-- implement this as a separate function
+	love.graphics.setDepthMode("always", false)
+	self:applyAmbientOcclusion()
+	love.graphics.setDepthMode("less", true)
 
 	-- now draw all the particles in the scene
 	-- don't need to send any info to the shader because the particles when they update themselves, also update the mesh attributes that encodes any required info
@@ -209,15 +254,20 @@ function Scene3:rescaleCanvas(width, height, msaa)
 			["readable"] = true;
 		}
 	)
+	local aoCanvas = love.graphics.newCanvas(gWidth * msaa, gHeight * msaa)
+	local aoBlendCanvas = love.graphics.newCanvas(gWidth * msaa, gHeight * msaa)
 
 	self.RenderCanvas = renderCanvas
 	self.DepthCanvas = depthCanvas
+	self.AOCanvas = aoCanvas
+	self.AOBlendCanvas = aoBlendCanvas
 	self.MSAA = msaa
 
 	-- update aspect ratio of the scene
 	local aspectRatio = width / height
 	self.Shader:send("aspectRatio", aspectRatio)
 	self.ParticlesShader:send("aspectRatio", aspectRatio)
+	self.SSAOShader:send("aspectRatio", aspectRatio)
 end
 
 
@@ -389,12 +439,17 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 			["readable"] = true;
 		}
 	)
+	local aoCanvas = love.graphics.newCanvas(gWidth * msaa, gHeight * msaa)
+	local aoBlendCanvas = love.graphics.newCanvas(gWidth * msaa, gHeight * msaa)
 
 	local Object = {
 		["Id"] = module.TotalCreated;
 
 		["Shader"] = love.graphics.newShader(SHADER_PATH); -- create one shader per scene so you can potentially 
 		["ParticlesShader"] = love.graphics.newShader(SHADER_PARTICLES_PATH);
+		["SSAOShader"] = love.graphics.newShader(SHADER_SSAO_PATH); -- screen-space ambient occlusion shader
+		["SSAOBlendShader"] = love.graphics.newShader(SHADER_SSAOBLEND_PATH); -- blend shader to blend ambient occlusion with the rendered scene
+
 		["QueuedShaderVars"] = { -- whether during the next :draw() call the scene should update the shader variables below. These variables are introduced to minimize traffic to the shader!
 			["LightPositions"] = true; -- initialize to true to force the variables to be sent on the very first frame
 			["LightColors"] = true; -- same as above
@@ -405,6 +460,8 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 		-- canvas properties, update whenever you change the render target
 		["RenderCanvas"] = renderCanvas;
 		["DepthCanvas"] = depthCanvas;
+		["AOCanvas"] = aoCanvas; -- ambient occlusion canvas that is transparent, except for the places that should be darker
+		["AOBlendCanvas"] = aoBlendCanvas; -- intermediate canvas to render ambient occlusion blending result to before rendering it to the render canvas. Idk if we can maybe eliminate this
 		["MSAA"] = msaa;
 
 		-- render variables
@@ -437,6 +494,8 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 	Object.Shader:send("fieldOfView", Object.Camera3.FieldOfView)
 	Object.ParticlesShader:send("aspectRatio", aspectRatio)
 	Object.ParticlesShader:send("fieldOfView", Object.Camera3.FieldOfView)
+	Object.SSAOShader:send("aspectRatio", aspectRatio)
+	Object.SSAOShader:send("fieldOfView", Object.Camera3.FieldOfView)
 
 
 	-- init lights with 0-strength white lights (re-enable this later when lights are enabled in the shader)
