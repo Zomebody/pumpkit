@@ -13,6 +13,7 @@ const int sampleCount = 16; // Number of samples
 
 const vec3 kernel[sampleCount] = vec3[]( // list of 16 samples. Samples were generated using two fibonacci spheres, one with 12 points with r=1 and one with 4 points with r=0.6
 	// first sphere
+	
 	vec3(0.0345, 0.0939, 0.0000),
 	vec3(-0.0472, 0.0768, -0.0433),
 	vec3(0.0070, 0.0597, 0.0799),
@@ -30,6 +31,24 @@ const vec3 kernel[sampleCount] = vec3[]( // list of 16 samples. Samples were gen
 	vec3(-0.0426, 0.0161, -0.0390),
 	vec3(0.0051, -0.0161, 0.0576),
 	vec3(0.0216, -0.0484, -0.0282)
+	/*
+	vec3(0.245, 0.000, 0.970),
+	vec3(-0.343, -0.314, 0.885),
+	vec3(0.052, 0.596, 0.801),
+	vec3(0.424, -0.553, 0.717),
+	vec3(-0.763, 0.135, 0.632),
+	vec3(0.706, 0.449, 0.548),
+	vec3(-0.230, -0.856, 0.464),
+	vec3(-0.426, 0.821, 0.379),
+	vec3(0.897, -0.328, 0.295),
+	vec3(-0.904, -0.373, 0.211),
+	vec3(0.420, 0.898, 0.126),
+	vec3(0.299, -0.953, 0.042),
+	vec3(0.253, 0.000, 0.544),
+	vec3(-0.337, -0.309, 0.389),
+	vec3(0.048, 0.551, 0.233),
+	vec3(0.362, -0.472, 0.078)
+	*/
 );
 
 
