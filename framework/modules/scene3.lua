@@ -69,21 +69,24 @@ function Scene3:applyAmbientOcclusion()
 	love.graphics.clear()
 	love.graphics.setShader(self.SSAOShader)
 	self.SSAOShader:send("normalTexture", self.NormalCanvas)
-	love.graphics.draw(self.DepthCanvas) -- set the ambient occlusion shader in motion
+	--love.graphics.draw(self.DepthCanvas)
+	love.graphics.draw(self.DepthCanvas, 0, 0, 0, 1 / self.MSAA, 1 / self.MSAA) -- set the ambient occlusion shader in motion
 
 	-- now blend the ambient occlusion result with whatever has been drawn already
 	love.graphics.setCanvas(self.AOBlendCanvas)
 	love.graphics.clear()
 	love.graphics.setShader(self.SSAOBlendShader) -- set the blend shader so we can apply ambient occlusion to the render canvas
 	self.SSAOBlendShader:send("aoTexture", self.AOCanvas) -- send over the rendered result from the ambient occlusion shader so we can sample it in the blend shader
-	love.graphics.draw(self.RenderCanvas)
+	--love.graphics.draw(self.RenderCanvas)
+	love.graphics.draw(self.RenderCanvas, 0, 0, 0, 1 / self.MSAA, 1 / self.MSAA)
 
 	-- copy result to render canvas
 	love.graphics.setShader()
 	love.graphics.setCanvas(self.RenderCanvas)
 	love.graphics.clear()
 	love.graphics.setShader()
-	love.graphics.draw(self.AOBlendCanvas)
+	--love.graphics.draw(self.AOBlendCanvas)
+	love.graphics.draw(self.AOBlendCanvas, 0, 0, 0, self.MSAA, self.MSAA)
 
 	love.graphics.setCanvas()
 	love.graphics.draw(self.RenderCanvas)
@@ -261,8 +264,10 @@ function Scene3:rescaleCanvas(width, height, msaa)
 		}
 	)
 	local normalCanvas = love.graphics.newCanvas(width * msaa, height * msaa)
-	local aoCanvas = love.graphics.newCanvas(width * msaa, height * msaa)
-	local aoBlendCanvas = love.graphics.newCanvas(width * msaa, height * msaa)
+	--local aoCanvas = love.graphics.newCanvas(width * msaa, height * msaa)
+	--local aoBlendCanvas = love.graphics.newCanvas(width * msaa, height * msaa)
+	local aoCanvas = love.graphics.newCanvas(width, height)
+	local aoBlendCanvas = love.graphics.newCanvas(width, height)
 
 	self.RenderCanvas = renderCanvas
 	self.DepthCanvas = depthCanvas
@@ -460,8 +465,10 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 		}
 	)
 	local normalCanvas = love.graphics.newCanvas(gWidth * msaa, gHeight * msaa)
-	local aoCanvas = love.graphics.newCanvas(gWidth * msaa, gHeight * msaa)
-	local aoBlendCanvas = love.graphics.newCanvas(gWidth * msaa, gHeight * msaa)
+	local aoCanvas = love.graphics.newCanvas(gWidth, gHeight)
+	local aoBlendCanvas = love.graphics.newCanvas(gWidth, gHeight)
+	--local aoCanvas = love.graphics.newCanvas(gWidth * msaa, gHeight * msaa)
+	--local aoBlendCanvas = love.graphics.newCanvas(gWidth * msaa, gHeight * msaa)
 
 
 	local Object = {

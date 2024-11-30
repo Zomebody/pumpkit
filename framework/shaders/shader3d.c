@@ -354,7 +354,7 @@ void effect() {
 	//float totalInfluence = 0;
 
 	// add the lighting contribution of all lights to the surface
-	for (int i = 0; i < 8; ++i) {
+	for (int i = 0; i < 16; ++i) {
 		if (lightStrengths[i] > 0) { // only consider lights with a strength above 0
 			// distance to the light
 			float distance = length(lightPositions[i] - fragWorldPosition);
