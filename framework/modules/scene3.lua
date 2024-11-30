@@ -68,21 +68,22 @@ function Scene3:applyAmbientOcclusion()
 	love.graphics.setCanvas(self.AOCanvas)
 	love.graphics.clear()
 	love.graphics.setShader(self.SSAOShader)
-	love.graphics.draw(self.DepthCanvas, 0, 0, 0, 1 / self.MSAA, 1 / self.MSAA) -- set the ambient occlusion shader in motion
+	self.SSAOShader:send("normalTexture", self.NormalCanvas)
+	love.graphics.draw(self.DepthCanvas) -- set the ambient occlusion shader in motion
 
 	-- now blend the ambient occlusion result with whatever has been drawn already
 	love.graphics.setCanvas(self.AOBlendCanvas)
 	love.graphics.clear()
 	love.graphics.setShader(self.SSAOBlendShader) -- set the blend shader so we can apply ambient occlusion to the render canvas
 	self.SSAOBlendShader:send("aoTexture", self.AOCanvas) -- send over the rendered result from the ambient occlusion shader so we can sample it in the blend shader
-	love.graphics.draw(self.RenderCanvas, 0, 0, 0, 1 / self.MSAA, 1 / self.MSAA) -- idk how this works out exactly since we're drawing what's on the canvas already to the canvas
+	love.graphics.draw(self.RenderCanvas)
 
 	-- copy result to render canvas
 	love.graphics.setShader()
 	love.graphics.setCanvas(self.RenderCanvas)
 	love.graphics.clear()
 	love.graphics.setShader()
-	love.graphics.draw(self.AOBlendCanvas, 0, 0, 0, self.MSAA, self.MSAA)
+	love.graphics.draw(self.AOBlendCanvas)
 
 	love.graphics.setCanvas()
 	love.graphics.draw(self.RenderCanvas)
@@ -148,7 +149,7 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 
 
 	-- set render canvas as target and clear it so a normal image can be drawn to it
-	love.graphics.setCanvas({self.RenderCanvas, ["depthstencil"] = self.DepthCanvas}) -- render to render canvas
+	love.graphics.setCanvas({self.RenderCanvas, self.NormalCanvas, ["depthstencil"] = self.DepthCanvas}) -- render to render canvas
 	love.graphics.clear()
 
 	local renderWidth, renderHeight = self.RenderCanvas:getDimensions()
@@ -182,6 +183,8 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 		love.graphics.drawInstanced(Mesh.Mesh, Mesh.Count)
 	end
 
+	--love.graphics.setCanvas({self.RenderCanvas, ["depthstencil"] = self.DepthCanvas}) -- reset the canvas to just the render canvas
+
 	-- TODO: somewhere in here we need to apply (screen-space) ambient occlusion
 	-- what we do is we take the depth canvas and use that to determine where 'corners' are that should be dark
 	-- we render the dark spots to a separate canvas, if I understand ambient occlusion correctly
@@ -211,6 +214,9 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 	-- reset the canvas to the render target & render the scene
 	love.graphics.setCanvas(renderTarget)
 	love.graphics.draw(self.RenderCanvas, 0, self.RenderCanvas:getHeight() / self.MSAA, 0, 1 / self.MSAA, -1 / self.MSAA)
+
+	--love.graphics.draw(self.NormalCanvas, 0, self.RenderCanvas:getHeight() / self.MSAA, 0, 1 / self.MSAA, -1 / self.MSAA)
+	--love.graphics.draw(self.DepthCanvas, 0, self.RenderCanvas:getHeight() / self.MSAA, 0, 1 / self.MSAA, -1 / self.MSAA)
 
 	-- revert some graphics settings
 	love.graphics.setCanvas(prevCanvas)
@@ -254,11 +260,13 @@ function Scene3:rescaleCanvas(width, height, msaa)
 			["readable"] = true;
 		}
 	)
-	local aoCanvas = love.graphics.newCanvas(gWidth, gHeight)
-	local aoBlendCanvas = love.graphics.newCanvas(gWidth, gHeight)
+	local normalCanvas = love.graphics.newCanvas(width * msaa, height * msaa)
+	local aoCanvas = love.graphics.newCanvas(width * msaa, height * msaa)
+	local aoBlendCanvas = love.graphics.newCanvas(width * msaa, height * msaa)
 
 	self.RenderCanvas = renderCanvas
 	self.DepthCanvas = depthCanvas
+	self.NormalCanvas = normalCanvas
 	self.AOCanvas = aoCanvas
 	self.AOBlendCanvas = aoBlendCanvas
 	self.MSAA = msaa
@@ -314,6 +322,11 @@ end
 
 function Scene3:setAmbient(col)
 	self.Shader:send("ambientColor", {col.r, col.g, col.b})
+end
+
+
+function Scene3:setAOStrength(strength)
+	self.SSAOShader:send("aoStrength", strength)
 end
 
 
@@ -446,8 +459,10 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 			["readable"] = true;
 		}
 	)
-	local aoCanvas = love.graphics.newCanvas(gWidth, gHeight)
-	local aoBlendCanvas = love.graphics.newCanvas(gWidth, gHeight)
+	local normalCanvas = love.graphics.newCanvas(gWidth * msaa, gHeight * msaa)
+	local aoCanvas = love.graphics.newCanvas(gWidth * msaa, gHeight * msaa)
+	local aoBlendCanvas = love.graphics.newCanvas(gWidth * msaa, gHeight * msaa)
+
 
 	local Object = {
 		["Id"] = module.TotalCreated;
@@ -467,6 +482,7 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 		-- canvas properties, update whenever you change the render target
 		["RenderCanvas"] = renderCanvas;
 		["DepthCanvas"] = depthCanvas;
+		["NormalCanvas"] = normalCanvas;
 		["AOCanvas"] = aoCanvas; -- ambient occlusion canvas that is transparent, except for the places that should be darker
 		["AOBlendCanvas"] = aoBlendCanvas; -- intermediate canvas to render ambient occlusion blending result to before rendering it to the render canvas. Idk if we can maybe eliminate this
 		["MSAA"] = msaa;
@@ -497,9 +513,7 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 	Object.Shader:send("fieldOfView", Object.Camera3.FieldOfView)
 	Object.ParticlesShader:send("aspectRatio", aspectRatio)
 	Object.ParticlesShader:send("fieldOfView", Object.Camera3.FieldOfView)
-	--Object.SSAOShader:send("aspectRatio", aspectRatio)
-	--Object.SSAOShader:send("fieldOfView", Object.Camera3.FieldOfView)
-	-- calculate perspective matrix for the SSAO shader
+	Object.SSAOShader:send("aoStrength", 0.5)
 	local persp = matrix4.perspective(aspectRatio, Object.Camera3.FieldOfView, 1000, 0.1)
 	local c1, c2, c3, c4 = persp:columns()
 	Object.SSAOShader:send("perspectiveMatrix", {c1, c2, c3, c4})

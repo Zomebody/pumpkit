@@ -28,7 +28,7 @@ uniform bool isInstanced;
 // TODO: fragment variables
 varying vec3 fragWorldPosition; // output automatically interpolated fragment world position
 //varying float fragDistanceToCamera; // used for fog
-//varying vec3 fragNormal; // used for backface culling
+varying vec3 fragNormal; // used for backface culling
 //varying vec3 cameraViewDirection;
 
 
@@ -116,6 +116,7 @@ mat4 getPerspectiveMatrix(float fieldOfView, float aspect) {
 
 
 
+// should be correct. Verify here: https://github.com/glslify/glsl-inverse/blob/master/index.glsl
 mat4 inverse(mat4 m) {
 	float
 		a00 = m[0][0], a01 = m[0][1], a02 = m[0][2], a03 = m[0][3],
@@ -209,7 +210,7 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 
 	// TODO: set the world position variable to pass onto the fragment shader
 	fragWorldPosition = (modelWorldMatrix * vertex_position).xyz; // sets the world position of this vertex. In the fragment shader this gets interpolated correctly automatically
-	//fragNormal = VertexNormal;
+	
 	// TODO: calculate distance to camera for any fog applied in the fragment shader
 	//fragDistanceToCamera = length(fragWorldPosition - cameraMatrix[3].xyz); // convert camera matrix to vec3 containing only the position
 
@@ -219,6 +220,9 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 
 	// Apply the view-projection transformation
 	vec4 result = projectionMatrix * cameraSpaceMatrix * vertex_position;
+
+
+	fragNormal = (viewMatrix * rotationMatrix * vec4(VertexNormal, 0.0)).xyz; // fragNormal is stored in view-space because it's cheaper and easier that way to program ambient-occlusion!
 
 
 
@@ -243,7 +247,7 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 
 varying vec3 fragWorldPosition; // output automatically interpolated fragment world position
 //varying float fragDistanceToCamera; // used for fog
-//varying vec3 fragNormal; // used for backface culling
+varying vec3 fragNormal; // used for backface culling
 //varying vec3 cameraViewDirection;
 
 // lights
@@ -257,6 +261,8 @@ uniform vec3 ambientColor;
 uniform vec3 meshColor;
 varying vec3 instColor;
 uniform bool isInstanced;
+
+uniform Image MainTex; // used to be the 'tex' argument, but is now passed separately in this specific variable name because we switched to multi-canvas shading which has no arguments
 
 // TODO: texture mode for regular textures or triplanar blending for terrain meshes
 //uniform bool doTriplanarBlend;
@@ -315,7 +321,11 @@ vec3 oklabMix(vec3 colA, vec3 colB, float h)
 
 
 // fragment shader
-vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
+
+void effect() {
+	vec4 color = VaryingColor; // argument 'color' doesn't exist when using multiple canvases
+	vec2 texture_coords = VaryingTexCoord.xy; // argument 'texture_coords' doesn't exist when using multiple canvases
+	//Image tex = MainTex;
 	if (isInstanced) {
 		color = vec4(color.x * instColor.x, color.y * instColor.y, color.z * instColor.z, color.w);
 	} else {
@@ -326,12 +336,16 @@ vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
 	// TODO: apply backface culling
 
 	// Check if a texture is applied by sampling from it
-	vec4 texColor = Texel(tex, texture_coords);
+	vec4 texColor = Texel(MainTex, texture_coords);
 
 	// Check if the alpha of the texture color is below a threshold
 	if (texColor.a < 0.01) {
 		discard;  // Discard fully transparent pixels
 	}
+
+
+	// the second canvas is the normals canvas. Output the surface normal to this canvas
+	love_Canvases[1] = vec4(fragNormal.x / 2 + 0.5, fragNormal.y / 2 + 0.5, fragNormal.z / 2 + 0.5, 1.0); // Pack normals into an RGBA format
 
 
 
@@ -352,7 +366,8 @@ vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
 		}
 	}
 	
-	return texColor * color * vec4(lighting.x, lighting.y, lighting.z, 1.0);
+	//return texColor * color * vec4(lighting.x, lighting.y, lighting.z, 1.0);
+	love_Canvases[0] = texColor * color * vec4(lighting.x, lighting.y, lighting.z, 1.0);
 	
 
 	//return texColor;

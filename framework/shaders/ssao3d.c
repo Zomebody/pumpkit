@@ -1,75 +1,42 @@
 // SSAO Shader
-//uniform Image depthTexture;
 
-// camera variables
-//uniform mat4 camMatrix;
-//uniform float aspectRatio;
-//uniform float fieldOfView;
 uniform mat4 perspectiveMatrix;
+uniform mat4 camMatrix;
 
+uniform float aoStrength;
+
+/*
 const float zNear = 0.1;
 const float zFar = 1000.0;
-
+*/
 const int sampleCount = 16; // Number of samples
+const float kernelScalar = 0.85;
 
 const vec3 kernel[sampleCount] = vec3[]( // list of 16 samples. Samples were generated using two fibonacci spheres, one with 12 points with r=1 and one with 4 points with r=0.6
-	// first sphere
+
 	
-	vec3(0.0345, 0.0939, 0.0000),
-	vec3(-0.0472, 0.0768, -0.0433),
-	vec3(0.0070, 0.0597, 0.0799),
-	vec3(0.0550, 0.0427, -0.0718),
-	vec3(-0.0952, 0.0256, 0.0168),
-	vec3(0.0841, 0.0085, 0.0535),
-	vec3(-0.0259, -0.0085, -0.0962),
-	vec3(-0.0446, -0.0256, 0.0858),
-	vec3(0.0850, -0.0427, -0.0310),
-	vec3(-0.0741, -0.0597, -0.0306),
-	vec3(0.0271, -0.0768, 0.0580),
-	vec3(0.0103, -0.0939, -0.0329),
+	// first sphere
+	vec3(0.0345, 0.0939, 0.0100) * kernelScalar,
+	vec3(-0.0472, 0.0768, 0.0433) * kernelScalar,
+	vec3(0.0070, 0.0597, 0.0799) * kernelScalar,
+	vec3(0.0550, 0.0427, 0.0718) * kernelScalar,
+	vec3(-0.0952, 0.0256, 0.0168) * kernelScalar,
+	vec3(0.0841, 0.0085, 0.0535) * kernelScalar,
+	vec3(-0.0259, -0.0085, 0.0962) * kernelScalar,
+	vec3(-0.0446, -0.0256, 0.0858) * kernelScalar,
+	vec3(0.0850, -0.0427, 0.0310) * kernelScalar,
+	vec3(-0.0741, -0.0597, 0.0306) * kernelScalar,
+	vec3(0.0271, -0.0768, 0.0580) * kernelScalar,
+	vec3(0.0103, -0.0939, 0.0329) * kernelScalar,
 	// second sphere
-	vec3(0.0355, 0.0484, 0.0000),
-	vec3(-0.0426, 0.0161, -0.0390),
-	vec3(0.0051, -0.0161, 0.0576),
-	vec3(0.0216, -0.0484, -0.0282)
-	/*
-	vec3(0.245, 0.000, 0.970),
-	vec3(-0.343, -0.314, 0.885),
-	vec3(0.052, 0.596, 0.801),
-	vec3(0.424, -0.553, 0.717),
-	vec3(-0.763, 0.135, 0.632),
-	vec3(0.706, 0.449, 0.548),
-	vec3(-0.230, -0.856, 0.464),
-	vec3(-0.426, 0.821, 0.379),
-	vec3(0.897, -0.328, 0.295),
-	vec3(-0.904, -0.373, 0.211),
-	vec3(0.420, 0.898, 0.126),
-	vec3(0.299, -0.953, 0.042),
-	vec3(0.253, 0.000, 0.544),
-	vec3(-0.337, -0.309, 0.389),
-	vec3(0.048, 0.551, 0.233),
-	vec3(0.362, -0.472, 0.078)
-	*/
+	vec3(0.0355, 0.0484, 0.0100) * kernelScalar,
+	vec3(-0.0426, 0.0161, 0.0390) * kernelScalar,
+	vec3(0.0051, -0.0161, 0.0576) * kernelScalar,
+	vec3(0.0216, -0.0484, 0.0282) * kernelScalar
+	
+
 );
 
-
-
-// vertical field-of-view is used
-/*
-mat4 getPerspectiveMatrix(float fieldOfView, float aspect) {
-	float tanHalfFov = tan(fieldOfView / 2.0);
-
-	mat4 perspectiveMatrix = mat4(0.0);
-	perspectiveMatrix[0][0] = 1.0 / (aspect * tanHalfFov);
-	perspectiveMatrix[1][1] = 1.0 / (tanHalfFov);
-	perspectiveMatrix[2][2] = -(zFar + zNear) / (zFar - zNear);
-	perspectiveMatrix[2][3] = -1.0;
-	perspectiveMatrix[3][2] = -(2.0 * zFar * zNear) / (zFar - zNear);
-	perspectiveMatrix[3][3] = 0.0; // chatgpt suggested this for some reason????
-
-	return perspectiveMatrix;
-}
-*/
 
 
 mat4 inverse(mat4 m) {
@@ -123,50 +90,76 @@ mat4 inverse(mat4 m) {
 
 
 
-vec3 reconstructPosition(float depth, vec2 uv) {
-	vec4 clipSpace = vec4(uv * 2.0 - 1.0, depth, 1.0);
-
-	//mat4 perspectiveMatrix = getPerspectiveMatrix(fieldOfView, aspectRatio);
-	mat4 invPerspective = inverse(perspectiveMatrix);
-	vec4 viewSpace = invPerspective * clipSpace;
-
-	return (viewSpace / viewSpace.w).xyz;
-}
 
 
-
-
-float calculateAmbientOcclusion(vec3 fragPos, vec3 normal, Image depthTexture) {
+float calculateOcclusion(vec3 fragmentPos, vec3 normal, vec2 texCoord, Image depthTexture, mat4 invPerspectiveMatrix) {
 	float occlusion = 0.0;
+
+	vec3 up = abs(normal.y) < 0.999 ? vec3(0.0, 1.0, 0.0) : vec3(1.0, 0.0, 0.0);
+	vec3 tangent = normalize(cross(up, normal));
+	vec3 bitangent = cross(normal, tangent);
+
+	mat3 TBN = mat3(tangent, bitangent, normal);
+
+
 	for (int i = 0; i < sampleCount; i++) {
-		vec3 samplePos = fragPos + kernel[i];
-		//vec4 sampleProj = getPerspectiveMatrix(fieldOfView, aspectRatio) * vec4(samplePos, 1.0);
-		vec4 sampleProj = perspectiveMatrix * vec4(samplePos, 1.0);
-		vec2 sampleUV = (sampleProj.xy / sampleProj.w) * 0.5 + 0.5;
+		vec3 worldSampleDir = TBN * kernel[i];
+		vec3 samplePos = fragmentPos + worldSampleDir; // Offset sample in world space
 
-		float sampleDepth = Texel(depthTexture, sampleUV).r;
-		vec3 sampleWorldPos = reconstructPosition(sampleDepth, sampleUV);
+		// Project sample position to screen space
+		vec4 sampleScreenPos = perspectiveMatrix * vec4(samplePos, 1.0);
+		sampleScreenPos /= sampleScreenPos.w; // Perspective divide
+		vec2 sampleTexCoord = sampleScreenPos.xy * 0.5 + 0.5; // Map to [0, 1]
 
-		float dist = length(sampleWorldPos - fragPos);
-		float rangeCheck = smoothstep(0.0, 1.0, 1.0 - dist);
-		occlusion += rangeCheck * max(0.0, dot(normal, normalize(sampleWorldPos - fragPos)));
+		float sampleDepth = Texel(depthTexture, sampleTexCoord).r;
+		vec4 sampleWorldPos = invPerspectiveMatrix * vec4(sampleScreenPos.xy, sampleDepth, 1.0);
+		sampleWorldPos /= sampleWorldPos.w;
+
+		// Compare depths to check for occlusion
+		// these two lines were stolen from: https://learnopengl.com/Advanced-Lighting/SSAO
+		if (sampleWorldPos.z > samplePos.z) {
+			float rangeCheck = smoothstep(0.0, 1.0, 2 / abs(fragmentPos.z - sampleDepth));
+			occlusion += (sampleDepth >= samplePos.z + 0.025 ? 1.0 : 0.0) * rangeCheck;
+			//occlusion += 1.0;
+		}
 	}
-	return 1.0 - (occlusion / sampleCount);
+
+	return occlusion / float(sampleCount); // Normalize occlusion
 }
 
 
+
+
+
+
+uniform Image normalTexture;
 
 
 vec4 effect(vec4 color, Image tex, vec2 texCoord, vec2 screenCoords) {
-	//float depth = Texel(depthTexture, texCoord).r;
 	float depth = Texel(tex, texCoord).r;
-	vec3 fragPos = reconstructPosition(depth, texCoord);
+	if (depth == 1.0) {
+		return vec4(1.0); // No occlusion in empty space
+	}
 
-	// approximate normal using neighboring depth values (simple normal reconstruction)
-	vec3 normal = vec3(0.0, 0.0, 1.0); // TODO: implement normal reconstruction
 
-	float ao = calculateAmbientOcclusion(fragPos, normal, tex);
-	return vec4(vec3(ao), 1.0);
+
+	// Reconstruct world position
+	vec4 screenPos = vec4(texCoord * 2.0 - 1.0, depth, 1.0);
+	//mat4 viewProjectionMatrix = perspectiveMatrix;
+	mat4 invPerspectiveMatrix = inverse(perspectiveMatrix);
+	vec4 worldPos = invPerspectiveMatrix * screenPos;
+	worldPos /= worldPos.w;
+
+	// Get normal from normal texture
+	vec3 normal = Texel(normalTexture, texCoord).rgb * 2.0 - 1.0;
+	//normal = (camMatrix * vec4(normal, 1.0)).xyz;
+
+	// Calculate ambient occlusion
+	
+	float occlusion = calculateOcclusion(worldPos.xyz, normal, texCoord, tex, invPerspectiveMatrix);
+
+	return vec4(vec3(1.0 - occlusion * aoStrength), 1.0); // Darken by occlusion amount
+
 }
 
 
