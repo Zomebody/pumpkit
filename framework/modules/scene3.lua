@@ -61,8 +61,8 @@ end
 
 
 function Scene3:applyAmbientOcclusion()
-	local prevCanvas = love.graphics.getCanvas()
-	local prevShader = love.graphics.getShader()
+	--local prevCanvas = love.graphics.getCanvas()
+	--local prevShader = love.graphics.getShader()
 
 	-- set ambient occlusion canvas as render target, and draw ambient occlusion data to the AO canvas
 	love.graphics.setCanvas(self.AOCanvas)
@@ -85,8 +85,8 @@ function Scene3:applyAmbientOcclusion()
 	love.graphics.setShader()
 	love.graphics.draw(self.ReuseCanvas)
 
-	love.graphics.setShader(prevShader)
-	love.graphics.setCanvas(prevCanvas)
+	--love.graphics.setShader(prevShader)
+	--love.graphics.setCanvas(prevCanvas)
 end
 
 
@@ -153,7 +153,7 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 
 	-- draw the background
 	if self.Background then
-		love.graphics.setShader()
+		--love.graphics.setShader()
 		love.graphics.setDepthMode("always", false)
 		local imgWidth, imgHeight = self.Background:getDimensions()
 		love.graphics.draw(self.Background, 0, 0, 0, renderWidth / imgWidth, renderHeight / imgHeight)
@@ -186,12 +186,14 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 	self:applyAmbientOcclusion()
 	love.graphics.setDepthMode("less", true)
 
-	-- now draw all the particles in the scene
-	-- don't need to send any info to the shader because the particles when they update themselves, also update the mesh attributes that encodes any required info
-	love.graphics.setCanvas({self.RenderCanvas, ["depthstencil"] = self.DepthCanvas}) -- remove normals canvas and bloom canvas from render target. We won't need it anymore
-	love.graphics.setShader(self.ParticlesShader)
-	for i = 1, #self.Particles do
-		love.graphics.drawInstanced(self.Particles[i].Mesh, #self.Particles[i].Spawned)
+	if #self.Particles > 0 then
+		-- now draw all the particles in the scene
+		-- don't need to send any info to the shader because the particles when they update themselves, also update the mesh attributes that encodes any required info
+		love.graphics.setCanvas({self.RenderCanvas, ["depthstencil"] = self.DepthCanvas}) -- remove normals canvas and bloom canvas from render target. We won't need it anymore
+		love.graphics.setShader(self.ParticlesShader)
+		for i = 1, #self.Particles do
+			love.graphics.drawInstanced(self.Particles[i].Mesh, #self.Particles[i].Spawned)
+		end
 	end
 
 	-- setShader() can be called here since if self.Foreground ~= nil then setting setShader() in there makes no sense since the shader will be set to nil anyway right after when drawing the canvas to the screen
