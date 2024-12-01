@@ -9,10 +9,10 @@ uniform float aoStrength;
 const float zNear = 0.1;
 const float zFar = 1000.0;
 */
-const int sampleCount = 16; // Number of samples
+const int sampleSize = 16;//64; // Number of samples
 const float kernelScalar = 0.85;
 
-const vec3 kernel[sampleCount] = vec3[]( // list of 16 samples. Samples were generated using two fibonacci spheres, one with 12 points with r=1 and one with 4 points with r=0.6
+const vec3 kernel[sampleSize] = vec3[]( // list of 16 samples. Samples were generated using two fibonacci spheres, one with 12 points with r=1 and one with 4 points with r=0.6
 
 	
 	// first sphere
@@ -33,8 +33,6 @@ const vec3 kernel[sampleCount] = vec3[]( // list of 16 samples. Samples were gen
 	vec3(-0.0426, 0.0161, 0.0390) * kernelScalar,
 	vec3(0.0051, -0.0161, 0.0576) * kernelScalar,
 	vec3(0.0216, -0.0484, 0.0282) * kernelScalar
-	
-
 );
 
 
@@ -98,11 +96,9 @@ float calculateOcclusion(vec3 fragmentPos, vec3 normal, vec2 texCoord, Image dep
 	vec3 up = abs(normal.y) < 0.999 ? vec3(0.0, 1.0, 0.0) : vec3(1.0, 0.0, 0.0);
 	vec3 tangent = normalize(cross(up, normal));
 	vec3 bitangent = cross(normal, tangent);
-
 	mat3 TBN = mat3(tangent, bitangent, normal);
 
-
-	for (int i = 0; i < sampleCount; i++) {
+	for (int i = 0; i < sampleSize; i++) {
 		vec3 worldSampleDir = TBN * kernel[i];
 		vec3 samplePos = fragmentPos + worldSampleDir; // Offset sample in world space
 
@@ -120,11 +116,10 @@ float calculateOcclusion(vec3 fragmentPos, vec3 normal, vec2 texCoord, Image dep
 		if (sampleWorldPos.z > samplePos.z) {
 			float rangeCheck = smoothstep(0.0, 1.0, 2 / abs(fragmentPos.z - sampleDepth));
 			occlusion += (sampleDepth >= samplePos.z + 0.025 ? 1.0 : 0.0) * rangeCheck;
-			//occlusion += 1.0;
 		}
 	}
 
-	return occlusion / float(sampleCount); // Normalize occlusion
+	return occlusion / float(sampleSize); // Normalize occlusion
 }
 
 
