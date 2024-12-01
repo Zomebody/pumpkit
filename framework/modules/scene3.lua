@@ -69,31 +69,24 @@ function Scene3:applyAmbientOcclusion()
 	love.graphics.clear()
 	love.graphics.setShader(self.SSAOShader)
 	self.SSAOShader:send("normalTexture", self.NormalCanvas)
-	--love.graphics.draw(self.DepthCanvas)
-	love.graphics.draw(self.DepthCanvas, 0, 0, 0, 1 / self.MSAA, 1 / self.MSAA) -- set the ambient occlusion shader in motion
+	love.graphics.draw(self.DepthCanvas) -- set the ambient occlusion shader in motion
 
 	-- now blend the ambient occlusion result with whatever has been drawn already
-	love.graphics.setCanvas(self.AOBlendCanvas)
+	love.graphics.setCanvas(self.ReuseCanvas)
 	love.graphics.clear()
 	love.graphics.setShader(self.SSAOBlendShader) -- set the blend shader so we can apply ambient occlusion to the render canvas
 	self.SSAOBlendShader:send("aoTexture", self.AOCanvas) -- send over the rendered result from the ambient occlusion shader so we can sample it in the blend shader
-	--love.graphics.draw(self.RenderCanvas)
-	love.graphics.draw(self.RenderCanvas, 0, 0, 0, 1 / self.MSAA, 1 / self.MSAA)
+	love.graphics.draw(self.RenderCanvas)
 
 	-- copy result to render canvas
 	love.graphics.setShader()
 	love.graphics.setCanvas(self.RenderCanvas)
 	love.graphics.clear()
 	love.graphics.setShader()
-	--love.graphics.draw(self.AOBlendCanvas)
-	love.graphics.draw(self.AOBlendCanvas, 0, 0, 0, self.MSAA, self.MSAA)
-
-	love.graphics.setCanvas()
-	love.graphics.draw(self.RenderCanvas)
+	love.graphics.draw(self.ReuseCanvas)
 
 	love.graphics.setShader(prevShader)
 	love.graphics.setCanvas(prevCanvas)
-
 end
 
 
@@ -152,8 +145,9 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 
 
 	-- set render canvas as target and clear it so a normal image can be drawn to it
-	love.graphics.setCanvas({self.RenderCanvas, self.NormalCanvas, ["depthstencil"] = self.DepthCanvas}) -- render to render canvas
+	love.graphics.setCanvas({self.RenderCanvas, self.NormalCanvas, ["depthstencil"] = self.DepthCanvas}) -- set the main canvas so it can be cleared
 	love.graphics.clear()
+	love.graphics.setCanvas(self.RenderCanvas) -- set the canvas to only be the render canvas so the background doesn't accidentally initialize anything in the normal canvas or bloom canvas
 
 	local renderWidth, renderHeight = self.RenderCanvas:getDimensions()
 
@@ -164,6 +158,8 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 		local imgWidth, imgHeight = self.Background:getDimensions()
 		love.graphics.draw(self.Background, 0, 0, 0, renderWidth / imgWidth, renderHeight / imgHeight)
 	end
+
+	love.graphics.setCanvas({self.RenderCanvas, self.NormalCanvas, ["depthstencil"] = self.DepthCanvas}) -- set the main canvas with proper maps for geometry being drawn
 
 	-- set the canvas to draw to the render canvas, and the shader to draw in 3d
 	love.graphics.setShader(self.Shader)
@@ -186,19 +182,13 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 		love.graphics.drawInstanced(Mesh.Mesh, Mesh.Count)
 	end
 
-	--love.graphics.setCanvas({self.RenderCanvas, ["depthstencil"] = self.DepthCanvas}) -- reset the canvas to just the render canvas
-
-	-- TODO: somewhere in here we need to apply (screen-space) ambient occlusion
-	-- what we do is we take the depth canvas and use that to determine where 'corners' are that should be dark
-	-- we render the dark spots to a separate canvas, if I understand ambient occlusion correctly
-	-- then we draw that canvas to the current render target (don't forget to temporarily change depth testing so it just works)
-	-- implement this as a separate function
 	love.graphics.setDepthMode("always", false)
 	self:applyAmbientOcclusion()
 	love.graphics.setDepthMode("less", true)
 
 	-- now draw all the particles in the scene
 	-- don't need to send any info to the shader because the particles when they update themselves, also update the mesh attributes that encodes any required info
+	love.graphics.setCanvas({self.RenderCanvas, ["depthstencil"] = self.DepthCanvas}) -- remove normals canvas and bloom canvas from render target. We won't need it anymore
 	love.graphics.setShader(self.ParticlesShader)
 	for i = 1, #self.Particles do
 		love.graphics.drawInstanced(self.Particles[i].Mesh, #self.Particles[i].Spawned)
@@ -264,16 +254,14 @@ function Scene3:rescaleCanvas(width, height, msaa)
 		}
 	)
 	local normalCanvas = love.graphics.newCanvas(width * msaa, height * msaa)
-	--local aoCanvas = love.graphics.newCanvas(width * msaa, height * msaa)
-	--local aoBlendCanvas = love.graphics.newCanvas(width * msaa, height * msaa)
-	local aoCanvas = love.graphics.newCanvas(width, height)
-	local aoBlendCanvas = love.graphics.newCanvas(width, height)
+	local aoCanvas = love.graphics.newCanvas(width * msaa, height * msaa)
+	local reuseCanvas = love.graphics.newCanvas(width * msaa, height * msaa)
 
 	self.RenderCanvas = renderCanvas
 	self.DepthCanvas = depthCanvas
 	self.NormalCanvas = normalCanvas
 	self.AOCanvas = aoCanvas
-	self.AOBlendCanvas = aoBlendCanvas
+	self.ReuseCanvas = reuseCanvas
 	self.MSAA = msaa
 
 	-- update aspect ratio of the scene
@@ -465,8 +453,8 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 		}
 	)
 	local normalCanvas = love.graphics.newCanvas(gWidth * msaa, gHeight * msaa)
-	local aoCanvas = love.graphics.newCanvas(gWidth, gHeight)
-	local aoBlendCanvas = love.graphics.newCanvas(gWidth, gHeight)
+	local aoCanvas = love.graphics.newCanvas(gWidth * msaa, gHeight * msaa)
+	local reuseCanvas = love.graphics.newCanvas(gWidth * msaa, gHeight * msaa)
 	--local aoCanvas = love.graphics.newCanvas(gWidth * msaa, gHeight * msaa)
 	--local aoBlendCanvas = love.graphics.newCanvas(gWidth * msaa, gHeight * msaa)
 
@@ -491,7 +479,8 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 		["DepthCanvas"] = depthCanvas;
 		["NormalCanvas"] = normalCanvas;
 		["AOCanvas"] = aoCanvas; -- ambient occlusion canvas that is transparent, except for the places that should be darker
-		["AOBlendCanvas"] = aoBlendCanvas; -- intermediate canvas to render ambient occlusion blending result to before rendering it to the render canvas. Idk if we can maybe eliminate this
+		["ReuseCanvas"] = reuseCanvas; -- intermediate canvas to render specific things to, suchg as ambient occlusion blending or bloom effects
+
 		["MSAA"] = msaa;
 
 		-- render variables
