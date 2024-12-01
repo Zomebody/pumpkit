@@ -71,7 +71,7 @@ function range:randomInt(mode)
 	elseif mode == "concentrated" then
 		local x = love.math.random()
 		local step = 1 / self.size
-		return self.min + math.ceil((0.25 * math.tan(math.pi * a * (x - 0.5)) + 0.5) * self.size)
+		return self.min + math.floor((0.25 * math.tan(math.pi * a * (x - 0.5)) + 0.5) * self.size + 0.5)
 		--return self.min + math.ceil(((x < 0.5) and math.sqrt(math.sqrt(2 * x)) / 2 or -math.sqrt(math.sqrt(2 - 2 * x)) / 2 + 1) * self.size)
 	end
 end
