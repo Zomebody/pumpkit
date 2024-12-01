@@ -138,50 +138,43 @@ table.insert(content, {
 table.insert(content, {
 	["Type"] = "Constructor";
 	["Name"] = "__add";
-	["Arguments"] = {"vector3"};
-	["Description"] = "Returns the result of the addition between two vector3s.";
+	["Arguments"] = {"range"};
+	["Description"] = "Return a new range with the sum of the two ranges' minimum and maximum values.";
 })
 
 table.insert(content, {
 	["Type"] = "Constructor";
 	["Name"] = "__div";
-	["Arguments"] = {"vector3"};
-	["Description"] = "Returns the division of two vector3s.";
-})
-
-table.insert(content, {
-	["Type"] = "Constructor";
-	["Name"] = "__eq";
-	["Arguments"] = {"vector3"};
-	["Description"] = "Returns true if the two vector3s have the same x, y and z values, and false otherwise.";
+	["Arguments"] = {"range"};
+	["Description"] = "Returns a new range with the first range's minimum and maximum values divided by the second range's minimum and maximum.";
 })
 
 table.insert(content, {
 	["Type"] = "Constructor";
 	["Name"] = "__mul";
-	["Arguments"] = {"vector3"};
-	["Description"] = "Returns the product of two vector3s.";
+	["Arguments"] = {"range"};
+	["Description"] = "Returns a new range with the first range's minimum and maximum values multiplied by the second range's minimum and maximum.";
 })
 
 table.insert(content, {
 	["Type"] = "Constructor";
 	["Name"] = "__sub";
-	["Arguments"] = {"vector3"};
-	["Description"] = "Returns the result of the subtraction between two vector3s.";
+	["Arguments"] = {"range"};
+	["Description"] = "Returns a new range with the second range's minimum and maximum values subtracted from the first range's minimum and maximum.";
 })
 
 table.insert(content, {
 	["Type"] = "Constructor";
 	["Name"] = "__tostring";
 	["Arguments"] = {};
-	["Description"] = "Prints the vector3 in the form (x,y,z).";
+	["Description"] = "Prints the range.";
 })
 
 table.insert(content, {
 	["Type"] = "Constructor";
 	["Name"] = "__unm";
 	["Arguments"] = {};
-	["Description"] = "Inverts the x, y and z components of the vector.";
+	["Description"] = "Makes the range negative.";
 })
 
 
