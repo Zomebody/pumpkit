@@ -1,4 +1,18 @@
 
+
+
+/*
+
+	TODO:
+	1. different facing directions options (A: facing world-up and B: facing the emitter's source position)
+	2. option for particle emitter to be affected by light
+	
+
+*/
+
+
+
+
 #ifdef VERTEX
 
 // camera variables
@@ -6,18 +20,11 @@ uniform mat4 camMatrix;
 uniform float aspectRatio;
 uniform float fieldOfView;
 
-// attributes
-attribute vec3 VertexNormal;
-
 
 const float zNear = 0.1;
 const float zFar = 1000.0;
 
-// IMPORTANT: in our world we apply rotation in the order Z, X, Y
 // mesh variables
-//uniform vec3 meshPosition;
-//uniform vec3 meshRotation;
-//uniform vec3 meshScale;
 attribute vec3 instancePosition;
 attribute float instanceRotation; // particles only rotate along one axis (the axis they face, i.e. the camera)
 attribute float instanceScale;
@@ -217,11 +224,7 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 	// now go from world space to camera space, by applying the inverse of the world matrix. Essentially this moves the camera back to the world origin and the vertex is moved along
 	mat4 cameraSpaceMatrix = viewMatrix *  modelWorldMatrix;
 
-	// TODO: set the world position variable to pass onto the fragment shader
 	fragWorldPosition = (modelWorldMatrix * vertex_position).xyz; // sets the world position of this vertex. In the fragment shader this gets interpolated correctly automatically
-	//fragNormal = VertexNormal;
-	// TODO: calculate distance to camera for any fog applied in the fragment shader
-	//fragDistanceToCamera = length(fragWorldPosition - cameraMatrix[3].xyz); // convert camera matrix to vec3 containing only the position
 
 
 	// finally calculate the perspective projection matrix to move from camera space to screen space
@@ -248,9 +251,6 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 #ifdef PIXEL
 
 varying vec3 fragWorldPosition; // output automatically interpolated fragment world position
-//varying float fragDistanceToCamera; // used for fog
-//varying vec3 fragNormal; // used for backface culling
-//varying vec3 cameraViewDirection;
 
 // lights
 /*
