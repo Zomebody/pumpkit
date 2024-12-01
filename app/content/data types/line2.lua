@@ -278,9 +278,23 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Constructor";
+	["Name"] = "__add";
+	["Arguments"] = {"line2", "line2"};
+	["Description"] = "Adds two line2s together. The 'from' and 'to' properties of the two input line2s are added together.";
+})
+
+table.insert(content, {
+	["Type"] = "Constructor";
 	["Name"] = "__eq";
 	["Arguments"] = {"line2"};
 	["Description"] = "Returns true if the two compared objects are both line2 instances with the same start and end points.";
+})
+
+table.insert(content, {
+	["Type"] = "Constructor";
+	["Name"] = "__sub";
+	["Arguments"] = {"line2", "line2"};
+	["Description"] = "Subtracts the second line2 from the first line2. The 'from' and 'to' properties of the two input line2s are subtracted from each other.";
 })
 
 table.insert(content, {
