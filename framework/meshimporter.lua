@@ -1,5 +1,30 @@
 
 
+-- mesh files have the following format:
+--[[
+	# data
+	v0 29.4, 1.0, 9.73665
+	v1 0.1 84.9 5263.0
+	...
+	u0 0.5 0.75
+	u1 1.0 0.988
+	...
+	c0 1.0 0.0 1.0 1.0
+	c1 0.5 0.5333 1.0 1.0
+	...
+	n0 0 0 1
+	n1 -0.707 0.707 0
+	...
+	# mesh
+	0 4 1 8 4 3 6 22 14 15 19 9
+	...
+
+	where in the # data section you have all unique vertices, uv coordinates, colors and normals stored
+	and where in the # mesh section individual triangles are stored where each line has the form (v1 u1 c1 n1 v2 u2 c2 n2 v3 u3 c3 n3), i.e. listing 12 references, 4 per vertex
+
+
+]]
+
 
 function createMeshFromFile(filename, image)
 	local triangles = {}
@@ -9,17 +34,6 @@ function createMeshFromFile(filename, image)
 	if not file then
 		error("Failed to open file: " .. filename)
 	end
-
-	--[[ old file format
-	-- read the file line by line
-	for line in file:lines() do
-		local tri = {}
-		for word in string.gmatch(line, "%S+") do
-			table.insert(tri, tonumber(word))
-		end
-		table.insert(triangles, tri)
-	end
-	]]
 
 	-- new file format
 	local positions = {}
@@ -43,7 +57,7 @@ function createMeshFromFile(filename, image)
 			-- the max number of words in a line is 5 (for colors, i.e. c5 1.0, 0.0, 1.0, 1.0). If there are fewer, words[5] etc. will just be nil, so the array becomes smaller
 			local firstCharacter = words[1]:sub(1, 1)
 			local index = tonumber(words[1]:sub(2))
-			
+
 			if firstCharacter == "v" then
 				positions[index] = {tonumber(words[2]), tonumber(words[3]), tonumber(words[4])}
 			elseif firstCharacter == "u" then
