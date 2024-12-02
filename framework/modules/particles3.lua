@@ -112,8 +112,8 @@ end
 function Particles3:update()
 	local time = love.timer.getTime()
 	local index = 1
-	local loopCount = #self.Spawned
-	for i = 1, loopCount do
+	--local loopCount = #self.Spawned
+	while index <= #self.Spawned do
 
 		-- remove any particles that are too old
 		if time - self.Spawned[index][1] > self.Spawned[index][2] then
@@ -135,7 +135,7 @@ function Particles3:update()
 			self.Instances:setVertexAttribute(index, 3, newSize)
 			self.Instances:setVertexAttribute(index, 4, newColor.r, newColor.g, newColor.b)
 			]]
-			
+
 			-- +10fps for doing this instead of setting each vertex attribute separately
 			self.Instances:setVertex(index, newPosition.x, newPosition.y, newPosition.z, newRotation, newSize, newColor.r, newColor.g, newColor.b)
 
