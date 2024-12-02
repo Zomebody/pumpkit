@@ -129,10 +129,15 @@ function Particles3:update()
 			local newColor = self.Gradient:getColor(x)
 
 			-- TODO: set the mesh attributes here to new values. It should look something like this:
+			--[[
 			self.Instances:setVertexAttribute(index, 1, newPosition.x, newPosition.y, newPosition.z)
 			self.Instances:setVertexAttribute(index, 2, newRotation)
 			self.Instances:setVertexAttribute(index, 3, newSize)
 			self.Instances:setVertexAttribute(index, 4, newColor.r, newColor.g, newColor.b)
+			]]
+			
+			-- +10fps for doing this instead of setting each vertex attribute separately
+			self.Instances:setVertex(index, newPosition.x, newPosition.y, newPosition.z, newRotation, newSize, newColor.r, newColor.g, newColor.b)
 
 
 			index = index + 1 -- item was not removed, so move the index one further
