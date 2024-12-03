@@ -31,12 +31,6 @@ attribute float instanceScale;
 attribute vec3 instanceColor;
 varying vec3 instColor;
 
-// TODO: fragment variables
-varying vec3 fragWorldPosition; // output automatically interpolated fragment world position
-//varying float fragDistanceToCamera; // used for fog
-//varying vec3 fragNormal; // used for backface culling
-//varying vec3 cameraViewDirection;
-
 
 
 // I DON'T KNOW WHY, BUT THE FUNCTIONS GETROTATIONMATRIX AND GETSCALEMATRIX AND GETTRANSLATIONMATRIX ARE ALL TRANSPOSED AND IT JUST KIND OF WORKS (probably because of row/column major order shenanigans?)
@@ -224,8 +218,6 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 	// now go from world space to camera space, by applying the inverse of the world matrix. Essentially this moves the camera back to the world origin and the vertex is moved along
 	mat4 cameraSpaceMatrix = viewMatrix *  modelWorldMatrix;
 
-	fragWorldPosition = (modelWorldMatrix * vertex_position).xyz; // sets the world position of this vertex. In the fragment shader this gets interpolated correctly automatically
-
 
 	// finally calculate the perspective projection matrix to move from camera space to screen space
 	mat4 projectionMatrix = getPerspectiveMatrix(fieldOfView, aspectRatio);
@@ -246,38 +238,18 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 
 
 
-
 // Fragment Shader
 #ifdef PIXEL
 
-varying vec3 fragWorldPosition; // output automatically interpolated fragment world position
-
-// lights
-/*
-uniform vec3 lightPositions[16]; // non-transformed!
-uniform vec3 lightColors[16];
-uniform float lightRanges[16];
-uniform float lightStrengths[16];
-uniform vec3 ambientColor;
-*/
 
 // colors
 varying vec3 instColor;
-
-// TODO: texture mode for regular textures or triplanar blending for terrain meshes
-//uniform bool doTriplanarBlend;
-//uniform float triplanarTexSize; // the size of the texture in world coordinates (e.g. 4 units by 4 units, or 1 unit by 1 unit)
-
 
 
 
 // fragment shader
 vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
 	color = vec4(color.x * instColor.x, color.y * instColor.y, color.z * instColor.z, color.w);
-
-	
-
-	// TODO: apply backface culling
 
 	// Check if a texture is applied by sampling from it
 	vec4 texColor = Texel(tex, texture_coords);
@@ -288,31 +260,8 @@ vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
 		discard;  // Discard fully transparent pixels
 	}
 	
-
-
-	/*
-	// ended up implementing a very basic naive additive lighting system because it doesn't have any weird edge-cases
-	vec3 lighting = ambientColor; // start with just ambient lighting on the surface
-	//float totalInfluence = 0;
-
-	// add the lighting contribution of all lights to the surface
-	for (int i = 0; i < 8; ++i) {
-		if (lightStrengths[i] > 0) { // only consider lights with a strength above 0
-			// distance to the light
-			float distance = length(lightPositions[i] - fragWorldPosition);
-			// attenuation factor
-			float attenuation = clamp(1.0 - pow(distance / lightRanges[i], 1), 0.0, 1.0); // TODO: add a uniform for the power
-			// sum up the light contributions
-			lighting += lightColors[i] * lightStrengths[i] * attenuation;
-			//totalInfluence = totalInfluence + attenuation;
-		}
-	}
-	*/
 	
-	return texColor * color;// * vec4(lighting.x, lighting.y, lighting.z, 1.0);
-	
-
-	//return texColor;
+	return texColor * color;
 }
 
 #endif
