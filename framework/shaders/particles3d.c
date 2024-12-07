@@ -15,21 +15,34 @@
 
 #ifdef VERTEX
 
+const float zNear = 0.1;
+const float zFar = 1000.0;
+
 // camera variables
 uniform mat4 camMatrix;
 uniform float aspectRatio;
 uniform float fieldOfView;
 
+// update variables
+uniform Image dataTexture; // data texture containing (currently) the color gradient and size curve
+uniform vec3 gravity; // direction the particle accelerates into
+uniform float currentTime; // current world time, used to calculate how old an instance is
 
-const float zNear = 0.1;
-const float zFar = 1000.0;
 
 // mesh variables
-attribute vec3 instancePosition;
-attribute float instanceRotation; // particles only rotate along one axis (the axis they face, i.e. the camera)
-attribute float instanceScale;
-attribute vec3 instanceColor;
-varying vec3 instColor;
+attribute vec3 instPosition;
+attribute float instEmittedAt;
+attribute float instLifetime; // particles only rotate along one axis (the axis they face, i.e. the camera)
+attribute vec3 instVelocity;
+attribute float instRotation;
+attribute float instRotationSpeed;
+attribute float instScaleOffset;
+
+varying float emittedAt;
+varying float lifetime;
+
+//varying vec3 instColor;
+//varying bool tooOld; // whether the instance is too old to be drawn
 
 
 
@@ -109,7 +122,7 @@ mat4 getPerspectiveMatrix(float fieldOfView, float aspect) {
 	perspectiveMatrix[2][2] = -(zFar + zNear) / (zFar - zNear);
 	perspectiveMatrix[2][3] = -1.0;
 	perspectiveMatrix[3][2] = -(2.0 * zFar * zNear) / (zFar - zNear);
-	perspectiveMatrix[3][3] = 0.0; // chatgpt suggested this for some reason????
+	perspectiveMatrix[3][3] = 0.0;
 
 	return perspectiveMatrix;
 }
@@ -189,6 +202,28 @@ mat4 getBillboardMatrix(mat4 cMatrix, vec3 iPosition) {
 
 
 
+// size curve decoding
+float decodeFromChannels(float high, float low) {
+	return high + (low / 256.0); // Combine high and low channels
+}
+
+
+
+float computeSize(float ageFraction, float offset) {
+	float curveU = clamp(ageFraction, 0.0, 1.0);
+	vec2 sizeUV = vec2(curveU, 0.75); // Bottom row (assume 2-pixel tall texture, so Y = 0.75)
+	vec4 sizeData = Texel(dataTexture, sizeUV);
+
+	float baseScale = decodeFromChannels(sizeData.r, sizeData.g) * 10.0; // Decode base scale
+	float deviation = decodeFromChannels(sizeData.b, sizeData.a) * 10.0; // Decode deviation
+	return baseScale + (deviation * offset);
+}
+
+
+
+
+
+
 
 vec4 position(mat4 transform_projection, vec4 vertex_position) {
 	// model transformations
@@ -198,15 +233,18 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 	mat4 billboardMatrix;
 	mat4 translationMatrix;
 
-	// get the scale matrix, then the rotation matrix in YXZ order, then the translation matrix
+
+	float size = computeSize((currentTime - instEmittedAt) / instLifetime, instScaleOffset);
+	vec3 worldPosition = instPosition + instVelocity * (currentTime - instEmittedAt) + 0.5 * gravity * pow((currentTime - instEmittedAt), 2.0);
+
 	
-	scaleMatrix = getScaleMatrix(vec3(instanceScale, instanceScale, instanceScale));
-	rotationMatrix = getRotationMatrixZ(instanceRotation);
-	billboardMatrix = getBillboardMatrix(camMatrix, instancePosition);
-	//rotationMatrix = getRotationMatrixX(0);
-	translationMatrix = getTranslationMatrix(instancePosition);
-	instColor = instanceColor; // pass color attribute from vertex shader to the fragment shader since the fragment shader doesn't support attributes for some reason?
+	scaleMatrix = getScaleMatrix(vec3(size, size, size));
+	rotationMatrix = getRotationMatrixZ(instRotation + instRotationSpeed * (currentTime - instEmittedAt));
+	billboardMatrix = getBillboardMatrix(camMatrix, worldPosition);
+	translationMatrix = getTranslationMatrix(worldPosition);
 	
+
+
 	
 	// construct the model's world matrix, i.e. where in the world is each vertex of this particle located
 	mat4 modelWorldMatrix = translationMatrix * billboardMatrix * rotationMatrix * scaleMatrix;
@@ -224,6 +262,9 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 
 	// Apply the view-projection transformation
 	vec4 result = projectionMatrix * cameraSpaceMatrix * vertex_position;
+
+	emittedAt = instEmittedAt;
+	lifetime = instLifetime;
 
 
 	return result;
@@ -243,13 +284,29 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 
 
 // colors
-varying vec3 instColor;
+//varying vec3 instColor;
+//varying bool tooOld;
+
+uniform Image dataTexture; // data texture containing (currently) the color gradient and size curve
+uniform float currentTime;
+
+
+varying float emittedAt;
+varying float lifetime;
 
 
 
 // fragment shader
 vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
-	color = vec4(color.x * instColor.x, color.y * instColor.y, color.z * instColor.z, color.w);
+	float ageFraction = (currentTime - emittedAt) / lifetime;
+	if (ageFraction > 1) {
+		discard;
+	}
+
+	// sample the gradient color from the top row of the data texture
+    float gradientU = clamp(ageFraction, 0.0, 1.0); // Ensure it stays within the range [0, 1]
+    vec2 gradientUV = vec2(gradientU, 0.25); // Top row (assume 2-pixel tall texture, so Y = 0.25 for the top row)
+    vec4 gradientColor = Texel(dataTexture, gradientUV);
 
 	// Check if a texture is applied by sampling from it
 	vec4 texColor = Texel(tex, texture_coords);
@@ -261,7 +318,7 @@ vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
 	}
 	
 	
-	return texColor * color;
+	return texColor * gradientColor;
 }
 
 #endif

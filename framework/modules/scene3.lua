@@ -192,7 +192,7 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 		love.graphics.setCanvas({self.RenderCanvas, ["depthstencil"] = self.DepthCanvas}) -- remove normals canvas and bloom canvas from render target. We won't need it anymore
 		love.graphics.setShader(self.ParticlesShader)
 		for i = 1, #self.Particles do
-			love.graphics.drawInstanced(self.Particles[i].Mesh, #self.Particles[i].Spawned)
+			self.Particles[i]:draw(self.ParticlesShader)
 		end
 	end
 
