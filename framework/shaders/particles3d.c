@@ -37,6 +37,7 @@ attribute vec3 instVelocity;
 attribute float instRotation;
 attribute float instRotationSpeed;
 attribute float instScaleOffset;
+attribute float instFacingMode; // if 0: facing world up, if 0.25: regular billboard behavior, if 0.5: facing velocity, if 0.75: faces camera (billboard) while rotating towards velocity
 
 varying float emittedAt;
 varying float lifetime;
@@ -202,7 +203,59 @@ mat4 getBillboardMatrix(mat4 cMatrix, vec3 iPosition) {
 
 
 
+mat4 getVelocityFacingMatrix(vec3 velocity) {
+	// normalize vector
+	vec3 forward = normalize(velocity);
+	if (length(velocity) < 0.001) {
+		forward = vec3(0.0, 0.0, 1.0);
+	}
+
+	// calculate the right vector as cross product of up and forward
+	vec3 right = normalize(cross(vec3(0.0, 0.0, 1.0), forward));
+
+	// reclculate the up vector to ensure orthogonality
+	vec3 newUp = cross(forward, right);
+
+	// rotation matrix
+	mat4 velocityFacingMatrix = mat4(1.0);
+	velocityFacingMatrix[0] = vec4(right, 0.0);
+	velocityFacingMatrix[1] = vec4(newUp, 0.0);
+	velocityFacingMatrix[2] = vec4(forward, 0.0);
+
+	return velocityFacingMatrix;
+}
+
+
+
+mat4 getBillboardRotatedToHeadingMatrix(mat4 cMatrix, vec3 iPosition, vec3 velocity, mat4 projectionMatrix, mat4 viewMatrix) {
+	// create a basic billboard matrix
+	mat4 billboardMatrix = getBillboardMatrix(cMatrix, iPosition);
+
+	// calculate the velocity direction in screen space
+	vec4 screenVelocity = projectionMatrix * viewMatrix * vec4(iPosition + velocity, 1.0);
+	vec4 screenPosition = projectionMatrix * viewMatrix * vec4(iPosition, 1.0);
+	vec2 velocityScreenDir = normalize(screenVelocity.xy / screenVelocity.w - screenPosition.xy / screenPosition.w);
+
+	// compute rotation angle
+	float angle = atan(velocityScreenDir.y, velocityScreenDir.x);
+
+	// create rotation matrix
+	float cosTheta = cos(angle);
+	float sinTheta = sin(angle);
+	mat4 rotationMatrix = mat4(1.0);
+	rotationMatrix[0][0] = cosTheta;
+	rotationMatrix[0][1] = -sinTheta;
+	rotationMatrix[1][0] = sinTheta;
+	rotationMatrix[1][1] = cosTheta;
+
+	// Combine billboard and rotation matrices
+	return billboardMatrix * rotationMatrix;
+}
+
+
+
 // size curve decoding
+// number curves are stored across two channels (r & g or b & a) to ensure enough bit precision. This does mean we need more work to extract that information
 float decodeFromChannels(float high, float low) {
 	return high + (low / 256.0); // Combine high and low channels
 }
@@ -230,8 +283,13 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 	// get the scale matrix
 	mat4 scaleMatrix;
 	mat4 rotationMatrix;
-	mat4 billboardMatrix;
+	mat4 facingMatrix;
 	mat4 translationMatrix;
+
+	// some of the camera calculations are moved up here because they are necessary for one of the particle rotation modes!
+	mat4 projectionMatrix = getPerspectiveMatrix(fieldOfView, aspectRatio);
+	mat4 cameraWorldMatrix = camMatrix;
+	mat4 viewMatrix = inverse(cameraWorldMatrix);
 
 
 	float size = computeSize((currentTime - instEmittedAt) / instLifetime, instScaleOffset);
@@ -240,25 +298,29 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 	
 	scaleMatrix = getScaleMatrix(vec3(size, size, size));
 	rotationMatrix = getRotationMatrixZ(instRotation + instRotationSpeed * (currentTime - instEmittedAt));
-	billboardMatrix = getBillboardMatrix(camMatrix, worldPosition);
+	if (instFacingMode == 0.0) { // world up
+		facingMatrix = mat4(1.0); // no rotation, i.e. identity matrix
+	} else if (instFacingMode == 0.25) { // billboard
+		facingMatrix = getBillboardMatrix(camMatrix, worldPosition);
+	} else if (instFacingMode == 0.5) { // facing velocity
+		facingMatrix = getVelocityFacingMatrix(instVelocity + gravity * (currentTime - instEmittedAt));
+	} else { // billboard, but rotated towards velocity
+		facingMatrix = getBillboardRotatedToHeadingMatrix(camMatrix, worldPosition, instVelocity + gravity * (currentTime - instEmittedAt), projectionMatrix, viewMatrix);
+	}
+	
 	translationMatrix = getTranslationMatrix(worldPosition);
 	
 
 
 	
 	// construct the model's world matrix, i.e. where in the world is each vertex of this particle located
-	mat4 modelWorldMatrix = translationMatrix * billboardMatrix * rotationMatrix * scaleMatrix;
+	mat4 modelWorldMatrix = translationMatrix * facingMatrix * rotationMatrix * scaleMatrix;
 
-	mat4 cameraWorldMatrix = camMatrix;
-
-	mat4 viewMatrix = inverse(cameraWorldMatrix);
+	
 
 	// now go from world space to camera space, by applying the inverse of the world matrix. Essentially this moves the camera back to the world origin and the vertex is moved along
 	mat4 cameraSpaceMatrix = viewMatrix *  modelWorldMatrix;
 
-
-	// finally calculate the perspective projection matrix to move from camera space to screen space
-	mat4 projectionMatrix = getPerspectiveMatrix(fieldOfView, aspectRatio);
 
 	// Apply the view-projection transformation
 	vec4 result = projectionMatrix * cameraSpaceMatrix * vertex_position;

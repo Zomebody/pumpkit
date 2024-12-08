@@ -165,6 +165,15 @@ end
 function Particles3:emit(count)
 	local emittedAt = love.timer.getTime()
 	local position = self.Source
+	local facingMode = 0
+	if self.FacesCamera and self.FacesVelocity then
+		facingMode = 0.75
+	elseif self.FacesCamera then
+		facingMode = 0.25
+	elseif self.FacesVelocity then
+		facingMode = 0.5
+	end
+
 
 	for i = 1, count do
 
@@ -175,7 +184,7 @@ function Particles3:emit(count)
 		local rotationSpeed = self.RotationSpeed:randomDecimal()
 		local scaleOffset = (love.math.random() - 0.5) * 2
 
-		self.Instances:setVertex(self.SpawnIndex, position.x, position.y, position.z, emittedAt, lifetime, velocity.x, velocity.y, velocity.z, rotation, rotationSpeed, scaleOffset)
+		self.Instances:setVertex(self.SpawnIndex, position.x, position.y, position.z, emittedAt, lifetime, velocity.x, velocity.y, velocity.z, rotation, rotationSpeed, scaleOffset, facingMode)
 
 		self.SpawnIndex = (self.SpawnIndex % self.MaxParticles) + 1
 	end
@@ -236,7 +245,8 @@ local function new(img, maxParticles, properties)
 			{"instVelocity", "float", 3},
 			{"instRotation", "float", 1},
 			{"instRotationSpeed", "float", 1},
-			{"instScaleOffset", "float", 1}
+			{"instScaleOffset", "float", 1},
+			{"instFacingMode", "float", 1}
 		},
 		instancesData,
 		"triangles",
@@ -250,6 +260,7 @@ local function new(img, maxParticles, properties)
 	mesh:attachAttribute("instRotation", instanceMesh, "perinstance") -- fifth vertex attribute
 	mesh:attachAttribute("instRotationSpeed", instanceMesh, "perinstance") -- sixth vertex attribute
 	mesh:attachAttribute("instScaleOffset", instanceMesh, "perinstance") -- seventh vertex attribute
+	mesh:attachAttribute("instFacingMode", instanceMesh, "perinstance") -- eight vertex attribute
 
 	local gradient = properties.Gradient or gradient(0, color(1, 1, 1), 1, color(1, 1, 1))
 	local source = properties.Source or vector3(0, 0, 0)
@@ -262,6 +273,8 @@ local function new(img, maxParticles, properties)
 	local size = properties.Size or numbercurve(0, 1, 1, 1)
 	local sizeDeviation = properties.SizeDeviation or numbercurve(0, 0, 1, 0)
 	local lifetime = properties.Lifetime or range(1.5, 2)
+	local facesCamera = properties.FacesCamera or false
+	local facesVelocity = properties.FacesVelocity or false
 
 	local data = love.image.newImageData(64, 2)
 	data:mapPixel(
@@ -295,6 +308,8 @@ local function new(img, maxParticles, properties)
 		["Size"] = size; -- the size of the particle over time
 		["SizeDeviation"] = sizeDeviation; -- the size of a particle can deviate by at most this much
 		["Lifetime"] = lifetime; -- for how long the particle lives at minimum & maximum
+		["FacesCamera"] = facesCamera; -- if true, billboard behavior is enabled
+		["FacesVelocity"] = facesVelocity; -- if true and facesCamera is false, particle aligns with velocity. If true and facesCamera is true, billboard behavior with rotation based on screen space velocity
 
 		["DataTexture"] = dataTexture; -- contains curves encoded into an image for faster look-ups on the GPU
 
