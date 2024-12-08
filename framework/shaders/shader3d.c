@@ -109,7 +109,6 @@ mat4 getPerspectiveMatrix(float fieldOfView, float aspect) {
 	perspectiveMatrix[2][2] = -(zFar + zNear) / (zFar - zNear);
 	perspectiveMatrix[2][3] = -1.0;
 	perspectiveMatrix[3][2] = -(2.0 * zFar * zNear) / (zFar - zNear);
-	perspectiveMatrix[3][3] = 0.0; // chatgpt suggested this for some reason????
 
 	return perspectiveMatrix;
 }

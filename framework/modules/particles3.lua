@@ -202,6 +202,7 @@ function Particles3:draw(shaderRef)
 	shaderRef:send("dataTexture", self.DataTexture)
 	shaderRef:send("gravity", {self.Gravity.x, self.Gravity.y, self.Gravity.z})
 	shaderRef:send("currentTime", love.timer.getTime())
+	shaderRef:send("drag", self.Drag)
 	love.graphics.drawInstanced(self.Mesh, self.MaxParticles) -- draw all the particles, but in practice most of them will be drawn at a scale of 0 because they're inactive
 end
 
@@ -275,6 +276,7 @@ local function new(img, maxParticles, properties)
 	local lifetime = properties.Lifetime or range(1.5, 2)
 	local facesCamera = properties.FacesCamera or false
 	local facesVelocity = properties.FacesVelocity or false
+	local drag = properties.Drag or 0
 
 	local data = love.image.newImageData(64, 2)
 	data:mapPixel(
@@ -310,6 +312,8 @@ local function new(img, maxParticles, properties)
 		["Lifetime"] = lifetime; -- for how long the particle lives at minimum & maximum
 		["FacesCamera"] = facesCamera; -- if true, billboard behavior is enabled
 		["FacesVelocity"] = facesVelocity; -- if true and facesCamera is false, particle aligns with velocity. If true and facesCamera is true, billboard behavior with rotation based on screen space velocity
+
+		["Drag"] = drag;
 
 		["DataTexture"] = dataTexture; -- contains curves encoded into an image for faster look-ups on the GPU
 

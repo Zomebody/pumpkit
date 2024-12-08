@@ -26,6 +26,7 @@ uniform float fieldOfView;
 // update variables
 uniform Image dataTexture; // data texture containing (currently) the color gradient and size curve
 uniform vec3 gravity; // direction the particle accelerates into
+uniform float drag;
 uniform float currentTime; // current world time, used to calculate how old an instance is
 
 
@@ -278,6 +279,8 @@ float computeSize(float ageFraction, float offset) {
 
 
 
+
+
 vec4 position(mat4 transform_projection, vec4 vertex_position) {
 	// model transformations
 	// get the scale matrix
@@ -293,7 +296,26 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 
 
 	float size = computeSize((currentTime - instEmittedAt) / instLifetime, instScaleOffset);
-	vec3 worldPosition = instPosition + instVelocity * (currentTime - instEmittedAt) + 0.5 * gravity * pow((currentTime - instEmittedAt), 2.0);
+
+	vec3 worldVelocity, worldPosition;
+
+	if (drag != 0.0) {
+		// formula for drag is: 1/2^x, i.e. every second, velocity is halved
+		vec3 draggedVelocity = instVelocity * (1.0 / pow(2.0, drag * (currentTime - instEmittedAt))); // velocity built up due to initial velocity, minus any drag that is applied
+		vec3 gravityVelocity = gravity * (currentTime - instEmittedAt); // velocity built up due to gravity
+
+		// how far you moved as a result of velocity and drag. This calculates the surface area under the curve 1/2^nx from 0 to how long the particle has lived for (x). n = drag.
+		float dragCurveSurfaceArea = 1.0 / (drag * log(2.0)) * (1.0 - pow(2.0, -drag*(currentTime - instEmittedAt)));
+		vec3 worldMovedThroughVelocity = instVelocity * dragCurveSurfaceArea;
+		// how the particle has moved as a result of gravity dragging the particle into a certain direction
+		vec3 worldMovedThroughGravity = 0.5 * gravity * pow((currentTime - instEmittedAt), 2.0);
+
+		worldVelocity = draggedVelocity + gravityVelocity;
+		worldPosition = instPosition + worldMovedThroughVelocity + worldMovedThroughGravity;
+	} else {
+		worldVelocity = instVelocity + gravity * (currentTime - instEmittedAt);
+		worldPosition = instPosition + instVelocity * (currentTime - instEmittedAt) + 0.5 * gravity * pow((currentTime - instEmittedAt), 2.0);
+	}
 
 	
 	scaleMatrix = getScaleMatrix(vec3(size, size, size));
@@ -303,9 +325,9 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 	} else if (instFacingMode == 0.25) { // billboard
 		facingMatrix = getBillboardMatrix(camMatrix, worldPosition);
 	} else if (instFacingMode == 0.5) { // facing velocity
-		facingMatrix = getVelocityFacingMatrix(instVelocity + gravity * (currentTime - instEmittedAt));
+		facingMatrix = getVelocityFacingMatrix(worldVelocity);
 	} else { // billboard, but rotated towards velocity
-		facingMatrix = getBillboardRotatedToHeadingMatrix(camMatrix, worldPosition, instVelocity + gravity * (currentTime - instEmittedAt), projectionMatrix, viewMatrix);
+		facingMatrix = getBillboardRotatedToHeadingMatrix(camMatrix, worldPosition, worldVelocity, projectionMatrix, viewMatrix);
 	}
 	
 	translationMatrix = getTranslationMatrix(worldPosition);
