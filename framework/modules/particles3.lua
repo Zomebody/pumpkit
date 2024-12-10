@@ -178,7 +178,7 @@ function Particles3:emit(count)
 	for i = 1, count do
 
 		-- calculate new instance properties
-		offsetVector = getRandomPerpendicularVector(self.Direction) * self.SpawnRadius:randomDecimal()
+		offsetVector = getRandomPerpendicularVector(self.Direction) * math.sqrt(love.math.random() * (self.SpawnRadius.max^2 - self.SpawnRadius.min^2) + self.SpawnRadius.min^2)
 		position = self.Source + offsetVector
 		lifetime = self.Lifetime:randomDecimal()
 		velocity = getVectorInCone(self.Direction, self.DirectionDeviation) * self.Speed:randomDecimal()
