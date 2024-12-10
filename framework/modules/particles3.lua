@@ -14,36 +14,10 @@ Particles3.__tostring = function(tab) return "{Particles3 (" .. tostring(tab.Max
 --[[
 
 
-TODO FOR PERFORMANCE OPTIMIZATION
+TODO:
 
--- standard vertex attributes
-vertex attributes
-VertexPosition
-VertexUVCoordinate
-VertexColor
--- attributes related to moving the particle
-ParticleLifetime number
-ParticleVelocity vec3
-ParticleDirection vec3
-ParticleRotationSpeed number
-ParticleStartRotation number
-ParticleScaleOffset number
-ParticleEmittedAt number
-
--- textures that are send to the shader each update
-DataTexture: contains gradient, size curve, size offet curve (sizes must be clamped within some range)
-
--- the basic idea is to create a pool of X instances of a mesh upon creation of a particle.
-Each vertex's direction, rotation, scale etc. is randomly initialized. When you call e.g. :emit(20),
-the first 20 particles in the pool are emitted. If you call :emit(20) again, the next 20 particles
-are emitted until you run out of 'pool' and wrap back round. This means emission patterns are not
-super random, but if the pool is large enough and you will never notice. Plus, if your pool size
-is exactly the size of how many particles you emit, you'll get consistent results!
-
-So on each :emit() call, you update the vertex attributes of the correct indices. You'll need some
-counter that keeps track of where in the pool you are currently. On a :draw() call you draw every
-particle, but in the shader you discard any fragment that is too old (past its lifetime). On an
-:update() call all you do is send a new 'time' uniform to the shader, that's all.
+- SpawnRadius (range, default: 0,0)
+- if the Direction vector is larger than 1, particles will randomly spawn in a circle around its source, with the circle being aligned to the Direction vector
 
 
 ]]
@@ -98,6 +72,23 @@ local function getVectorInCone(vec, maxAngle)
 	newRandomVector:setMag(1)
 
 	return newRandomVector
+end
+
+
+
+function getRandomPerpendicularVector(vec)
+	if vec:getMag() == 0 then
+		return vector3.random()
+	end
+
+	local arbitraryVector = (math.abs(vec.x) > 0.9 and vector3.new(0, 1, 0) or vector3.new(1, 0, 0))
+	local perpendicular = vec:cross(arbitraryVector):norm()
+	local perpendicular2 = vec:cross(perpendicular):norm()
+	local angle = love.math.random() * 2 * math.pi
+
+	local randomVector = perpendicular * math.cos(angle) + perpendicular2 * math.sin(angle)
+
+	return randomVector
 end
 
 
@@ -164,7 +155,15 @@ end
 
 function Particles3:emit(count)
 	local emittedAt = love.timer.getTime()
-	local position = self.Source
+
+	local lifetime
+	local velocity
+	local rotation
+	local rotationSpeed
+	local scaleOffset
+	local offsetVector
+	local position
+
 	local facingMode = 0
 	if self.FacesCamera and self.FacesVelocity then
 		facingMode = 0.75
@@ -174,15 +173,18 @@ function Particles3:emit(count)
 		facingMode = 0.5
 	end
 
+	
 
 	for i = 1, count do
 
 		-- calculate new instance properties
-		local lifetime = self.Lifetime:randomDecimal()
-		local velocity = getVectorInCone(self.Direction, self.DirectionDeviation) * self.Speed:randomDecimal()
-		local rotation = self.Rotation:randomDecimal()
-		local rotationSpeed = self.RotationSpeed:randomDecimal()
-		local scaleOffset = (love.math.random() - 0.5) * 2
+		offsetVector = getRandomPerpendicularVector(self.Direction) * self.SpawnRadius:randomDecimal()
+		position = self.Source + offsetVector
+		lifetime = self.Lifetime:randomDecimal()
+		velocity = getVectorInCone(self.Direction, self.DirectionDeviation) * self.Speed:randomDecimal()
+		rotation = self.Rotation:randomDecimal()
+		rotationSpeed = self.RotationSpeed:randomDecimal()
+		scaleOffset = (love.math.random() - 0.5) * 2
 
 		self.Instances:setVertex(self.SpawnIndex, position.x, position.y, position.z, emittedAt, lifetime, velocity.x, velocity.y, velocity.z, rotation, rotationSpeed, scaleOffset, facingMode)
 
@@ -267,6 +269,7 @@ local function new(img, maxParticles, properties)
 	local source = properties.Source or vector3(0, 0, 0)
 	local direction = properties.Direction or vector3(0, 1, 0)
 	local directionDeviation = properties.DirectionDeviation or math.pi / 8
+	local spawnRadius = properties.SpawnRadius or range(0, 0)
 	local gravity = properties.Gravity or vector3(0, 0, 0)
 	local speed = properties.Speed or range(1, 1)
 	local rotation = properties.Rotation or range(0, math.pi * 2)
@@ -303,6 +306,7 @@ local function new(img, maxParticles, properties)
 		["Source"] = source; -- location from which particles are emitted
 		["Direction"] = direction; -- the direction the particles get emitted from
 		["DirectionDeviation"] = directionDeviation; -- when the particle is emitted, it deviates from the direction with at most this angle (at random)
+		["SpawnRadius"] = spawnRadius;
 		["Gravity"] = gravity; -- direction into which the particles accelerate
 		["Speed"] = speed; -- minimum and maximum speed at which the particle is emitted
 		["Rotation"] = rotation; -- minimum and maximum rotation at which the particle is emitted
