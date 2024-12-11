@@ -100,7 +100,7 @@ table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "randomInt";
 	["Arguments"] = {"mode"};
-	["Description"] = "Returns a random integer within the given range. This will error if the range has a non-integer minimum or maximum. 'mode' can be set to nil or 'default' for a truly random value, or 'concentrated' for values that trend towards the center of the range.\n\nBelow is an example from the range 1-40 with 10.000 samples.";
+	["Description"] = "Returns a random integer within the given range. This will error if the range has a non-integer minimum or maximum. 'mode' can be set to nil or 'default' for a truly random value, or 'concentrated' for values that trend towards the center of the range.\n\nBelow is an example from a concentrated range 1-40 with 10.000 samples.";
 	["Demo"] = function()
 		local canvas = love.graphics.newCanvas(200, 100)
 		canvas:renderTo(
