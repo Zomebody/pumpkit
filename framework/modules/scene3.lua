@@ -167,15 +167,18 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 
 	-- draw all of the scene's meshes
 	local Mesh = nil
+	self.Shader:send("currentTime", love.timer.getTime())
 	self.Shader:send("isInstanced", false) -- tell the shader to use the meshPosition, meshRotation, meshScale and meshColor uniforms to calculate the model matrices
 	for i = 1, #self.BasicMeshes do
 		Mesh = self.BasicMeshes[i]
+		self.Shader:send("uvVelocity", Mesh.UVVelocity:array())
 		self.Shader:send("meshPosition", Mesh.Position:array())
 		self.Shader:send("meshRotation", Mesh.Rotation:array())
 		self.Shader:send("meshScale", Mesh.Scale:array())
 		self.Shader:send("meshColor", Mesh.Color:array())
 		love.graphics.draw(Mesh.Mesh)
 	end
+	self.Shader:send("uvVelocity", {0, 0})
 	self.Shader:send("isInstanced", true) -- tell the shader to use the attributes to calculate the model matrices
 	for i = 1, #self.InstancedMeshes do
 		Mesh = self.InstancedMeshes[i]
@@ -326,14 +329,15 @@ end
 
 
 
-function Scene3:addBasicMesh(mesh, position, rotation, scale, col)
+function Scene3:addBasicMesh(mesh, position, rotation, scale, col, uvVelocity)
 	assert(vector3.isVector3(position), "Scene3:addBasicMesh(mesh, position, rotation, scale, col) requires argument 'position' to be a vector3")
 	local Mesh = {
 		["Mesh"] = mesh;
 		["Position"] = vector3(position);
-		["Rotation"] = vector3(rotation) or vector3(0, 0, 0);
-		["Scale"] = vector3(scale) or vector3(1, 1, 1);
-		["Color"] = color(col) or color(1, 1, 1);
+		["Rotation"] = rotation ~= nil and vector3(rotation) or vector3(0, 0, 0);
+		["Scale"] = scale ~= nil and vector3(scale) or vector3(1, 1, 1);
+		["Color"] = col ~= nil and color(col) or color(1, 1, 1);
+		["UVVelocity"] = uvVelocity ~= nil and vector2(uvVelocity) or vector2(0, 0);
 	}
 	table.insert(self.BasicMeshes, Mesh)
 end

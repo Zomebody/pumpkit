@@ -249,6 +249,10 @@ varying vec3 fragWorldPosition; // output automatically interpolated fragment wo
 varying vec3 fragNormal; // used for backface culling
 //varying vec3 cameraViewDirection;
 
+uniform float currentTime;
+
+// uvs
+uniform vec2 uvVelocity; // how quckly the UV scrolls on the X and Y axis, usually this equals 0,0
 // lights
 uniform vec3 lightPositions[16]; // non-transformed!
 uniform vec3 lightColors[16];
@@ -335,7 +339,7 @@ void effect() {
 	// TODO: apply backface culling
 
 	// Check if a texture is applied by sampling from it
-	vec4 texColor = Texel(MainTex, texture_coords);
+	vec4 texColor = Texel(MainTex, texture_coords - uvVelocity * currentTime);
 
 	// Check if the alpha of the texture color is below a threshold
 	if (texColor.a < 0.01) {
