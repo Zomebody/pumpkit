@@ -326,6 +326,13 @@ vec3 oklabMix(vec3 colA, vec3 colB, float h)
 // fragment shader
 
 void effect() {
+	// TODO: apply backface culling
+	if (fragNormal.z <= 0) {
+		discard;
+	}
+
+
+
 	vec4 color = VaryingColor; // argument 'color' doesn't exist when using multiple canvases
 	vec2 texture_coords = VaryingTexCoord.xy; // argument 'texture_coords' doesn't exist when using multiple canvases
 	//Image tex = MainTex;
@@ -336,7 +343,7 @@ void effect() {
 	}
 	
 
-	// TODO: apply backface culling
+
 
 	// Check if a texture is applied by sampling from it
 	vec4 texColor = Texel(MainTex, texture_coords - uvVelocity * currentTime);
