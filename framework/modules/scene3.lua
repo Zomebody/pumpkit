@@ -330,7 +330,7 @@ end
 
 
 function Scene3:addBasicMesh(mesh, position, rotation, scale, col, uvVelocity)
-	assert(vector3.isVector3(position), "Scene3:addBasicMesh(mesh, position, rotation, scale, col) requires argument 'position' to be a vector3")
+	assert(vector3.isVector3(position), "Scene3:addBasicMesh(mesh, position, rotation, scale, col, uvVelocity) requires argument 'position' to be a vector3")
 	local Mesh = {
 		["Mesh"] = mesh;
 		["Position"] = vector3(position);

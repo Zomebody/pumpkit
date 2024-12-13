@@ -28,7 +28,7 @@ uniform bool isInstanced;
 // TODO: fragment variables
 varying vec3 fragWorldPosition; // output automatically interpolated fragment world position
 //varying float fragDistanceToCamera; // used for fog
-varying vec3 fragNormal; // used for backface culling
+varying vec3 fragNormal; // used for normal map for SSAO (in screen space)
 //varying vec3 cameraViewDirection;
 
 
@@ -207,7 +207,6 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 	// now go from world space to camera space, by applying the inverse of the world matrix. Essentially this moves the camera back to the world origin and the vertex is moved along
 	mat4 cameraSpaceMatrix = viewMatrix *  modelWorldMatrix;
 
-	// TODO: set the world position variable to pass onto the fragment shader
 	fragWorldPosition = (modelWorldMatrix * vertex_position).xyz; // sets the world position of this vertex. In the fragment shader this gets interpolated correctly automatically
 	
 	// TODO: calculate distance to camera for any fog applied in the fragment shader
@@ -246,7 +245,7 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 
 varying vec3 fragWorldPosition; // output automatically interpolated fragment world position
 //varying float fragDistanceToCamera; // used for fog
-varying vec3 fragNormal; // used for backface culling
+varying vec3 fragNormal; // used for normal map
 //varying vec3 cameraViewDirection;
 
 uniform float currentTime;
@@ -326,12 +325,6 @@ vec3 oklabMix(vec3 colA, vec3 colB, float h)
 // fragment shader
 
 void effect() {
-	// TODO: apply backface culling
-	if (fragNormal.z <= 0) {
-		discard;
-	}
-
-
 
 	vec4 color = VaryingColor; // argument 'color' doesn't exist when using multiple canvases
 	vec2 texture_coords = VaryingTexCoord.xy; // argument 'texture_coords' doesn't exist when using multiple canvases

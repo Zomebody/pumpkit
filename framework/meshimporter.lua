@@ -88,13 +88,14 @@ function createMeshFromFile(filename, image)
 			local color3 = colors[numbers[11]]
 			local normal3 = normals[numbers[12]]
 
-			local tri1 = {position1[1], position1[2], position1[3], uv1[1], uv1[2], color1[1], color1[2], color1[3], color1[4], normal1[1], normal1[2], normal1[3]}
-			local tri2 = {position2[1], position2[2], position2[3], uv2[1], uv2[2], color2[1], color2[2], color2[3], color2[4], normal2[1], normal2[2], normal2[3]}
-			local tri3 = {position3[1], position3[2], position3[3], uv3[1], uv3[2], color3[1], color3[2], color3[3], color3[4], normal3[1], normal3[2], normal3[3]}
+			-- store the triangle
+			local ver1 = {position1[1], position1[2], position1[3], uv1[1], uv1[2], color1[1], color1[2], color1[3], color1[4], normal1[1], normal1[2], normal1[3]}
+			local ver2 = {position2[1], position2[2], position2[3], uv2[1], uv2[2], color2[1], color2[2], color2[3], color2[4], normal2[1], normal2[2], normal2[3]}
+			local ver3 = {position3[1], position3[2], position3[3], uv3[1], uv3[2], color3[1], color3[2], color3[3], color3[4], normal3[1], normal3[2], normal3[3]}
 
-			table.insert(triangles, tri1)
-			table.insert(triangles, tri2)
-			table.insert(triangles, tri3)
+			table.insert(triangles, ver1)
+			table.insert(triangles, ver2)
+			table.insert(triangles, ver3)
 
 		end
 	end
