@@ -166,6 +166,8 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 	love.graphics.setDepthMode("less", true)
 
 	-- draw all of the scene's meshes
+	love.graphics.setMeshCullMode("front")
+
 	local Mesh = nil
 	self.Shader:send("currentTime", love.timer.getTime())
 	self.Shader:send("isInstanced", false) -- tell the shader to use the meshPosition, meshRotation, meshScale and meshColor uniforms to calculate the model matrices
@@ -188,6 +190,9 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 	love.graphics.setDepthMode("always", false)
 	self:applyAmbientOcclusion()
 	love.graphics.setDepthMode("less", true)
+
+	-- disable culling for particles so they can be seen from both sides
+	love.graphics.setMeshCullMode("none")
 
 	if #self.Particles > 0 then
 		-- now draw all the particles in the scene

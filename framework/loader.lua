@@ -53,9 +53,6 @@ function load()
 	animation:initialize()
 	world:initialize()
 	camera:initialize()
-
-	love.graphics.setMeshCullMode("front")
-
 end
 
 return load
