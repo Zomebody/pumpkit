@@ -187,9 +187,11 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 		love.graphics.drawInstanced(Mesh.Mesh, Mesh.Count)
 	end
 
-	love.graphics.setDepthMode("always", false)
-	self:applyAmbientOcclusion()
-	love.graphics.setDepthMode("less", true)
+	if self.AOEnabled then
+		love.graphics.setDepthMode("always", false)
+		self:applyAmbientOcclusion()
+		love.graphics.setDepthMode("less", true)
+	end
 
 	-- disable culling for particles so they can be seen from both sides
 	love.graphics.setMeshCullMode("none")
@@ -329,6 +331,7 @@ end
 
 
 function Scene3:setAOStrength(strength)
+	self.AOEnabled = (strength > 0)
 	self.SSAOShader:send("aoStrength", strength)
 end
 
@@ -493,6 +496,7 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 		["ReuseCanvas"] = reuseCanvas; -- intermediate canvas to render specific things to, suchg as ambient occlusion blending or bloom effects
 
 		["MSAA"] = msaa;
+		["AOEnabled"] = true;
 
 		-- render variables
 		["Background"] = bgImage; -- image, drawn first (so they appear in the back)
