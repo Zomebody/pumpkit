@@ -25,7 +25,7 @@ attribute vec3 instanceColor;
 varying vec3 instColor;
 uniform bool isInstanced;
 
-// TODO: fragment variables
+
 varying vec3 fragWorldPosition; // output automatically interpolated fragment world position
 //varying float fragDistanceToCamera; // used for fog
 varying vec3 fragNormal; // used for normal map for SSAO (in screen space)
@@ -362,7 +362,7 @@ void effect() {
 			// distance to the light
 			float distance = length(lightPositions[i] - fragWorldPosition);
 			// attenuation factor
-			float attenuation = clamp(1.0 - pow(distance / lightRanges[i], 1), 0.0, 1.0); // TODO: add a uniform for the power
+			float attenuation = clamp(1.0 - pow(distance / lightRanges[i], 1), 0.0, 1.0);
 			// sum up the light contributions
 			lighting += lightColors[i] * lightStrengths[i] * attenuation;
 			//totalInfluence = totalInfluence + attenuation;

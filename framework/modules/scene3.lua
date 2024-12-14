@@ -111,6 +111,7 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 			positions[i] = self.Lights[i].Position:array()
 		end
 		self.Shader:send("lightPositions", unpack(positions))
+		self.ParticlesShader:send("lightPositions", unpack(positions))
 	end
 
 	-- update colors of lights in the shader if any of the lights changed color
@@ -121,6 +122,7 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 			colors[i] = {self.Lights[i].Color.r, self.Lights[i].Color.g, self.Lights[i].Color.b}
 		end
 		self.Shader:send("lightColors", unpack(colors))
+		self.ParticlesShader:send("lightColors", unpack(colors))
 	end
 
 	-- update ranges of lights in the shader if any of the lights changed their range
@@ -131,6 +133,7 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 			ranges[i] = self.Lights[i].Range
 		end
 		self.Shader:send("lightRanges", unpack(ranges))
+		self.ParticlesShader:send("lightRanges", unpack(ranges))
 	end
 
 	-- update strengths of lights in the shader if any of the lights changed strength
@@ -141,6 +144,7 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 			strengths[i] = self.Lights[i].Strength
 		end
 		self.Shader:send("lightStrengths", unpack(strengths))
+		self.ParticlesShader:send("lightStrengths", unpack(strengths))
 	end
 
 
@@ -294,6 +298,11 @@ end
 
 
 function Scene3:setLight(index, position, col, range, strength)
+	assert(type(index) == "number", "Scene3:setLight(index, position, col, range, strength) requires argument 'index' to be a number")
+	assert(vector3.isVector3(position), "Scene3:setLight(index, position, col, range, strength) requires argument 'position' to be a vector3")
+	assert(color.isColor(col), "Scene3:setLight(index, position, col, range, strength) requires argument 'col' to be a color")
+	assert(type(range) == "number", "Scene3:setLight(index, position, col, range, strength) requires argument 'range' to be a number")
+	assert(type(strength) == "number", "Scene3:setLight(index, position, col, range, strength) requires argument 'strength' to be a number")
 	local currentPosition = self.Lights[index].Position
 	local currentColor = self.Lights[index].Color
 	local currentRange = self.Lights[index].Range
@@ -320,13 +329,14 @@ function Scene3:setLight(index, position, col, range, strength)
 	if self.QueuedShaderVars.LightStrengths == false and currentStrength ~= strength then
 		self.QueuedShaderVars.LightStrengths = true
 	end
-	--self:sendLights()
+	
 end
 
 
 
 function Scene3:setAmbient(col)
 	self.Shader:send("ambientColor", {col.r, col.g, col.b})
+	self.ParticlesShader:send("ambientColor", {col.r, col.g, col.b})
 end
 
 
@@ -542,6 +552,7 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 
 	-- set a default ambience
 	Object.Shader:send("ambientColor", {1, 1, 1, 1})
+	Object.ParticlesShader:send("ambientColor", {1, 1, 1, 1})
 
 	return Object
 end

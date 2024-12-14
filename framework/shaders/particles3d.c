@@ -42,6 +42,7 @@ attribute float instFacingMode; // if 0: facing world up, if 0.25: regular billb
 
 varying float emittedAt;
 varying float lifetime;
+varying vec3 fragWorldPosition; // output automatically interpolated fragment world position
 
 //varying vec3 instColor;
 //varying bool tooOld; // whether the instance is too old to be drawn
@@ -350,6 +351,8 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 	emittedAt = instEmittedAt;
 	lifetime = instLifetime;
 
+	fragWorldPosition = worldPosition;//(modelWorldMatrix * vertex_position).xyz;
+
 
 	return result;
 }
@@ -373,10 +376,19 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 
 uniform Image dataTexture; // data texture containing (currently) the color gradient and size curve
 uniform float currentTime;
+uniform float brightness;
 
 
 varying float emittedAt;
 varying float lifetime;
+varying vec3 fragWorldPosition;
+
+// lights
+uniform vec3 lightPositions[16]; // non-transformed!
+uniform vec3 lightColors[16];
+uniform float lightRanges[16];
+uniform float lightStrengths[16];
+uniform vec3 ambientColor;
 
 
 
@@ -400,9 +412,26 @@ vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
 	if (texColor.a < 0.01) {
 		discard;  // Discard fully transparent pixels
 	}
+
+
+	vec3 lighting = ambientColor; // start with just ambient lighting on the surface
+	//float totalInfluence = 0;
+
+	// add the lighting contribution of all lights to the surface
+	for (int i = 0; i < 16; ++i) {
+		if (lightStrengths[i] > 0) { // only consider lights with a strength above 0
+			// distance to the light
+			float distance = length(lightPositions[i] - fragWorldPosition);
+			// attenuation factor
+			float attenuation = clamp(1.0 - pow(distance / lightRanges[i], 1), 0.0, 1.0);
+			// sum up the light contributions
+			lighting += lightColors[i] * lightStrengths[i] * attenuation;
+			//totalInfluence = totalInfluence + attenuation;
+		}
+	}
 	
 	
-	return texColor * gradientColor;
+	return (texColor * gradientColor) * brightness + (texColor * gradientColor * vec4(lighting.x, lighting.y, lighting.z, 1.0)) * (1.0 - brightness);
 }
 
 #endif
