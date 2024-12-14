@@ -206,6 +206,7 @@ function Particles3:draw(shaderRef)
 	shaderRef:send("currentTime", love.timer.getTime())
 	shaderRef:send("drag", self.Drag)
 	shaderRef:send("brightness", self.Brightness)
+	shaderRef:send("zOffset", self.ZOffset)
 	love.graphics.drawInstanced(self.Mesh, self.MaxParticles) -- draw all the particles, but in practice most of them will be drawn at a scale of 0 because they're inactive
 end
 
@@ -282,6 +283,7 @@ local function new(img, maxParticles, properties)
 	local facesVelocity = properties.FacesVelocity or false
 	local drag = properties.Drag or 0
 	local brightness = properties.Brightness or 1
+	local zOffset = properties.ZOffset or 0
 
 	local data = love.image.newImageData(64, 2)
 	data:mapPixel(
@@ -306,6 +308,7 @@ local function new(img, maxParticles, properties)
 	local Obj = {
 		["Gradient"] = gradient; -- the color the particle has at a given moment in time
 		["Source"] = source; -- location from which particles are emitted
+		["ZOffset"] = zOffset;
 		["Direction"] = direction; -- the direction the particles get emitted from
 		["DirectionDeviation"] = directionDeviation; -- when the particle is emitted, it deviates from the direction with at most this angle (at random)
 		["SpawnRadius"] = spawnRadius;

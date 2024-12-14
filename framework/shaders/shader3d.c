@@ -29,6 +29,7 @@ uniform bool isInstanced;
 varying vec3 fragWorldPosition; // output automatically interpolated fragment world position
 //varying float fragDistanceToCamera; // used for fog
 varying vec3 fragNormal; // used for normal map for SSAO (in screen space)
+varying vec3 fragWorldNormal; // normal vector, but in world space this time
 //varying vec3 cameraViewDirection;
 
 
@@ -221,6 +222,7 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 
 
 	fragNormal = (viewMatrix * rotationMatrix * vec4(VertexNormal, 0.0)).xyz; // fragNormal is stored in view-space because it's cheaper and easier that way to program ambient-occlusion!
+	fragWorldNormal = (rotationMatrix * vec4(VertexNormal, 0.0)).xyz;
 
 
 
@@ -246,9 +248,11 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 varying vec3 fragWorldPosition; // output automatically interpolated fragment world position
 //varying float fragDistanceToCamera; // used for fog
 varying vec3 fragNormal; // used for normal map
+varying vec3 fragWorldNormal;
 //varying vec3 cameraViewDirection;
 
 uniform float currentTime;
+uniform float diffuseStrength;
 
 // uvs
 uniform vec2 uvVelocity; // how quckly the UV scrolls on the X and Y axis, usually this equals 0,0
@@ -336,8 +340,6 @@ void effect() {
 	}
 	
 
-
-
 	// Check if a texture is applied by sampling from it
 	vec4 texColor = Texel(MainTex, texture_coords - uvVelocity * currentTime);
 
@@ -351,29 +353,28 @@ void effect() {
 	love_Canvases[1] = vec4(fragNormal.x / 2 + 0.5, fragNormal.y / 2 + 0.5, fragNormal.z / 2 + 0.5, 1.0); // Pack normals into an RGBA format
 
 
-
 	// ended up implementing a very basic naive additive lighting system because it doesn't have any weird edge-cases
 	vec3 lighting = ambientColor; // start with just ambient lighting on the surface
-	//float totalInfluence = 0;
-
+	
 	// add the lighting contribution of all lights to the surface
 	for (int i = 0; i < 16; ++i) {
-		if (lightStrengths[i] > 0) { // only consider lights with a strength above 0
-			// distance to the light
+		if (lightStrengths[i] > 0.0) { // Only consider lights with a strength above 0
+			vec3 lightDir = normalize(lightPositions[i] - fragWorldPosition);
 			float distance = length(lightPositions[i] - fragWorldPosition);
-			// attenuation factor
-			float attenuation = clamp(1.0 - pow(distance / lightRanges[i], 1), 0.0, 1.0);
-			// sum up the light contributions
-			lighting += lightColors[i] * lightStrengths[i] * attenuation;
-			//totalInfluence = totalInfluence + attenuation;
+			float attenuation = clamp(1.0 - pow(distance / lightRanges[i], 1.0), 0.0, 1.0);
+
+			// diffuse shading
+			float diffuseFactor = max(dot(fragWorldNormal, lightDir), 0.0);
+			vec3 light = lightColors[i] * lightStrengths[i] * attenuation;
+			lighting += light * ((diffuseFactor * diffuseStrength) + (1.0 - diffuseStrength)); // if diffuseStrength==0, just add the color, otherwise, add based on angle between surface and light direction
 		}
 	}
+
 	
 	//return texColor * color * vec4(lighting.x, lighting.y, lighting.z, 1.0);
 	love_Canvases[0] = texColor * color * vec4(lighting.x, lighting.y, lighting.z, 1.0);
 	
 
-	//return texColor;
 }
 
 #endif

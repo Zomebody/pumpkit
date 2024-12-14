@@ -346,6 +346,11 @@ function Scene3:setAOStrength(strength)
 end
 
 
+function Scene3:setDiffuse(strength)
+	self.Shader:send("diffuseStrength", strength)
+end
+
+
 
 function Scene3:addBasicMesh(mesh, position, rotation, scale, col, uvVelocity)
 	assert(vector3.isVector3(position), "Scene3:addBasicMesh(mesh, position, rotation, scale, col, uvVelocity) requires argument 'position' to be a vector3")
@@ -507,6 +512,7 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 
 		["MSAA"] = msaa;
 		["AOEnabled"] = true;
+		["DiffuseStrength"] = 1;
 
 		-- render variables
 		["Background"] = bgImage; -- image, drawn first (so they appear in the back)
@@ -532,6 +538,7 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 	local aspectRatio = gWidth / gHeight
 	Object.Shader:send("aspectRatio", aspectRatio)
 	Object.Shader:send("fieldOfView", Object.Camera3.FieldOfView)
+	Object.Shader:send("diffuseStrength", 1)
 	Object.ParticlesShader:send("aspectRatio", aspectRatio)
 	Object.ParticlesShader:send("fieldOfView", Object.Camera3.FieldOfView)
 	Object.SSAOShader:send("aoStrength", 0.5)

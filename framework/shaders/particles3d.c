@@ -28,6 +28,7 @@ uniform Image dataTexture; // data texture containing (currently) the color grad
 uniform vec3 gravity; // direction the particle accelerates into
 uniform float drag;
 uniform float currentTime; // current world time, used to calculate how old an instance is
+uniform float zOffset;
 
 
 // mesh variables
@@ -317,6 +318,8 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 		worldVelocity = instVelocity + gravity * (currentTime - instEmittedAt);
 		worldPosition = instPosition + instVelocity * (currentTime - instEmittedAt) + 0.5 * gravity * pow((currentTime - instEmittedAt), 2.0);
 	}
+
+	worldPosition = worldPosition + normalize(cameraWorldMatrix[3].xyz - worldPosition) * zOffset;
 
 	
 	scaleMatrix = getScaleMatrix(vec3(size, size, size));
