@@ -18,7 +18,11 @@ local Quadtree = {}
 Quadtree.__index = Quadtree
 
 
-local function new(bucketSize, maxSplits, position, size)
+local function new(position, size, bucketSize, maxSplits)
+	assert(vector2.isVector2(position), "quadtree.new(position, size, bucketSize, maxSplits) requires argument 'position' to be a vector2.")
+	assert(vector2.isVector2(size), "quadtree.new(position, size, bucketSize, maxSplits) requires argument 'size' to be a vector2.")
+	assert(type(bucketSize) == "number", "quadtree.new(position, size, bucketSize, maxSplits) requires argument 'bucketSize' to be a number.")
+	assert(type(maxSplits) == "number", "quadtree.new(position, size, bucketSize, maxSplits) requires argument 'maxSplits' to be a number.")
 	local Obj = {
 		["Position"] = position ~= nil and vector2(position) or vector2(0, 0);
 		["Size"] = size ~= nil and vector2(size) or vector2(1000, 1000);

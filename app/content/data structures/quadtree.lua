@@ -20,8 +20,8 @@ table.insert(content, {
 table.insert(content, {
 	["Type"] = "Constructor";
 	["Name"] = "new";
-	["Arguments"] = {"bucketSize", "maxSplits", "position", "size"};
-	["Description"] = "Creates a new quadtree instance and returns it.\n- bucketSize: How many items can be stored within the same cell. If an item is inserted into a full cell, the cell is instead split into 4 quadrants and the item is inserted into the right children.\n- maxSplits: The total number of times a quadtree can be split. 'bucketSize' is ignored when at the deepest allowed layer.\n- position: A vector2 indicating the top left position the quadtree starts at.\n- size: A vector2 indicating the width and height of the quadtree (to the left and down).";
+	["Arguments"] = {"position", "size", "bucketSize", "maxSplits"};
+	["Description"] = "Creates a new quadtree instance and returns it.\n- position: A vector2 indicating the top left position the quadtree starts at.\n- size: A vector2 indicating the width and height of the quadtree (to the left and down).\n- bucketSize: How many items can be stored within the same cell. If an item is inserted into a full cell, the cell is instead split into 4 quadrants and the item is inserted into the right children.\n- maxSplits: The total number of times a quadtree can be split. 'bucketSize' is ignored when at the deepest allowed layer.";
 })
 
 table.insert(content, {
