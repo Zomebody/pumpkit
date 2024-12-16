@@ -241,10 +241,10 @@ end
 
 -- split the quadtree into 4 quadrants of equal size
 function Quadtree:split()
-	self.Splits[1] = new(self.BucketSize, self.MaxSplits - 1, self.Position, self.Size / 2)
-	self.Splits[2] = new(self.BucketSize, self.MaxSplits - 1, self.Position + vector2(self.Size.x / 2, 0), self.Size / 2)
-	self.Splits[3] = new(self.BucketSize, self.MaxSplits - 1, self.Position + vector2(0, self.Size.y / 2), self.Size / 2)
-	self.Splits[4] = new(self.BucketSize, self.MaxSplits - 1, self.Position + vector2(self.Size.x / 2, self.Size.y / 2), self.Size / 2)
+	self.Splits[1] = new(self.Position, self.Size / 2, self.BucketSize, self.MaxSplits - 1)
+	self.Splits[2] = new(self.Position + vector2(self.Size.x / 2, 0), self.Size / 2, self.BucketSize, self.MaxSplits - 1)
+	self.Splits[3] = new(self.Position + vector2(0, self.Size.y / 2), self.Size / 2, self.BucketSize, self.MaxSplits - 1)
+	self.Splits[4] = new(self.Position + vector2(self.Size.x / 2, self.Size.y / 2), self.Size / 2, self.BucketSize, self.MaxSplits - 1)
 	-- moving items from the current quadtree to child quadtrees worsens performance! So just keep them in the parent quadtree :>
 end
 
