@@ -15,11 +15,11 @@ local function isNavmesh(t)
 end
 
 
-local function new(trisAndLines)
+local function new(trisAndLines, margin)
 	assert(type(trisAndLines) == "table", "navmesh(trisAndLines) requires argument 'trisAndLines' to be a table of lines and/or triangles.")
 
 	local mesh = {
-		["Margin"] = 0.01; -- margin for boundary checks and going off-path and such
+		["Margin"] = margin or 0.01; -- margin for boundary checks and going off-path and such
 		["Quadtree"] = nil; -- quadtree in which the triangles are stored
 		["Vectors"] = {}; -- list of vectors (nodes) that the graph is made out of. Key = integer, value = vector
 		["Connections"] = {}; -- key/value dictionary (technically an array though) where key = node number, value = dictionary where keys = nodes to connect to and their values are weights
@@ -68,7 +68,7 @@ local function new(trisAndLines)
 		Obj = trisAndLines[i]
 		if triangle.isTriangle(Obj) then
 			tryListTriangle(Obj)
-		elseif line.isLine(Obj) then
+		elseif line2.isLine2(Obj) then
 			tryListLine(Obj)
 		end
 	end
@@ -86,7 +86,7 @@ local function new(trisAndLines)
 	end
 
 	-- then, use that to create the quadtree
-	mesh.Quadtree = quadtree(3, 10, vector2(minX - 1, minY - 1), vector2((maxX - minX) + 2, (maxY - minY) + 2));
+	mesh.Quadtree = quadtree(vector2(minX - 1, minY - 1), vector2((maxX - minX) + 2, (maxY - minY) + 2), 3, 10);
 
 	-- then, finally insert all the triangles into the quadtree. Lines can be ignored because the quadtree is only used for finding the triangles points are inside of
 	for i = 1, #trisAndLines do
@@ -113,30 +113,36 @@ end
 
 
 
-function navmesh:pathfind(from, to)
-	print("------------ PATHFINDING START ------------")
-	local startTriangles = self.Quadtree:getInRange(from, self.Margin)
+function navmesh:pathfind(from, to, epsilon)
+
+	-- find the triangle you started inside of
+	local startTriangles = self.Quadtree:getInRange(from, self.Margin + epsilon)
 	local startTriangle = nil
+	local closestDistance = math.huge
 	for i = 1, #startTriangles do
-		if startTriangles[i]:encloses(from) then
+		local d = startTriangles[i]:dist(from)
+		if d < closestDistance and d <= epsilon then
+			closestDistance = d
 			startTriangle = startTriangles[i]
 		end
 	end
 	if startTriangle == nil then
-		print("no startTriangle")
 		-- your starting point fell outside the navigation mesh, so no path was found
 		return nil
 	end
 
-	local endTriangles = self.Quadtree:getInRange(to, self.Margin)
+	-- find the triangle you're ending up in
+	local endTriangles = self.Quadtree:getInRange(to, self.Margin + epsilon) -- TODO: add epsilon to margin
 	local endTriangle = nil
+	closestDistance = math.huge
 	for i = 1, #endTriangles do
-		if endTriangles[i]:encloses(to) then
+		local d = endTriangles[i]:dist(to)
+		if d < closestDistance and d <= epsilon then -- TODO: replace encloses with :dist() and check if distance < epsilon
+			closestDistance = d
 			endTriangle = endTriangles[i]
 		end
 	end
 	if endTriangle == nil then
-		print("no endTriangle")
 		-- your starting point fell outside the navigation mesh, so no path was found
 		return nil
 	end
@@ -145,15 +151,11 @@ function navmesh:pathfind(from, to)
 		return {vector2(from), vector2(to)} -- if the starting point and end point fall within the same triangle, there must be a direct line of sight!
 	end
 
-	print("start triangle & end triangle")
-	print(startTriangle)
-	print(endTriangle)
-
 	-- for the starting point and the end point, create a new node which you connect to the three corners of the triangle you are inside of!
 	local indexStart = #self.Vectors + 1
 	local indexEnd = #self.Vectors + 2
-	self.Vectors[indexStart] = vector2(from)
-	self.Vectors[indexEnd] = vector2(to)
+	self.Vectors[indexStart] = startTriangle:closestTo(from) -- use closestTo(from) instead of just from to deal with cases where epsilon > 0 and the start point falls outside the graph
+	self.Vectors[indexEnd] = endTriangle:closestTo(to)
 	self.Connections[indexStart] = {}
 	self.Connections[indexEnd] = {}
 
@@ -248,13 +250,12 @@ function navmesh:pathfind(from, to)
 					local sumAcrossTriangles = 0
 					local trianglesInRange = self.Quadtree:getInRange((nodeFrom + nodeTo) / 2, disToNode / 2)
 
-					print(("evaluating connection %d -> %d"):format(curNode, i))
 					for k = 1, #trianglesInRange do
-						local p1, p2 = trianglesInRange[k]:intersectLine(line(nodeFrom, nodeTo))
-						print(p1, p2)
+
+						local p1, p2 = trianglesInRange[k]:intersectLine(line2(nodeFrom, nodeTo))
+
 						if p1 ~= nil and p2 ~= nil then
 							--local p3, p4 = trianglesInRange[k]:closestTo(nodeFrom), trianglesInRange[k]:closestTo(nodeTo)
-							print(("adding (1) %.2f"):format(p1:dist(p2)))
 							sumAcrossTriangles = sumAcrossTriangles + p1:dist(p2)
 						elseif p1 ~= nil then
 							-- edge-case for the start and end-node where you only hit the triangle once because the point itself is inside of the triangle
@@ -263,22 +264,12 @@ function navmesh:pathfind(from, to)
 							elseif i == #totalPath and trianglesInRange[k]:encloses(to) then
 								sumAcrossTriangles = sumAcrossTriangles + to:dist(p1)
 							end
-							--[[
-							if curNode == 1 and startTriangle:dist(p1) < self.Margin then
-								sumAcrossTriangles = sumAcrossTriangles + from:dist(p1)
-								print(("adding (2) %.2f"):format(from:dist(p1)))
-							elseif i == #totalPath and endTriangle:dist(p1) < self.Margin then
-								sumAcrossTriangles = sumAcrossTriangles + to:dist(p1)
-								print(("adding (3) %.2f"):format(to:dist(p1)))
-							end
-							]]
 						end
 					end
-					print(("distance: %.2f out of %.2f"):format(sumAcrossTriangles, disToNode))
+					
 					-- there's a direct line between two nodes, so skip to that node immediately!
 					if sumAcrossTriangles + self.Margin > disToNode then
 						skipToNode = i
-						print(("skipping to node %d, with a sum of %.2f out of %.2f"):format(skipToNode, sumAcrossTriangles, disToNode))
 					else
 						break
 					end
