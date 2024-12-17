@@ -44,11 +44,16 @@ local function isCamera3(t)
 	return getmetatable(t) == Camera3
 end
 
+
+
 function Camera3:updateCameraMatrices()
 	local camMatrix = matrix4():translate(0, 0, self.Offset):rotateX(self.Rotation.x):rotateY(self.Rotation.y):rotateZ(self.Rotation.z):translate(self.Position.x, self.Position.y, self.Position.z)
-	local c1, c2, c3, c4 = camMatrix:columns()
-	self.Scene3.Shader:send("camMatrix", {c1, c2, c3, c4})
-	self.Scene3.ParticlesShader:send("camMatrix", {c1, c2, c3, c4})
+	self.Matrix = camMatrix
+	if self.Scene3 ~= nil then
+		local c1, c2, c3, c4 = camMatrix:columns()
+		self.Scene3.Shader:send("camMatrix", {c1, c2, c3, c4})
+		self.Scene3.ParticlesShader:send("camMatrix", {c1, c2, c3, c4})
+	end
 end
 
 
@@ -173,7 +178,7 @@ function Camera3:setFOV(fov)
 
 		self:updateCameraMatrices()
 
-		local aspectRatio = self.Scene3.RenderCanvas.getWidth() / self.Scene3.RenderCanvas.getHeight()
+		local aspectRatio = self.Scene3.RenderCanvas:getWidth() / self.Scene3.RenderCanvas:getHeight()
 		local persp = matrix4.perspective(aspectRatio, fov, 1000, 0.1)
 		local c1, c2, c3, c4 = persp:columns()
 		Object.SSAOShader:send("perspectiveMatrix", {c1, c2, c3, c4})
@@ -188,14 +193,38 @@ end
 
 -- returns a line3 with a length of 1, starting at the camera's position and pointing towards the given coordinate in world space
 -- xFactor and yFactor are how far on the x-axis and y-axis you clicked, as numbers from 0 to 1
---[[
-function Camera3:screenPointToRay(xFactor, yFactor)
-	-- calculate the camera's matrix4
-	local camMatrix = matrix4():translate(0, 0, self.Offset):rotateX(self.Rotation.x):rotateY(self.Rotation.y):rotateZ(self.Rotation.z):translate(self.Position.x, self.Position.y, self.Position.z)
 
-	-- TODO: calculate the rest
+function Camera3:screenToRay(xFactor, yFactor, aspectRatio)
+	if aspectRatio == nil then
+		assert(self.Scene3 ~= nil, "Camera3:screenToRay(xFactor, yFactor, aspectRatio, fov) does not work if 'aspectRatio' is nil and no Scene3 is set to fetch an aspect ratio from.")
+		
+		aspectRatio = self.Scene3.RenderCanvas:getWidth() / self.Scene3.RenderCanvas:getHeight()
+	end
+
+	
+	-- convert to clip space
+	local clipX = 2 * xFactor - 1
+	local clipY = 1 - 2 * yFactor
+	local clipPosition = vector4(clipX, clipY, -1, 1)
+
+	local invCamProjection = matrix4.perspective(aspectRatio, self.FieldOfView, 1000, 0.1):invert()
+	local invViewMatrix = self.Matrix:invert()
+
+	-- clip position to view space to world space
+	local viewPosition = invCamProjection * clipPosition
+	viewPosition = vector4(viewPosition.x, viewPosition.y, -1, 0)
+	local worldDirection = invViewMatrix * viewPosition
+	worldDirection = vector3(worldDirection.x, worldDirection.y, worldDirection.z):norm()
+
+	local realCameraPosition = vector3(self.Matrix[13], self.Matrix[14], self.Matrix[15]) -- check if these indices are the correct ones, otherwise it might be 4,8,12
+
+	-- return line3
+	return line3(realCameraPosition, realCameraPosition + worldDirection)
 end
-]]
+
+
+
+
 
 
 
@@ -214,13 +243,17 @@ local function new(p)
 		["Rotation"] = vector3(); -- euler angles rotation. Gets converted to a matrix and sent to the shader each time it's updated
 		["Offset"] = 0; -- this also gets incorporated into that same matrix and sent to the shader
 		["FieldOfView"] = math.rad(70); -- vertical FoV
+		["Matrix"] = nil;
 
 		["Scene3"] = nil; -- reference to the scene3 that has this camera attached to it
 
 		["Events"] = {};
 	}
 
-	return setmetatable(Obj, Camera3)
+	setmetatable(Obj, Camera3)
+	Obj:updateCameraMatrices() -- updates self.Matrix. Shaders are ignored as no scene is set yet
+
+	return Obj
 end
 
 
