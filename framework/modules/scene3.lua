@@ -352,6 +352,29 @@ end
 
 
 
+-- compares each index with the following index and swaps them so that the mesh that is further away from the camera comes first
+-- this won't immediately sort the array, which is the point. The idea is that you call this method once per frame
+-- so that over time the array will eventually be sorted from far away meshes to close by meshes.
+-- the order of meshes doesn't matter too much, but preferably you want to draw meshes from back to front to deal with semi-transparency properly
+function Scene3:slowlySortMeshes()
+	if self.Camera3 == nil then
+		return
+	end
+	local cameraPosition = vector3(self.Camera3.Matrix[13], self.Camera3.Matrix[14], self.Camera3.Matrix[15])
+	local dist1, dist2
+	for i = 1, #self.BasicMeshes - 1 do
+		-- compute squared distance since it's cheaper than pythagoras
+		dist1 = (self.BasicMeshes[i].Position.x - cameraPosition.x)^2 + (self.BasicMeshes[i].Position.y - cameraPosition.y)^2 + (self.BasicMeshes[i].Position.z - cameraPosition.z)^2
+		dist2 = (self.BasicMeshes[i + 1].Position.x - cameraPosition.x)^2 + (self.BasicMeshes[i + 1].Position.y - cameraPosition.y)^2 + (self.BasicMeshes[i + 1].Position.z - cameraPosition.z)^2
+		-- swap so that the furthest object gets drawn earlier
+		if dist1 < dist2 then
+			self.BasicMeshes[i], self.BasicMeshes[i + 1] = self.BasicMeshes[i + 1], self.BasicMeshes[i]
+		end
+	end
+end
+
+
+
 function Scene3:addBasicMesh(mesh, position, rotation, scale, col, uvVelocity)
 	assert(vector3.isVector3(position), "Scene3:addBasicMesh(mesh, position, rotation, scale, col, uvVelocity) requires argument 'position' to be a vector3")
 	local Mesh = {
@@ -363,6 +386,7 @@ function Scene3:addBasicMesh(mesh, position, rotation, scale, col, uvVelocity)
 		["UVVelocity"] = uvVelocity ~= nil and vector2(uvVelocity) or vector2(0, 0);
 	}
 	table.insert(self.BasicMeshes, Mesh)
+	return Mesh
 end
 
 
