@@ -182,9 +182,11 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 		self.Shader:send("meshRotation", Mesh.Rotation:array())
 		self.Shader:send("meshScale", Mesh.Scale:array())
 		self.Shader:send("meshColor", Mesh.Color:array())
+		self.Shader:send("meshBrightness", Mesh.Brightness)
 		love.graphics.draw(Mesh.Mesh)
 	end
 	self.Shader:send("uvVelocity", {0, 0})
+	self.Shader:send("meshBrightness", 0)
 	self.Shader:send("isInstanced", true) -- tell the shader to use the attributes to calculate the model matrices
 	for i = 1, #self.InstancedMeshes do
 		Mesh = self.InstancedMeshes[i]
@@ -384,6 +386,7 @@ function Scene3:addBasicMesh(mesh, position, rotation, scale, col, uvVelocity)
 		["Scale"] = scale ~= nil and vector3(scale) or vector3(1, 1, 1);
 		["Color"] = col ~= nil and color(col) or color(1, 1, 1);
 		["UVVelocity"] = uvVelocity ~= nil and vector2(uvVelocity) or vector2(0, 0);
+		["Brightness"] = 0;
 	}
 	table.insert(self.BasicMeshes, Mesh)
 	return Mesh
