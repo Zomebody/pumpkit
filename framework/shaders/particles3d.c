@@ -267,16 +267,13 @@ float decodeFromChannels(float high, float low) {
 
 float computeSize(float ageFraction, float offset) {
 	float curveU = clamp(ageFraction, 0.0, 1.0);
-	vec2 sizeUV = vec2(curveU, 0.75); // Bottom row (assume 2-pixel tall texture, so Y = 0.75)
+	vec2 sizeUV = vec2(curveU, 0.75); // bottom row (assume 2-pixel tall texture, so Y = 0.75)
 	vec4 sizeData = Texel(dataTexture, sizeUV);
 
 	float baseScale = decodeFromChannels(sizeData.r, sizeData.g) * 10.0; // Decode base scale
 	float deviation = decodeFromChannels(sizeData.b, sizeData.a) * 10.0; // Decode deviation
 	return baseScale + (deviation * offset);
 }
-
-
-
 
 
 
@@ -298,6 +295,7 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 
 
 	float size = computeSize((currentTime - instEmittedAt) / instLifetime, instScaleOffset);
+
 
 	vec3 worldVelocity, worldPosition;
 
@@ -403,9 +401,9 @@ vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
 	}
 
 	// sample the gradient color from the top row of the data texture
-    float gradientU = clamp(ageFraction, 0.0, 1.0); // Ensure it stays within the range [0, 1]
-    vec2 gradientUV = vec2(gradientU, 0.25); // Top row (assume 2-pixel tall texture, so Y = 0.25 for the top row)
-    vec4 gradientColor = Texel(dataTexture, gradientUV);
+	float gradientU = clamp(ageFraction, 0.0, 1.0); // Ensure it stays within the range [0, 1]
+	vec2 gradientUV = vec2(gradientU, 0.25); // Top row (assume 2-pixel tall texture, so Y = 0.25 for the top row)
+	vec4 gradientColor = Texel(dataTexture, gradientUV);
 
 	// Check if a texture is applied by sampling from it
 	vec4 texColor = Texel(tex, texture_coords);

@@ -285,6 +285,7 @@ local function new(img, maxParticles, properties)
 	local brightness = properties.Brightness or 1
 	local zOffset = properties.ZOffset or 0
 
+	-- TODO: re-use local variables instead of making new ones over and over again
 	local data = love.image.newImageData(64, 2)
 	data:mapPixel(
 		function(x, y, r, g, b, a)
