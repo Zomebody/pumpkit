@@ -174,6 +174,14 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 
 	local Mesh = nil
 	self.Shader:send("currentTime", love.timer.getTime())
+	self.Shader:send("uvVelocity", {0, 0})
+	self.Shader:send("meshBrightness", 0)
+	self.Shader:send("meshTransparency", 0)
+	self.Shader:send("isInstanced", true) -- tell the shader to use the attributes to calculate the model matrices
+	for i = 1, #self.InstancedMeshes do
+		Mesh = self.InstancedMeshes[i]
+		love.graphics.drawInstanced(Mesh.Mesh, Mesh.Count)
+	end
 	self.Shader:send("isInstanced", false) -- tell the shader to use the meshPosition, meshRotation, meshScale and meshColor uniforms to calculate the model matrices
 	for i = 1, #self.BasicMeshes do
 		Mesh = self.BasicMeshes[i]
@@ -183,15 +191,10 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 		self.Shader:send("meshScale", Mesh.Scale:array())
 		self.Shader:send("meshColor", Mesh.Color:array())
 		self.Shader:send("meshBrightness", Mesh.Brightness)
+		self.Shader:send("meshTransparency", Mesh.Transparency)
 		love.graphics.draw(Mesh.Mesh)
 	end
-	self.Shader:send("uvVelocity", {0, 0})
-	self.Shader:send("meshBrightness", 0)
-	self.Shader:send("isInstanced", true) -- tell the shader to use the attributes to calculate the model matrices
-	for i = 1, #self.InstancedMeshes do
-		Mesh = self.InstancedMeshes[i]
-		love.graphics.drawInstanced(Mesh.Mesh, Mesh.Count)
-	end
+	
 
 	if self.AOEnabled then
 		love.graphics.setDepthMode("always", false)
@@ -365,11 +368,17 @@ function Scene3:slowlySortMeshes()
 	local cameraPosition = vector3(self.Camera3.Matrix[13], self.Camera3.Matrix[14], self.Camera3.Matrix[15])
 	local dist1, dist2
 	for i = 1, #self.BasicMeshes - 1 do
-		-- compute squared distance since it's cheaper than pythagoras
-		dist1 = (self.BasicMeshes[i].Position.x - cameraPosition.x)^2 + (self.BasicMeshes[i].Position.y - cameraPosition.y)^2 + (self.BasicMeshes[i].Position.z - cameraPosition.z)^2
-		dist2 = (self.BasicMeshes[i + 1].Position.x - cameraPosition.x)^2 + (self.BasicMeshes[i + 1].Position.y - cameraPosition.y)^2 + (self.BasicMeshes[i + 1].Position.z - cameraPosition.z)^2
-		-- swap so that the furthest object gets drawn earlier
-		if dist1 < dist2 then
+
+		-- make sure fully opaque meshes are drawn first
+		if self.BasicMeshes[i].Transparency > 0 and self.BasicMeshes[i + 1].Transparency > 0 then
+			-- compute squared distance since it's cheaper than pythagoras
+			dist1 = (self.BasicMeshes[i].Position.x - cameraPosition.x)^2 + (self.BasicMeshes[i].Position.y - cameraPosition.y)^2 + (self.BasicMeshes[i].Position.z - cameraPosition.z)^2
+			dist2 = (self.BasicMeshes[i + 1].Position.x - cameraPosition.x)^2 + (self.BasicMeshes[i + 1].Position.y - cameraPosition.y)^2 + (self.BasicMeshes[i + 1].Position.z - cameraPosition.z)^2
+			-- swap so that the furthest object gets drawn earlier
+			if dist1 < dist2 then
+				self.BasicMeshes[i], self.BasicMeshes[i + 1] = self.BasicMeshes[i + 1], self.BasicMeshes[i]
+			end
+		elseif self.BasicMeshes[i].Transparency > 0 then
 			self.BasicMeshes[i], self.BasicMeshes[i + 1] = self.BasicMeshes[i + 1], self.BasicMeshes[i]
 		end
 	end
@@ -387,6 +396,7 @@ function Scene3:addBasicMesh(mesh, position, rotation, scale, col, uvVelocity)
 		["Color"] = col ~= nil and color(col) or color(1, 1, 1);
 		["UVVelocity"] = uvVelocity ~= nil and vector2(uvVelocity) or vector2(0, 0);
 		["Brightness"] = 0;
+		["Transparency"] = 0;
 	}
 	table.insert(self.BasicMeshes, Mesh)
 	return Mesh

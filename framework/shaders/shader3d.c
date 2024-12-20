@@ -265,7 +265,8 @@ uniform vec3 ambientColor;
 
 // colors
 uniform vec3 meshColor;
-uniform float meshBrightness; // TODO: if 1, mesh is not affected by diffuse shading at all
+uniform float meshBrightness; // if 1, mesh is not affected by diffuse shading at all
+uniform float meshTransparency; // how transparent the mesh is
 varying vec3 instColor;
 uniform bool isInstanced;
 
@@ -296,7 +297,7 @@ void effect() {
 	
 
 	// Check if a texture is applied by sampling from it
-	vec4 texColor = Texel(MainTex, texture_coords - uvVelocity * currentTime);
+	vec4 texColor = Texel(MainTex, texture_coords - uvVelocity * currentTime) * vec4(1.0, 1.0, 1.0, 1.0 - meshTransparency);
 
 	// Check if the alpha of the texture color is below a threshold
 	if (texColor.a < 0.01) {
