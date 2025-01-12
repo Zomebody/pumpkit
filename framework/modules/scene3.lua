@@ -180,6 +180,7 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 	self.Shader:send("isInstanced", true) -- tell the shader to use the attributes to calculate the model matrices
 	for i = 1, #self.InstancedMeshes do
 		Mesh = self.InstancedMeshes[i]
+		self.Shader:send("triplanarScale", Mesh.IsTriplanar and Mesh.TextureScale or 0)
 		love.graphics.drawInstanced(Mesh.Mesh, Mesh.Count)
 	end
 	self.Shader:send("isInstanced", false) -- tell the shader to use the meshPosition, meshRotation, meshScale and meshColor uniforms to calculate the model matrices
@@ -192,6 +193,7 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 		self.Shader:send("meshColor", Mesh.Color:array())
 		self.Shader:send("meshBrightness", Mesh.Brightness)
 		self.Shader:send("meshTransparency", Mesh.Transparency)
+		self.Shader:send("triplanarScale", Mesh.IsTriplanar and Mesh.TextureScale or 0)
 		love.graphics.draw(Mesh.Mesh)
 	end
 	
@@ -386,10 +388,12 @@ end
 
 
 
-function Scene3:addBasicMesh(mesh, position, rotation, scale, col, uvVelocity)
+function Scene3:addBasicMesh(mesh, position, rotation, scale, col, uvVelocity, texScale) -- if texScale is nil, IsPlanar is false, else, IsPlanar is true and TextureScale becomes texScale
 	assert(vector3.isVector3(position), "Scene3:addBasicMesh(mesh, position, rotation, scale, col, uvVelocity) requires argument 'position' to be a vector3")
 	local Mesh = {
 		["Mesh"] = mesh;
+		["IsTriplanar"] = texScale ~= nil; -- determines if the mesh's texture is applied using triplanar projection
+		["TextureScale"] = texScale ~= nil and texScale or 1; -- only used if IsTriplanar is true.
 		["Position"] = vector3(position);
 		["Rotation"] = rotation ~= nil and vector3(rotation) or vector3(0, 0, 0);
 		["Scale"] = scale ~= nil and vector3(scale) or vector3(1, 1, 1);
@@ -404,7 +408,7 @@ end
 
 
 
-function Scene3:addInstancedMesh(mesh, positions, rotations, scales, cols)
+function Scene3:addInstancedMesh(mesh, positions, rotations, scales, cols, texScale) -- if texScale is nil, IsPlanar is false, else, IsPlanar is true and TextureScale becomes texScale
 	assert(type(positions) == "table", "Scene3:addInstancedMesh(mesh, positions, rotations, scales, cols) requires argument 'positions' to be a table of vector3s, given is nil")
 	if rotations == nil then
 		rotations = {}
@@ -463,6 +467,8 @@ function Scene3:addInstancedMesh(mesh, positions, rotations, scales, cols)
 	local Data = {
 		["Mesh"] = mesh;
 		["Instances"] = instanceMesh; -- the reason for exposing the instances is so that setVertexAttribute() can be used on individual instances to update them after batching
+		["IsTriplanar"] = texScale ~= nil; -- determines if the mesh's texture is applied using triplanar projection
+		["TextureScale"] = texScale ~= nil and texScale or 1; -- only used if IsTriplanar is true.
 		["Count"] = #positions;
 	}
 
@@ -607,6 +613,5 @@ end
 ----------------------------------------------------[[ == RETURN == ]]----------------------------------------------------
 
 module.newScene3 = newScene3
-module.newTiledScene = newTiledScene
 module.isScene3 = isScene3
 return setmetatable(module, {__call = function(_, ...) return newScene3(...) end})

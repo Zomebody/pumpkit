@@ -25,12 +25,9 @@ attribute vec3 instanceColor;
 varying vec3 instColor;
 uniform bool isInstanced;
 
-
 varying vec3 fragWorldPosition; // output automatically interpolated fragment world position
-//varying float fragDistanceToCamera; // used for fog
 varying vec3 fragNormal; // used for normal map for SSAO (in screen space)
 varying vec3 fragWorldNormal; // normal vector, but in world space this time
-//varying vec3 cameraViewDirection;
 
 
 
@@ -174,13 +171,15 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 	mat4 rotationMatrix;
 	mat4 translationMatrix;
 
-	// get the scale matrix, then the rotation matrix in YXZ order, then the translation matrix
+	// get the scale matrix, then the rotation matrix in XYZ order, then the translation matrix
 	if (isInstanced) {
+		// for instanced meshes, use the instance position/rotation/scale uniforms
 		scaleMatrix = getScaleMatrix(instanceScale);
 		rotationMatrix = getRotationMatrixZ(instanceRotation.z) * getRotationMatrixY(instanceRotation.y) * getRotationMatrixX(instanceRotation.x);
 		translationMatrix = getTranslationMatrix(instancePosition);
 		instColor = instanceColor; // pass color attribute from vertex shader to the fragment shader since the fragment shader doesn't support attributes for some reason?
 	} else {
+		// for regular meshes, use the mesh position/rotation/scale variables
 		scaleMatrix = getScaleMatrix(meshScale);
 		rotationMatrix = getRotationMatrixZ(meshRotation.z) * getRotationMatrixY(meshRotation.y) * getRotationMatrixX(meshRotation.x);
 		translationMatrix = getTranslationMatrix(meshPosition);
@@ -222,7 +221,10 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 
 
 	fragNormal = (viewMatrix * rotationMatrix * vec4(VertexNormal, 0.0)).xyz; // fragNormal is stored in view-space because it's cheaper and easier that way to program ambient-occlusion!
-	fragWorldNormal = (rotationMatrix * vec4(VertexNormal, 0.0)).xyz;
+
+	//mat3 normalMatrix = mat3(transpose(inverse(modelWorldMatrix)));
+	//fragWorldNormal = normalize(normalMatrix * VertexNormal);
+	fragWorldNormal = (rotationMatrix * scaleMatrix * vec4(VertexNormal, 0.0)).xyz;
 
 
 
@@ -270,11 +272,12 @@ uniform float meshTransparency; // how transparent the mesh is
 varying vec3 instColor;
 uniform bool isInstanced;
 
+// triplanar texture projection variables
+//uniform bool isTriplanarTexture;
+uniform float triplanarScale;
+
 uniform Image MainTex; // used to be the 'tex' argument, but is now passed separately in this specific variable name because we switched to multi-canvas shading which has no arguments
 
-// TODO: texture mode for regular textures or triplanar blending for terrain meshes
-//uniform bool doTriplanarBlend;
-//uniform float triplanarTexSize; // the size of the texture in world coordinates (e.g. 4 units by 4 units, or 1 unit by 1 unit)
 
 
 
@@ -287,7 +290,6 @@ uniform Image MainTex; // used to be the 'tex' argument, but is now passed separ
 void effect() {
 
 	vec4 color = VaryingColor; // argument 'color' doesn't exist when using multiple canvases
-	vec2 texture_coords = VaryingTexCoord.xy; // argument 'texture_coords' doesn't exist when using multiple canvases
 	//Image tex = MainTex;
 	if (isInstanced) {
 		color = vec4(color.x * instColor.x, color.y * instColor.y, color.z * instColor.z, color.w);
@@ -296,12 +298,45 @@ void effect() {
 	}
 	
 
-	// Check if a texture is applied by sampling from it
-	vec4 texColor = Texel(MainTex, texture_coords - uvVelocity * currentTime) * vec4(1.0, 1.0, 1.0, 1.0 - meshTransparency);
+	// sample the pixel to display from the supplied texture. For triplanar projection: use world coordinates and surface normal to sample. For regular meshes, use uv coordinates and uvvelocity
+	vec4 texColor;
+	vec2 texture_coords;
+	if (triplanarScale > 0.0) { // project texture onto mesh using triplanar projection
 
-	// Check if the alpha of the texture color is below a threshold
+		// calculate surface normal using interpolated vertex normal and derivative wizardry
+		vec3 dFdx = dFdx(fragWorldPosition);
+		vec3 dFdy = dFdy(fragWorldPosition);
+		vec3 surfaceNormal = normalize(cross(dFdx, dFdy));
+		if (dot(surfaceNormal, fragWorldNormal) < 0.0) {
+			surfaceNormal = -surfaceNormal;
+		}
+		surfaceNormal = normalize(surfaceNormal);
+
+		float absNormX = abs(surfaceNormal.x); // fragWorldNormal
+		float absNormY = abs(surfaceNormal.y); // fragWorldNormal
+		float absNormZ = abs(surfaceNormal.z); // fragWorldNormal
+		if (absNormX > absNormY && absNormX > absNormZ) {
+			// pointing into x-direction
+			texture_coords = vec2(fragWorldPosition.y * triplanarScale, fragWorldPosition.z * triplanarScale);
+			texColor = vec4(1.0, 0.0, 0.0, 1.0);
+		} else if (absNormY > absNormZ) {
+			// pointing into y-direction
+			texture_coords = vec2(fragWorldPosition.x * triplanarScale, fragWorldPosition.z * triplanarScale);
+			texColor = vec4(0.0, 1.0, 0.0, 1.0);
+		} else {
+			// pointing into z-direction
+			texture_coords = vec2(fragWorldPosition.x * triplanarScale, fragWorldPosition.y * triplanarScale);
+			texColor = vec4(0.0, 0.0, 1.0, 1.0);
+		}
+	} else { // simply grab the uv coordinates for applying the texture
+		texture_coords = VaryingTexCoord.xy; // argument 'texture_coords' doesn't exist when doing multi-canvas operations, so extract it from VaryingTexCoord instead
+	}
+	texColor = Texel(MainTex, texture_coords - uvVelocity * currentTime) * vec4(1.0, 1.0, 1.0, 1.0 - meshTransparency);
+	//texColor = texColor + vec4(meshTransparency, uvVelocity.x, currentTime, 0.0) * 0.000000001; // debug surface normal visualization
+
+	// check if the alpha of the texture color is below a threshold
 	if (texColor.a < 0.01) {
-		discard;  // Discard fully transparent pixels
+		discard;  // discard fully transparent pixels
 	}
 
 
