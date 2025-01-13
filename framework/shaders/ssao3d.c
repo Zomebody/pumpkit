@@ -4,36 +4,72 @@ uniform mat4 perspectiveMatrix;
 uniform mat4 camMatrix;
 
 uniform float aoStrength;
+uniform float kernelScalar;
+//uniform float viewDistanceFactor;
+
+uniform Image noiseTexture; // assumed to be a 16x16 noise texture where r,g,b = x,y,z normal vector with z>0
+
+const float rangeCheckScalar = 10.0; // larger value == need to zoom out further for AO to fade away
 
 /*
 const float zNear = 0.1;
 const float zFar = 1000.0;
 */
-const int sampleSize = 16;//64; // Number of samples
-const float kernelScalar = 0.85;
+//const int sampleSize = 16;//16; // Number of samples
+//const float kernelScalar = 0.85;
 
-const vec3 kernel[sampleSize] = vec3[]( // list of 16 samples. Samples were generated using two fibonacci spheres, one with 12 points with r=1 and one with 4 points with r=0.6
-
-	
-	// first sphere
-	vec3(0.0345, 0.0939, 0.0100) * kernelScalar,
-	vec3(-0.0472, 0.0768, 0.0433) * kernelScalar,
-	vec3(0.0070, 0.0597, 0.0799) * kernelScalar,
-	vec3(0.0550, 0.0427, 0.0718) * kernelScalar,
-	vec3(-0.0952, 0.0256, 0.0168) * kernelScalar,
-	vec3(0.0841, 0.0085, 0.0535) * kernelScalar,
-	vec3(-0.0259, -0.0085, 0.0962) * kernelScalar,
-	vec3(-0.0446, -0.0256, 0.0858) * kernelScalar,
-	vec3(0.0850, -0.0427, 0.0310) * kernelScalar,
-	vec3(-0.0741, -0.0597, 0.0306) * kernelScalar,
-	vec3(0.0271, -0.0768, 0.0580) * kernelScalar,
-	vec3(0.0103, -0.0939, 0.0329) * kernelScalar,
-	// second sphere
-	vec3(0.0355, 0.0484, 0.0100) * kernelScalar,
-	vec3(-0.0426, 0.0161, 0.0390) * kernelScalar,
-	vec3(0.0051, -0.0161, 0.0576) * kernelScalar,
-	vec3(0.0216, -0.0484, 0.0282) * kernelScalar
+const vec2 sampleOffsets[16] = vec2[](
+	/*
+	vec2(-0.1, -0.1),
+	vec2(-0.1, 0.0),
+	vec2(-0.1, 0.1),
+	vec2(0.0, -0.1),
+	vec2(0.0, 0.0),
+	vec2(0.0, 0.1),
+	vec2(0.1, -0.1),
+	vec2(0.1, 0.0),
+	vec2(0.1, 0.1)
+	*/
+	vec2(-0.075, -0.075),
+	vec2(-0.025, -0.075),
+	vec2(0.025, -0.075),
+	vec2(0.075, -0.075),
+	vec2(-0.075, -0.025),
+	vec2(-0.025, -0.025),
+	vec2(0.025, -0.025),
+	vec2(0.075, -0.025),
+	vec2(-0.075, 0.025),
+	vec2(-0.025, 0.025),
+	vec2(0.025, 0.025),
+	vec2(0.075, 0.025),
+	vec2(-0.075, 0.075),
+	vec2(-0.025, 0.075),
+	vec2(0.025, 0.075),
+	vec2(0.075, 0.075)
 );
+
+/*
+const vec3 kernel[256] = vec3[]( // kernel[sampleSize]
+	// first sphere
+	vec3(0.0345, 0.0939, 0.0100),
+	vec3(-0.0472, 0.0768, 0.0433),
+	vec3(0.0070, 0.0597, 0.0799),
+	vec3(0.0550, 0.0427, 0.0718),
+	vec3(-0.0952, 0.0256, 0.0168),
+	vec3(0.0841, 0.0085, 0.0535),
+	vec3(-0.0259, -0.0085, 0.0962),
+	vec3(-0.0446, -0.0256, 0.0858),
+	vec3(0.0850, -0.0427, 0.0310),
+	vec3(-0.0741, -0.0597, 0.0306),
+	vec3(0.0271, -0.0768, 0.0580),
+	vec3(0.0103, -0.0939, 0.0329),
+	// second sphere
+	vec3(0.0355, 0.0484, 0.0100),
+	vec3(-0.0426, 0.0161, 0.0390),
+	vec3(0.0051, -0.0161, 0.0576),
+	vec3(0.0216, -0.0484, 0.0282)
+);
+*/
 
 
 
@@ -93,33 +129,53 @@ mat4 inverse(mat4 m) {
 float calculateOcclusion(vec3 fragmentPos, vec3 normal, vec2 texCoord, Image depthTexture, mat4 invPerspectiveMatrix) {
 	float occlusion = 0.0;
 
+	// calculate a matrix that will transform a normal vector from world-space to surface-space
 	vec3 up = abs(normal.y) < 0.999 ? vec3(0.0, 1.0, 0.0) : vec3(1.0, 0.0, 0.0);
 	vec3 tangent = normalize(cross(up, normal));
 	vec3 bitangent = cross(normal, tangent);
-	mat3 TBN = mat3(tangent, bitangent, normal);
+	mat3 TBN = mat3(tangent, bitangent, normal); // transforms a vector from world-space to the surface normal space
 
-	for (int i = 0; i < sampleSize; i++) {
-		vec3 worldSampleDir = TBN * kernel[i];
-		vec3 samplePos = fragmentPos + worldSampleDir; // Offset sample in world space
+	vec2 noiseSamplePosition = vec2(
+		float(love_PixelCoord.x) / 2.65, // the image is 16x16 but the image repeats and so if we divide by a weird number it breaks up repetition
+		float(love_PixelCoord.y) / 2.65
+	);
 
-		// Project sample position to screen space
-		vec4 sampleScreenPos = perspectiveMatrix * vec4(samplePos, 1.0);
+
+	for (int i = 0; i < 9; i++) { // for (int i = 0; i < sampleSize; i++) {
+		vec3 kernelVector = (Texel(noiseTexture, noiseSamplePosition + sampleOffsets[i])).xyz * 2.0 - vec3(1.0, 1.0, 1.0);
+		vec3 worldSampleDir = TBN * kernelVector * kernelScalar; // for the current index in the kernel, calculate where it's pointing in world-space when placed on the mesh's surface
+		vec3 sampleWorldPos = fragmentPos + worldSampleDir; // offset sample in world space
+
+		// project sample position to screen space
+		vec4 sampleScreenPos = perspectiveMatrix * vec4(sampleWorldPos, 1.0);
 		sampleScreenPos /= sampleScreenPos.w; // Perspective divide
 		vec2 sampleTexCoord = sampleScreenPos.xy * 0.5 + 0.5; // Map to [0, 1]
 
 		float sampleDepth = Texel(depthTexture, sampleTexCoord).r;
-		vec4 sampleWorldPos = invPerspectiveMatrix * vec4(sampleScreenPos.xy, sampleDepth, 1.0);
-		sampleWorldPos /= sampleWorldPos.w;
+		vec4 sampledFragmentWorldPos = invPerspectiveMatrix * vec4(sampleScreenPos.xy, sampleDepth, 1.0);
+		sampledFragmentWorldPos /= sampledFragmentWorldPos.w;
 
-		// Compare depths to check for occlusion
+		// compare depths to check for occlusion
 		// these two lines were stolen from: https://learnopengl.com/Advanced-Lighting/SSAO
-		if (sampleWorldPos.z > samplePos.z) {
-			float rangeCheck = smoothstep(0.0, 1.0, 2 / abs(fragmentPos.z - sampleDepth));
-			occlusion += (sampleDepth >= samplePos.z + 0.025 ? 1.0 : 0.0) * rangeCheck;
+		if (sampledFragmentWorldPos.z > sampleWorldPos.z) { // check if the fragment at a the sampled screen coordinate is in front of a random sampled ambient point near the surface we're evaluating
+			
+			// let's spice this occlusion checker up a bit. We'll calculate a rangeCheck variable that will make ambient occlusion less intense as you zoom out
+			// we'll also calculate a value that checks the *world space* distance between our surface point and the sampled nearby (occluded) point. As the gap between them grows, make occlusion less intense
+			// for this gap we can re-use the kernelScalar value!
+			
+			float rangeCheck = smoothstep(0.0, 1.0, rangeCheckScalar / abs(fragmentPos.z - sampleDepth));
+			float gapSize = sampledFragmentWorldPos.z - sampleWorldPos.z;
+			float darkenFactor = pow(clamp(1.0 - gapSize * kernelScalar, 0.0, 1.0), 3);
+			//float gapFactor = pow(clamp(1.0 - (gapSize / kernelScalar), 0.0, 1.0), 0.25); // value between 0 and 1 where 
+
+			occlusion += darkenFactor * rangeCheck;
+
+			// TODO: finish this section
+			
 		}
 	}
 
-	return occlusion / float(sampleSize); // Normalize occlusion
+	return occlusion / 16.0; // float(sampleSize) // (sampleSize = 16) Normalize occlusion
 }
 
 

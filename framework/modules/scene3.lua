@@ -69,7 +69,7 @@ function Scene3:applyAmbientOcclusion()
 	love.graphics.clear()
 	love.graphics.setShader(self.SSAOShader)
 	self.SSAOShader:send("normalTexture", self.NormalCanvas)
-	love.graphics.draw(self.DepthCanvas) -- set the ambient occlusion shader in motion
+	love.graphics.draw(self.DepthCanvas, 0, 0, 0, 0.5, 0.5) -- set the ambient occlusion shader in motion
 
 	-- now blend the ambient occlusion result with whatever has been drawn already
 	love.graphics.setCanvas(self.ReuseCanvas)
@@ -277,7 +277,7 @@ function Scene3:rescaleCanvas(width, height, msaa)
 		}
 	)
 	local normalCanvas = love.graphics.newCanvas(width * msaa, height * msaa)
-	local aoCanvas = love.graphics.newCanvas(width * msaa, height * msaa)
+	local aoCanvas = love.graphics.newCanvas(math.ceil(width * msaa * 0.5), math.ceil(height * msaa * 0.5))
 	local reuseCanvas = love.graphics.newCanvas(width * msaa, height * msaa)
 
 	self.RenderCanvas = renderCanvas
@@ -347,10 +347,17 @@ function Scene3:setAmbient(col)
 end
 
 
-function Scene3:setAOStrength(strength)
-	self.AOEnabled = (strength > 0)
+
+function Scene3:setAO(strength, kernelScalar, viewDistanceFactor)
+	local enabled = strength > 0
+	self.AOEnabled = enabled
 	self.SSAOShader:send("aoStrength", strength)
+	if enabled then
+		self.SSAOShader:send("kernelScalar", kernelScalar)
+		--self.SSAOShader:send("viewDistanceFactor", viewDistanceFactor)
+	end
 end
+
 
 
 function Scene3:setDiffuse(strength)
@@ -525,7 +532,7 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 		}
 	)
 	local normalCanvas = love.graphics.newCanvas(gWidth * msaa, gHeight * msaa)
-	local aoCanvas = love.graphics.newCanvas(gWidth * msaa, gHeight * msaa)
+	local aoCanvas = love.graphics.newCanvas(math.ceil(gWidth * msaa * 0.5), math.ceil(gHeight * msaa * 0.5))
 	local reuseCanvas = love.graphics.newCanvas(gWidth * msaa, gHeight * msaa)
 	--local aoCanvas = love.graphics.newCanvas(gWidth * msaa, gHeight * msaa)
 	--local aoBlendCanvas = love.graphics.newCanvas(gWidth * msaa, gHeight * msaa)
@@ -576,7 +583,7 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 
 	Object.Camera3:attach(Object)
 
-	-- init camera shader variables
+	-- init shader variables
 	Object.Camera3:updateCameraMatrices()
 	local aspectRatio = gWidth / gHeight
 	Object.Shader:send("aspectRatio", aspectRatio)
@@ -585,9 +592,14 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 	Object.ParticlesShader:send("aspectRatio", aspectRatio)
 	Object.ParticlesShader:send("fieldOfView", Object.Camera3.FieldOfView)
 	Object.SSAOShader:send("aoStrength", 0.5)
+	Object.SSAOShader:send("kernelScalar", 0.85) -- how 'large' ambient occlusion is
+	--Object.SSAOShader:send("viewDistanceFactor", 0.2) -- when you zoom out ambient occlusion fades away, bigger number = need to zoom out more
 	local persp = matrix4.perspective(aspectRatio, Object.Camera3.FieldOfView, 1000, 0.1)
 	local c1, c2, c3, c4 = persp:columns()
 	Object.SSAOShader:send("perspectiveMatrix", {c1, c2, c3, c4})
+	local noiseImage = love.graphics.newImage("framework/shaders/noiseTexture.png")
+	noiseImage:setWrap("repeat")
+	Object.SSAOShader:send("noiseTexture", noiseImage)
 
 
 	-- init lights with 0-strength white lights (re-enable this later when lights are enabled in the shader)
