@@ -34,6 +34,7 @@ local SHADER_PATH = "framework/shaders/shader3d.c"
 local SHADER_PARTICLES_PATH = "framework/shaders/particles3d.c"
 local SHADER_SSAO_PATH = "framework/shaders/ssao3d.c"
 local SHADER_SSAOBLEND_PATH = "framework/shaders/ssaoBlend.c"
+local SHADER_BLUR_PATH = "framework/shaders/blur.c"
 
 
 
@@ -66,10 +67,22 @@ function Scene3:applyAmbientOcclusion()
 
 	-- set ambient occlusion canvas as render target, and draw ambient occlusion data to the AO canvas
 	love.graphics.setCanvas(self.AOCanvas)
-	love.graphics.clear()
+	--love.graphics.clear()
 	love.graphics.setShader(self.SSAOShader)
 	self.SSAOShader:send("normalTexture", self.NormalCanvas)
-	love.graphics.draw(self.DepthCanvas, 0, 0, 0, 0.5, 0.5) -- set the ambient occlusion shader in motion
+	love.graphics.draw(self.DepthCanvas, 0, 0, 0, 1, 1) -- set the ambient occlusion shader in motion
+
+	-- apply horizontal and vertical gaussian blur in two passes, using the reuse canvas to draw to that, and then back to the ambient occlusion canvas
+	love.graphics.setCanvas(self.ReuseCanvas)
+	--love.graphics.clear()
+	love.graphics.setShader(self.BlurShader)
+	self.BlurShader:send("depthTexture", self.DepthCanvas)
+	self.BlurShader:send("blurDirection", {1, 0})
+	love.graphics.draw(self.AOCanvas)
+	love.graphics.setCanvas(self.AOCanvas)
+	--love.graphics.clear()
+	self.BlurShader:send("blurDirection", {0, 1})
+	love.graphics.draw(self.ReuseCanvas)
 
 	-- now blend the ambient occlusion result with whatever has been drawn already
 	love.graphics.setCanvas(self.ReuseCanvas)
@@ -81,7 +94,7 @@ function Scene3:applyAmbientOcclusion()
 	-- copy result to render canvas
 	love.graphics.setShader()
 	love.graphics.setCanvas(self.RenderCanvas)
-	love.graphics.clear()
+	--love.graphics.clear()
 	love.graphics.setShader()
 	love.graphics.draw(self.ReuseCanvas)
 
@@ -277,7 +290,7 @@ function Scene3:rescaleCanvas(width, height, msaa)
 		}
 	)
 	local normalCanvas = love.graphics.newCanvas(width * msaa, height * msaa)
-	local aoCanvas = love.graphics.newCanvas(math.ceil(width * msaa * 0.5), math.ceil(height * msaa * 0.5))
+	local aoCanvas = love.graphics.newCanvas(math.ceil(width * msaa * 1), math.ceil(height * msaa * 1))
 	local reuseCanvas = love.graphics.newCanvas(width * msaa, height * msaa)
 
 	self.RenderCanvas = renderCanvas
@@ -532,7 +545,7 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 		}
 	)
 	local normalCanvas = love.graphics.newCanvas(gWidth * msaa, gHeight * msaa)
-	local aoCanvas = love.graphics.newCanvas(math.ceil(gWidth * msaa * 0.5), math.ceil(gHeight * msaa * 0.5))
+	local aoCanvas = love.graphics.newCanvas(math.ceil(gWidth * msaa * 1), math.ceil(gHeight * msaa * 1))
 	local reuseCanvas = love.graphics.newCanvas(gWidth * msaa, gHeight * msaa)
 	--local aoCanvas = love.graphics.newCanvas(gWidth * msaa, gHeight * msaa)
 	--local aoBlendCanvas = love.graphics.newCanvas(gWidth * msaa, gHeight * msaa)
@@ -545,6 +558,7 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 		["ParticlesShader"] = love.graphics.newShader(SHADER_PARTICLES_PATH);
 		["SSAOShader"] = love.graphics.newShader(SHADER_SSAO_PATH); -- screen-space ambient occlusion shader
 		["SSAOBlendShader"] = love.graphics.newShader(SHADER_SSAOBLEND_PATH); -- blend shader to blend ambient occlusion with the rendered scene
+		["BlurShader"] = love.graphics.newShader(SHADER_BLUR_PATH);
 
 		["QueuedShaderVars"] = { -- whether during the next :draw() call the scene should update the shader variables below. These variables are introduced to minimize traffic to the shader!
 			["LightPositions"] = true; -- initialize to true to force the variables to be sent on the very first frame
@@ -597,7 +611,16 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 	local persp = matrix4.perspective(aspectRatio, Object.Camera3.FieldOfView, 1000, 0.1)
 	local c1, c2, c3, c4 = persp:columns()
 	Object.SSAOShader:send("perspectiveMatrix", {c1, c2, c3, c4})
-	local noiseImage = love.graphics.newImage("framework/shaders/noiseTexture.png")
+
+	-- create and send noise image to SSAO shader
+	local imgData = love.image.newImageData(4, 4) --16, 16
+	local seed = love.math.getRandomSeed()
+	local state = love.math.getRandomState()
+	love.math.setRandomSeed(553)
+	imgData:mapPixel(function() local r = love.math.random() return r, r, r, 1 end)
+	love.math.setRandomSeed(seed)
+	love.math.setRandomState(state)
+	local noiseImage = love.graphics.newImage(imgData)
 	noiseImage:setWrap("repeat")
 	Object.SSAOShader:send("noiseTexture", noiseImage)
 

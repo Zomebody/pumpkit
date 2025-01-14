@@ -7,6 +7,7 @@ uniform float aoStrength;
 uniform float kernelScalar;
 //uniform float viewDistanceFactor;
 
+// TODO: replace with a 'rotation' noise texture. Have 9 pre-determined vectors, then rotate them by a value from the noise texture
 uniform Image noiseTexture; // assumed to be a 16x16 noise texture where r,g,b = x,y,z normal vector with z>0
 
 const float rangeCheckScalar = 10.0; // larger value == need to zoom out further for AO to fade away
@@ -18,18 +19,30 @@ const float zFar = 1000.0;
 //const int sampleSize = 16;//16; // Number of samples
 //const float kernelScalar = 0.85;
 
+const vec3 samplingKernel[9] = vec3[](
+	vec3(3.536, 1.0, 0.671) / 5.5,
+	vec3(2.68, 2.919, 2.745) / 5.5,
+	vec3(0.995, 3.628, 1.154) / 5.5,
+	vec3(-0.6, 2.361, 4.117) / 5.5,
+	vec3(-0.267, 0.83, 1.434) / 5.5,
+	vec3(-0.797, -0.764, 3.68) / 5.5,
+	vec3(0.983, -1.23, 1.933) / 5.5,
+	vec3(2.302, -0.194, 3.301) / 5.5,
+	vec3(1.481, 1.68, 5.031) / 5.5
+);
+/*
 const vec2 sampleOffsets[16] = vec2[](
-	/*
-	vec2(-0.1, -0.1),
-	vec2(-0.1, 0.0),
-	vec2(-0.1, 0.1),
-	vec2(0.0, -0.1),
-	vec2(0.0, 0.0),
-	vec2(0.0, 0.1),
-	vec2(0.1, -0.1),
-	vec2(0.1, 0.0),
-	vec2(0.1, 0.1)
-	*/
+	
+	//vec2(-0.1, -0.1),
+	//vec2(-0.1, 0.0),
+	//vec2(-0.1, 0.1),
+	//vec2(0.0, -0.1),
+	//vec2(0.0, 0.0),
+	//vec2(0.0, 0.1),
+	//vec2(0.1, -0.1),
+	//vec2(0.1, 0.0),
+	//vec2(0.1, 0.1)
+	
 	vec2(-0.075, -0.075),
 	vec2(-0.025, -0.075),
 	vec2(0.025, -0.075),
@@ -47,7 +60,7 @@ const vec2 sampleOffsets[16] = vec2[](
 	vec2(0.025, 0.075),
 	vec2(0.075, 0.075)
 );
-
+*/
 /*
 const vec3 kernel[256] = vec3[]( // kernel[sampleSize]
 	// first sphere
@@ -122,7 +135,19 @@ mat4 inverse(mat4 m) {
 }
 
 
+vec3 rotateKernelVector(vec3 vector, float angle) {
+	float cosAngle = cos(angle);
+	float sinAngle = sin(angle);
 
+	return vec3(
+		vector.x * cosAngle - vector.y * sinAngle,
+		vector.x * sinAngle + vector.y * cosAngle,
+		vector.z
+	);
+
+	// Rodrigues' rotation formula
+	//return vector * cosAngle + cross(axis, vector) * sinAngle + axis * dot(axis, vector) * (1.0 - cosAngle);
+}
 
 
 
@@ -136,19 +161,22 @@ float calculateOcclusion(vec3 fragmentPos, vec3 normal, vec2 texCoord, Image dep
 	mat3 TBN = mat3(tangent, bitangent, normal); // transforms a vector from world-space to the surface normal space
 
 	vec2 noiseSamplePosition = vec2(
-		float(love_PixelCoord.x) / 2.65, // the image is 16x16 but the image repeats and so if we divide by a weird number it breaks up repetition
-		float(love_PixelCoord.y) / 2.65
+		float(love_PixelCoord.x) / 4.0,
+		float(love_PixelCoord.y) / 4.0
 	);
+	float sampledRotation = Texel(noiseTexture, noiseSamplePosition).x * 6.283; // sample a rotation for this pixel from the noise texture
 
 
-	for (int i = 0; i < 9; i++) { // for (int i = 0; i < sampleSize; i++) {
-		vec3 kernelVector = (Texel(noiseTexture, noiseSamplePosition + sampleOffsets[i])).xyz * 2.0 - vec3(1.0, 1.0, 1.0);
+	for (int i = 0; i < 9; i++) { // loop through each item in samplingKernel
+		// grab the vec3 from the kernel and rotate it around the surface normal by some factor sampled from the noise texture
+		vec3 kernelVector = rotateKernelVector(samplingKernel[i], sampledRotation);
+
 		vec3 worldSampleDir = TBN * kernelVector * kernelScalar; // for the current index in the kernel, calculate where it's pointing in world-space when placed on the mesh's surface
 		vec3 sampleWorldPos = fragmentPos + worldSampleDir; // offset sample in world space
 
 		// project sample position to screen space
 		vec4 sampleScreenPos = perspectiveMatrix * vec4(sampleWorldPos, 1.0);
-		sampleScreenPos /= sampleScreenPos.w; // Perspective divide
+		sampleScreenPos /= sampleScreenPos.w; // perspective divide
 		vec2 sampleTexCoord = sampleScreenPos.xy * 0.5 + 0.5; // Map to [0, 1]
 
 		float sampleDepth = Texel(depthTexture, sampleTexCoord).r;
@@ -165,17 +193,14 @@ float calculateOcclusion(vec3 fragmentPos, vec3 normal, vec2 texCoord, Image dep
 			
 			float rangeCheck = smoothstep(0.0, 1.0, rangeCheckScalar / abs(fragmentPos.z - sampleDepth));
 			float gapSize = sampledFragmentWorldPos.z - sampleWorldPos.z;
-			float darkenFactor = pow(clamp(1.0 - gapSize * kernelScalar, 0.0, 1.0), 3);
-			//float gapFactor = pow(clamp(1.0 - (gapSize / kernelScalar), 0.0, 1.0), 0.25); // value between 0 and 1 where 
+			float clampedScaledGap = clamp(1.0 - gapSize * kernelScalar, 0.0, 1.0);
+			float darkenFactor = clampedScaledGap * clampedScaledGap * clampedScaledGap; // pow(clampedScaledGap, 3)
 
 			occlusion += darkenFactor * rangeCheck;
-
-			// TODO: finish this section
-			
 		}
 	}
 
-	return occlusion / 16.0; // float(sampleSize) // (sampleSize = 16) Normalize occlusion
+	return occlusion / 9.0; // float(sampleSize) // (sampleSize = 16) Normalize occlusion
 }
 
 
@@ -194,19 +219,16 @@ vec4 effect(vec4 color, Image tex, vec2 texCoord, vec2 screenCoords) {
 
 
 
-	// Reconstruct world position
+	// reconstruct world position
 	vec4 screenPos = vec4(texCoord * 2.0 - 1.0, depth, 1.0);
-	//mat4 viewProjectionMatrix = perspectiveMatrix;
 	mat4 invPerspectiveMatrix = inverse(perspectiveMatrix);
 	vec4 worldPos = invPerspectiveMatrix * screenPos;
 	worldPos /= worldPos.w;
 
-	// Get normal from normal texture
+	// get normal (relative to the screen) from normal texture
 	vec3 normal = Texel(normalTexture, texCoord).rgb * 2.0 - 1.0;
-	//normal = (camMatrix * vec4(normal, 1.0)).xyz;
 
-	// Calculate ambient occlusion
-	
+	// calculate ambient occlusion
 	float occlusion = calculateOcclusion(worldPos.xyz, normal, texCoord, tex, invPerspectiveMatrix);
 
 	return vec4(vec3(1.0 - occlusion * aoStrength), 1.0); // Darken by occlusion amount
