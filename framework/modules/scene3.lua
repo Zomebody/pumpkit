@@ -62,15 +62,14 @@ end
 
 
 function Scene3:applyAmbientOcclusion()
-	--local prevCanvas = love.graphics.getCanvas()
-	--local prevShader = love.graphics.getShader()
 
 	-- set ambient occlusion canvas as render target, and draw ambient occlusion data to the AO canvas
 	love.graphics.setCanvas(self.AOCanvas)
 	--love.graphics.clear()
 	love.graphics.setShader(self.SSAOShader)
 	self.SSAOShader:send("normalTexture", self.NormalCanvas)
-	love.graphics.draw(self.DepthCanvas, 0, 0, 0, 1, 1) -- set the ambient occlusion shader in motion
+	love.graphics.draw(self.DepthCanvas, 0, 0, 0, 1 / self.MSAA, 1 / self.MSAA) -- set the ambient occlusion shader in motion
+
 
 	-- apply horizontal and vertical gaussian blur in two passes, using the reuse canvas to draw to that, and then back to the ambient occlusion canvas
 	love.graphics.setCanvas(self.ReuseCanvas)
@@ -84,8 +83,10 @@ function Scene3:applyAmbientOcclusion()
 	self.BlurShader:send("blurDirection", {0, 1})
 	love.graphics.draw(self.ReuseCanvas)
 
+
 	-- now blend the ambient occlusion result with whatever has been drawn already
-	love.graphics.setCanvas(self.ReuseCanvas)
+	-- you may think "why not render to the render canvas immediately" and I will say good question, I don't really know why.
+	love.graphics.setCanvas(self.AOFinalCanvas)
 	love.graphics.clear()
 	love.graphics.setShader(self.SSAOBlendShader) -- set the blend shader so we can apply ambient occlusion to the render canvas
 	self.SSAOBlendShader:send("aoTexture", self.AOCanvas) -- send over the rendered result from the ambient occlusion shader so we can sample it in the blend shader
@@ -96,7 +97,7 @@ function Scene3:applyAmbientOcclusion()
 	love.graphics.setCanvas(self.RenderCanvas)
 	--love.graphics.clear()
 	love.graphics.setShader()
-	love.graphics.draw(self.ReuseCanvas)
+	love.graphics.draw(self.AOFinalCanvas)
 
 	--love.graphics.setShader(prevShader)
 	--love.graphics.setCanvas(prevCanvas)
@@ -290,14 +291,16 @@ function Scene3:rescaleCanvas(width, height, msaa)
 		}
 	)
 	local normalCanvas = love.graphics.newCanvas(width * msaa, height * msaa)
-	local aoCanvas = love.graphics.newCanvas(math.ceil(width * msaa * 1), math.ceil(height * msaa * 1))
-	local reuseCanvas = love.graphics.newCanvas(width * msaa, height * msaa)
+	local aoCanvas = love.graphics.newCanvas(width, height)
+	local reuseCanvas = love.graphics.newCanvas(width, height)
+	local aoFinalCanvas = love.graphics.newCanvas(width * msaa, height * msaa)
 
 	self.RenderCanvas = renderCanvas
 	self.DepthCanvas = depthCanvas
 	self.NormalCanvas = normalCanvas
 	self.AOCanvas = aoCanvas
 	self.ReuseCanvas = reuseCanvas
+	self.AOFinalCanvas = aoFinalCanvas
 	self.MSAA = msaa
 
 	-- update aspect ratio of the scene
@@ -545,8 +548,9 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 		}
 	)
 	local normalCanvas = love.graphics.newCanvas(gWidth * msaa, gHeight * msaa)
-	local aoCanvas = love.graphics.newCanvas(math.ceil(gWidth * msaa * 1), math.ceil(gHeight * msaa * 1))
-	local reuseCanvas = love.graphics.newCanvas(gWidth * msaa, gHeight * msaa)
+	local aoCanvas = love.graphics.newCanvas(gWidth, gHeight)
+	local reuseCanvas = love.graphics.newCanvas(gWidth, gHeight)
+	local aoFinalCanvas = love.graphics.newCanvas(gWidth * msaa, gHeight * msaa)
 	--local aoCanvas = love.graphics.newCanvas(gWidth * msaa, gHeight * msaa)
 	--local aoBlendCanvas = love.graphics.newCanvas(gWidth * msaa, gHeight * msaa)
 
@@ -571,8 +575,9 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 		["RenderCanvas"] = renderCanvas;
 		["DepthCanvas"] = depthCanvas;
 		["NormalCanvas"] = normalCanvas;
-		["AOCanvas"] = aoCanvas; -- ambient occlusion canvas that is transparent, except for the places that should be darker
-		["ReuseCanvas"] = reuseCanvas; -- intermediate canvas to render specific things to, suchg as ambient occlusion blending or bloom effects
+		["AOCanvas"] = aoCanvas; -- ambient occlusion canvas that is black and white
+		["ReuseCanvas"] = reuseCanvas; -- intermediate canvas to render specific things to, such as ambient occlusion blending, currently only used in ambient occlusion
+		["AOFinalCanvas"] = aoFinalCanvas; -- higher resolution canvas for ambient occlusion used to draw things to which are then combined with the render canvas
 
 		["MSAA"] = msaa;
 		["AOEnabled"] = true;
