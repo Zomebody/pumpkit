@@ -4,7 +4,7 @@
 
 
 //uniform float radius; // in pixels
-const float radius = 4;
+const float radius = 6;
 const float depthTolerance = 0.003;
 uniform vec2 blurDirection;
 uniform Image depthTexture;

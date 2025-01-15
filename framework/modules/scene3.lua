@@ -63,12 +63,16 @@ end
 
 function Scene3:applyAmbientOcclusion()
 
+	-- 305 fps here
+
 	-- set ambient occlusion canvas as render target, and draw ambient occlusion data to the AO canvas
 	love.graphics.setCanvas(self.AOCanvas)
 	--love.graphics.clear()
 	love.graphics.setShader(self.SSAOShader)
 	self.SSAOShader:send("normalTexture", self.NormalCanvas)
 	love.graphics.draw(self.DepthCanvas, 0, 0, 0, 1 / self.MSAA, 1 / self.MSAA) -- set the ambient occlusion shader in motion
+
+	-- 194 fps here
 
 
 	-- apply horizontal and vertical gaussian blur in two passes, using the reuse canvas to draw to that, and then back to the ambient occlusion canvas
@@ -83,6 +87,7 @@ function Scene3:applyAmbientOcclusion()
 	self.BlurShader:send("blurDirection", {0, 1})
 	love.graphics.draw(self.ReuseCanvas)
 
+	-- 170 fps here
 
 	-- now blend the ambient occlusion result with whatever has been drawn already
 	-- you may think "why not render to the render canvas immediately" and I will say good question, I don't really know why.
@@ -99,8 +104,8 @@ function Scene3:applyAmbientOcclusion()
 	love.graphics.setShader()
 	love.graphics.draw(self.AOFinalCanvas)
 
-	--love.graphics.setShader(prevShader)
-	--love.graphics.setCanvas(prevCanvas)
+	-- 148 fps here
+
 end
 
 
@@ -290,10 +295,15 @@ function Scene3:rescaleCanvas(width, height, msaa)
 			["readable"] = true;
 		}
 	)
+	depthCanvas:setFilter("nearest")
 	local normalCanvas = love.graphics.newCanvas(width * msaa, height * msaa)
+	normalCanvas:setFilter("nearest")
 	local aoCanvas = love.graphics.newCanvas(width, height)
+	aoCanvas:setFilter("nearest")
 	local reuseCanvas = love.graphics.newCanvas(width, height)
+	reuseCanvas:setFilter("nearest")
 	local aoFinalCanvas = love.graphics.newCanvas(width * msaa, height * msaa)
+	aoFinalCanvas:setFilter("nearest")
 
 	self.RenderCanvas = renderCanvas
 	self.DepthCanvas = depthCanvas
@@ -307,13 +317,15 @@ function Scene3:rescaleCanvas(width, height, msaa)
 	local aspectRatio = width / height
 	self.Shader:send("aspectRatio", aspectRatio)
 	self.ParticlesShader:send("aspectRatio", aspectRatio)
-	--self.SSAOShader:send("aspectRatio", aspectRatio)
 
 	-- calculate perspective matrix for the SSAO shader
 	if self.Camera3 ~= nil then
 		local persp = matrix4.perspective(aspectRatio, self.Camera3.FieldOfView, 1000, 0.1)
 		local c1, c2, c3, c4 = persp:columns()
 		self.SSAOShader:send("perspectiveMatrix", {c1, c2, c3, c4})
+		--local invPersp = persp:invert()
+		--local i1, i2, i3, i4 = invPersp:columns()
+		--self.SSAOShader:send("invPerspectiveMatrix", {i1, i2, i3, i4})
 	end
 end
 
@@ -357,9 +369,12 @@ end
 
 
 
-function Scene3:setAmbient(col)
+function Scene3:setAmbient(col, occlusionColor)
 	self.Shader:send("ambientColor", {col.r, col.g, col.b})
 	self.ParticlesShader:send("ambientColor", {col.r, col.g, col.b})
+	if occlusionColor ~= nil then
+		self.SSAOBlendShader:send("occlusionColor", {occlusionColor.r, occlusionColor.g, occlusionColor.b})
+	end
 end
 
 
@@ -547,10 +562,15 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 			["readable"] = true;
 		}
 	)
+	depthCanvas:setFilter("nearest")
 	local normalCanvas = love.graphics.newCanvas(gWidth * msaa, gHeight * msaa)
+	normalCanvas:setFilter("nearest")
 	local aoCanvas = love.graphics.newCanvas(gWidth, gHeight)
+	aoCanvas:setFilter("nearest")
 	local reuseCanvas = love.graphics.newCanvas(gWidth, gHeight)
+	reuseCanvas:setFilter("nearest")
 	local aoFinalCanvas = love.graphics.newCanvas(gWidth * msaa, gHeight * msaa)
+	aoFinalCanvas:setFilter("nearest")
 	--local aoCanvas = love.graphics.newCanvas(gWidth * msaa, gHeight * msaa)
 	--local aoBlendCanvas = love.graphics.newCanvas(gWidth * msaa, gHeight * msaa)
 
@@ -618,14 +638,15 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 	Object.SSAOShader:send("perspectiveMatrix", {c1, c2, c3, c4})
 
 	-- create and send noise image to SSAO shader
-	local imgData = love.image.newImageData(4, 4) --16, 16
+	local imgData = love.image.newImageData(16, 16) --16, 16
 	local seed = love.math.getRandomSeed()
 	local state = love.math.getRandomState()
-	love.math.setRandomSeed(553)
+	love.math.setRandomSeed(1212)
 	imgData:mapPixel(function() local r = love.math.random() return r, r, r, 1 end)
 	love.math.setRandomSeed(seed)
 	love.math.setRandomState(state)
 	local noiseImage = love.graphics.newImage(imgData)
+	noiseImage:setFilter("nearest") -- using nearest instead of linear interpolation somehow increases FPS by 10%, probs Texel() is slow?
 	noiseImage:setWrap("repeat")
 	Object.SSAOShader:send("noiseTexture", noiseImage)
 
@@ -643,6 +664,7 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 	-- set a default ambience
 	Object.Shader:send("ambientColor", {1, 1, 1, 1})
 	Object.ParticlesShader:send("ambientColor", {1, 1, 1, 1})
+	Object.SSAOBlendShader:send("occlusionColor", {0, 0, 0})
 
 	return Object
 end
