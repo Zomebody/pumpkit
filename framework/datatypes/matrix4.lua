@@ -288,36 +288,46 @@ end
 -- rotate a matrix along the X-axis by a certain angle
 function matrix4:rotateX(angle)
 	local rx = rotationX(angle)
+	return self * rx
+	--[[
 	local newMatrix = self * rx
 	for i = 1, 16 do
 		self[i] = newMatrix[i]
 	end
 	return self
+	]]
 end
 
 -- rotate a matrix along the Y-axis by a certain angle
 function matrix4:rotateY(angle)
 	local ry = rotationY(angle)
+	return self * ry
+	--[[
 	local newMatrix = self * ry
 	for i = 1, 16 do
 		self[i] = newMatrix[i]
 	end
 	return self
+	]]
 end
 
 -- rotate a matrix along the Z-axis by a certain angle
 function matrix4:rotateZ(angle)
 	local rz = rotationZ(angle)
+	return self * rz
+	--[[
 	local newMatrix = self * rz
 	for i = 1, 16 do
 		self[i] = newMatrix[i]
 	end
 	return self
+	]]
 end
 
 
--- transpose the matrix
+-- return the transpose of the matrix
 function matrix4:transpose()
+	--[[
 	self[2], self[5] = self[5], self[2]
 	self[3], self[9] = self[9], self[3]
 	self[7], self[10] = self[10], self[7]
@@ -325,6 +335,8 @@ function matrix4:transpose()
 	self[8], self[14] = self[14], self[8]
 	self[12], self[15] = self[15], self[12]
 	return self
+	]]
+	return new(self[1], self[5], self[9], self[13], self[2], self[6], self[10], self[14], self[3], self[7], self[11], self[15], self[4], self[8], self[12], self[16])
 end
 
 
@@ -343,7 +355,7 @@ end
 
 
 -- invert the matrix4
-function matrix4:invert()
+function matrix4:inverse()
 	local det = self:determinant()
 	if det == 0 then
 		error("matrix4 cannot be inverted because the determinant equals 0.")
@@ -431,7 +443,7 @@ end
 -- invert the matrix
 function matrix4.__unm(a)
 	local Obj = new(a:unpack())
-	return Obj:invert()
+	return Obj:inverse()
 end
 
 

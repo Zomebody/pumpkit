@@ -104,7 +104,7 @@ function matrix3:determinant()
 end
 
 
-function matrix3:invert()
+function matrix3:inverse()
 	local det = self:determinant()
 	if det == 0 then
 		error("matrix3 cannot be inverted because the determinant equals 0.")
@@ -169,7 +169,7 @@ end
 
 function matrix3.__unm(a)
 	local Obj = new(a:unpack())
-	Obj:invert()
+	Obj:inverse()
 	return Obj
 end
 

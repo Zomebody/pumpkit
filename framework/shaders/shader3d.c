@@ -277,7 +277,7 @@ uniform bool isInstanced;
 uniform float triplanarScale;
 
 uniform Image MainTex; // used to be the 'tex' argument, but is now passed separately in this specific variable name because we switched to multi-canvas shading which has no arguments
-
+uniform Image normalMap;
 
 
 

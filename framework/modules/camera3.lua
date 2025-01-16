@@ -207,8 +207,8 @@ function Camera3:screenToRay(xFactor, yFactor, aspectRatio)
 	local clipY = 1 - 2 * yFactor
 	local clipPosition = vector4(clipX, clipY, -1, 1)
 
-	local invCamProjection = matrix4.perspective(aspectRatio, self.FieldOfView, 1000, 0.1):invert()
-	local invViewMatrix = self.Matrix:invert()
+	local invCamProjection = matrix4.perspective(aspectRatio, self.FieldOfView, 1000, 0.1):inverse()
+	local invViewMatrix = self.Matrix:inverse()
 
 	-- clip position to view space to world space
 	local viewPosition = invCamProjection * clipPosition
