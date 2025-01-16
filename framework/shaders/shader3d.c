@@ -297,12 +297,16 @@ void effect() {
 		color = vec4(color.x * meshColor.x, color.y * meshColor.y, color.z * meshColor.z, color.w);
 	}
 	
+	if (love_PixelCoord.x < 0 || love_PixelCoord.x > love_ScreenSize.x || love_PixelCoord.y < 0 || love_PixelCoord.y > love_ScreenSize.y) {
+		discard;
+	}
+
+	
 
 	// sample the pixel to display from the supplied texture. For triplanar projection: use world coordinates and surface normal to sample. For regular meshes, use uv coordinates and uvvelocity
 	vec4 texColor;
 	vec2 texture_coords;
 	if (triplanarScale > 0.0) { // project texture onto mesh using triplanar projection
-
 		// calculate surface normal using interpolated vertex normal and derivative wizardry
 		vec3 dFdx = dFdx(fragWorldPosition);
 		vec3 dFdy = dFdy(fragWorldPosition);
