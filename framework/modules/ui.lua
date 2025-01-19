@@ -160,9 +160,13 @@ local function updateAbsoluteSize(Obj, ignoreParentSize) -- ignoreParentSize is 
 	end
 
 	if Obj.TextBlock ~= nil then
-		Obj.TextBlock:setWidth(Obj.AbsoluteSize.x - 2 * Obj.Padding.x)
-		if Obj.FitTextOnResize then
-			Obj:fitText()
+		--Obj.TextBlock:setWidth(Obj.AbsoluteSize.x - 2 * Obj.Padding.x)
+		Obj.TextBlock:updateWidth()
+		--if Obj.FitTextOnResize then
+		if Obj.TextBlock.TextScales then
+			local w = Obj.AbsoluteSize.x - 2 * Obj.Padding.x
+			local h = Obj.AbsoluteSize.y - 2 * Obj.Padding.y
+			Obj.TextBlock:fitText()
 		end
 	end
 
@@ -889,6 +893,7 @@ function UIBase:remove()
 	end
 	-- remove any fonts from memory
 	if self.TextBlock ~= nil then
+		self.TextBlock.Parent = nil
 		self.TextBlock:clearFont()
 		self.TextBlock.Text:release()
 		self.TextBlock.Text = nil
@@ -987,9 +992,6 @@ function UIBase:resize(sw, sh, ow, oh)
 	else
 		updateAbsolutePosition(self) -- TODO: THIS LINE OF CODE IS NOT TESTED
 	end
-	--if self.FitTextOnResize and self.TextBlock ~= nil then
-	--	self:fitText()
-	--end
 	module.Changed = true
 end
 
@@ -1147,7 +1149,7 @@ function UIBase:setPadding(sizeX, sizeY)
 		self.Padding:set(sizeX, sizeY)
 	end
 	if self.TextBlock ~= nil then
-		self.TextBlock:setWidth(self.AbsoluteSize.x - 2 * self.Padding.x)
+		self.TextBlock:updateWidth()
 	end
 	updateAbsoluteSize(self)
 	updateAbsolutePosition(self)
@@ -1170,22 +1172,25 @@ end
 
 
 -- adds a TextBlock to the UI and sets its content. If no arguments provided, removes the text. If no font size provided, text is scaled to fit the frame
-function UIBase:setText(fontname, textData, size, scaleHeight)
+function UIBase:setText(fontname, textData, size, lineCountOrScale)
+	local lineCount = type(lineCountOrScale) == "number" and lineCountOrScale or 0
+	local scaleHeight = type(lineCountOrScale) == "boolean" and lineCountOrScale
+
 	if fontname == nil then
 		if self.TextBlock ~= nil then
 			self.TextBlock:clearFont()
 		end
 		self.TextBlock = nil
 	elseif size == nil then -- scale text to fit box
-		local w = self.AbsoluteSize.x - 2 * self.Padding.x
-		local h = self.AbsoluteSize.y - 2 * self.Padding.y
-		local tb = textblock(fontname, size, textData, w)
-		tb:fitText(w, h)
-		self.FitTextOnResize = true
+		--local w = self.AbsoluteSize.x - 2 * self.Padding.x
+		--local h = self.AbsoluteSize.y - 2 * self.Padding.y
+		local tb = textblock(self, fontname, size, textData, lineCount)
+		tb:fitText()
+		--tb.FitOnResize = true
 		self.TextBlock = tb
 	else
-		local w = self.AbsoluteSize.x - 2 * self.Padding.x
-		local tb = textblock(fontname, size, textData, w)
+		--local w = self.AbsoluteSize.x - 2 * self.Padding.x
+		local tb = textblock(self, fontname, size, textData, 0)
 		self.TextBlock = tb
 		if scaleHeight then
 			local width, height = tb:getSize()
@@ -1197,11 +1202,13 @@ end
 
 
 -- resize the text to fit perfectly within the box
+--[[
 function UIBase:fitText()
 	if self.TextBlock ~= nil then
 		self.TextBlock:fitText(self.AbsoluteSize.x - 2 * self.Padding.x, self.AbsoluteSize.y - 2 * self.Padding.y)
 	end
 end
+]]
 
 
 function UIBase:getWordAt(x, y)
@@ -1849,6 +1856,7 @@ function AnimatedFrame:remove()
 	self.ReferenceAnimation:stop()
 	-- remove any fonts from memory
 	if self.TextBlock ~= nil then
+		self.TextBlock.Parent = nil
 		self.TextBlock:clearFont()
 		self.TextBlock.Text:release()
 		self.TextBlock.Text = nil
@@ -1960,7 +1968,7 @@ local function newBase(w, h, col)
 			["Scale"] = 0; -- scale uses the min(AbsoluteSize.x, AbsoluteSize.y) multiplied by this number
 			["Offset"] = 0; -- regular pixels
 		};
-		["FitTextOnResize"] = false;
+		--["FitTextOnResize"] = false;
 		["Hidden"] = false;
 		["Id"] = module.TotalCreated;
 		["Name"] = "Object"; -- The name of the instance. Names are not unique. They can be used with the :child() method to find a child with a given name inside some parent instance.
