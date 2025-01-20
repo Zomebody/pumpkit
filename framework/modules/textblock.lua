@@ -214,24 +214,9 @@ function textblock:updateWidth()
 	else
 		self.Text:setf(self.ColoredText, self.Width, self.AlignmentX)
 	end
-	--[[
-	if self.WrapEnabled then
-		self.Text:setf(self.ColoredText, self.Width, self.AlignmentX)
-	else
-		self.Text:set(self.ColoredText)
-		local maxWidth = self.Text:getWidth()
-		self.Text:setf(self.ColoredText, math.max(maxWidth, w), self.AlignmentX)
-	end
-	]]
 end
 
---[[
-function textblock:setWrap(state)
-	if state == self.WrapEnabled then return end
-	self.WrapEnabled = state
-	self:setWidth(self.Width)
-end
-]]
+
 
 -- called when the object that uses the textblock is being removed
 function textblock:clearFont()

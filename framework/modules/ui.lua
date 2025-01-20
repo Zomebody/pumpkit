@@ -1186,7 +1186,6 @@ function UIBase:setText(fontname, textData, size, lineCountOrScale)
 		--local h = self.AbsoluteSize.y - 2 * self.Padding.y
 		local tb = textblock(self, fontname, size, textData, lineCount)
 		tb:fitText()
-		--tb.FitOnResize = true
 		self.TextBlock = tb
 	else
 		--local w = self.AbsoluteSize.x - 2 * self.Padding.x
@@ -1200,15 +1199,6 @@ function UIBase:setText(fontname, textData, size, lineCountOrScale)
 	end
 end
 
-
--- resize the text to fit perfectly within the box
---[[
-function UIBase:fitText()
-	if self.TextBlock ~= nil then
-		self.TextBlock:fitText(self.AbsoluteSize.x - 2 * self.Padding.x, self.AbsoluteSize.y - 2 * self.Padding.y)
-	end
-end
-]]
 
 
 function UIBase:getWordAt(x, y)
@@ -1470,6 +1460,7 @@ end
 function UIBase:drawText()
 	-- draw text on top
 	if self.TextBlock ~= nil then
+		--local r, g, b, a = love.graphics.getColor()
 		love.graphics.setColor(self.TextBlock.Color:components())
 		if self.TextBlock.AlignmentY == "top" then
 			love.graphics.draw(self.TextBlock.Text, -self.AbsoluteSize.x * self.Pivot.x + self.Padding.x, -self.AbsoluteSize.y * self.Pivot.y + self.Padding.y)
@@ -1478,6 +1469,8 @@ function UIBase:drawText()
 		else -- bottom
 			love.graphics.draw(self.TextBlock.Text, -self.AbsoluteSize.x * self.Pivot.x + self.Padding.x, self.AbsoluteSize.y * (1 - self.Pivot.y) - self.Padding.y - self.TextBlock.Text:getHeight())
 		end
+		-- no need to reset the color because it happens right after drawText() is called in the ui draw functions
+		--love.graphics.setColor(r, g, b, a)
 	end
 end
 
@@ -1529,6 +1522,7 @@ function Frame:draw()
 	local gw, gh = love.graphics.getDimensions()
 	-- bounds check optimization. This will reduce GPU used! (GPU went down from 17% to 14% in a recent test)
 	if not (self.AbsolutePosition.x > gw or self.AbsolutePosition.x + self.AbsoluteSize.x < 0 or self.AbsolutePosition.y > gh or self.AbsolutePosition.y + self.AbsoluteSize.y < 0) then
+		local oldR, oldG, oldB, oldA = love.graphics.getColor()
 		local r, g, b, a = self.Color.r, self.Color.g, self.Color.b, self.Color.a
 		if module.PressedElement == self then
 			r, g, b, a = self.ColorHold.r, self.ColorHold.g, self.ColorHold.b, self.ColorHold.a
@@ -1552,6 +1546,7 @@ function Frame:draw()
 		love.graphics.rectangle("fill", -self.AbsoluteSize.x * self.Pivot.x + self.BorderWidth, -self.AbsoluteSize.y * self.Pivot.y + self.BorderWidth, self.AbsoluteSize.x - self.BorderWidth*2, self.AbsoluteSize.y - self.BorderWidth*2, cornerArg and math.max(0, cornerArg - self.BorderWidth))
 		-- draw text on top
 		self:drawText()
+		love.graphics.setColor(oldR, oldG, oldB, oldA)
 
 		love.graphics.pop() -- revert to previous graphics coordinate state
 	end
@@ -1638,6 +1633,7 @@ function ImageFrame:draw()
 	local gw, gh = love.graphics.getDimensions()
 	-- bounds check to reduce GPU load. Don't need to draw out of bounds!
 	if not (self.AbsolutePosition.x > gw or self.AbsolutePosition.x + self.AbsoluteSize.x < 0 or self.AbsolutePosition.y > gh or self.AbsolutePosition.y + self.AbsoluteSize.y < 0) then
+		local oldR, oldG, oldB, oldA = love.graphics.getColor()
 		local r, g, b, a = self.Color.r, self.Color.g, self.Color.b, self.Color.a
 		if module.PressedElement == self then
 			r, g, b, a = self.ColorHold.r, self.ColorHold.g, self.ColorHold.b, self.ColorHold.a
@@ -1691,6 +1687,7 @@ function ImageFrame:draw()
 		end
 		-- draw text on top
 		self:drawText()
+		love.graphics.setColor(oldR, oldG, oldB, oldA)
 
 		love.graphics.pop() -- revert to previous graphics coordinate state
 	end
@@ -1752,6 +1749,7 @@ function SlicedFrame:draw()
 	local gw, gh = love.graphics.getDimensions()
 	-- bounds check to reduce GPU load. Don't need to draw out of bounds!
 	if not (self.AbsolutePosition.x > gw or self.AbsolutePosition.x + self.AbsoluteSize.x < 0 or self.AbsolutePosition.y > gh or self.AbsolutePosition.y + self.AbsoluteSize.y < 0) then
+		local oldR, oldG, oldB, oldA = love.graphics.getColor()
 		local r, g, b, a = self.Color.r, self.Color.g, self.Color.b, self.Color.a
 		if module.PressedElement == self then
 			r, g, b, a = self.ColorHold.r, self.ColorHold.g, self.ColorHold.b, self.ColorHold.a
@@ -1799,6 +1797,7 @@ function SlicedFrame:draw()
 		end
 		-- draw text on top
 		self:drawText()
+		love.graphics.setColor(oldR, oldG, oldB, oldA)
 
 		love.graphics.pop() -- revert to previous graphics coordinate state
 	end
@@ -1892,6 +1891,7 @@ function AnimatedFrame:draw()
 	local gw, gh = love.graphics.getDimensions()
 	-- bounds check to reduce GPU load. Don't need to draw out of bounds!
 	if not (self.AbsolutePosition.x > gw or self.AbsolutePosition.x + self.AbsoluteSize.x < 0 or self.AbsolutePosition.y > gh or self.AbsolutePosition.y + self.AbsoluteSize.y < 0) then
+		local oldR, oldG, oldB, oldA = love.graphics.getColor()
 		local r, g, b, a = self.Color.r, self.Color.g, self.Color.b, self.Color.a
 		if module.PressedElement == self then
 			r, g, b, a = self.ColorHold.r, self.ColorHold.g, self.ColorHold.b, self.ColorHold.a
@@ -1917,6 +1917,7 @@ function AnimatedFrame:draw()
 		end
 		-- draw text on top
 		self:drawText()
+		love.graphics.setColor(oldR, oldG, oldB, oldA)
 
 		love.graphics.pop() -- revert to previous graphics coordinate state
 	end

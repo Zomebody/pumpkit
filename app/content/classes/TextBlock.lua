@@ -75,6 +75,22 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Property";
+	["ValueType"] = "number";
+	["Name"] = "MaxLines";
+	["Description"] = "The maximum number of lines that will fit inside the text block when TextScales is set to true.";
+	["ReadOnly"] = true;
+})
+
+table.insert(content, {
+	["Type"] = "Property";
+	["ValueType"] = "UIBase";
+	["Name"] = "Parent";
+	["Description"] = "The parent element that this text block is attached to. The size of the text block is dependent on the parent's size.";
+	["ReadOnly"] = true;
+})
+
+table.insert(content, {
+	["Type"] = "Property";
 	["ValueType"] = "string";
 	["Name"] = "RawText";
 	["Description"] = "The raw text string displayed in the text block. This excludes text coloring.";
@@ -91,12 +107,20 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Property";
+	["ValueType"] = "boolean";
+	["Name"] = "TextScales";
+	["Description"] = "Whether the text inside the text block will automatically increase of decrease in size when the parent element is resized, new text is added, or the MaxLines changes.";
+	["ReadOnly"] = true;
+})
+
+table.insert(content, {
+	["Type"] = "Property";
 	["ValueType"] = "number";
 	["Name"] = "Width";
 	["Description"] = "Unclear what this property actually does, but it was required to implement the WrapEnabled property.";
 	["ReadOnly"] = true;
 })
-
+--[[
 table.insert(content, {
 	["Type"] = "Property";
 	["ValueType"] = "number";
@@ -104,7 +128,7 @@ table.insert(content, {
 	["Description"] = "Defaulted to true. If true, the text will wrap on the edge and then continue on the line below.";
 	["ReadOnly"] = true;
 })
-
+]]
 table.insert(content, {
 	["Type"] = "Header";
 	["Name"] = "Methods";
@@ -135,8 +159,8 @@ table.insert(content, {
 table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "fitText";
-	["Arguments"] = {"width", "height"};
-	["Description"] = "Changes the dimensions of the given text block and resizes the text such that it best fits within text block without overflowing. Finding the right size is done by using a O(log(n)) search of trying different text sizes.";
+	["Arguments"] = {"remainScaled"};
+	["Description"] = "Changes the dimensions of the given text block and resizes the text such that it best fits within text block without overflowing. Finding the right size is done by using a O(log(n)) search of trying different text sizes.\n\n'remainScaled' is a boolean indicating if TextScales should be set to true or false after fitting the text (or unchanged if nil).\n\nIf 'MaxLines' is set to any value other than 0, the text will be scaled such that exactly that many lines of text fit within the text block.";
 })
 
 table.insert(content, {
@@ -176,16 +200,16 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Method";
-	["Name"] = "setWidth";
-	["Arguments"] = {"number"};
-	["Description"] = "Changes the width (in pixels) of the text block in which the text resides.";
+	["Name"] = "setWrap";
+	["Arguments"] = {"boolean"};
+	["Description"] = "Sets whether or not the text should wrap onto the next line. If set to false, the text will overflow or cut off on the side of the element it resides in.";
 })
 
 table.insert(content, {
 	["Type"] = "Method";
-	["Name"] = "setWrap";
-	["Arguments"] = {"boolean"};
-	["Description"] = "Sets whether or not the text should wrap onto the next line. If set to false, the text will overflow or cut off on the side of the element it resides in.";
+	["Name"] = "updateWidth";
+	["Arguments"] = {};
+	["Description"] = "Changes the width (in pixels) of the text block in which the text resides. This is called automatically when the parent element is resized.";
 })
 
 return {

@@ -475,6 +475,8 @@ table.insert(content, {
 	["Arguments"] = {};
 	["Description"] = "Calls :removeTag() for all strings currently in the Tags list. This will clear all tags from the object.";
 })
+--[[
+-- method has been removed in favor of TextBlock:fitText()
 
 table.insert(content, {
 	["Type"] = "Method";
@@ -485,11 +487,12 @@ table.insert(content, {
 	["Demo"] = function()
 		local Frame = ui.newFrame(250, 80, color(0, 0, 0))
 		Frame:setPadding(4)
-		Frame:setText("FiraCode.ttf", "Hello World", 8)
-		Frame:fitText()
+		Frame:setText("FiraCode.ttf", "Hello World and some more", nil, nil)
+		--Frame.TextBlock:fitText(true)
 		return Frame
 	end
 })
+]]
 
 table.insert(content, {
 	["Type"] = "Method";
@@ -704,8 +707,8 @@ table.insert(content, {
 table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "setText";
-	["Arguments"] = {"fontname", "textData", "fontsize", "scaleHeight"};
-	["Description"] = "Sets the text inside the element. This will set the TextBlock property, which is another instance type. fontname must be a font that exists in the list of fonts. textData is either a string or a table with colored text data (see Love2D documentation of printf()). fontsize is the size of the font. scaleHeight is a boolean that, when enabled, will set the element's height such that the text perfectly fits vertically. This will take padding into consideration as well.";
+	["Arguments"] = {"fontname", "textData", "fontsize", "scaleHeight/lineCount"};
+	["Description"] = "Sets the text inside the element. This will set the TextBlock property, which is another instance type.\n\n- 'fontname' must be a font that exists in the list of fonts.\n- 'textData' is either a string or a table with colored text data (see Love2D documentation of printf()).\n- 'fontsize' is the size of the font or nil (to enable TextBlock.TextScales).\n- 'scaleHeight' or 'lineCount' is either a boolean or number. If it's a boolean, the UI element's height is scaled (in pixels) such that the text perfectly fits within the element at the supplied font size (including padding). If it's a number, it enables automatic text scaling (TextBlock.TextScales) and scales the text so that exactly that many lines of text fit inside the element. Use 'nil' to enable scaling without a set 'TextBlock.MaxLines'.";
 	["CodeMarkup"] = "<k>local</k> Frame <k>=</k> ui.<f>newFrame</f>(<n>300</n>, <n>100</n>, <f>color</f>(<n>0</n>, <n>0</n>, <n>0</n>))\nFrame:<f>setText</f>(<s>\"FiraCode.ttf\"</s>, <s>\"The quick brown fox jumps over the lazy dog\"</s>, <n>32</n>, <b>true</b>)";
 	["Demo"] = function()
 		local Frame = ui.newFrame(300, 100, color(0, 0, 0))

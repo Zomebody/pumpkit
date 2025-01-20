@@ -170,7 +170,7 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 	-- set render canvas as target and clear it so a normal image can be drawn to it
 	love.graphics.setCanvas({self.RenderCanvas, self.NormalCanvas, ["depthstencil"] = self.DepthCanvas}) -- set the main canvas so it can be cleared
 	love.graphics.clear()
-	love.graphics.setCanvas(self.RenderCanvas) -- set the canvas to only be the render canvas so the background doesn't accidentally initialize anything in the normal canvas or bloom canvas
+	love.graphics.setCanvas(self.RenderCanvas) -- set the canvas to only be the render canvas so the background doesn't accidentally initialize anything in the normal canvas
 
 	local renderWidth, renderHeight = self.RenderCanvas:getDimensions()
 
@@ -249,9 +249,6 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 	-- reset the canvas to the render target & render the scene
 	love.graphics.setCanvas(renderTarget)
 	love.graphics.draw(self.RenderCanvas, 0, self.RenderCanvas:getHeight() / self.MSAA, 0, 1 / self.MSAA, -1 / self.MSAA)
-
-	--love.graphics.draw(self.NormalCanvas, 0, self.RenderCanvas:getHeight() / self.MSAA, 0, 1 / self.MSAA, -1 / self.MSAA)
-	--love.graphics.draw(self.DepthCanvas, 0, self.RenderCanvas:getHeight() / self.MSAA, 0, 1 / self.MSAA, -1 / self.MSAA)
 
 	-- revert some graphics settings
 	love.graphics.setCanvas(prevCanvas)

@@ -30,7 +30,7 @@ function font.new(filename, size, isTemporary) -- isTemporary is only used once:
 	end
 end
 
--- TODO: DOCUMENT THIS METHOD
+
 function font:dereference(filename, size)
 	assert(semaphores[filename] ~= nil and semaphores[filename][size] ~= nil, "semaphore for " .. filename .. " at size " .. tostring(size) .. " does not exist")
 	semaphores[filename][size] = semaphores[filename][size] - 1
