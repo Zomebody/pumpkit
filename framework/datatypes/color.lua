@@ -314,6 +314,11 @@ function color:__eq(a)
 end
 
 
+function color:__mul(a)
+	return new(self.r * a.r, self.g * a.g, self.b * a.b, self.a * a.a)
+end
+
+
 -- pack up and return module
 module.new = new
 module.fromRGB = fromRGB

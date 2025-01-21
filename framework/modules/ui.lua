@@ -59,7 +59,7 @@ local module = {
 	["TotalCreated"] = 0; -- total number of UI elements that have been created
 	["Visible"] = true; -- if set to false, ui won't be drawn, events can still technically take place (e.g. gamepad events once support is added)
 
-	["Events"] = {}
+	["Events"] = {};
 }
 
 local UIBase = {}
@@ -143,11 +143,27 @@ local function updateAbsoluteSize(Obj, ignoreParentSize) -- ignoreParentSize is 
 	local sX = 0
 	local sY = 0
 	if Par and Par ~= module and (not ignoreParentSize) then -- inherit size from parent
-		sX = Obj.Size.Scale.x * (Par.AbsoluteSize.x - Par.Padding.x * 2) + Obj.Size.Offset.x
-		sY = Obj.Size.Scale.y * (Par.AbsoluteSize.y - Par.Padding.y * 2) + Obj.Size.Offset.y
+		if Obj.SizeAxes:sub(1, 1) == "x" then -- resize x relative to x-axis
+			sX = Obj.Size.Scale.x * (Par.AbsoluteSize.x - Par.Padding.x * 2) + Obj.Size.Offset.x
+		else -- resize x relative to y-axis
+			sX = Obj.Size.Scale.x * (Par.AbsoluteSize.y - Par.Padding.y * 2) + Obj.Size.Offset.x
+		end
+		if Obj.SizeAxes:sub(2, 2) == "x" then -- resize y relative to x-axis
+			sY = Obj.Size.Scale.y * (Par.AbsoluteSize.x - Par.Padding.x * 2) + Obj.Size.Offset.y
+		else -- resize y relative to y-axis
+			sY = Obj.Size.Scale.y * (Par.AbsoluteSize.y - Par.Padding.y * 2) + Obj.Size.Offset.y
+		end
 	else -- use the window's size
-		sX = Obj.Size.Scale.x * module.Size.x + Obj.Size.Offset.x
-		sY = Obj.Size.Scale.y * module.Size.y + Obj.Size.Offset.y
+		if Obj.SizeAxes:sub(1, 1) == "x" then -- resize x relative to x-axis
+			sX = Obj.Size.Scale.x * module.Size.x + Obj.Size.Offset.x
+		else -- resize x relative to y-axis
+			sX = Obj.Size.Scale.x * module.Size.y + Obj.Size.Offset.x
+		end
+		if Obj.SizeAxes:sub(2, 2) == "x" then -- resize y relative to x-axis
+			sY = Obj.Size.Scale.y * module.Size.x + Obj.Size.Offset.y
+		else
+			sY = Obj.Size.Scale.y * module.Size.y + Obj.Size.Offset.y
+		end
 	end
 	local prevX, prevY = Obj.AbsoluteSize.x, Obj.AbsoluteSize.y
 	Obj.AbsoluteSize:set(math.floor(sX), math.floor(sY))
@@ -846,6 +862,24 @@ function UIBase:addChild(Obj)
 end
 
 
+-- remove the object from the hierarchy (but do not remove it!)
+function UIBase:unparent()
+	if self.Parent ~= nil then
+		-- remove the object from the parent's list of children
+		for i = 1, #self.Parent.Children do
+			if self.Parent.Children[i] == self then
+				table.remove(self.Parent.Children, i)
+				break
+			end
+		end
+		-- unparent the object
+		self.Parent = nil
+		-- other stuff
+		module.Changed = true
+	end
+end
+
+
 -- look through all children for the first child with the given name. Return either nil or the found child.
 function UIBase:child(name)
 	for i = 1, #self.Children do
@@ -995,6 +1029,8 @@ function UIBase:resize(sw, sh, ow, oh)
 	module.Changed = true
 end
 
+
+
 -- reposition the UI element to another location
 function UIBase:reposition(sx, sy, ox, oy)
 	if vector2.isVector2(sx) then
@@ -1010,6 +1046,27 @@ function UIBase:reposition(sx, sy, ox, oy)
 	updateAbsolutePosition(self)
 	module.Changed = true
 end
+
+
+
+function UIBase:setSizeAxes(axes)
+	assert(axes == "xx" or axes == "yy" or axes == "xy" or axes == nil, "UIBase:setSizeAxes(axes) must have argument 'axes' be one of nil, 'xx', 'xy' or 'yy'.")
+	if axes == nil then
+		axes = "xy"
+	end
+	local oldAxes = self.SizeAxes
+	if oldAxes ~= axes then
+		self.SizeAxes = axes
+		updateAbsoluteSize(self)
+		if self.Parent ~= nil and self.Parent ~= module then
+			updateAbsolutePosition(self, self.Parent.AbsolutePosition.x, self.Parent.AbsolutePosition.y, self.Parent.AbsoluteSize.x, self.Parent.AbsoluteSize.y)
+		else
+			updateAbsolutePosition(self) -- TODO: THIS LINE OF CODE IS NOT TESTED
+		end
+		module.Changed = true
+	end
+end
+
 
 -- reposition the UI element to be placed to one of the sides of the given UI element (Parents should have the same Center property to make this work)
 -- side: "left" / "right" / "top" / "above" / "bottom" / "under"
@@ -1989,6 +2046,7 @@ local function newBase(w, h, col)
 			["Scale"] = vector2(sw, sh);
 			["Offset"] = vector2(ow, oh);
 		};
+		["SizeAxes"] = "xy"; -- xy, xx, yy. Determines which axes Size.Scale uses
 		["Tags"] = {}; -- list of tags assigned to this object
 		["TextBlock"] = nil;
 		["VisualOnly"] = false; -- if true, no events are registered and the object can never be focused, so :at() will ignore the object

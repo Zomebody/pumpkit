@@ -717,6 +717,51 @@ table.insert(content, {
 	end
 })
 
+
+table.insert(content, {
+	["Type"] = "Method";
+	["Name"] = "setSizeAxes";
+	["Arguments"] = {"xx/xy/yy"};
+	["Description"] = "Sets how the object's Size.Scale interacts with the X-axis and Y-axis.\n\nThe default (xy) means the object's width is relative to the x-axis and height is relative to the y-axis. 'xx' means both the width and height are relative to the x-axis. 'yy' means both the width and height are relative to the y-axis.";
+	["Demo"] = function()
+		local Frame = ui.newFrame(490, 100, color(0, 0, 0))
+
+		local ContainerXY = ui.newFrame(150, 80, color(1, 1, 1))
+		ContainerXY:reposition(10, 10)
+		Frame:addChild(ContainerXY)
+		local ContainerXX = ui.newFrame(150, 80, color(1, 1, 1))
+		ContainerXX:reposition(170, 10)
+		Frame:addChild(ContainerXX)
+		local ContainerYY = ui.newFrame(150, 80, color(1, 1, 1))
+		ContainerYY:reposition(330, 10)
+		Frame:addChild(ContainerYY)
+
+		local FrameXY = ui.newFrame(vector2(0.8, 0.4), vector2(0, 0), color(0.8, 0.3, 0.3))
+		FrameXY:alignX("center")
+		FrameXY:alignY("center")
+		FrameXY:setSizeAxes("xy")
+		FrameXY:setText("FiraCode.ttf", "x=0.8 y=0.4 axes=xy", 10, 3)
+		ContainerXY:addChild(FrameXY)
+
+		local FrameXX = ui.newFrame(vector2(0.8, 0.4), vector2(0, 0), color(0.3, 0.8, 0.3))
+		FrameXX:alignX("center")
+		FrameXX:alignY("center")
+		FrameXX:setSizeAxes("xx")
+		FrameXX:setText("FiraCode.ttf", "x=0.8 y=0.4 axes=xx", 10, 3)
+		ContainerXX:addChild(FrameXX)
+
+		local FrameYY = ui.newFrame(vector2(0.8, 0.4), vector2(0, 0), color(0.3, 0.3, 0.8))
+		FrameYY:alignX("center")
+		FrameYY:alignY("center")
+		FrameYY:setSizeAxes("yy")
+		FrameYY:setText("FiraCode.ttf", "x=0.8 y=0.4 axes=yy", 10, 3)
+		ContainerYY:addChild(FrameYY)
+
+		return Frame
+	end
+})
+
+
 table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "shift";
@@ -804,6 +849,13 @@ table.insert(content, {
 		Container:addChild(frameRight)
 		return Container
 	end;
+})
+
+table.insert(content, {
+	["Type"] = "Method";
+	["Name"] = "unparent";
+	["Arguments"] = {};
+	["Description"] = "Sets the parent of the object to nil and also removes the object from the parent's list of Children. This does *not* remove the object.";
 })
 
 table.insert(content, {
