@@ -159,6 +159,13 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Constructor";
+	["Name"] = "__mul";
+	["Arguments"] = {"c1", "c2"};
+	["Description"] = "Returns a new color whose components are the product of each of the given two colors' components.";
+})
+
+table.insert(content, {
+	["Type"] = "Constructor";
 	["Name"] = "__tostring";
 	["Arguments"] = {};
 	["Description"] = "Prints the color in the form (r,g,b) where r, g and b are values from 0 to 255.";

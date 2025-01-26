@@ -376,13 +376,12 @@ end
 
 
 
-function Scene3:setAO(strength, kernelScalar, viewDistanceFactor)
+function Scene3:setAO(strength, kernelScalar)
 	local enabled = strength > 0
 	self.AOEnabled = enabled
 	self.SSAOShader:send("aoStrength", strength)
 	if enabled then
 		self.SSAOShader:send("kernelScalar", kernelScalar)
-		--self.SSAOShader:send("viewDistanceFactor", viewDistanceFactor)
 	end
 end
 
@@ -398,6 +397,7 @@ end
 -- this won't immediately sort the array, which is the point. The idea is that you call this method once per frame
 -- so that over time the array will eventually be sorted from far away meshes to close by meshes.
 -- the order of meshes doesn't matter too much, but preferably you want to draw meshes from back to front to deal with semi-transparency properly
+--[[ -- removed for now because I want to add mesh3:remove() which requires meshes to be sorted correctly
 function Scene3:slowlySortMeshes()
 	if self.Camera3 == nil then
 		return
@@ -420,6 +420,7 @@ function Scene3:slowlySortMeshes()
 		end
 	end
 end
+]]
 
 
 
