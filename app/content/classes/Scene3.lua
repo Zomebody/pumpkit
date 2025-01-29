@@ -213,6 +213,20 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Event";
+	["Name"] = "CameraAttached";
+	["Arguments"] = {"camera3"};
+	["Description"] = "Called when a camera3 has been attached to the scene3.";
+})
+
+table.insert(content, {
+	["Type"] = "Event";
+	["Name"] = "CameraDetached";
+	["Arguments"] = {"camera3"};
+	["Description"] = "Called when a camera3 has been detached from the scene3.";
+})
+
+table.insert(content, {
+	["Type"] = "Event";
 	["Name"] = "Loading";
 	["Arguments"] = {};
 	["Description"] = "Called when the scene3 is set as the world's current scene.";

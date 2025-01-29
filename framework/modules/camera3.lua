@@ -1,10 +1,6 @@
 
 ----------------------------------------------------[[ == BASE OBJECTS == ]]----------------------------------------------------
 
--- camera3 is a top-down camera that rotates using a rotation along the Z-axis, and has a tilt along the local X-axis
-
--- TODO: replace how this works. Instead of 'tilt' and 'rotation' floats, add a rotation vector3
--- keep 'offset'
 -- camera transform is applied in the order: first zoom -> then rotation x -> then rotation y -> then rotation z
 -- whenever the camera's rotation/position changes, calculate a matrix4 which is then sent to the shader
 -- the reason for doing all this is to reduce work-load on the GPU side (since the camera won't be moving every frame!). So now instead of calculating the matrix on the GPU each frame, we simply have it computed already
@@ -16,28 +12,11 @@ local module = {}
 
 local Camera3 = {}
 Camera3.__index = Camera3
-Camera3.__tostring = function(tab) return "{Camera3: " .. tostring(tab.Id) .. "}" end
+Camera3.__tostring = function(tab) return "{Camera3: " .. tostring(tab.Position) .. ", " .. tostring(tab.Rotation) .. "}" end
 
 
 
 ----------------------------------------------------[[ == METHODS == ]]----------------------------------------------------
-
---[[
-
-	properties:
-	- position
-	- yaw
-	- pitch
-	methods:
-	- moveLocal(vector3): relative to the camera's space
-	- moveFlat(vector3): ignores pitch, but not yaw
-	- move(vector3): moves in world space coordinates
-	- set(position, yaw, pitch)
-	- screenToRay(x, y): returns a ray with magnitude 1 in the direction of where you clicked
-	- worldPointToScreen(vector3)
-	- renderScene(scene3)
-
-]]
 
 -- check if an object is a camera3
 local function isCamera3(t)
@@ -94,17 +73,7 @@ function Camera3:set(pos, rot, offset)
 end
 
 
---[[
-function Camera3:moveFlat(vec3)
-	local absX = vec3.x * math.cos(self.Rotation) - vec3.y * math.sin(self.Rotation)
-	local absY = vec3.x * math.sin(self.Rotation) + vec3.y * math.cos(self.Rotation)
-	self.Position = self.Position + vector3(absX, absY, vec3.z)
-	if self.Scene3 ~= nil then
-		self.Scene3.Shader:send("cameraPosition", self.Position:array())
-	end
-end
 
-]]
 function Camera3:pitch(angle)
 	self.Rotation = self.Rotation + vector3(angle, 0, 0)
 	self:updateCameraMatrices()
