@@ -37,14 +37,30 @@ table.insert(content, {
 	["Type"] = "Property";
 	["ValueType"] = "number";
 	["Name"] = "Interval";
-	["Description"] = "The time between each function call. In case of multiple repeats, the interval will remain consistent and not build up any delay.";
+	["Description"] = "The time between each function call. In case of multiple repeats, the interval will remain consistent and not build up any delay - but using task:wait() breaks this guarantee.";
 	["ReadOnly"] = true;
 })
 
 table.insert(content, {
 	["Type"] = "Property";
 	["ValueType"] = "number";
-	["Name"] = "Repeats";
+	["Name"] = "NextRun";
+	["Description"] = "When the stored function will be run next. When task.spawn() is called, the NextRun value is set to the current time plus the delay to delay the execution of the task.";
+	["ReadOnly"] = true;
+})
+
+table.insert(content, {
+	["Type"] = "Property";
+	["ValueType"] = "function";
+	["Name"] = "Routine";
+	["Description"] = "The coroutine that will run the function stored in 'Function'. Coroutines are used so that tasks can yield through task:wait(). When an error occurs in a coroutine it will correctly be returned to the main thread and thrown there.";
+	["ReadOnly"] = true;
+})
+
+table.insert(content, {
+	["Type"] = "Property";
+	["ValueType"] = "number";
+	["Name"] = "Runs";
 	["Description"] = "How often the task is run. Defaults to '1'.";
 	["ReadOnly"] = true;
 })
@@ -60,8 +76,8 @@ table.insert(content, {
 table.insert(content, {
 	["Type"] = "Property";
 	["ValueType"] = "number";
-	["Name"] = "LastRun";
-	["Description"] = "When the Function argument was last called. When task.spawn() is called, the LastRun value is set to the current time minus the delay to delay the execution of the task.";
+	["Name"] = "YieldCount";
+	["Description"] = "How often the execution of the task was halted through calling task:wait(). This property exists to guarantee that tasks without yields are executed at consistent intervals.";
 	["ReadOnly"] = true;
 })
 

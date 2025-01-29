@@ -38,6 +38,20 @@ table.insert(content, {
 })
 
 table.insert(content, {
+	["Type"] = "Header";
+	["Name"] = "Properties";
+	["Description"] = "";
+})
+
+table.insert(content, {
+	["Type"] = "Property";
+	["ValueType"] = "array";
+	["Name"] = "Running";
+	["Description"] = "An array containing task instances that are currently running. This includes tasks that have yielded, as they still need to be evaluated for continuation every frame.";
+	["ReadOnly"] = true;
+})
+
+table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "initialize";
 	["Arguments"] = {};
