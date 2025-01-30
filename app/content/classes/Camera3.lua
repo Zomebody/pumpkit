@@ -75,9 +75,16 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Method";
-	["Name"] = "getTransform";
+	["Name"] = "attach";
+	["Arguments"] = {"scene3"};
+	["Description"] = "Links the camera to a scene3. If the camera is already attached to another scene3, it is detached before this is executed.";
+})
+
+table.insert(content, {
+	["Type"] = "Method";
+	["Name"] = "detach";
 	["Arguments"] = {};
-	["Description"] = "Returns the camera's Transform object. This transform is used when drawing objects in a scene to the screen.";
+	["Description"] = "Unlinks the camera from the scene3 it is attached to. If the camera is attached to another scene3, this method is automatically called.";
 })
 
 table.insert(content, {
@@ -96,6 +103,13 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Method";
+	["Name"] = "offset";
+	["Arguments"] = {"number"};
+	["Description"] = "Adds an additional offset to the camera.";
+})
+
+table.insert(content, {
+	["Type"] = "Method";
 	["Name"] = "on";
 	["Arguments"] = {"eventName", "function"};
 	["Description"] = "Registers a function to be called when the given event triggered. When this method is called multiple times, each function will be called in the same order as they were registered.\n\nReturns a Connection object.";
@@ -106,13 +120,6 @@ table.insert(content, {
 	["Name"] = "pitch";
 	["Arguments"] = {"radians"};
 	["Description"] = "Applies a pitch (rotation along the x-axis) to the camera's Rotation property.";
-})
-
-table.insert(content, {
-	["Type"] = "Method";
-	["Name"] = "detach";
-	["Arguments"] = {};
-	["Description"] = "Unlinks the camera from the scene3 it is attached to. If the camera is attached to another scene3, this method is automatically called.";
 })
 
 table.insert(content, {
@@ -145,23 +152,16 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Method";
-	["Name"] = "yaw";
-	["Arguments"] = {"radians"};
-	["Description"] = "Applies a yaw (rotation along the y-axis) to the camera's Rotation property.";
-})
-
-table.insert(content, {
-	["Type"] = "Method";
-	["Name"] = "offset";
-	["Arguments"] = {"number"};
-	["Description"] = "Adds an additional offset to the camera.";
-})
-
-table.insert(content, {
-	["Type"] = "Method";
 	["Name"] = "updateCameraMatrices";
 	["Arguments"] = {};
 	["Description"] = "FOR INTERNAL USE ONLY. Updates the camera3's Matrix property and sends it over to the shader(s) of the scene3 the camera is attached to.";
+})
+
+table.insert(content, {
+	["Type"] = "Method";
+	["Name"] = "yaw";
+	["Arguments"] = {"radians"};
+	["Description"] = "Applies a yaw (rotation along the y-axis) to the camera's Rotation property.";
 })
 
 
