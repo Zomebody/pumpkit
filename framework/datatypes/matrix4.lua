@@ -180,7 +180,7 @@ end
 function matrix4:toEuler(order)
 	local euler = vector3(0, 0, 0)
 
-	if order == 'xyz' then
+	if order == "xyz" or order == nil then
 		euler.y = math.asin(math.min(math.max(self[9], -1), 1))
 		if math.abs(self[9]) < 0.99999 then
 			euler.x = math.atan2(-self[10], self[11])
@@ -189,7 +189,7 @@ function matrix4:toEuler(order)
 			euler.x = math.atan2(self[7], self[6])
 			euler.z = 0
 		end
-	elseif order == 'yxz' then
+	elseif order == "yxz" then
 		euler.x = math.asin(-math.min(math.max(self[10], -1), 1))
 		if math.abs(self[10]) < 0.99999 then
 			euler.y = math.atan2(self[9], self[11])
@@ -198,7 +198,7 @@ function matrix4:toEuler(order)
 			euler.y = math.atan2(-self[8], self[1])
 			euler.z = 0
 		end
-	elseif order == 'zyx' then
+	elseif order == "zyx" then
 		euler.x = math.asin(math.min(math.max(self[10], -1), 1))
 		if math.abs(self[10]) < 0.99999 then
 			euler.y = math.atan2(-self[9], self[11])
