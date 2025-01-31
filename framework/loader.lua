@@ -1,6 +1,4 @@
 
---local here = ...
---local currentModule = (...):gsub("%.[^%.]+$", "") -- replace a dot followed by any non-dots at the end of the string with nothing
 
 function load()
 	filepath = require("framework.filepath")
@@ -44,52 +42,6 @@ function load()
 	entity = require(filepath("../framework/modules/entity", "."))
 	particles3 = require(filepath("../framework/modules/particles3", "."))
 	network = require(filepath("../framework/modules/network", "."))
-
-
-	--getpath = require("framework.getpath");
-
-	--[[
-	-- data types
-	vector2 = require(getpath(here, "../framework/datatypes/vector2"))
-	vector3 = require(getpath(here, "../framework/datatypes/vector3"))
-	vector4 = require(getpath(here, "../framework/datatypes/vector4"))
-	matrix3 = require(getpath(here, "../framework/datatypes/matrix3"))
-	matrix4 = require(getpath(here, "../framework/datatypes/matrix4"))
-	line2 = require(getpath(here, "../framework/datatypes/line2"))
-	line3 = require(getpath(here, "../framework/datatypes/line3"))
-	polygon = require(getpath(here, "../framework/datatypes/polygon"))
-	triangle = require(getpath(here, "../framework/datatypes/triangle"))
-	bezier = require(getpath(here, "../framework/datatypes/bezier"))
-	color = require(getpath(here, "../framework/datatypes/color"))
-	gradient = require(getpath(here, "../framework/datatypes/gradient"))
-	numbercurve = require(getpath(here, "../framework/datatypes/numbercurve"))
-	range = require(getpath(here, "../framework/datatypes/range"))
-	task = require(getpath(here, "../framework/modules/task"))
-
-	-- data structures
-	quadtree = require(getpath(here, "../framework/modules/quadtree"))
-	navmesh = require(getpath(here, "../framework/modules/navmesh"))
-
-	-- weird stuff
-	tween = require(getpath(here, "../framework/modules/tween"))
-	animation = require(getpath(here, "../framework/modules/animation"))
-	font = require(getpath(here, "../framework/modules/font"))
-	signal = require(getpath(here, "../framework/modules/signal"))
-	callbacks = require(getpath(here, "../framework/modules/callbacks"))
-	printObject = require(getpath(here, "../framework/objectPrinter"))
-	importMesh = require(getpath(here, "../framework/meshimporter"))
-	ui = require(getpath(here, "../framework/modules/ui"))
-
-	-- world stuff
-	world = require(getpath(here, "../framework/modules/world"))
-	scene = require(getpath(here, "../framework/modules/scene"))
-	scene3 = require(getpath(here, "../framework/modules/scene3"))
-	camera = require(getpath(here, "../framework/modules/camera"))
-	camera3 = require(getpath(here, "../framework/modules/camera3"))
-	entity = require(getpath(here, "../framework/modules/entity"))
-	particles3 = require(getpath(here, "../framework/modules/particles3"))
-	network = require(getpath(here, "../framework/modules/network"))
-	]]
 
 	-- initialization
 	callbacks:initialize()
