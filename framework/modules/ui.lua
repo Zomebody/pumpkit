@@ -3,12 +3,7 @@
 
 local initialized = false
 local connection = require("framework.connection")
-local getpath = require("framework.getpath")
---local path = ... -- path is now a string representing the path to the current directory
---print(path) -- framework.ui
---local vector = require(getpath(..., "../datatypes/vector"))
---local color = require(getpath(..., "../datatypes/color"))
-local textblock = require(getpath(..., "textblock"))
+local textblock = require(filepath("./textblock", "."))
 
 
 

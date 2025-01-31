@@ -1,7 +1,4 @@
 
-local getpath = require("framework.getpath")
-local vector2 = require(getpath(..., "vector2"))
-
 local module = {}
 -- create the module
 local bezier = {}

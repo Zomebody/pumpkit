@@ -1,4 +1,4 @@
-local here = ...
+
 local loader = require("framework.loader")
 
 local addToPage
@@ -52,8 +52,8 @@ local wx, wy, ww, wh = love.window.getSafeArea()
 
 function love.load()
 	loader()
-	addToPage = require(getpath(here, "app/append_page"))
-	createDropdown = require(getpath(here, "app/create_dropdown"))
+	addToPage = require(filepath("app/append_page", "."))
+	createDropdown = require(filepath("app/create_dropdown", "."))
 	Colors = require("app.color_palette")
 	
 	love.window.setTitle("UI Documentation")

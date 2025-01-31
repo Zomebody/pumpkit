@@ -1,9 +1,54 @@
 
-local here = ...
+--local here = ...
+--local currentModule = (...):gsub("%.[^%.]+$", "") -- replace a dot followed by any non-dots at the end of the string with nothing
 
 function load()
-	getpath = require("framework.getpath");
+	filepath = require("framework.filepath")
 
+	vector2 = require(filepath("../framework/datatypes/vector2", "."))
+	vector3 = require(filepath("../framework/datatypes/vector3", "."))
+	vector4 = require(filepath("../framework/datatypes/vector4", "."))
+	matrix3 = require(filepath("../framework/datatypes/matrix3", "."))
+	matrix4 = require(filepath("../framework/datatypes/matrix4", "."))
+	line2 = require(filepath("../framework/datatypes/line2", "."))
+	line3 = require(filepath("../framework/datatypes/line3", "."))
+	polygon = require(filepath("../framework/datatypes/polygon", "."))
+	triangle = require(filepath("../framework/datatypes/triangle", "."))
+	bezier = require(filepath("../framework/datatypes/bezier", "."))
+	color = require(filepath("../framework/datatypes/color", "."))
+	gradient = require(filepath("../framework/datatypes/gradient", "."))
+	numbercurve = require(filepath("../framework/datatypes/numbercurve", "."))
+	range = require(filepath("../framework/datatypes/range", "."))
+	task = require(filepath("../framework/modules/task", "."))
+
+	-- data structures
+	quadtree = require(filepath("../framework/modules/quadtree", "."))
+	navmesh = require(filepath("../framework/modules/navmesh", "."))
+
+	-- weird stuff
+	tween = require(filepath("../framework/modules/tween", "."))
+	animation = require(filepath("../framework/modules/animation", "."))
+	font = require(filepath("../framework/modules/font", "."))
+	signal = require(filepath("../framework/modules/signal", "."))
+	callbacks = require(filepath("../framework/modules/callbacks", "."))
+	printObject = require(filepath("../framework/objectPrinter", "."))
+	importMesh = require(filepath("../framework/meshimporter", "."))
+	ui = require(filepath("../framework/modules/ui", "."))
+
+	-- world stuff
+	world = require(filepath("../framework/modules/world", "."))
+	scene = require(filepath("../framework/modules/scene", "."))
+	scene3 = require(filepath("../framework/modules/scene3", "."))
+	camera = require(filepath("../framework/modules/camera", "."))
+	camera3 = require(filepath("../framework/modules/camera3", "."))
+	entity = require(filepath("../framework/modules/entity", "."))
+	particles3 = require(filepath("../framework/modules/particles3", "."))
+	network = require(filepath("../framework/modules/network", "."))
+
+
+	--getpath = require("framework.getpath");
+
+	--[[
 	-- data types
 	vector2 = require(getpath(here, "../framework/datatypes/vector2"))
 	vector3 = require(getpath(here, "../framework/datatypes/vector3"))
@@ -44,6 +89,7 @@ function load()
 	entity = require(getpath(here, "../framework/modules/entity"))
 	particles3 = require(getpath(here, "../framework/modules/particles3"))
 	network = require(getpath(here, "../framework/modules/network"))
+	]]
 
 	-- initialization
 	callbacks:initialize()

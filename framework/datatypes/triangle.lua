@@ -1,8 +1,4 @@
 
-local getpath = require("framework.getpath")
-local vector2 = require(getpath(..., "vector2"))
-local line2 = require(getpath(..., "line2"))
-
 local module = {}
 
 local triangle = {}

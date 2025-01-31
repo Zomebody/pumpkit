@@ -1,5 +1,5 @@
 
-local Colors = require(getpath("", "app/color_palette"))
+local Colors = require(filepath("./color_palette", "."))
 
 local defaultFont = "LieraSansMedium.ttf"
 

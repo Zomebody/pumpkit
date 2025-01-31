@@ -1,11 +1,10 @@
 
 ----------------------------------------------------[[ == IMPORTS == ]]----------------------------------------------------
-
-local getpath = require("framework.getpath")
+--[[
 local fontDirectory = "framework/fonts/"
-local font = require(getpath(..., "font"))
-local color = require(getpath(..., "../datatypes/color"))
-
+local font = require(filepath(..., "font"))
+local color = require(filepath(..., "../datatypes/color"))
+]]
 
 
 ----------------------------------------------------[[ == MODULE == ]]----------------------------------------------------
