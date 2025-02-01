@@ -92,6 +92,23 @@ function line3:getCenter()
 end
 
 
+-- returns the vector going from the line's start to its end
+function line3:toVector3()
+	return self.to - self.from
+end
+
+-- return coordinates in array form
+function line3:array()
+	return {self.from.x, self.from.y, self.from.z, self.to.x, self.to.y, self.to.z}
+end
+
+
+-- return coordinates as a tuple
+function line3:unpack()
+	return self.from.x, self.from.y, self.from.z, self.to.x, self.to.y, self.to.z
+end
+
+
 
 -- meta function to check if line3s have the same values
 function line3.__eq(a,b)

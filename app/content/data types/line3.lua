@@ -41,9 +41,16 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Method";
+	["Name"] = "array";
+	["Arguments"] = {};
+	["Description"] = "Returns an array representing the line3, as {x1,y1,z1,x2,y2,z1}.";
+})
+
+table.insert(content, {
+	["Type"] = "Method";
 	["Name"] = "clone";
 	["Arguments"] = {};
-	["Description"] = "Creates a new line2 using the same parameters as the current line2.";
+	["Description"] = "Creates a new line3 using the same parameters as the current line2.";
 })
 
 table.insert(content, {
@@ -73,6 +80,20 @@ table.insert(content, {
 	["Name"] = "intersectSphere";
 	["Arguments"] = {"pos", "radius"};
 	["Description"] = "Checks if the line3 intersects a sphere located at 'pos' with a radius of 'radius' units. Returns true if so, otherwise false.";
+})
+
+table.insert(content, {
+	["Type"] = "Method";
+	["Name"] = "toVector3";
+	["Arguments"] = {};
+	["Description"] = "Returns a new vector3 that is the end point minus the starting point.";
+})
+
+table.insert(content, {
+	["Type"] = "Method";
+	["Name"] = "unpack";
+	["Arguments"] = {};
+	["Description"] = "The same as the :array() method, but this returns a tuple as opposed to a table.";
 })
 
 
