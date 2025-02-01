@@ -50,7 +50,7 @@ table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "clone";
 	["Arguments"] = {};
-	["Description"] = "Creates a new line3 using the same parameters as the current line2.";
+	["Description"] = "Creates a new line3 using the same parameters as the current line3.";
 })
 
 table.insert(content, {
