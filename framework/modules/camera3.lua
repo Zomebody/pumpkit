@@ -90,8 +90,8 @@ function Camera3:roll(angle)
 end
 
 
-function Camera3:offset(amount)
-	self.Offset = self.Offset + amount
+function Camera3:setOffset(offset)
+	self.Offset = offset
 	if self.Scene3 ~= nil then
 		self:updateCameraMatrices()
 	end

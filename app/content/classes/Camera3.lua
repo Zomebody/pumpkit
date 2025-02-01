@@ -103,13 +103,6 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Method";
-	["Name"] = "offset";
-	["Arguments"] = {"number"};
-	["Description"] = "Adds an additional offset to the camera.";
-})
-
-table.insert(content, {
-	["Type"] = "Method";
 	["Name"] = "on";
 	["Arguments"] = {"eventName", "function"};
 	["Description"] = "Registers a function to be called when the given event triggered. When this method is called multiple times, each function will be called in the same order as they were registered.\n\nReturns a Connection object.";
@@ -148,6 +141,13 @@ table.insert(content, {
 	["Name"] = "setFOV";
 	["Arguments"] = {"fov"};
 	["Description"] = "Sets the field of view of the camera in radians.";
+})
+
+table.insert(content, {
+	["Type"] = "Method";
+	["Name"] = "setOffset";
+	["Arguments"] = {"number"};
+	["Description"] = "Sets the offset of the camera3 to the given amount.";
 })
 
 table.insert(content, {
