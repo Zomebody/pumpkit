@@ -22,7 +22,8 @@ function load()
 	-- data structures
 	quadtree = require(filepath("../framework/modules/quadtree", "."))
 	navmesh = require(filepath("../framework/modules/navmesh", "."))
-
+	floodmap = require(filepath("../framework/modules/floodmap", "."))
+	
 	-- weird stuff
 	tween = require(filepath("../framework/modules/tween", "."))
 	animation = require(filepath("../framework/modules/animation", "."))
