@@ -52,6 +52,27 @@ Scene3.__tostring = function(tab) return "{Scene3: " .. tostring(tab.Id) .. "}" 
 
 
 
+----------------------------------------------------[[ == HELPERS == ]]----------------------------------------------------
+
+local function findObjectInOrderedArray(Obj, tbl)
+	local l, r = 1, #tbl
+	while l ~= r do
+		local index = math.floor((l + r) / 2)
+		if tbl[index] == Obj then
+			return index
+		else
+			if tbl[index].Id < Obj.Id then
+				l = math.min(r, index + 1)
+			else
+				r = math.max(l, index - 1)
+			end
+		end
+	end
+	return l
+end
+
+
+
 ----------------------------------------------------[[ == FUNCTIONS == ]]----------------------------------------------------
 
 -- check if an object is a scene
@@ -424,6 +445,22 @@ end
 
 
 
+function Scene3:attachBasicMesh(mesh)
+	assert(mesh3.isMesh3(mesh), "Scene3:attachBasicMesh(mesh) requires argument 'mesh' to be a mesh3.")
+	if mesh.Scene ~= nil then
+		mesh:detach()
+	end
+
+	table.insert(self.BasicMeshes, mesh)
+	mesh.Scene = self
+
+	if self.Events.MeshAdded then
+		connection.doEvents(self.Events.MeshAdded, mesh)
+	end
+	return mesh
+	
+end
+--[[
 function Scene3:addBasicMesh(mesh, position, rotation, scale, col, uvVelocity, texScale) -- if texScale is nil, IsPlanar is false, else, IsPlanar is true and TextureScale becomes texScale
 	assert(vector3.isVector3(position), "Scene3:addBasicMesh(mesh, position, rotation, scale, col, uvVelocity) requires argument 'position' to be a vector3")
 	local Mesh = {
@@ -439,8 +476,12 @@ function Scene3:addBasicMesh(mesh, position, rotation, scale, col, uvVelocity, t
 		["Transparency"] = 0;
 	}
 	table.insert(self.BasicMeshes, Mesh)
+	if self.Events.MeshAdded then
+		connection.doEvents(self.Events.MeshAdded, Mesh)
+	end
 	return Mesh
 end
+]]
 
 
 
@@ -521,6 +562,20 @@ function Scene3:addParticles(particles)
 	table.insert(self.Particles, particles)
 end
 
+
+
+function Scene3:detachBasicMesh(meshOrSlot)
+	if type(meshOrSlot) ~= "number" then -- object was passed
+		assert(mesh3.isMesh3(meshOrSlot), "Scene3:detachBasicMesh(meshOrSlot) requires argument 'meshOrSlot' to be either a mesh3 or an integer")
+		meshOrSlot = findObjectInOrderedArray(meshOrSlot, self.BasicMeshes)
+	end
+	local Item = table.remove(self.BasicMeshes, meshOrSlot)
+	if Item ~= nil then
+		Item.Scene = nil
+		return true
+	end
+	return false
+end
 
 
 -- eventName is the name of the event to call. All event name strings are accepted, but not all of them may trigger

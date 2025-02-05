@@ -2,6 +2,7 @@
 
 function load()
 	filepath = require("framework.filepath")
+	connection = require("framework.connection")
 
 	vector2 = require(filepath("../framework/datatypes/vector2", "."))
 	vector3 = require(filepath("../framework/datatypes/vector3", "."))
@@ -40,6 +41,7 @@ function load()
 	scene3 = require(filepath("../framework/modules/scene3", "."))
 	camera = require(filepath("../framework/modules/camera", "."))
 	camera3 = require(filepath("../framework/modules/camera3", "."))
+	mesh3 = require(filepath("../framework/modules/mesh3", "."))
 	entity = require(filepath("../framework/modules/entity", "."))
 	particles3 = require(filepath("../framework/modules/particles3", "."))
 	network = require(filepath("../framework/modules/network", "."))
