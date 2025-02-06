@@ -77,50 +77,34 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Property";
-	["Name"] = "BucketSize";
+	["Name"] = "Connections";
+	["ValueType"] = "dictionary";
+	["ReadOnly"] = true;
+	["Description"] = "FOR INTERNAL USE ONLY. A dictionary that stores which vectors in the Vectors array are connected to each other. Keys are node numbers (the index in the Vectors array) and values are arrays with node ids that the given key is connected to.";
+})
+
+table.insert(content, {
+	["Type"] = "Property";
+	["Name"] = "Margin";
 	["ValueType"] = "number";
 	["ReadOnly"] = true;
-	["Description"] = "The number of items that may be stored in the quadtree.";
+	["Description"] = "The margin supplied when creating the navmesh. Margins are used during pathfinding to prevent floating point imprecision from ruling out more direct paths.";
 })
 
 table.insert(content, {
 	["Type"] = "Property";
-	["Name"] = "Items";
+	["Name"] = "Quadtree";
+	["ValueType"] = "quadtree";
+	["ReadOnly"] = true;
+	["Description"] = "The quadtree used internally for faster look-ups when checking if a given start and end-point falls within the navmesh.";
+})
+
+table.insert(content, {
+	["Type"] = "Property";
+	["Name"] = "Vectors";
 	["ValueType"] = "array";
 	["ReadOnly"] = true;
-	["Description"] = "An array of items that are stored inside the current quadtree cell. Each item in the list has an 'Item' property which is the stored object, a 'Position' vector2 and a 'Radius' value.";
-})
-
-table.insert(content, {
-	["Type"] = "Property";
-	["Name"] = "MaxSplits";
-	["ValueType"] = "number";
-	["ReadOnly"] = true;
-	["Description"] = "The maximum number of splits which the current quadtree allows. When a quadtree is split, its children will have a MaxSplits value of 1 less than their parent quadtree.";
-})
-
-table.insert(content, {
-	["Type"] = "Property";
-	["Name"] = "Position";
-	["ValueType"] = "vector2";
-	["ReadOnly"] = true;
-	["Description"] = "The top-left position of the current quadtree.";
-})
-
-table.insert(content, {
-	["Type"] = "Property";
-	["Name"] = "Size";
-	["ValueType"] = "vector2";
-	["ReadOnly"] = true;
-	["Description"] = "The width and height of the current quadtree.";
-})
-
-table.insert(content, {
-	["Type"] = "Property";
-	["Name"] = "Splits";
-	["ValueType"] = "array";
-	["ReadOnly"] = true;
-	["Description"] = "An array with child quadtrees. This array always contains either 0 items or 4 items depending on if the quadtree has been split or not.";
+	["Description"] = "FOR INTERNAL USE ONLY. An array of vector2s that make up the navmesh.";
 })
 
 table.insert(content, {
