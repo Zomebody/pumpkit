@@ -361,14 +361,14 @@ void effect() {
 			// diffuse shading
 			float diffuseFactor = max(dot(fragWorldNormal, lightDir), 0.0);
 			vec3 light = lightColors[i] * lightStrengths[i] * attenuation;
-			float diffStrength = diffuseStrength * (1.0 - meshBrightness); // if a mesh is fully bright, diffuse strength becomes 0 so that it has no efect
-			lighting += light * ((diffuseFactor * diffStrength) + (1.0 - diffStrength)); // if diffStrength==0, just add the color, otherwise, add based on angle between surface and light direction
+			//float diffStrength = diffuseStrength * (1.0 - meshBrightness); // if a mesh is fully bright, diffuse strength becomes 0 so that it has no efect
+			lighting += light * ((diffuseFactor * diffuseStrength) + (1.0 - diffuseStrength)); // if diffStrength==0, just add the color, otherwise, add based on angle between surface and light direction
 		}
 	}
 
 	
 	//return texColor * color * vec4(lighting.x, lighting.y, lighting.z, 1.0);
-	love_Canvases[0] = texColor * color * vec4(lighting.x, lighting.y, lighting.z, 1.0);
+	love_Canvases[0] = texColor * color * (vec4(lighting.x, lighting.y, lighting.z, 1.0) * (1.0 - meshBrightness) + vec4(1.0, 1.0, 1.0, 1.0) * meshBrightness);
 	
 
 }
