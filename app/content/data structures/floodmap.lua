@@ -11,6 +11,25 @@ table.insert(content, {
 	["Description"] = "A floodmap is a 2d tile-map suited for flood-filling purposes. It supports setting walls and weights, and filling the map at any point and returning any paths.";
 })
 
+table.insert(content, {
+	["Type"] = "Header";
+	["Name"] = "Constructors";
+	["Description"] = "";
+})
+
+table.insert(content, {
+	["Type"] = "Constructor";
+	["Name"] = "new";
+	["Arguments"] = {"width", "height"};
+	["Description"] = "Creates a new floodmap of the given size.";
+})
+
+table.insert(content, {
+	["Type"] = "Constructor";
+	["Name"] = "fromImage";
+	["Arguments"] = {"pathToImage"};
+	["Description"] = "Creates a new floodmap where the width equals the image's width and the height equals the image's height. A tile is walkable if a pixel's red component is > 0.5. Otherwise, it's a wall.";
+})
 
 table.insert(content, {
 	["Type"] = "Header";
