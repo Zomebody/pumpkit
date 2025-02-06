@@ -132,12 +132,12 @@ function navmesh:pathfind(from, to, epsilon)
 	end
 
 	-- find the triangle you're ending up in
-	local endTriangles = self.Quadtree:getInRange(to, self.Margin + epsilon) -- TODO: add epsilon to margin
+	local endTriangles = self.Quadtree:getInRange(to, self.Margin + epsilon)
 	local endTriangle = nil
 	closestDistance = math.huge
 	for i = 1, #endTriangles do
 		local d = endTriangles[i]:dist(to)
-		if d < closestDistance and d <= epsilon then -- TODO: replace encloses with :dist() and check if distance < epsilon
+		if d < closestDistance and d <= epsilon then
 			closestDistance = d
 			endTriangle = endTriangles[i]
 		end
@@ -197,7 +197,7 @@ function navmesh:pathfind(from, to, epsilon)
 	gScore[indexStart] = 0
 	fScore[indexStart] = self.Vectors[indexStart]:dist(self.Vectors[indexEnd])
 
-	-- A-star, implemented with the help of some ChatGPT
+	-- A-star implementation
 	while #openSet > 0 do
 		local current = nil
 		local currentScore = math.huge
@@ -223,7 +223,7 @@ function navmesh:pathfind(from, to, epsilon)
 				totalPath[i] = self.Vectors[node] -- ... a double ]] bracket here! :)
 			end
 
-			-- also, don't forget to remove the 6 connections we earlier to the graph
+			-- also, don't forget to remove the 6 connections we added earlier to the graph
 			self.Connections[indexEnd] = nil
 			self.Connections[indexStart] = nil
 			self.Vectors[indexEnd] = nil
@@ -319,7 +319,7 @@ function navmesh:pathfind(from, to, epsilon)
 	end
 
 
-	-- even if no path isfound, remove the 6 connections we added
+	-- even if no path is found, remove the 6 connections we added
 	self.Connections[indexEnd] = nil
 	self.Connections[indexStart] = nil
 	self.Vectors[indexEnd] = nil

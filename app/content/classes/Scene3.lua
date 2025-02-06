@@ -115,13 +115,6 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Method";
-	["Name"] = "addBasicMesh";
-	["Arguments"] = {"mesh3"};
-	["Description"] = "Adds a mesh3 instance to the scene's list of meshes that will be drawn. Each mesh takes up one draw call.";
-})
-
-table.insert(content, {
-	["Type"] = "Method";
 	["Name"] = "addInstancedMesh";
 	["Arguments"] = {"mesh", "positions", "rotations", "scales", "colors", "texScale"};
 	["Description"] = "Adds a Love2d mesh to the scene that uses mesh instancing to draw multiple copies and different locations with different properties. Arguments 'positions', 'rotations', 'scales' and 'colors' are all arrays of equal length.\n- mesh: The Love2d mesh object using a specific format that is initialized by the loadMesh() method.\n-positions: array of vector3s.\nrotations: array of vector3s describing the rotation of the mesh in euler angles XYZ.\n- scales: array of vector3s.\n- colors: array of color datatypes.\n- texScale: a number representing the scale of the triplanar projection on the mesh's texture. If 'nil', the mesh texture is applied using UV-coordinates instead.";
@@ -139,6 +132,20 @@ table.insert(content, {
 	["Name"] = "applyAmbientOcclusion";
 	["Arguments"] = {};
 	["Description"] = "FOR INTERNAL USE ONLY. This will apply ambient occlusion to the canvas that is currently being prepared for rendering.";
+})
+
+table.insert(content, {
+	["Type"] = "Method";
+	["Name"] = "attachBasicMesh";
+	["Arguments"] = {"mesh3"};
+	["Description"] = "Adds a mesh3 instance to the scene's list of meshes that will be drawn. Each mesh takes up one draw call. A mesh cannot be added multiple times. If the mesh is already attached to a scene, it is first detached.";
+})
+
+table.insert(content, {
+	["Type"] = "Method";
+	["Name"] = "detachBasicMesh";
+	["Arguments"] = {"mesh3"};
+	["Description"] = "Removes a basic mesh3 from the scene's list of meshes. This does not destroy the mesh, so they can be added back later.";
 })
 
 table.insert(content, {
@@ -230,6 +237,20 @@ table.insert(content, {
 	["Name"] = "Loading";
 	["Arguments"] = {};
 	["Description"] = "Called when the scene3 is set as the world's current scene.";
+})
+
+table.insert(content, {
+	["Type"] = "Event";
+	["Name"] = "MeshAttached";
+	["Arguments"] = {"mesh3"};
+	["Description"] = "Called when a basic mesh is added to the scene, returns the mesh3 that was attached.";
+})
+
+table.insert(content, {
+	["Type"] = "Event";
+	["Name"] = "MeshDetached";
+	["Arguments"] = {"mesh3"};
+	["Description"] = "Called when a basic mesh is detached from the scene, returns the mesh3 that was detached.";
 })
 
 table.insert(content, {
