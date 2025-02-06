@@ -110,7 +110,7 @@ table.insert(content, {
 table.insert(content, {
 	["Type"] = "Header";
 	["Name"] = "Methods";
-	["Description"] = "Note that these are the methods of a quadtree, not of the module creating the quadtrees!";
+	["Description"] = "";
 })
 
 table.insert(content, {
