@@ -72,6 +72,9 @@ function Mesh3:clone()
 	local Mesh = new(self.Mesh, self.Position, self.Rotation, self.Scale, self.Color)
 	Mesh.UVVelocity = vector2(self.UVVelocity)
 	Mesh.IsTriplanar = self.IsTriplanar
+	Mesh.TextureScale = self.TextureScale
+	Mesh.Transparency = self.Transparency
+	Mesh.Brightness = self.Brightness
 	-- keep the scene nil
 	return Mesh
 end
@@ -110,6 +113,7 @@ local function new(meshRef, position, rotation, scale, col)
 		["Transparency"] = 0;
 		["UVVelocity"] = vector2(0, 0);
 		["IsTriplanar"] = false;
+		["TextureScale"] = 1;
 		["Scene"] = nil;
 	}
 

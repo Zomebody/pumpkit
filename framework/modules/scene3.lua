@@ -454,8 +454,8 @@ function Scene3:attachBasicMesh(mesh)
 	table.insert(self.BasicMeshes, mesh)
 	mesh.Scene = self
 
-	if self.Events.MeshAdded then
-		connection.doEvents(self.Events.MeshAdded, mesh)
+	if self.Events.MeshAttached then
+		connection.doEvents(self.Events.MeshAttached, mesh)
 	end
 	return mesh
 	
@@ -572,6 +572,11 @@ function Scene3:detachBasicMesh(meshOrSlot)
 	local Item = table.remove(self.BasicMeshes, meshOrSlot)
 	if Item ~= nil then
 		Item.Scene = nil
+
+		if self.Events.MeshDetached then
+			connection.doEvents(self.Events.MeshDetached, mesh)
+		end
+
 		return true
 	end
 	return false
