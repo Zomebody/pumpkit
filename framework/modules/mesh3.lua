@@ -95,10 +95,10 @@ end
 ----------------------------------------------------[[ == OBJECT CREATION == ]]----------------------------------------------------
 
 local function new(meshRef, position, rotation, scale, col)
-	assert(type(position) == nil or vector3.isVector3(position), "mesh3.new(meshRef, position, rotation, scale, col) requires argument 'position' to be nil or a vector3.")
-	assert(type(rotation) == nil or vector3.isVector3(rotation), "mesh3.new(meshRef, rotation, rotation, scale, col) requires argument 'rotation' to be nil or a vector3.")
-	assert(type(scale) == nil or vector3.isVector3(scale), "mesh3.new(meshRef, position, rotation, scale, col) requires argument 'scale' to be nil or a vector3.")
-	assert(type(col) == nil or color.isColor(col), "mesh3.new(meshRef, position, rotation, scale, col) requires argument 'col' to be nil or a color.")
+	assert(position == nil or vector3.isVector3(position), "mesh3.new(meshRef, position, rotation, scale, col) requires argument 'position' to be nil or a vector3.")
+	assert(rotation == nil or vector3.isVector3(rotation), "mesh3.new(meshRef, position, rotation, scale, col) requires argument 'rotation' to be nil or a vector3.")
+	assert(scale == nil or vector3.isVector3(scale), "mesh3.new(meshRef, position, rotation, scale, col) requires argument 'scale' to be nil or a vector3.")
+	assert(col == nil or color.isColor(col), "mesh3.new(meshRef, position, rotation, scale, col) requires argument 'col' to be nil or a color.")
 
 	module.TotalCreated = module.TotalCreated + 1
 
