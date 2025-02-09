@@ -147,9 +147,10 @@ function navmesh:pathfind(from, to, epsilon)
 		return nil
 	end
 
-	if startTriangle == endTriangle then
+	if startTriangle == endTriangle and startTriangle:encloses(from) and endTriangle:encloses(to) then
 		return {vector2(from), vector2(to)} -- if the starting point and end point fall within the same triangle, there must be a direct line of sight!
 	end
+	
 
 	-- for the starting point and the end point, create a new node which you connect to the three corners of the triangle you are inside of!
 	local indexStart = #self.Vectors + 1
