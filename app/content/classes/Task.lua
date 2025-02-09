@@ -90,9 +90,9 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Method";
-	["Name"] = "resume";
+	["Name"] = "run";
 	["Arguments"] = {};
-	["Description"] = "Resumes the task and sets its \"Active\" property to true.";
+	["Description"] = "Runs the task and sets its \"Active\" property to true.";
 })
 
 table.insert(content, {
