@@ -124,7 +124,7 @@ table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "pathfind";
 	["Arguments"] = {"from", "to", "epsilon"};
-	["Description"] = "Return an array of vector2s that form a path from the vector2 'from' to the vector2 'to'. Epsilon is a number that allows you to specify a starting and end point that fall a certain distance off the path. If these points fall out of bounds, the returned path will have a starting and/or end point as close to these locations as possible.";
+	["Description"] = "Return an array of vector2s that form a path from the vector2 'from' to the vector2 'to'. If no path is found it returns nil.\n\nEpsilon is a number that allows you to specify a starting and end point that fall a certain distance off the path. If these points fall out of bounds, the returned path will have a starting and/or end point as close to these locations as possible.";
 })
 
 

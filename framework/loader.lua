@@ -32,8 +32,12 @@ function load()
 	signal = require(filepath("../framework/modules/signal", "."))
 	callbacks = require(filepath("../framework/modules/callbacks", "."))
 	printObject = require(filepath("../framework/objectPrinter", "."))
-	importMesh = require(filepath("../framework/meshimporter", "."))
 	ui = require(filepath("../framework/modules/ui", "."))
+
+	-- importers
+	importMesh = require(filepath("../framework/meshimporter", "."))
+	importNavmesh = require(filepath("../framework/navimporter", "."))
+	importCollision = require(filepath("../framework/colimporter", "."))
 
 	-- world stuff
 	world = require(filepath("../framework/modules/world", "."))
