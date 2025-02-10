@@ -1815,27 +1815,76 @@ function SlicedFrame:draw()
 
 		love.graphics.setColor(r, g, b, a*self.Opacity)
 
-		local x2 = self.TopLeftSlice.x * self.CornerScale
-		local x3 = self.AbsoluteSize.x - (imgWidth - self.BottomRightSlice.x) * self.CornerScale
-		local y2 = self.TopLeftSlice.y * self.CornerScale
-		local y3 = self.AbsoluteSize.y - (imgHeight - self.BottomRightSlice.y) * self.CornerScale
+		local absSize = self.AbsoluteSize
 
-		local stretchXMultiplier = (self.AbsoluteSize.x - self.BorderWidth * 2 - self.TopLeftSlice.x * self.CornerScale - (imgWidth - self.BottomRightSlice.x) * self.CornerScale) / (self.BottomRightSlice.x - self.TopLeftSlice.x)
-		local stretchYMultiplier = (self.AbsoluteSize.y - self.BorderWidth * 2 - self.TopLeftSlice.y * self.CornerScale - (imgHeight - self.BottomRightSlice.y) * self.CornerScale) / (self.BottomRightSlice.y - self.TopLeftSlice.y)
+		-- coordinates relative to the top-left corner & size relative to the element's size rather than the image size. Used to calculate scaling multipliers
+		local x0 = self.BorderWidth
+		local x1 = self.BorderWidth + self.TopLeftSlice.x * self.CornerScale
+		local x2 = absSize.x - self.BorderWidth - (imgWidth - self.BottomRightSlice.x) * self.CornerScale
+		local x3 = absSize.x - self.BorderWidth
+		local y0 = self.BorderWidth
+		local y1 = self.BorderWidth + self.TopLeftSlice.y * self.CornerScale
+		local y2 = absSize.y - self.BorderWidth - (imgHeight - self.BottomRightSlice.y) * self.CornerScale
+		local y3 = absSize.y - self.BorderWidth
+
+		-- If corners are too large to fit in the image, downscale the corners
+		if x1 > x2 then
+			x1 = (x1 + x2) / 2
+			x2 = x1
+		end
+		if y1 > y2 then
+			y1 = (y1 + y2) / 2
+			y2 = y1
+		end
+
+		local stretchXLeft = (x1 - x0) / self.TopLeftSlice.x
+		local stretchXMid = (x2 - x1) / (self.BottomRightSlice.x - self.TopLeftSlice.x)
+		local stretchXRight = (x3 - x2) / (imgWidth - self.BottomRightSlice.x)
+		local stretchYTop = (y1 - y0) / self.TopLeftSlice.y
+		local stretchYMid = (y2 - y1) / (self.BottomRightSlice.y - self.TopLeftSlice.y)
+		local stretchYBottom = (y3 - y2) / (imgHeight - self.BottomRightSlice.y)
+
+		local refImage = self.ReferenceImage
+
+		-- draw(img, quad, x, y, 0, sx, sy)
 
 		addCornerStencil(self)
 		-- in reading order, top row
-		love.graphics.draw(self.ReferenceImage, self.ImageSlices[1], -self.AbsoluteSize.x * self.Pivot.x + self.BorderWidth, -self.AbsoluteSize.y * self.Pivot.y + self.BorderWidth, 0, self.CornerScale, self.CornerScale)
-		love.graphics.draw(self.ReferenceImage, self.ImageSlices[2], -self.AbsoluteSize.x * self.Pivot.x + self.BorderWidth + x2, -self.AbsoluteSize.y * self.Pivot.y + self.BorderWidth, 0, stretchXMultiplier, self.CornerScale)
-		love.graphics.draw(self.ReferenceImage, self.ImageSlices[3], -self.AbsoluteSize.x * self.Pivot.x - self.BorderWidth + x3, -self.AbsoluteSize.y * self.Pivot.y + self.BorderWidth, 0, self.CornerScale, self.CornerScale)
+		if stretchYTop > 0 then
+			if stretchXLeft > 0 then
+				love.graphics.draw(refImage, self.ImageSlices[1], -absSize.x * self.Pivot.x + x0, -absSize.y * self.Pivot.y + y0, 0, stretchXLeft, stretchYTop)
+			end
+			if stretchXMid > 0 then
+				love.graphics.draw(refImage, self.ImageSlices[2], -absSize.x * self.Pivot.x + x1, -absSize.y * self.Pivot.y + y0, 0, stretchXMid, stretchYTop)
+			end
+			if stretchXRight > 0 then
+				love.graphics.draw(refImage, self.ImageSlices[3], -absSize.x * self.Pivot.x + x2, -absSize.y * self.Pivot.y + y0, 0, stretchXRight, stretchYTop)
+			end
+		end
 		-- middle row
-		love.graphics.draw(self.ReferenceImage, self.ImageSlices[4], -self.AbsoluteSize.x * self.Pivot.x + self.BorderWidth, -self.AbsoluteSize.y * self.Pivot.y + self.BorderWidth + y2, 0, self.CornerScale, stretchYMultiplier)
-		love.graphics.draw(self.ReferenceImage, self.ImageSlices[5], -self.AbsoluteSize.x * self.Pivot.x + self.BorderWidth + x2, -self.AbsoluteSize.y * self.Pivot.y + self.BorderWidth + y2, 0, stretchXMultiplier, stretchYMultiplier)
-		love.graphics.draw(self.ReferenceImage, self.ImageSlices[6], -self.AbsoluteSize.x * self.Pivot.x - self.BorderWidth + x3, -self.AbsoluteSize.y * self.Pivot.y + self.BorderWidth + y2, 0, self.CornerScale, stretchYMultiplier)
+		if stretchYMid > 0 then
+			if stretchXLeft > 0 then
+				love.graphics.draw(refImage, self.ImageSlices[4], -absSize.x * self.Pivot.x + x0, -absSize.y * self.Pivot.y + y1, 0, stretchXLeft, stretchYMid)
+			end
+			if stretchXMid > 0 then
+				love.graphics.draw(refImage, self.ImageSlices[5], -absSize.x * self.Pivot.x + x1, -absSize.y * self.Pivot.y + y1, 0, stretchXMid, stretchYMid)
+			end
+			if stretchXRight > 0 then
+				love.graphics.draw(refImage, self.ImageSlices[6], -absSize.x * self.Pivot.x + x2, -absSize.y * self.Pivot.y + y1, 0, stretchXRight, stretchYMid)
+			end
+		end
 		-- bottom row
-		love.graphics.draw(self.ReferenceImage, self.ImageSlices[7], -self.AbsoluteSize.x * self.Pivot.x + self.BorderWidth, -self.AbsoluteSize.y * self.Pivot.y - self.BorderWidth + y3, 0, self.CornerScale, self.CornerScale)
-		love.graphics.draw(self.ReferenceImage, self.ImageSlices[8], -self.AbsoluteSize.x * self.Pivot.x + self.BorderWidth + x2, -self.AbsoluteSize.y * self.Pivot.y - self.BorderWidth + y3, 0, stretchXMultiplier, self.CornerScale)
-		love.graphics.draw(self.ReferenceImage, self.ImageSlices[9], -self.AbsoluteSize.x * self.Pivot.x - self.BorderWidth + x3, -self.AbsoluteSize.y * self.Pivot.y - self.BorderWidth + y3, 0, self.CornerScale, self.CornerScale)
+		if stretchYBottom > 0 then
+			if stretchXLeft > 0 then
+				love.graphics.draw(refImage, self.ImageSlices[7], -absSize.x * self.Pivot.x + x0, -absSize.y * self.Pivot.y + y2, 0, stretchXLeft, stretchYBottom)
+			end
+			if stretchXMid > 0 then
+				love.graphics.draw(refImage, self.ImageSlices[8], -absSize.x * self.Pivot.x + x1, -absSize.y * self.Pivot.y + y2, 0, stretchXMid, stretchYBottom)
+			end
+			if stretchXRight > 0 then
+				love.graphics.draw(refImage, self.ImageSlices[9], -absSize.x * self.Pivot.x + x2, -absSize.y * self.Pivot.y + y2, 0, stretchXRight, stretchYBottom)
+			end
+		end
 		
 		clearCornerStencil(self)
 
@@ -2100,8 +2149,14 @@ end
 
 -- create new SlicedFrame object
 local function newSlicedFrame(img, topLeft, bottomRight, w, h, col, corScale)
-	-- create and initialize main object
 	local imgPixelWidth, imgPixelHeight = img:getDimensions()
+	assert(topLeft.x < bottomRight.x, "ui.newSlicedFrame(img, topLeft, bottomRight, w, h, col, corScale) expects argument 'topLeft' to have a smaller x than argument 'bottomRight'.")
+	assert(topLeft.y < bottomRight.y, "ui.newSlicedFrame(img, topLeft, bottomRight, w, h, col, corScale) expects argument 'topLeft' to have a smaller y than argument 'bottomRight'.")
+	assert(topLeft.x > 0, "ui.newSlicedFrame(img, topLeft, bottomRight, w, h, col, corScale) expects argument 'topLeft' to have an x larger than 0.")
+	assert(topLeft.y > 0, "ui.newSlicedFrame(img, topLeft, bottomRight, w, h, col, corScale) expects argument 'topLeft' to have a y larger than 0.")
+	assert(bottomRight.x < imgPixelWidth, "ui.newSlicedFrame(img, topLeft, bottomRight, w, h, col, corScale) expects argument 'bottomRight' to have an x smaller than the image width.")
+	assert(bottomRight.y < imgPixelHeight, "ui.newSlicedFrame(img, topLeft, bottomRight, w, h, col, corScale) expects argument 'bottomRight' to have a y smaller than the image height.")
+	-- create and initialize main object
 	if bottomRight == nil then
 		bottomRight = vector2(imgPixelWidth, imgPixelHeight) - topLeft
 	end
