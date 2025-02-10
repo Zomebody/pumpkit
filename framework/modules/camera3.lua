@@ -195,6 +195,37 @@ end
 
 
 
+function Camera3:worldToScreen(vec3, width, height)
+	if width == nil then
+		width = love.graphics.getWidth()
+	end
+	if height == nil then
+		height = love.graphics.getHeight()
+	end
+	
+	local viewMatrix = self.Matrix:inverse():transpose() -- I probably did something wrong in my matrix implementation given that I have to use transposes here...
+	local viewPosition = viewMatrix * vector4(vec3.x, vec3.y, vec3.z, 1)
+
+	
+	local clipPosition = matrix4.perspective(width / height, self.FieldOfView, 1000, 0.1):transpose() * viewPosition
+	--print(clipPosition)
+
+	if clipPosition.w == 0 then -- prevents dividing by zero, also returns nil if point is behind the camera
+		return nil
+	end
+
+	-- convert to normalized device coordinates
+	local ndc = vector2(clipPosition.x / clipPosition.w, clipPosition.y / clipPosition.w)
+	-- convert to screen coordinates
+	local screenX = (ndc.x + 1) / 2 * width
+	local screenY = (1 - ndc.y) / 2 * height
+
+	return vector2(screenX, screenY)
+end
+
+
+
+
 
 
 
