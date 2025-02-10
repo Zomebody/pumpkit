@@ -210,7 +210,7 @@ function Camera3:worldToScreen(vec3, width, height)
 	local clipPosition = matrix4.perspective(width / height, self.FieldOfView, 1000, 0.1):transpose() * viewPosition
 	--print(clipPosition)
 
-	if clipPosition.w == 0 then -- prevents dividing by zero, also returns nil if point is behind the camera
+	if clipPosition.w <= 0 then -- prevents dividing by zero, also returns nil if point is behind the camera
 		return nil
 	end
 
