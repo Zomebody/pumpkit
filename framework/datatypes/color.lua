@@ -315,7 +315,11 @@ end
 
 
 function color:__mul(a)
-	return new(self.r * a.r, self.g * a.g, self.b * a.b, self.a * a.a)
+	if type(a) == "number" then
+		return new(self.r * a, self.g * a, self.b * a, self.a * a)
+	else
+		return new(self.r * a.r, self.g * a.g, self.b * a.b, self.a * a.a)
+	end
 end
 
 
