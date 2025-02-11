@@ -92,6 +92,7 @@ local function updateAbsolutePosition(Obj, wX, wY, wWidth, wHeight, ignoreParent
 		return
 	end
 	-- set value depending on if this is a top-level element, or if there is a parent
+	-- calculate parent 'window' x, y, width, height
 	OP = Obj.Parent
 	if OP and OP ~= module and (not ignoreParentPosition) then
 		wX = (wX == nil and OP.AbsolutePosition.x or wX) + OP.Padding.x
@@ -113,10 +114,96 @@ local function updateAbsolutePosition(Obj, wX, wY, wWidth, wHeight, ignoreParent
 		contentOffsetY = OP.ContentOffset.y
 	end
 
-	-- calculate and apply absolute position. Then update children
-	local absX = wX + contentOffsetX + Obj.Position.Offset.x + math.floor(Obj.Position.Scale.x * wWidth) - math.floor(Obj.AbsoluteSize.x * Obj.Center.x)
-	local absY = wY + contentOffsetY + Obj.Position.Offset.y + math.floor(Obj.Position.Scale.y * wHeight) - math.floor(Obj.AbsoluteSize.y * Obj.Center.y)
+	-- calculate new absolute position
+	local absX, absY -- absolute position vars
+	if OP and OP.Layout == "horizontal" then -- ignore own position, order object horizontally based on position in list
+		-- calculate absolute x
+		if OP.LayoutAlignX == "left" then -- align children on the left of the element
+			local sumBefore = 0
+			for i = 1, #OP.Children do
+				if OP.Children[i] == Obj then
+					break
+				elseif not OP.Children[i].Hidden then
+					sumBefore = sumBefore + OP.Children[i].AbsoluteSize.x
+				end
+			end
+			absX = wX + contentOffsetX + sumBefore
+		else -- align children in middle of element or on the right
+			local sumOfChildren = 0
+			local sumBefore = 0
+			local selfFound = false
+			for i = 1, #OP.Children do
+				if OP.Children[i] == Obj then
+					selfFound = true
+				elseif (not selfFound) and (not OP.Children[i].Hidden) then
+					sumBefore = sumBefore + OP.Children[i].AbsoluteSize.x
+				end
+				if not OP.Children[i].Hidden then
+					sumOfChildren = sumOfChildren + OP.Children[i].AbsoluteSize.x
+				end
+			end
+			if OP.LayoutAlignX == "center" then -- align in center
+				absX = wX + wWidth / 2 - sumOfChildren / 2 + sumBefore + contentOffsetX
+			else -- align on the right
+				absX = wX + wWidth - sumOfChildren + sumBefore + contentOffsetX
+			end
+		end
+		-- calculate absolute y
+		if OP.LayoutAlignY == "top" then
+			absY = wY + contentOffsetY
+		elseif OP.LayoutAlignY == "center" then
+			absY = wY + contentOffsetY + wHeight / 2 - Obj.AbsoluteSize.y / 2
+		else -- bottom
+			absY = wY + contentOffsetY + wHeight - Obj.AbsoluteSize.y
+		end
+	elseif OP and OP.Layout == "vertical" then -- ignore own position, order object vertically based on position in list
+		-- calculate absolute y
+		if OP.LayoutAlignY == "top" then -- align children on the left of the element
+			local sumBefore = 0
+			for i = 1, #OP.Children do
+				if OP.Children[i] == Obj then
+					break
+				elseif not OP.Children[i].Hidden then
+					sumBefore = sumBefore + OP.Children[i].AbsoluteSize.y
+				end
+			end
+			absY = wY + contentOffsetY + sumBefore
+		else -- align children in middle of element or on the bottom
+			local sumOfChildren = 0
+			local sumBefore = 0
+			local selfFound = false
+			for i = 1, #OP.Children do
+				if OP.Children[i] == Obj then
+					selfFound = true
+				elseif (not selfFound) and (not OP.Children[i].Hidden) then
+					sumBefore = sumBefore + OP.Children[i].AbsoluteSize.y
+				end
+				if not OP.Children[i].Hidden then
+					sumOfChildren = sumOfChildren + OP.Children[i].AbsoluteSize.y
+				end
+			end
+			if OP.LayoutAlignY == "center" then -- align in center
+				absY = wY + wHeight / 2 - sumOfChildren / 2 + sumBefore + contentOffsetY
+			else -- align on the right
+				absY = wY + wHeight - sumOfChildren + sumBefore + contentOffsetY
+			end
+		end
+		-- calculate absolute x
+		if OP.LayoutAlignX == "left" then
+			absX = wX + contentOffsetX
+		elseif OP.LayoutAlignX == "center" then
+			absX = wX + contentOffsetX + wWidth / 2 - Obj.AbsoluteSize.x / 2
+		else -- right
+			absX = wX + contentOffsetX + wWidth - Obj.AbsoluteSize.x
+		end
+	else -- TODO: these math.floor calls aren't needed because there's another floor call right below, right?
+		absX = wX + contentOffsetX + Obj.Position.Offset.x + math.floor(Obj.Position.Scale.x * wWidth) - math.floor(Obj.AbsoluteSize.x * Obj.Center.x)
+		absY = wY + contentOffsetY + Obj.Position.Offset.y + math.floor(Obj.Position.Scale.y * wHeight) - math.floor(Obj.AbsoluteSize.y * Obj.Center.y)
+	end
+
+	-- apply position, and then evaluate children recursively
 	Obj.AbsolutePosition:set(math.floor(absX), math.floor(absY))
+
 	for i = 1, #Obj.Children do
 		updateAbsolutePosition(Obj.Children[i], absX, absY, Obj.AbsoluteSize.x, Obj.AbsoluteSize.y)
 	end
@@ -1110,38 +1197,27 @@ function UIBase:positionContent(offsetX, offsetY)
 	module.Changed = true
 end
 
--- align the children horizontally / vertically and align the top/bottom/left/right/center. Order in which the elements are aligned it based on the order of the children: first child in front, last child last
-function UIBase:alignChildren(direction, side, padding)
-	if #self.Children == 0 then return end
-	assert(direction == "horizontal" or direction == "vertical", "The 'direction' parameter in :alignChildren(direction, side, padding) must be one of 'horizontal' or 'vertical'.")
+-- make it so children are no longer positioned based on their position property, but rather based on their order in the Children list and based on the parent's alignment settings
+function UIBase:alignChildren(direction, xAlign, yAlign)
+	if direction == nil then
+		self.Layout = "none"
+		self.LayoutAlignX = "center"
+		self.LayoutAlignY = "center"
+		return
+	end
+	assert(direction == "horizontal" or direction == "vertical", "The 'direction' parameter in UIBase:alignChildren(direction, xAlign, yAlign) must be one of 'horizontal' or 'vertical' or nil.")
+	assert(xAlign == "left" or xAlign == "right" or xAlign == "center", "UIBase:alignChildren(direction, xAlign, yAlign) requires argument 'xAlign' to be one of 'left', 'center', 'right'.")
+	assert(yAlign == "top" or yAlign == "bottom" or yAlign == "center", "UIBase:alignChildren(direction, xAlign, yAlign) requires argument 'yAlign' to be one of 'top', 'center', 'bottom'.")
 	
-	-- create a list of all visible children
-	local VisibleChildren = {} -- list of all children that are visible (and thus should be aligned)
-	for i = 1, #self.Children do
-		if self.Children[i].Hidden == false then
-			VisibleChildren[#VisibleChildren + 1] = self.Children[i]
-		end
-	end
+	self.Layout = direction
+	self.LayoutAlignX = xAlign
+	self.LayoutAlignY = yAlign
 
-	if #VisibleChildren > 0 then
-		padding = (padding == nil) and 0 or padding
-		if direction == "horizontal" then
-			assert(side == "top" or side == "center" or side == "bottom" or side == nil, "The 'side' parameter in :alignChildren(direction, side, padding) must be one of 'top', 'center', 'bottom' or nil.")
-			VisibleChildren[1]:alignX("left")
-			VisibleChildren[1]:alignY(side)
-			for i = 2, #VisibleChildren do
-				VisibleChildren[i]:putNextTo(VisibleChildren[i - 1], "right", padding)
-			end
-		elseif direction == "vertical" then
-			assert(side == "left" or side == "center" or side == "right" or side == nil, "The 'side' parameter in :alignChildren(direction, side, padding) must be one of 'left', 'center', 'right' or nil.")
-			VisibleChildren[1]:alignX(side)
-			VisibleChildren[1]:alignY("top")
-			for i = 2, #VisibleChildren do
-				VisibleChildren[i]:putNextTo(VisibleChildren[i - 1], "bottom", padding)
-			end
-		end
-	end
+	updateAbsoluteSize(self)
+	updateAbsolutePosition(self)
 end
+
+
 
 -- horizontally align the element to a side, valid options: "left" / "center" / "right"
 function UIBase:alignX(side)
@@ -2073,6 +2149,9 @@ local function newBase(w, h, col)
 		--["FitTextOnResize"] = false;
 		["Hidden"] = false;
 		["Id"] = module.TotalCreated;
+		["Layout"] = "none";
+		["LayoutAlignX"] = "center";
+		["LayoutAlignY"] = "center";
 		["Name"] = "Object"; -- The name of the instance. Names are not unique. They can be used with the :child() method to find a child with a given name inside some parent instance.
 		["Opacity"] = 1; -- if 0, this object is not drawn (but children are!)
 		--["PaddingX"] = 0; -- an invisible border that creates a smaller inner-window to contain children and text.
