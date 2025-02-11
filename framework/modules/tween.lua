@@ -108,6 +108,12 @@ function tween:play(reversed, inversed)
 	if self.State ~= "idle" then
 		return false
 	end
+	-- initialize start variables
+	for k, _ in pairs(self.Values.Goal) do
+		self.Values.Start[k] = self.Target[k]
+		self.Values.Current[k] = self.Target[k]
+	end
+
 	self.Reversed = reversed == true and true or false
 	self.Inversed = inversed == true and true or false
 	self.State = "playing"
@@ -241,7 +247,7 @@ local function new(Target, tweenType, duration, valueTable)
 		["Inversed"] = false; -- inverse the interpolation constant (mirror on y-axis)
 		["State"] = "idle"; -- "idle" / "playing" / "paused"
 		["Values"] = {
-			["Start"] = {};
+			["Start"] = {}; -- initialized when :play() is called
 			["Current"] = {};
 			["Goal"] = {};
 		};
@@ -252,8 +258,8 @@ local function new(Target, tweenType, duration, valueTable)
 	}
 
 	for k, v in pairs(valueTable) do
-		t.Values.Start[k] = Target[k]
-		t.Values.Current[k] = Target[k]
+		--t.Values.Start[k] = Target[k]
+		--t.Values.Current[k] = Target[k]
 		t.Values.Goal[k] = v
 	end
 	return setmetatable(t, tween)
