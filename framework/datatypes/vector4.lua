@@ -102,7 +102,7 @@ end
 
 -- meta function to change how vectors appear as string
 function vector4:__tostring()
-	return "(" .. self.x .. ", " .. self.y .. ", " .. self.z .. "," .. self.w .. ")"
+	return "(" .. self.x .. ", " .. self.y .. ", " .. self.z .. ", " .. self.w .. ")"
 end
 
 -- get the distance between two vectors
