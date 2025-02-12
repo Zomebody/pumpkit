@@ -74,6 +74,15 @@ end
 
 
 
+function Camera3:setMatrix(m)
+	assert(matrix4.isMatrix4(m), "Camera3:setMatrix(m) requires argument 'm' to be a matrix4.")
+	local pos = m:getPosition()
+	local rot = m:toEulerXYZ()
+	self:set(pos, rot, 0)
+end
+
+
+
 function Camera3:pitch(angle)
 	self.Rotation = self.Rotation + vector3(angle, 0, 0)
 	self:updateCameraMatrices()
@@ -240,7 +249,7 @@ local function new(p)
 
 	local Obj = {
 		["Position"] = vector3(p);
-		["Rotation"] = vector3(); -- euler angles rotation. Gets converted to a matrix and sent to the shader each time it's updated
+		["Rotation"] = vector3(); -- euler angles rotation (xyz). Gets converted to a matrix and sent to the shader each time it's updated
 		["Offset"] = 0; -- this also gets incorporated into that same matrix and sent to the shader
 		["FieldOfView"] = math.rad(70); -- vertical FoV
 		["Matrix"] = nil;

@@ -80,6 +80,111 @@ local function new(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, 
 end
 
 
+
+local function fromQuaternion(q)
+	local xx = q.x^2
+	local yy = q.y^2
+	local zz = q.z^2
+	local xy = q.x * q.y
+	local xz = q.x * q.z
+	local yz = q.y * q.z
+	local wx = q.w * q.x
+	local wy = q.w * q.y
+	local wz = q.w * q.z
+
+	return new(
+		1 - 2 * (yy + zz), 2 * (xy - wz), 2 * (xz + wy), 0,
+		2 * (xy + wz), 1 - 2 * (xx + zz), 2 * (yz - wx), 0,
+		2 * (xz - wy), 2 * (yz + wx), 1 - 2 * (xx + yy), 0,
+		0, 0, 0, 1
+	)
+end
+
+
+
+
+-- helper function for interpolate
+local function lerp(a, b, t)
+	return a + (b - a) * t
+end
+
+-- helper function for interpolate
+local function slerpQuaternion(q1, q2, t)
+	local dot = q1.x * q2.x + q1.y * q2.y + q1.z * q2.z + q1.w * q2.w
+	if dot < 0 then
+		q2 = -q2
+		dot = -dot
+	end
+
+	dot = math.min(1, math.max(-1, dot))
+	local theta = math.acos(dot)
+	local sinTheta = math.sin(theta)
+	if sinTheta < 0.001 then
+		return vector4(
+			lerp(q1.x, q2.x, t),
+			lerp(q1.y, q2.y, t),
+			lerp(q1.z, q2.z, t),
+			lerp(q1.w, q2.w, t)
+		):norm()
+	end
+
+	-- interpolation weights
+	local w1 = math.sin((1 - t) * theta) / sinTheta
+	local w2 = math.sin(t * theta) / sinTheta
+
+	return vector4(
+		q1.x * w1 + q2.x * w2,
+		q1.y * w1 + q2.y * w2,
+		q1.z * w1 + q2.z * w2,
+		q1.w * w1 + q2.w * w2
+	):norm()
+end
+
+
+-- interpolate from one matrix4 to another matrix4, useful when moving cameras from one place to another
+local function interpolate(m1, m2, t)
+	-- get positions
+	local p1 = m1:getPosition() -- getPosition works correctly
+	local p2 = m2:getPosition()
+
+	local newP = lerp(p1, p2, t) -- works correctly
+
+	-- get rotations
+	--print("matrix 1")
+	--print(m1)
+	local q1 = m1:toQuaternion() -- worked correctly in online converter
+	--print("quaternion 1")
+	--print(q1)
+	local q2 = m2:toQuaternion()
+	local newQ = slerpQuaternion(q1, q2, t)
+	--print("slerped quaternion")
+	--print(newQ)
+
+	-- get scales
+	local s1 = m1:getScale()
+	local s2 = m2:getScale()
+	local newS = lerp(s1, s2, t)
+
+	local baseMatrix = fromQuaternion(newQ) -- newQ -- also works correctly somehow????
+	--print("matrix from quaternion")
+	--print(baseMatrix)
+	local scaleMatrix = new(
+		newS.x, 0, 0, 0,
+		0, newS.y, 0, 0,
+		0, 0, newS.z, 0,
+		0, 0, 0, 1
+	)
+
+	-- combine
+	baseMatrix = baseMatrix * scaleMatrix -- scale matrix
+
+	baseMatrix:translate(newP.x, newP.y, newP.z)
+	--print("baseMatrix:", baseMatrix:getPosition())
+	return baseMatrix
+end
+
+
+
 local function rotationX(angle)
 	local c = math.cos(angle)
 	local s = math.sin(angle)
@@ -151,6 +256,8 @@ local function perspective(aspectRatio, fov, far, near)
 end
 
 
+
+
 -- from euler angles and specify the euler order
 local function fromEuler(euler, order)
 	local rotX = rotationX(euler.x)
@@ -176,42 +283,15 @@ end
 
 
 
--- TODO: THIS METHOD IS PROBABLY WRONG
-function matrix4:toEuler(order)
-	local euler = vector3(0, 0, 0)
+-- using the same calculation as found here: https://github.com/CoppeliaRobotics/lua/blob/master/matrix.lua
+function matrix4:toEulerXYZ() -- assumes xyz order
+	--local euler = vector3(0, 0, 0)
 
-	if order == "xyz" or order == nil then
-		euler.y = math.asin(math.min(math.max(self[9], -1), 1))
-		if math.abs(self[9]) < 0.99999 then
-			euler.x = math.atan2(-self[10], self[11])
-			euler.z = math.atan2(-self[5], self[1])
-		else
-			euler.x = math.atan2(self[7], self[6])
-			euler.z = 0
-		end
-	elseif order == "yxz" then
-		euler.x = math.asin(-math.min(math.max(self[10], -1), 1))
-		if math.abs(self[10]) < 0.99999 then
-			euler.y = math.atan2(self[9], self[11])
-			euler.z = math.atan2(self[2], self[6])
-		else
-			euler.y = math.atan2(-self[8], self[1])
-			euler.z = 0
-		end
-	elseif order == "zyx" then
-		euler.x = math.asin(math.min(math.max(self[10], -1), 1))
-		if math.abs(self[10]) < 0.99999 then
-			euler.y = math.atan2(-self[9], self[11])
-			euler.z = math.atan2(-self[2], self[6])
-		else
-			euler.y = 0
-			euler.z = math.atan2(self[5], self[1])
-		end
-	else
-		error("Invalid rotation order")
-	end
-
-	return euler
+	return vector3(
+		math.atan2(self[7], self[11]),
+		math.atan2(-self[3], math.sqrt(self[7]^2 + self[11]^2)),
+		math.atan2(self[2], self[1])
+	)
 end
 
 
@@ -233,6 +313,58 @@ function matrix4:toWorldVector(vec)
 	)
 
 	return deltaVector
+end
+
+
+-- converted from https://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToQuaternion/
+function matrix4:toQuaternion()
+	local trace = self[1] + self[6] + self[11]
+	local qw, qx, qy, qz
+
+	if trace > 0 then
+		local s = math.sqrt(trace + 1) * 2
+		qw = 0.25 * s
+		qx = (self[10] - self[7]) / s
+		qy = (self[3] - self[9]) / s
+		qz = (self[5] - self[2]) / s
+	else
+		if self[1] > self[6] and self[1] > self[11] then
+			local s = 2 * math.sqrt(1 + self[1] - self[6] - self[11])
+			qw = (self[10] - self[7]) / s
+			qx = 0.25 * s
+			qy = (self[2] + self[5]) / s
+			qz = (self[3] + self[9]) / s
+		elseif self[6] > self[11] then
+			local s = 2 * math.sqrt(1 + self[6] - self[1] - self[11])
+			qw = (self[3] - self[9]) / s
+			qx = (self[2] + self[5]) / s
+			qy = 0.25 * s
+			qz = (self[7] + self[10]) / s
+		else
+			local s = 2 * math.sqrt(1 + self[11] - self[1] - self[6])
+			qw = (self[5] - self[2]) / s
+			qx = (self[3] + self[9]) / s
+			qy = (self[7] + self[10]) / s
+			qz = 0.25 * s
+		end
+	end
+
+	return vector4(qx, qy, qz, qw)
+
+end
+
+
+-- get the scale of the upper-left 3x3 matrix as a vector3 representing the scale of each row
+function matrix4:getScale()
+	local sx = math.sqrt(self[1]^2 + self[2]^2 + self[3]^2)
+	local sy = math.sqrt(self[5]^2 + self[6]^2 + self[7]^2)
+	local sz = math.sqrt(self[9]^2 + self[10]^2 + self[11]^2)
+	return vector3(sx, sy, sz)
+end
+
+
+function matrix4:getPosition()
+	return vector3(self[13], self[14], self[15])
 end
 
 
@@ -520,5 +652,7 @@ module.rotationZ = rotationZ
 module.perspective = perspective
 module.translation = translation
 module.fromEuler = fromEuler
+module.fromQuaternion = fromQuaternion
+module.interpolate = interpolate
 module.isMatrix4 = isMatrix4
 return setmetatable(module, {__call = function(_, ...) return new(...) end})
