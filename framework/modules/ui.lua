@@ -981,6 +981,10 @@ end
 	- clearing its font from memory if that font is now unused
 ]]
 function UIBase:remove()
+	if self.Events.Remove ~= nil then
+		connection.doEvents(oldFocus.Events.Remove)
+	end
+
 	local children = {}
 	for i = 1, #self.Children do
 		children[i] = self.Children[i]
