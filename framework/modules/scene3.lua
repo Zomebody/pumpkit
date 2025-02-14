@@ -56,6 +56,7 @@ Scene3.__tostring = function(tab) return "{Scene3: " .. tostring(tab.Id) .. "}" 
 
 local function findObjectInOrderedArray(Obj, tbl)
 	local l, r = 1, #tbl
+	if r < l then return 1 end
 	while l ~= r do
 		local index = math.floor((l + r) / 2)
 		if tbl[index] == Obj then
@@ -75,6 +76,7 @@ end
 
 local function findOrderedInsertLocation(tbl, Obj)
 	local l, r = 1, #tbl
+	if r < l then return 1 end
 	while l ~= r do
 		local index = math.floor((l + r) / 2)
 		if tbl[index].Id < Obj.Id then
@@ -466,7 +468,7 @@ function Scene3:attachBasicMesh(mesh)
 		mesh:detach()
 	end
 
-	local index = findOrderedInsertLocation(self.BasicMeshes)
+	local index = findOrderedInsertLocation(self.BasicMeshes, mesh)
 	table.insert(self.BasicMeshes, index, mesh)
 	mesh.Scene = self
 
@@ -599,7 +601,7 @@ function Scene3:attachParticles(particles)
 		particles:detach()
 	end
 
-	local index = findOrderedInsertLocation(self.Particles)
+	local index = findOrderedInsertLocation(self.Particles, particles)
 	table.insert(self.Particles, index, particles)
 	particles.Scene = self
 
