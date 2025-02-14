@@ -33,7 +33,7 @@ local MAX_LIGHTS_PER_SCENE = 16
 local SHADER_PATH = "framework/shaders/shader3d.c"
 local SHADER_PARTICLES_PATH = "framework/shaders/particles3d.c"
 local SHADER_SSAO_PATH = "framework/shaders/ssao3d.c"
-local SHADER_SSAOBLEND_PATH = "framework/shaders/ssaoBlend.c"
+local SHADER_SSAOBLEND_PATH = "framework/shaders/ssaoblend.c"
 local SHADER_BLUR_PATH = "framework/shaders/blur.c"
 
 
