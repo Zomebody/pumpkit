@@ -582,7 +582,7 @@ function Scene3:detachBasicMesh(meshOrSlot)
 		Item.Scene = nil
 
 		if self.Events.MeshDetached then
-			connection.doEvents(self.Events.MeshDetached, mesh)
+			connection.doEvents(self.Events.MeshDetached, Item)
 		end
 
 		return true
@@ -621,7 +621,7 @@ function Scene3:detachParticles(meshOrSlot)
 		Item.Scene = nil
 
 		if self.Events.ParticlesDetached then
-			connection.doEvents(self.Events.ParticlesDetached, particles)
+			connection.doEvents(self.Events.ParticlesDetached, Item)
 		end
 
 		return true
