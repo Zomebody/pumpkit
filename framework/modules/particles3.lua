@@ -2,7 +2,9 @@
 
 ----------------------------------------------------[[ == BASE OBJECTS == ]]----------------------------------------------------
 
-local module = {}
+local module = {
+	["TotalCreated"] = 0;
+}
 
 
 local Particles3 = {}
@@ -284,29 +286,31 @@ local function new(img, maxParticles, properties)
 	local drag = properties.Drag or 0
 	local brightness = properties.Brightness or 1
 	local zOffset = properties.ZOffset or 0
-
-	-- TODO: re-use local variables instead of making new ones over and over again
+	
+	local c, s1, s2, high1, low1, high2, low2
 	local data = love.image.newImageData(64, 2)
 	data:mapPixel(
 		function(x, y, r, g, b, a)
 			if y == 0 then
-				local c = gradient:getColor(x / 64)
+				c = gradient:getColor(x / 64)
 				return c:components()
 			else
-				local s1 = size:getNumber(x / 64) / 10
-				local s2 = sizeDeviation:getNumber(x / 64) / 10
-				local high1 = math.floor(s1 * 256) / 256
-				local low1 = s1 * 256 % 1
-				local high2 = math.floor(s2 * 256) / 256
-				local low2 = s2 * 256 % 1
+				s1 = size:getNumber(x / 64) / 10
+				s2 = sizeDeviation:getNumber(x / 64) / 10
+				high1 = math.floor(s1 * 256) / 256
+				low1 = s1 * 256 % 1
+				high2 = math.floor(s2 * 256) / 256
+				low2 = s2 * 256 % 1
 				return high1, low1, high2, low2
 			end
 		end
 	)
 	local dataTexture = love.graphics.newImage(data)
 
+	module.TotalCreated = module.TotalCreated + 1
 
 	local Obj = {
+		["Id"] = module.TotalCreated;
 		["Gradient"] = gradient; -- the color the particle has at a given moment in time
 		["Source"] = source; -- location from which particles are emitted
 		["ZOffset"] = zOffset;

@@ -73,6 +73,21 @@ end
 
 
 
+local function findOrderedInsertLocation(tbl, Obj)
+	local l, r = 1, #tbl
+	while l ~= r do
+		local index = math.floor((l + r) / 2)
+		if tbl[index].Id < Obj.Id then
+			l = math.min(r, index + 1)
+		else
+			r = math.max(l, index - 1)
+		end
+	end
+	return (Obj.Id > tbl[l].Id) and (l + 1) or (l)
+end
+
+
+
 ----------------------------------------------------[[ == FUNCTIONS == ]]----------------------------------------------------
 
 -- check if an object is a scene
@@ -451,7 +466,8 @@ function Scene3:attachBasicMesh(mesh)
 		mesh:detach()
 	end
 
-	table.insert(self.BasicMeshes, mesh)
+	local index = findOrderedInsertLocation(self.BasicMeshes)
+	table.insert(self.BasicMeshes, index, mesh)
 	mesh.Scene = self
 
 	if self.Events.MeshAttached then
@@ -556,14 +572,6 @@ end
 
 
 
-function Scene3:addParticles(particles)
-	assert(particles3.isParticles3(particles), "Scene3:addParticles(particles) expects argument 'particles' to be of type particles3")
-
-	table.insert(self.Particles, particles)
-end
-
-
-
 function Scene3:detachBasicMesh(meshOrSlot)
 	if type(meshOrSlot) ~= "number" then -- object was passed
 		assert(mesh3.isMesh3(meshOrSlot), "Scene3:detachBasicMesh(meshOrSlot) requires argument 'meshOrSlot' to be either a mesh3 or an integer")
@@ -581,6 +589,46 @@ function Scene3:detachBasicMesh(meshOrSlot)
 	end
 	return false
 end
+
+
+
+function Scene3:attachParticles(particles)
+	assert(particles3.isParticles3(particles), "Scene3:addParticles(particles) expects argument 'particles' to be of type particles3")
+
+	if particles.Scene ~= nil then
+		particles:detach()
+	end
+
+	local index = findOrderedInsertLocation(self.Particles)
+	table.insert(self.Particles, index, particles)
+	particles.Scene = self
+
+	if self.Events.ParticlesAttached then
+		connection.doEvents(self.Events.ParticlesAttached, particles)
+	end
+	return particles
+end
+
+
+
+function Scene3:detachParticles(meshOrSlot)
+	if type(meshOrSlot) ~= "number" then -- object was passed
+		assert(particles3.isParticles3(meshOrSlot), "Scene3:detachParticles(meshOrSlot) requires argument 'meshOrSlot' to be either a particles3 or an integer")
+		meshOrSlot = findObjectInOrderedArray(meshOrSlot, self.Particles)
+	end
+	local Item = table.remove(self.Particles, meshOrSlot)
+	if Item ~= nil then
+		Item.Scene = nil
+
+		if self.Events.ParticlesDetached then
+			connection.doEvents(self.Events.ParticlesDetached, particles)
+		end
+
+		return true
+	end
+	return false
+end
+
 
 
 -- eventName is the name of the event to call. All event name strings are accepted, but not all of them may trigger
