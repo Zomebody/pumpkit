@@ -243,14 +243,28 @@ table.insert(content, {
 	["Type"] = "Event";
 	["Name"] = "MeshAttached";
 	["Arguments"] = {"mesh3"};
-	["Description"] = "Called when a basic mesh is added to the scene, returns the mesh3 that was attached.";
+	["Description"] = "Called when a basic mesh is added to the scene, supplies the mesh3 that was attached.";
 })
 
 table.insert(content, {
 	["Type"] = "Event";
 	["Name"] = "MeshDetached";
 	["Arguments"] = {"mesh3"};
-	["Description"] = "Called when a basic mesh is detached from the scene, returns the mesh3 that was detached.";
+	["Description"] = "Called when a basic mesh is detached from the scene, supplies the mesh3 that was detached.";
+})
+
+table.insert(content, {
+	["Type"] = "Event";
+	["Name"] = "ParticlesAttached";
+	["Arguments"] = {"particles3"};
+	["Description"] = "Called when a basic mesh is added to the scene, supplies the particles3 that was attached.";
+})
+
+table.insert(content, {
+	["Type"] = "Event";
+	["Name"] = "ParticlesDetached";
+	["Arguments"] = {"particles3"};
+	["Description"] = "Called when a basic mesh is detached from the scene, supplies the particles3 that was detached.";
 })
 
 table.insert(content, {

@@ -1124,6 +1124,13 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Event";
+	["Name"] = "Remove";
+	["Arguments"] = {};
+	["Description"] = "Called when the :remove() method is called, right before the element is actually being removed.";
+})
+
+table.insert(content, {
+	["Type"] = "Event";
 	["Name"] = "Resize";
 	["Arguments"] = {};
 	["Description"] = "Called when the UI object changes its size, which can happen when the window changes size, a parent element changes its size or the UI object itself changes its size. This is called at most once per frame.";
