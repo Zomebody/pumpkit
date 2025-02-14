@@ -1483,6 +1483,7 @@ end
 -- log2(n) insert search to support large numbers of tagged objects!
 local function findOrderedUIInsertLocation(tbl, Obj)
 	local l, r = 1, #tbl
+	-- TODO: this will error if #tbl == 0, because the statement below will be true, nd then tbl[index] will be nil
 	while l ~= r do
 		local index = math.floor((l + r) / 2)
 		if tbl[index].Id < Obj.Id then
@@ -1907,15 +1908,37 @@ function SlicedFrame:draw()
 		local y2 = absSize.y - self.BorderWidth - (imgHeight - self.BottomRightSlice.y) * self.CornerScale
 		local y3 = absSize.y - self.BorderWidth
 
-		-- If corners are too large to fit in the image, downscale the corners
+		-- If corners are too large to fit in the image, downscale the corners, while maintaining aspect ratio
+		-- both x and y are downscaled to remain aspect ratio of the corner
 		if x1 > x2 then
-			x1 = (x1 + x2) / 2
-			x2 = x1
+			local sumX = (x1 - x0) + (x3 - x2) -- total room the corners occupy on the x-axis
+			local spaceX = x3 - x0 -- how much space there actually is on the x-axis
+			local scalar = spaceX / sumX
+			-- adjust x's to proportionally downscale
+			x1 = x0 + (x1 - x0) * scalar
+			x2 = x3 - (x3 - x2) * scalar
+			-- downscale y's proportionally as well
+			y1 = y0 + (y1 - y0) * scalar
+			y2 = y3 - (y3 - y2) * scalar
 		end
+		-- apply the same principle as above on the y-axis as well
 		if y1 > y2 then
-			y1 = (y1 + y2) / 2
-			y2 = y1
+			local sumY = (y1 - y0) + (y3 - y2) -- total room the corners occupy on the y-axis
+			local spaceY = y3 - y0 -- how much space there actually is on the y-axis
+			local scalar = spaceY / sumY
+			-- adjust y's to proportionally downscale
+			y1 = y0 + (y1 - y0) * scalar
+			y2 = y3 - (y3 - y2) * scalar
+			-- downscale x's proportionally as well
+			x1 = x0 + (x1 - x0) * scalar
+			x2 = x3 - (x3 - x2) * scalar
 		end
+
+		-- round everything to hide seams
+		x1 = math.floor(x1)
+		x2 = math.ceil(x2)
+		y1 = math.floor(y1)
+		y2 = math.ceil(y2)
 
 		local stretchXLeft = (x1 - x0) / self.TopLeftSlice.x
 		local stretchXMid = (x2 - x1) / (self.BottomRightSlice.x - self.TopLeftSlice.x)
