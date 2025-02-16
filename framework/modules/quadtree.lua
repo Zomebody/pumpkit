@@ -22,9 +22,18 @@ local function lineIntersectsRectangle(line, rTopLeft, rBottomRight)
 	if x1 > x2 then x1, x2 = x2, x1 end
 	if y1 > y2 then y1, y2 = y2, y1 end
 
-	-- early return if line's bounding box does not overlap the rectangle
 	local minX, minY = rTopLeft.x, rTopLeft.y
 	local maxX, maxY = rBottomRight.x, rBottomRight.y
+
+	-- early return if either points are inside the rectangle
+	if x1 >= minX and x1 <= maxX and y1 >= minY and y1 <= maxY then
+		return true
+	end
+	if x2 >= minX and x2 <= maxX and y2 >= minY and y2 <= maxY then
+		return true
+	end
+
+	-- early return if line's bounding box does not overlap the rectangle
 	if x2 < minX or x1 > maxX or y2 < minY or y1 > maxY then
 		return false
 	end
@@ -231,7 +240,7 @@ function Quadtree:findAtLine(line, dict)
 	local Item = nil
 	for i = 1, #self.Items do
 		Item = self.Items[i]
-		if line:intersectCircle(Item.Position, Item.Radius) ~= nil then
+		if line:dist(Item.Position) <= Item.Radius then
 			dict[Item.Item] = true
 		end
 	end
