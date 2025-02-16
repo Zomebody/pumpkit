@@ -159,7 +159,7 @@ end
 
 -- returns true if this line intersects line arg1, or in the case of a circle, intersects the circle at vector arg1 with radius arg2
 function line2:intersects(arg1, arg2)
-	if isLine(arg1) then
+	if isLine2(arg1) then
 		return self:intersect(arg1) ~= nil
 	else
 		return self:intersectCircle(arg1, arg2) ~= nil
@@ -194,21 +194,21 @@ end
 
 -- meta function to check if lines have the same values
 function line2.__eq(a,b)
-	assert(isLine(a) and isLine(b), "__eq: wrong argument types (expected <line2> and <line2>)")
+	assert(isLine2(a) and isLine2(b), "__eq: wrong argument types (expected <line2> and <line2>)")
 	return a.from == b.from and a.to == b.to
 end
 
 
 -- meta function to add a vector to a line
 function line2.__add(a, b)
-	assert(isLine(a) and vector2.isVector2(b), "add: wrong argument types: (expected <line2> and <vector2>)")
+	assert(isLine2(a) and vector2.isVector2(b), "add: wrong argument types: (expected <line2> and <vector2>)")
 	return new(a.from + b, a.to + b)
 end
 
 
 -- meta function to subtract a vector from a line
 function line2.__sub(a, b)
-	assert(isLine(a) and vector2.isVector2(b), "add: wrong argument types: (expected <line2> and <vector2>)")
+	assert(isLine2(a) and vector2.isVector2(b), "add: wrong argument types: (expected <line2> and <vector2>)")
 	return new(a.from - b, a.to - b)
 end
 
