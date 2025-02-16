@@ -14,6 +14,32 @@ end
 
 
 
+
+local function lineIntersectsRectangle(line, rTopLeft, rBottomRight)
+	-- sort line's points
+	local x1, y1 = line.from.x, line.from.y
+	local x2, y2 = line.to.x, line.to.y
+	if x1 > x2 then x1, x2 = x2, x1 end
+	if y1 > y2 then y1, y2 = y2, y1 end
+
+	-- early return if line's bounding box does not overlap the rectangle
+	local minX, minY = rTopLeft.x, rTopLeft.y
+	local maxX, maxY = rBottomRight.x, rBottomRight.y
+	if x2 < minX or x1 > maxX or y2 < minY or y1 > maxY then
+		return false
+	end
+	
+	-- check intersection with each edge
+	local rTopRight = vector2(maxX, minY)
+	local rBottomLeft = vector2(minX, maxY)
+	return line:intersects(line2(rTopLeft, rTopRight))
+		or line:intersects(line2(rBottomLeft, rBottomRight))
+		or line:intersects(line2(rTopLeft, rBottomLeft))
+		or line:intersects(line2(rTopRight, rBottomRight))
+end
+
+
+
 local Quadtree = {}
 Quadtree.__index = Quadtree
 
@@ -78,6 +104,7 @@ end
 
 
 -- this is prone to crashing due to a bug in LuaJIT!
+-- actually, I think it was due to a bug in my logic and now it should work just fine
 function Quadtree:findClosestItem(position, closestDis)
 	local closestItem = nil
 	local closestDistance = closestDis
@@ -184,6 +211,40 @@ function Quadtree:findAt(position, dict)
 		end
 	end
 end
+
+
+
+function Quadtree:atLine(line)
+	local dict = {}
+	self:findAtLine(line, dict)
+	local arr = {}
+	for k, v in pairs(dict) do
+		arr[#arr + 1] = k
+	end
+	return arr
+end
+
+
+
+function Quadtree:findAtLine(line, dict)
+	-- check children
+	local Item = nil
+	for i = 1, #self.Items do
+		Item = self.Items[i]
+		if line:intersectCircle(Item.Position, Item.Radius) ~= nil then
+			dict[Item.Item] = true
+		end
+	end
+	-- check sub-splits
+	for i = 1, #self.Splits do
+		Split = self.Splits[i]
+		-- check if line intersects sub-split. If so, check the split
+		if lineIntersectsRectangle(line, Split.Position, Split.Position + Split.Size) then
+			Split:findAtLine(line, dict)
+		end
+	end
+end
+
 
 
 -- THIS FUNCTION IS INCREDIBLY SLOW FOR LARGE QUADTREES! (if no position and radius is supplied)
