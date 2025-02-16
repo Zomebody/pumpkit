@@ -1908,6 +1908,18 @@ function SlicedFrame:draw()
 		local y2 = absSize.y - self.BorderWidth - (imgHeight - self.BottomRightSlice.y) * self.CornerScale
 		local y3 = absSize.y - self.BorderWidth
 
+		--[[
+					x0	 x1		 x2   x3
+					╔════╦═══════╦════╗ y0
+					║    ║       ║    ║
+					╠════╬═══════╬════╣ y1
+					║    ║       ║    ║
+					║    ║       ║    ║
+					╠════╬═══════╬════╣ y2
+					║    ║       ║    ║
+					╚════╩═══════╩════╝ y3
+		]]
+
 		-- If corners are too large to fit in the image, downscale the corners, while maintaining aspect ratio
 		-- both x and y are downscaled to remain aspect ratio of the corner
 		if x1 > x2 then

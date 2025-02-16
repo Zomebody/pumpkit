@@ -47,7 +47,7 @@ end
 
 
 function Camera3:moveLocal(vec3)
-	local localVector = matrix4():rotateX(self.Rotation.x):rotateY(self.Rotation.y):rotateZ(self.Rotation.z):toWorldVector(vec3)
+	local localVector = matrix4():rotateX(self.Rotation.x):rotateY(self.Rotation.y):rotateZ(self.Rotation.z):toWorldVector(vec3) -- TODO: just do self.Matrix:toWorldVector()?
 	self.Position = self.Position + localVector
 	if self.Scene3 ~= nil then
 		self:updateCameraMatrices()
