@@ -18,8 +18,11 @@ local function new(v1, v2)
 			["to"] = vector3(v1.to);
 		}
 		return setmetatable(Obj, line3)
-	else
+	elseif vector3.isVector3(v1) and vector3.isVector3(v2) then
+		assert(v1 ~= v2, "line3.new(v1, v2) requires arguments v1 and v2 to be different vector3s.")
 		return setmetatable({from = vector3(v1.x, v1.y, v1.z), to = vector3(v2.x, v2.y, v2.z)}, line3)
+	else
+		error("line3.new(v1, v2) only accepts two vector3s as arguments, or a line3 as v1.")
 	end
 end
 
@@ -72,6 +75,45 @@ function line3:intersectSphere(pos, radius)
 			return intersection1, intersection2 -- two intersections
 		end
 	end
+end
+
+
+-- Moller Trumbore implementation, returns intersection with 3d triangle or nil
+function line3:intersectTriangle(v1, v2, v3)
+	local direction = (self.to - self.from):setMag(1)
+
+	-- use dot-product to check if parallel. If so, no intersection is found
+	local edge1 = v2 - v1
+	local edge2 = v3 - v1
+	local perpendicular1 = direction:cross(edge2)
+	local determinant = edge1:dot(perpendicular1)
+
+	if math.abs(determinant) < 0.000001 then
+		return nil
+	end
+
+	local detInv = 1 / determinant
+	local delta = self.from - v1
+	local u = detInv * delta:dot(perpendicular1) -- barycentric coordinate 1
+
+	if u < 0 or u > 1 then
+		return nil
+	end
+
+	local perpendicular2 = delta:cross(edge1)
+	local v = detInv * direction:dot(perpendicular2) -- barycentric coordinate 2
+	if v < 0 or u + v > 1 then
+		return nil
+	end
+
+	-- calculate distance to intersection
+	local t = detInv * edge2:dot(perpendicular2)
+	if t < 0 or t > self:getLength() then -- intersection behind the ray
+		return nil
+	end
+	
+	local intersection = self.from + direction * t
+	return intersection
 end
 
 
