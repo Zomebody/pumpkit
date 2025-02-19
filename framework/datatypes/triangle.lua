@@ -175,6 +175,19 @@ function triangle:circumcenter()
 
 	local d = 2 * (v1.x * (v2.y - v3.y) + v2.x * (v3.y - v1.y) + v3.x * (v1.y - v2.y))
 
+	-- if d=0, ux and uy will be nan. Happens if the triangle has a volume of 0 (it's a line)
+	if d < 0.00000001 then
+		-- return the center of the longest line, and its diameter / 2
+		local l1, l2, l3 = self.Line1:getLength(), self.Line2:getLength(), self.Line3:getLength()
+		if l1 > l2 and l1 > l3 then
+			return self.Line1:getCenter(), l1 / 2
+		elseif l2 > l3 then
+			return self.Line2:getCenter(), l2 / 2
+		else
+			return self.Line3:getCenter(), l3 / 2
+		end
+	end
+
 	local ux = ((v1.x^2 + v1.y^2) * (v2.y - v3.y) + (v2.x^2 + v2.y^2) * (v3.y - v1.y) + (v3.x^2 + v3.y^2) * (v1.y - v2.y)) / d
 	local uy = ((v1.x^2 + v1.y^2) * (v3.x - v2.x) + (v2.x^2 + v2.y^2) * (v1.x - v3.x) + (v3.x^2 + v3.y^2) * (v2.x - v1.x)) / d
 
