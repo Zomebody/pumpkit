@@ -248,9 +248,9 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 #ifdef PIXEL
 
 varying vec3 fragWorldPosition; // output automatically interpolated fragment world position
-//varying float fragDistanceToCamera; // used for fog
 varying vec3 fragNormal; // used for normal map
 varying vec3 fragWorldNormal;
+//varying float fragDistanceToCamera; // used for fog
 //varying vec3 cameraViewDirection;
 
 uniform float currentTime;
@@ -258,6 +258,7 @@ uniform float diffuseStrength;
 
 // uvs
 uniform vec2 uvVelocity; // how quckly the UV scrolls on the X and Y axis, usually this equals 0,0
+
 // lights
 uniform vec3 lightPositions[16]; // non-transformed!
 uniform vec3 lightColors[16];
@@ -269,13 +270,16 @@ uniform vec3 ambientColor;
 uniform vec3 meshColor;
 uniform float meshBrightness; // if 1, mesh is not affected by diffuse shading at all
 uniform float meshTransparency; // how transparent the mesh is
+uniform float meshBloom;
 varying vec3 instColor;
+
+
 uniform bool isInstanced;
 
 // triplanar texture projection variables
-//uniform bool isTriplanarTexture;
 uniform float triplanarScale;
 
+// textures
 uniform Image MainTex; // used to be the 'tex' argument, but is now passed separately in this specific variable name because we switched to multi-canvas shading which has no arguments
 uniform Image normalMap;
 
@@ -289,7 +293,7 @@ uniform Image normalMap;
 
 void effect() {
 
-	vec4 color = VaryingColor; // argument 'color' doesn't exist when using multiple canvases
+	vec4 color = VaryingColor; // argument 'color' doesn't exist when using multiple canvases, so use built-in VaryingColor
 	//Image tex = MainTex;
 	if (isInstanced) {
 		color = vec4(color.x * instColor.x, color.y * instColor.y, color.z * instColor.z, color.w);
@@ -367,8 +371,11 @@ void effect() {
 	}
 
 	
-	//return texColor * color * vec4(lighting.x, lighting.y, lighting.z, 1.0);
+	//set the color on the main canvas. Apply mesh brightness here as well. Higher brightness means less affected by ambient color
 	love_Canvases[0] = texColor * color * (vec4(lighting.x, lighting.y, lighting.z, 1.0) * (1.0 - meshBrightness) + vec4(1.0, 1.0, 1.0, 1.0) * meshBrightness);
+
+	// apply bloom to canvas. Semi-transparent meshes will emit weaker bloom
+	love_Canvases[2] = vec4(color.x * meshBloom, color.y * meshBloom, color.z * meshBloom, 1.0 - meshTransparency);
 	
 
 }

@@ -35,6 +35,7 @@ local SHADER_PARTICLES_PATH = "framework/shaders/particles3d.c"
 local SHADER_SSAO_PATH = "framework/shaders/ssao3d.c"
 local SHADER_SSAOBLEND_PATH = "framework/shaders/ssaoblend.c"
 local SHADER_BLUR_PATH = "framework/shaders/blur.c"
+local SHADER_BLOOMBLUR_PATH = "framework/shaders/bloomblur.c"
 
 
 
@@ -100,50 +101,75 @@ end
 
 
 function Scene3:applyAmbientOcclusion()
-
-	-- 305 fps here
-
 	-- set ambient occlusion canvas as render target, and draw ambient occlusion data to the AO canvas
-	love.graphics.setCanvas(self.AOCanvas)
+	love.graphics.setCanvas(self.ReuseCanvas1)
 	--love.graphics.clear()
 	love.graphics.setShader(self.SSAOShader)
 	self.SSAOShader:send("normalTexture", self.NormalCanvas)
 	love.graphics.draw(self.DepthCanvas, 0, 0, 0, 1 / self.MSAA, 1 / self.MSAA) -- set the ambient occlusion shader in motion
 
-	-- 194 fps here
-
 
 	-- apply horizontal and vertical gaussian blur in two passes, using the reuse canvas to draw to that, and then back to the ambient occlusion canvas
-	love.graphics.setCanvas(self.ReuseCanvas)
+	love.graphics.setCanvas(self.ReuseCanvas2)
 	--love.graphics.clear()
 	love.graphics.setShader(self.BlurShader)
 	self.BlurShader:send("depthTexture", self.DepthCanvas)
 	self.BlurShader:send("blurDirection", {1, 0})
-	love.graphics.draw(self.AOCanvas)
-	love.graphics.setCanvas(self.AOCanvas)
+	love.graphics.draw(self.ReuseCanvas1)
+	love.graphics.setCanvas(self.ReuseCanvas1)
 	--love.graphics.clear()
 	self.BlurShader:send("blurDirection", {0, 1})
-	love.graphics.draw(self.ReuseCanvas)
+	love.graphics.draw(self.ReuseCanvas2)
 
-	-- 170 fps here
 
 	-- now blend the ambient occlusion result with whatever has been drawn already
 	-- you may think "why not render to the render canvas immediately" and I will say good question, I don't really know why.
-	love.graphics.setCanvas(self.AOFinalCanvas)
+	love.graphics.setCanvas(self.PrepareCanvas)
 	love.graphics.clear()
 	love.graphics.setShader(self.SSAOBlendShader) -- set the blend shader so we can apply ambient occlusion to the render canvas
-	self.SSAOBlendShader:send("aoTexture", self.AOCanvas) -- send over the rendered result from the ambient occlusion shader so we can sample it in the blend shader
+	self.SSAOBlendShader:send("aoTexture", self.ReuseCanvas1) -- send over the rendered result from the ambient occlusion shader so we can sample it in the blend shader
 	love.graphics.draw(self.RenderCanvas)
+
 
 	-- copy result to render canvas
 	love.graphics.setShader()
 	love.graphics.setCanvas(self.RenderCanvas)
 	--love.graphics.clear()
 	love.graphics.setShader()
-	love.graphics.draw(self.AOFinalCanvas)
+	love.graphics.draw(self.PrepareCanvas)
 
-	-- 148 fps here
+end
 
+
+
+function Scene3:applyBloom()
+	-- bloom canvas will have mostly black pixels, but any mesh with bloom > 0 and a non-black color, will be drawn as a non-black color
+	-- the idea is to blur the bloom canvas, then draw it over the scene using additive blending, using a special shader for it
+
+	-- draw scene to reuse canvas, then blur it
+	love.graphics.setCanvas(self.ReuseCanvas1)
+	--love.graphics.clear()
+	love.graphics.setShader(self.BloomBlurShader)
+	-- re-use the blur-shader that was made for ambient occlusion. We can ignore the depth texture by disabling depth tolerance
+	self.BloomBlurShader:send("blurDirection", {1, 0})
+	love.graphics.draw(self.BloomCanvas, 0, 0, 0, 1 / self.MSAA, 1 / self.MSAA)
+	love.graphics.setCanvas(self.ReuseCanvas2)
+	--love.graphics.clear()
+	self.BloomBlurShader:send("blurDirection", {0, 1})
+	-- draw to second reuse canvas for second blurring pass
+	love.graphics.draw(self.ReuseCanvas1)
+	--love.graphics.clear()
+	-- then finally, draw everything on top of the already rendered scene
+
+
+	--love.graphics.setShader(self.BloomBlendShader)
+	--self.BloomBlendShader:send("bloomTexture", self.ReuseCanvas2)
+	local blendMode = love.graphics.getBlendMode()
+	love.graphics.setBlendMode("add")
+	love.graphics.setCanvas(self.RenderCanvas)
+	love.graphics.draw(self.ReuseCanvas2, 0, 0, 0, self.MSAA, self.MSAA)
+	love.graphics.setBlendMode(blendMode)
+	--love.graphics.setShader() -- not needed since whatever comes after this will set the correct shader
 end
 
 
@@ -208,6 +234,8 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 	-- set render canvas as target and clear it so a normal image can be drawn to it
 	love.graphics.setCanvas({self.RenderCanvas, self.NormalCanvas, ["depthstencil"] = self.DepthCanvas}) -- set the main canvas so it can be cleared
 	love.graphics.clear()
+	love.graphics.setCanvas(self.BloomCanvas)
+	love.graphics.clear(0, 0, 0)
 	love.graphics.setCanvas(self.RenderCanvas) -- set the canvas to only be the render canvas so the background doesn't accidentally initialize anything in the normal canvas
 
 	local renderWidth, renderHeight = self.RenderCanvas:getDimensions()
@@ -220,7 +248,7 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 		love.graphics.draw(self.Background, 0, 0, 0, renderWidth / imgWidth, renderHeight / imgHeight)
 	end
 
-	love.graphics.setCanvas({self.RenderCanvas, self.NormalCanvas, ["depthstencil"] = self.DepthCanvas}) -- set the main canvas with proper maps for geometry being drawn
+	love.graphics.setCanvas({self.RenderCanvas, self.NormalCanvas, self.BloomCanvas, ["depthstencil"] = self.DepthCanvas}) -- set the main canvas with proper maps for geometry being drawn
 
 	-- set the canvas to draw to the render canvas, and the shader to draw in 3d
 	love.graphics.setShader(self.Shader)
@@ -233,6 +261,7 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 	self.Shader:send("currentTime", love.timer.getTime())
 	self.Shader:send("uvVelocity", {0, 0})
 	self.Shader:send("meshBrightness", 0)
+	self.Shader:send("meshBloom", 0)
 	self.Shader:send("meshTransparency", 0)
 	self.Shader:send("isInstanced", true) -- tell the shader to use the attributes to calculate the model matrices
 	for i = 1, #self.InstancedMeshes do
@@ -253,6 +282,7 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 			self.Shader:send("meshScale", Mesh.Scale:array())
 			self.Shader:send("meshColor", Mesh.Color:array())
 			self.Shader:send("meshBrightness", Mesh.Brightness)
+			self.Shader:send("meshBloom", Mesh.Bloom)
 			--self.Shader:send("meshTransparency", Mesh.Transparency) -- no need to send over Transparency anymore since we're skipping any meshes with transparency > 0
 			self.Shader:send("triplanarScale", Mesh.IsTriplanar and Mesh.TextureScale or 0)
 			love.graphics.draw(Mesh.Mesh)
@@ -278,6 +308,7 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 		self.Shader:send("meshScale", Mesh.Scale:array())
 		self.Shader:send("meshColor", Mesh.Color:array())
 		self.Shader:send("meshBrightness", Mesh.Brightness)
+		self.Shader:send("meshBloom", Mesh.Bloom)
 		self.Shader:send("meshTransparency", Mesh.Transparency) -- now we do include transparency though!
 		self.Shader:send("triplanarScale", Mesh.IsTriplanar and Mesh.TextureScale or 0)
 		love.graphics.draw(Mesh.Mesh)
@@ -287,6 +318,12 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 	if self.AOEnabled then
 		love.graphics.setDepthMode("always", false)
 		self:applyAmbientOcclusion()
+		love.graphics.setDepthMode("less", true)
+	end
+
+	if self.BloomStrength > 0 then
+		love.graphics.setDepthMode("always", false)
+		self:applyBloom()
 		love.graphics.setDepthMode("less", true)
 	end
 
@@ -362,19 +399,22 @@ function Scene3:rescaleCanvas(width, height, msaa)
 	depthCanvas:setFilter("nearest")
 	local normalCanvas = love.graphics.newCanvas(width * msaa, height * msaa)
 	normalCanvas:setFilter("nearest")
-	local aoCanvas = love.graphics.newCanvas(width, height)
-	aoCanvas:setFilter("nearest")
-	local reuseCanvas = love.graphics.newCanvas(width, height)
-	reuseCanvas:setFilter("nearest")
-	local aoFinalCanvas = love.graphics.newCanvas(width * msaa, height * msaa)
-	aoFinalCanvas:setFilter("nearest")
+	local reuseCanvas1 = love.graphics.newCanvas(width, height)
+	reuseCanvas1:setFilter("nearest")
+	local reuseCanvas2 = love.graphics.newCanvas(width, height)
+	reuseCanvas2:setFilter("nearest")
+	local prepareCanvas = love.graphics.newCanvas(width * msaa, height * msaa)
+	prepareCanvas:setFilter("nearest")
+	local bloomCanvas = love.graphics.newCanvas(width * msaa, height * msaa)
+	bloomCanvas:setFilter("nearest")
 
 	self.RenderCanvas = renderCanvas
 	self.DepthCanvas = depthCanvas
 	self.NormalCanvas = normalCanvas
-	self.AOCanvas = aoCanvas
-	self.ReuseCanvas = reuseCanvas
-	self.AOFinalCanvas = aoFinalCanvas
+	self.ReuseCanvas1 = reuseCanvas1
+	self.ReuseCanvas2 = reuseCanvas2
+	self.PrepareCanvas = prepareCanvas
+	self.BloomCanvas = bloomCanvas
 	self.MSAA = msaa
 
 	-- update aspect ratio of the scene
@@ -456,6 +496,14 @@ end
 
 function Scene3:setDiffuse(strength)
 	self.Shader:send("diffuseStrength", strength)
+end
+
+
+-- the strength parameter is how big the bloom blur will be in pixels. A strength of 0 disables blur
+function Scene3:setBloom(strength)
+	assert(type(strength) == "number", "Scene3:setBloom(strength) only accepts a number as the argument.")
+	self.BloomStrength = strength
+	self.BloomBlurShader:send("blurSize", strength)
 end
 
 
@@ -702,13 +750,15 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 	depthCanvas:setFilter("nearest")
 	local normalCanvas = love.graphics.newCanvas(gWidth * msaa, gHeight * msaa)
 	normalCanvas:setFilter("nearest")
-	local aoCanvas = love.graphics.newCanvas(gWidth, gHeight)
-	aoCanvas:setFilter("nearest")
-	local reuseCanvas = love.graphics.newCanvas(gWidth, gHeight)
-	reuseCanvas:setFilter("nearest")
-	local aoFinalCanvas = love.graphics.newCanvas(gWidth * msaa, gHeight * msaa)
-	aoFinalCanvas:setFilter("nearest")
-	--local aoCanvas = love.graphics.newCanvas(gWidth * msaa, gHeight * msaa)
+	local reuseCanvas1 = love.graphics.newCanvas(gWidth, gHeight)
+	reuseCanvas1:setFilter("nearest")
+	local reuseCanvas2 = love.graphics.newCanvas(gWidth, gHeight)
+	reuseCanvas2:setFilter("nearest")
+	local prepareCanvas = love.graphics.newCanvas(gWidth * msaa, gHeight * msaa)
+	prepareCanvas:setFilter("nearest")
+	local bloomCanvas = love.graphics.newCanvas(gWidth * msaa, gHeight * msaa)
+	bloomCanvas:setFilter("nearest")
+	--local smallCanvas1 = love.graphics.newCanvas(gWidth * msaa, gHeight * msaa)
 	--local aoBlendCanvas = love.graphics.newCanvas(gWidth * msaa, gHeight * msaa)
 
 
@@ -720,6 +770,7 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 		["SSAOShader"] = love.graphics.newShader(SHADER_SSAO_PATH); -- screen-space ambient occlusion shader
 		["SSAOBlendShader"] = love.graphics.newShader(SHADER_SSAOBLEND_PATH); -- blend shader to blend ambient occlusion with the rendered scene
 		["BlurShader"] = love.graphics.newShader(SHADER_BLUR_PATH);
+		["BloomBlurShader"] = love.graphics.newShader(SHADER_BLOOMBLUR_PATH);
 
 		["QueuedShaderVars"] = { -- whether during the next :draw() call the scene should update the shader variables below. These variables are introduced to minimize traffic to the shader!
 			["LightPositions"] = true; -- initialize to true to force the variables to be sent on the very first frame
@@ -732,13 +783,15 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 		["RenderCanvas"] = renderCanvas;
 		["DepthCanvas"] = depthCanvas;
 		["NormalCanvas"] = normalCanvas;
-		["AOCanvas"] = aoCanvas; -- ambient occlusion canvas that is black and white
-		["ReuseCanvas"] = reuseCanvas; -- intermediate canvas to render specific things to, such as ambient occlusion blending, currently only used in ambient occlusion
-		["AOFinalCanvas"] = aoFinalCanvas; -- higher resolution canvas for ambient occlusion used to draw things to which are then combined with the render canvas
+		["ReuseCanvas1"] = reuseCanvas1; -- intermediate canvas to render specific things to
+		["ReuseCanvas2"] = reuseCanvas2; -- intermediate canvas to render specific things to
+		["PrepareCanvas"] = prepareCanvas; -- higher resolution canvas for ambient occlusion & bloom, used to draw things to which are then combined with the render canvas
+		["BloomCanvas"] = bloomCanvas;
 
 		["MSAA"] = msaa;
 		["AOEnabled"] = true;
 		["DiffuseStrength"] = 1;
+		["BloomStrength"] = 0;
 
 		-- render variables
 		["Background"] = bgImage; -- image, drawn first (so they appear in the back)

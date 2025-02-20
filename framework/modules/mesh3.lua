@@ -110,6 +110,7 @@ local function new(meshRef, position, rotation, scale, col)
 		["Scale"] = scale ~= nil and vector3(scale) or vector3(1, 1, 1);
 		["Color"] = col ~= nil and color(col) or color(1, 1, 1);
 		["Brightness"] = 0;
+		["Bloom"] = 0;
 		["Transparency"] = 0;
 		["UVVelocity"] = vector2(0, 0);
 		["IsTriplanar"] = false;
