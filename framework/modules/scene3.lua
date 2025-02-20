@@ -241,15 +241,44 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 		love.graphics.drawInstanced(Mesh.Mesh, Mesh.Count)
 	end
 	self.Shader:send("isInstanced", false) -- tell the shader to use the meshPosition, meshRotation, meshScale and meshColor uniforms to calculate the model matrices
+	-- create new array to put all basic meshes in that have a Transparency > 0. Their rendering is postponed. They will be sorted later
+	local TransMeshes = {}
+	self.Shader:send("meshTransparency", 0)
 	for i = 1, #self.BasicMeshes do
 		Mesh = self.BasicMeshes[i]
+		if Mesh.Transparency == 0 then
+			self.Shader:send("uvVelocity", Mesh.UVVelocity:array())
+			self.Shader:send("meshPosition", Mesh.Position:array())
+			self.Shader:send("meshRotation", Mesh.Rotation:array())
+			self.Shader:send("meshScale", Mesh.Scale:array())
+			self.Shader:send("meshColor", Mesh.Color:array())
+			self.Shader:send("meshBrightness", Mesh.Brightness)
+			--self.Shader:send("meshTransparency", Mesh.Transparency) -- no need to send over Transparency anymore since we're skipping any meshes with transparency > 0
+			self.Shader:send("triplanarScale", Mesh.IsTriplanar and Mesh.TextureScale or 0)
+			love.graphics.draw(Mesh.Mesh)
+		elseif Mesh.Transparency < 1 then -- ignore meshes with transparency == 1
+			table.insert(TransMeshes, Mesh)
+		end
+	end
+
+	-- now sort, then draw all meshes that were postponed
+	local cameraPosition = self.Camera3.Position
+	table.sort(
+		TransMeshes,
+		function(meshA, meshB)
+			return (meshA.Position.x - cameraPosition.x)^2 + (meshA.Position.y - cameraPosition.y)^2 + (meshA.Position.z - cameraPosition.z)^2
+				> (meshB.Position.x - cameraPosition.x)^2 + (meshB.Position.y - cameraPosition.y)^2 + (meshB.Position.z - cameraPosition.z)^2
+		end
+	)
+	for i = 1, #TransMeshes do
+		Mesh = TransMeshes[i]
 		self.Shader:send("uvVelocity", Mesh.UVVelocity:array())
 		self.Shader:send("meshPosition", Mesh.Position:array())
 		self.Shader:send("meshRotation", Mesh.Rotation:array())
 		self.Shader:send("meshScale", Mesh.Scale:array())
 		self.Shader:send("meshColor", Mesh.Color:array())
 		self.Shader:send("meshBrightness", Mesh.Brightness)
-		self.Shader:send("meshTransparency", Mesh.Transparency)
+		self.Shader:send("meshTransparency", Mesh.Transparency) -- now we do include transparency though!
 		self.Shader:send("triplanarScale", Mesh.IsTriplanar and Mesh.TextureScale or 0)
 		love.graphics.draw(Mesh.Mesh)
 	end
