@@ -163,10 +163,14 @@ function tween:update(dt)
 
 		-- calculate x and set current values
 		local x = nil
+		local input = self.Progress
 		if self.Reversed then
-			x = interpolations[self.TweenType](1 - self.Progress)
+			input = 1 - input
+		end
+		if type(self.TweenType) == "function" then
+			x = self.TweenType(input)
 		else
-			x = interpolations[self.TweenType](self.Progress)
+			x = interpolations[self.TweenType](input)
 		end
 		if self.Inversed then
 			x = 1 - x
@@ -237,6 +241,8 @@ end
 -- create a new tween object and set its metatable and return it
 -- valueTable is key/value dictionary. If the key is a method, the method is called with the tweened variable instead
 local function new(Target, tweenType, duration, valueTable)
+	assert(type(tweenType) == "function" or interpolations[tweenType] ~= nil, "tween.new(Target, tweenType, duration, valueTable) requires argument 'tweenType' to be a function or valid string.")
+	assert(type(duration) == "number", "tween.new(Target, tweenType, duration, valueTable) requires argument 'duration' to be a number.")
 	local t = {
 		["Target"] = Target;
 		["TimePlayed"] = 0;
@@ -270,6 +276,7 @@ end
 ----------------------------------------------------[[ == RETURN == ]]----------------------------------------------------
 
 module.new = new
+module.TweenTypes = interpolations
 return setmetatable(module, {__call = function(_, ...) return new(...) end})
 
 
