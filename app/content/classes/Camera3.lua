@@ -145,6 +145,13 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Method";
+	["Name"] = "setMatrix";
+	["Arguments"] = {"m4"};
+	["Description"] = "Extracts the position and euler angles from the given matrix4, then applies it to the camera3. Note that this may not work properly if an unsound matrix4 is passed. This method is also prone to inaccuracies as the camera matrix is converted to a position + euler angles, then back into a matrix4.\n\nThis method is useful when creating camera interpolation.";
+})
+
+table.insert(content, {
+	["Type"] = "Method";
 	["Name"] = "setOffset";
 	["Arguments"] = {"number"};
 	["Description"] = "Sets the offset of the camera3 to the given amount.";
@@ -155,6 +162,13 @@ table.insert(content, {
 	["Name"] = "updateCameraMatrices";
 	["Arguments"] = {};
 	["Description"] = "FOR INTERNAL USE ONLY. Updates the camera3's Matrix property and sends it over to the shader(s) of the scene3 the camera is attached to.";
+})
+
+table.insert(content, {
+	["Type"] = "Method";
+	["Name"] = "worldToScreen";
+	["Arguments"] = {"vec3", "width", "height"};
+	["Description"] = "Returns a vector2 with screen coordinates indicating where a given world vector3 would be displayed on the screen.\n\n'width' and 'height' are the screen size. If either is missing, the love.graphics's width and height are used.";
 })
 
 table.insert(content, {
