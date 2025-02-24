@@ -260,13 +260,15 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 	local Mesh = nil
 	self.Shader:send("currentTime", love.timer.getTime())
 	self.Shader:send("uvVelocity", {0, 0})
-	self.Shader:send("meshBrightness", 0)
-	self.Shader:send("meshBloom", 0)
+	--self.Shader:send("meshBrightness", 0)
+	--self.Shader:send("meshBloom", 0)
 	self.Shader:send("meshTransparency", 0)
 	self.Shader:send("isInstanced", true) -- tell the shader to use the attributes to calculate the model matrices
 	for i = 1, #self.InstancedMeshes do
 		Mesh = self.InstancedMeshes[i]
 		self.Shader:send("triplanarScale", Mesh.IsTriplanar and Mesh.TextureScale or 0)
+		self.Shader:send("meshBrightness", Mesh.Brightness)
+		self.Shader:send("meshBloom", Mesh.Bloom)
 		love.graphics.drawInstanced(Mesh.Mesh, Mesh.Count)
 	end
 	self.Shader:send("isInstanced", false) -- tell the shader to use the meshPosition, meshRotation, meshScale and meshColor uniforms to calculate the model matrices
@@ -580,34 +582,33 @@ end
 
 
 
-function Scene3:addInstancedMesh(mesh, positions, rotations, scales, cols, texScale) -- if texScale is nil, IsPlanar is false, else, IsPlanar is true and TextureScale becomes texScale
-	assert(type(positions) == "table", "Scene3:addInstancedMesh(mesh, positions, rotations, scales, cols) requires argument 'positions' to be a table of vector3s, given is nil")
+-- if texScale is nil, IsPlanar is false, else, IsPlanar is true and TextureScale becomes texScale
+function Scene3:addInstancedMesh(mesh, positions, rotations, scales, cols, bloom, brightness, texScale)
+	assert(type(bloom) == "number" or bloom == nil, "Scene3:addInstancedMesh(mesh, positions, rotations, scales, cols, bloom, brightness, texScale) requires 'bloom' to be a number or nil")
+	assert(type(brightness) == "number" or brightness == nil, "Scene3:addInstancedMesh(mesh, positions, rotations, scales, cols, bloom, brightness, texScale) requires 'brightness' to be a number or nil")
+	assert(type(texScale) == "number" or texScale == nil, "Scene3:addInstancedMesh(mesh, positions, rotations, scales, cols, bloom, brightness, texScale) requires 'texScale' to be a number or nil")
+	assert(type(positions) == "table",
+		"Scene3:addInstancedMesh(mesh, positions, rotations, scales, cols, bloom, brightness, texScale) requires argument 'positions' to be a table of vector3s, given is nil")
 	if rotations == nil then
 		rotations = {}
-		for i = 1, #positions do
-			rotations[i] = vector3(0, 0, 0)
-		end
+		for i = 1, #positions do rotations[i] = vector3(0, 0, 0) end
 	else
 		assert(type(rotations) == "table" and #rotations == #positions,
-			"Scene3:addInstancedMesh(mesh, positions, rotations, scales, cols) requires argument 'rotations' to be nil or a table with vector3s of the same length as 'positions'")
+			"Scene3:addInstancedMesh(mesh, positions, rotations, scales, cols, bloom, brightness, texScale) requires argument 'rotations' to be nil or a table with vector3s of the same length as 'positions'")
 	end
 	if scales == nil then
 		scales = {}
-		for i = 1, #positions do
-			scales[i] = vector3(1, 1, 1)
-		end
+		for i = 1, #positions do scales[i] = vector3(1, 1, 1) end
 	else
 		assert(type(scales) == "table" and #scales == #positions,
-			"Scene3:addInstancedMesh(mesh, positions, rotations, scales, cols) requires argument 'scales' to be nil or a table with vector3s of the same length as 'positions'")
+			"Scene3:addInstancedMesh(mesh, positions, rotations, scales, cols, bloom, brightness, texScale) requires argument 'scales' to be nil or a table with vector3s of the same length as 'positions'")
 	end
 	if cols == nil then
 		cols = {}
-		for i = 1, #positions do
-			cols[i] = color(1, 1, 1)
-		end
+		for i = 1, #positions do cols[i] = color(1, 1, 1) end
 	else
-		assert(type(scales) == "table" and #cols == #positions,
-			"Scene3:addInstancedMesh(mesh, positions, rotations, scales, cols) requires argument 'cols' to be nil or a table with colors of the same length as 'positions'")
+		assert(type(cols) == "table" and #cols == #positions,
+			"Scene3:addInstancedMesh(mesh, positions, rotations, scales, cols, bloom, brightness, texScale) requires argument 'cols' to be nil or a table with colors of the same length as 'positions'")
 	end
 
 	local instancesData = {}
@@ -639,6 +640,8 @@ function Scene3:addInstancedMesh(mesh, positions, rotations, scales, cols, texSc
 	local Data = {
 		["Mesh"] = mesh;
 		["Instances"] = instanceMesh; -- the reason for exposing the instances is so that setVertexAttribute() can be used on individual instances to update them after batching
+		["Bloom"] = bloom ~= nil and bloom or 0;
+		["Brightness"] = brightness ~= nil and brightness or 0;
 		["IsTriplanar"] = texScale ~= nil; -- determines if the mesh's texture is applied using triplanar projection
 		["TextureScale"] = texScale ~= nil and texScale or 1; -- only used if IsTriplanar is true.
 		["Count"] = #positions;
