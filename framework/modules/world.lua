@@ -109,13 +109,13 @@ end
 
 
 
-function module:render()
+function module:render(renderTarget)
 	if self.CurrentScene ~= nil then
 		-- draw the scene
 		--for i = 1, #self.CurrentScene.Particles do
 		--	self.CurrentScene.Particles[i]:update() -- updating particles can be really bad for performance if there are many particles active!
 		--end
-		self.CurrentScene:draw()
+		self.CurrentScene:draw(renderTarget)
 		
 	end
 end

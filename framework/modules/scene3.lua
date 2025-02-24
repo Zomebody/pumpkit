@@ -123,7 +123,6 @@ function Scene3:applyAmbientOcclusion()
 
 
 	-- now blend the ambient occlusion result with whatever has been drawn already
-	-- you may think "why not render to the render canvas immediately" and I will say good question, I don't really know why.
 	love.graphics.setCanvas(self.PrepareCanvas)
 	love.graphics.clear()
 	love.graphics.setShader(self.SSAOBlendShader) -- set the blend shader so we can apply ambient occlusion to the render canvas
@@ -354,6 +353,9 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 
 	-- reset the canvas to the render target & render the scene
 	love.graphics.setCanvas(renderTarget)
+	if renderTarget ~= nil then
+		love.graphics.clear()
+	end
 	love.graphics.draw(self.RenderCanvas, 0, self.RenderCanvas:getHeight() / self.MSAA, 0, 1 / self.MSAA, -1 / self.MSAA)
 
 	-- revert some graphics settings
@@ -510,36 +512,6 @@ end
 
 
 
--- compares each index with the following index and swaps them so that the mesh that is further away from the camera comes first
--- this won't immediately sort the array, which is the point. The idea is that you call this method once per frame
--- so that over time the array will eventually be sorted from far away meshes to close by meshes.
--- the order of meshes doesn't matter too much, but preferably you want to draw meshes from back to front to deal with semi-transparency properly
---[[ -- removed for now because I want to add mesh3:remove() which requires meshes to be sorted correctly
-function Scene3:slowlySortMeshes()
-	if self.Camera3 == nil then
-		return
-	end
-	local cameraPosition = vector3(self.Camera3.Matrix[13], self.Camera3.Matrix[14], self.Camera3.Matrix[15])
-	local dist1, dist2
-	for i = 1, #self.BasicMeshes - 1 do
-
-		-- make sure fully opaque meshes are drawn first
-		if self.BasicMeshes[i].Transparency > 0 and self.BasicMeshes[i + 1].Transparency > 0 then
-			-- compute squared distance since it's cheaper than pythagoras
-			dist1 = (self.BasicMeshes[i].Position.x - cameraPosition.x)^2 + (self.BasicMeshes[i].Position.y - cameraPosition.y)^2 + (self.BasicMeshes[i].Position.z - cameraPosition.z)^2
-			dist2 = (self.BasicMeshes[i + 1].Position.x - cameraPosition.x)^2 + (self.BasicMeshes[i + 1].Position.y - cameraPosition.y)^2 + (self.BasicMeshes[i + 1].Position.z - cameraPosition.z)^2
-			-- swap so that the furthest object gets drawn earlier
-			if dist1 < dist2 then
-				self.BasicMeshes[i], self.BasicMeshes[i + 1] = self.BasicMeshes[i + 1], self.BasicMeshes[i]
-			end
-		elseif self.BasicMeshes[i].Transparency > 0 then
-			self.BasicMeshes[i], self.BasicMeshes[i + 1] = self.BasicMeshes[i + 1], self.BasicMeshes[i]
-		end
-	end
-end
-]]
-
-
 
 function Scene3:attachBasicMesh(mesh)
 	assert(mesh3.isMesh3(mesh), "Scene3:attachBasicMesh(mesh) requires argument 'mesh' to be a mesh3.")
@@ -557,28 +529,6 @@ function Scene3:attachBasicMesh(mesh)
 	return mesh
 	
 end
---[[
-function Scene3:addBasicMesh(mesh, position, rotation, scale, col, uvVelocity, texScale) -- if texScale is nil, IsPlanar is false, else, IsPlanar is true and TextureScale becomes texScale
-	assert(vector3.isVector3(position), "Scene3:addBasicMesh(mesh, position, rotation, scale, col, uvVelocity) requires argument 'position' to be a vector3")
-	local Mesh = {
-		["Mesh"] = mesh;
-		["IsTriplanar"] = texScale ~= nil; -- determines if the mesh's texture is applied using triplanar projection
-		["TextureScale"] = texScale ~= nil and texScale or 1; -- only used if IsTriplanar is true.
-		["Position"] = vector3(position);
-		["Rotation"] = rotation ~= nil and vector3(rotation) or vector3(0, 0, 0);
-		["Scale"] = scale ~= nil and vector3(scale) or vector3(1, 1, 1);
-		["Color"] = col ~= nil and color(col) or color(1, 1, 1);
-		["UVVelocity"] = uvVelocity ~= nil and vector2(uvVelocity) or vector2(0, 0);
-		["Brightness"] = 0;
-		["Transparency"] = 0;
-	}
-	table.insert(self.BasicMeshes, Mesh)
-	if self.Events.MeshAdded then
-		connection.doEvents(self.Events.MeshAdded, Mesh)
-	end
-	return Mesh
-end
-]]
 
 
 
