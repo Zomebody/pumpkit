@@ -355,8 +355,17 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 	love.graphics.setCanvas(renderTarget)
 	if renderTarget ~= nil then
 		love.graphics.clear()
+		-- if a render target is set, adjust the scaling so that it fits inside the render target
+		local scaleX = renderTarget:getWidth() / self.RenderCanvas:getWidth()
+		local scaleY = renderTarget:getHeight() / self.RenderCanvas:getHeight()
+		love.graphics.draw(self.RenderCanvas, 0, renderTarget:getHeight(), 0, scaleX, -scaleY)
+	else
+		-- if no render target is set, the scene is drawn to the screen, so use the screen's dimensions
+		local scaleX = love.graphics.getWidth() / self.RenderCanvas:getWidth()
+		local scaleY = love.graphics.getHeight() / self.RenderCanvas:getHeight()
+		love.graphics.draw(self.RenderCanvas, 0, love.graphics.getHeight(), 0, scaleX, -scaleY)
 	end
-	love.graphics.draw(self.RenderCanvas, 0, self.RenderCanvas:getHeight() / self.MSAA, 0, 1 / self.MSAA, -1 / self.MSAA)
+	
 
 	-- revert some graphics settings
 	love.graphics.setCanvas(prevCanvas)
