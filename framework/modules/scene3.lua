@@ -101,8 +101,26 @@ end
 
 
 function Scene3:applyAmbientOcclusion()
+	-- choose ping-pong canvases based on the quality you set
+	local pingCanvas = self.ReuseCanvas1
+	local pongCanvas = self.ReuseCanvas2
+	--[[
+	local pingCanvas, pongCanvas
+	if self.AOQuality == 1 then
+		pingCanvas = self.ReuseCanvas1
+		pongCanvas = self.ReuseCanvas2
+	elseif self.AOQuality == 0.5 then
+		pingCanvas = self.ReuseCanvas3
+		pongCanvas = self.ReuseCanvas4
+	else -- 0.25
+		pingCanvas = self.ReuseCanvas5
+		pongCanvas = self.ReuseCanvas6
+	end
+	]]
+
+
 	-- set ambient occlusion canvas as render target, and draw ambient occlusion data to the AO canvas
-	love.graphics.setCanvas(self.ReuseCanvas1)
+	love.graphics.setCanvas(pingCanvas)
 	--love.graphics.clear()
 	love.graphics.setShader(self.SSAOShader)
 	self.SSAOShader:send("normalTexture", self.NormalCanvas)
@@ -110,23 +128,24 @@ function Scene3:applyAmbientOcclusion()
 
 
 	-- apply horizontal and vertical gaussian blur in two passes, using the reuse canvas to draw to that, and then back to the ambient occlusion canvas
-	love.graphics.setCanvas(self.ReuseCanvas2)
+	love.graphics.setCanvas(pongCanvas)
 	--love.graphics.clear()
+	--love.graphics.setShader()
 	love.graphics.setShader(self.BlurShader)
 	self.BlurShader:send("depthTexture", self.DepthCanvas)
 	self.BlurShader:send("blurDirection", {1, 0})
-	love.graphics.draw(self.ReuseCanvas1)
-	love.graphics.setCanvas(self.ReuseCanvas1)
+	love.graphics.draw(pingCanvas)
+	love.graphics.setCanvas(pingCanvas)
 	--love.graphics.clear()
 	self.BlurShader:send("blurDirection", {0, 1})
-	love.graphics.draw(self.ReuseCanvas2)
+	love.graphics.draw(pongCanvas)
 
 
 	-- now blend the ambient occlusion result with whatever has been drawn already
 	love.graphics.setCanvas(self.PrepareCanvas)
 	love.graphics.clear()
 	love.graphics.setShader(self.SSAOBlendShader) -- set the blend shader so we can apply ambient occlusion to the render canvas
-	self.SSAOBlendShader:send("aoTexture", self.ReuseCanvas1) -- send over the rendered result from the ambient occlusion shader so we can sample it in the blend shader
+	self.SSAOBlendShader:send("aoTexture", pingCanvas) -- send over the rendered result from the ambient occlusion shader so we can sample it in the blend shader
 	love.graphics.draw(self.RenderCanvas)
 
 
@@ -142,22 +161,34 @@ end
 
 
 function Scene3:applyBloom()
+	-- choose ping-pong canvases based on the quality you set
+	local pingCanvas, pongCanvas
+	if self.BloomQuality == 1 then
+		pingCanvas = self.ReuseCanvas1
+		pongCanvas = self.ReuseCanvas2
+	elseif self.BloomQuality == 0.5 then
+		pingCanvas = self.ReuseCanvas3
+		pongCanvas = self.ReuseCanvas4
+	else -- 0.25
+		pingCanvas = self.ReuseCanvas5
+		pongCanvas = self.ReuseCanvas6
+	end
+
 	-- bloom canvas will have mostly black pixels, but any mesh with bloom > 0 and a non-black color, will be drawn as a non-black color
 	-- the idea is to blur the bloom canvas, then draw it over the scene using additive blending, using a special shader for it
 
+	-- TODO: edit the blur shader so that is knows about the quality and adjusts the blur size accordingly!
+
 	-- draw scene to reuse canvas, then blur it
-	love.graphics.setCanvas(self.ReuseCanvas1)
-	--love.graphics.clear()
+	love.graphics.setCanvas(pingCanvas)
 	love.graphics.setShader(self.BloomBlurShader)
 	-- re-use the blur-shader that was made for ambient occlusion. We can ignore the depth texture by disabling depth tolerance
 	self.BloomBlurShader:send("blurDirection", {1, 0})
-	love.graphics.draw(self.BloomCanvas, 0, 0, 0, 1 / self.MSAA, 1 / self.MSAA)
-	love.graphics.setCanvas(self.ReuseCanvas2)
-	--love.graphics.clear()
+	love.graphics.draw(self.BloomCanvas, 0, 0, 0, 1 / self.MSAA * self.BloomQuality, 1 / self.MSAA * self.BloomQuality)
+	love.graphics.setCanvas(pongCanvas)
 	self.BloomBlurShader:send("blurDirection", {0, 1})
 	-- draw to second reuse canvas for second blurring pass
-	love.graphics.draw(self.ReuseCanvas1)
-	--love.graphics.clear()
+	love.graphics.draw(pingCanvas)
 	-- then finally, draw everything on top of the already rendered scene
 
 
@@ -166,7 +197,7 @@ function Scene3:applyBloom()
 	local blendMode = love.graphics.getBlendMode()
 	love.graphics.setBlendMode("add")
 	love.graphics.setCanvas(self.RenderCanvas)
-	love.graphics.draw(self.ReuseCanvas2, 0, 0, 0, self.MSAA, self.MSAA)
+	love.graphics.draw(pongCanvas, 0, 0, 0, self.MSAA / self.BloomQuality, self.MSAA / self.BloomQuality)
 	love.graphics.setBlendMode(blendMode)
 	--love.graphics.setShader() -- not needed since whatever comes after this will set the correct shader
 end
@@ -184,6 +215,22 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 	if self.Camera3 == nil then
 		return
 	end
+
+	-- blur shaders do sampling in 'pixel' coordinates while shaders work with normalized device coordinates
+	-- that means that if you resize your screen, blurs will need to be adjusted as well to compensate for the different canvas size
+	-- sending over shader variables every frame is unnecessary, so instead check if the canvas size has changed since last drawing operation
+	local width, height
+	if renderTarget ~= nil then
+		width, height = renderTarget:getDimensions()
+	else
+		width, height = love.graphics.getDimensions()
+	end
+	if self.LastDrawSize.x ~= width or self.LastDrawSize.y ~= height then
+		self.LastDrawSize = vector2(width, height)
+		self.BlurShader:send("screenSize", {width, height})
+		self.BloomBlurShader:send("screenSize", {width, height})
+	end
+
 
 	-- update positions of lights in the shader if any of the lights moved
 	if self.QueuedShaderVars.LightPositions then
@@ -358,6 +405,9 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 		-- if a render target is set, adjust the scaling so that it fits inside the render target
 		local scaleX = renderTarget:getWidth() / self.RenderCanvas:getWidth()
 		local scaleY = renderTarget:getHeight() / self.RenderCanvas:getHeight()
+		-- a pretty important caveat here: if you are drawing to a render target it's VERY RECOMMENDED that the render target has the same dimensions as the screen
+		-- if your render target is smaller however, e.g. when using split-screen, you should 100% call Scene3:rescaleCanvas() with your target width and height.
+		-- because if you are drawing to a smaller render canvas but the scene has a fullscreen render canvas, you're tanking your FPS for no reason (better anti-aliasing though I guess)
 		love.graphics.draw(self.RenderCanvas, 0, renderTarget:getHeight(), 0, scaleX, -scaleY)
 	else
 		-- if no render target is set, the scene is drawn to the screen, so use the screen's dimensions
@@ -399,6 +449,11 @@ function Scene3:rescaleCanvas(width, height, msaa)
 	if width == nil or height == nil then
 		width, height = love.graphics.getDimensions()
 	end
+
+	-- round to a multiple of 4 so that we can downsample bloom/SSAO to half and quarter resolution
+	width = math.ceil(width / 4) * 4
+	height = math.ceil(height / 4) * 4
+
 	local renderCanvas = love.graphics.newCanvas(width * msaa, height * msaa)
 	local depthCanvas = love.graphics.newCanvas(
 		width * msaa,
@@ -411,23 +466,36 @@ function Scene3:rescaleCanvas(width, height, msaa)
 	)
 	depthCanvas:setFilter("nearest")
 	local normalCanvas = love.graphics.newCanvas(width * msaa, height * msaa)
-	normalCanvas:setFilter("nearest")
-	local reuseCanvas1 = love.graphics.newCanvas(width, height)
-	reuseCanvas1:setFilter("nearest")
-	local reuseCanvas2 = love.graphics.newCanvas(width, height)
-	reuseCanvas2:setFilter("nearest")
+	--normalCanvas:setFilter("nearest")
 	local prepareCanvas = love.graphics.newCanvas(width * msaa, height * msaa)
 	prepareCanvas:setFilter("nearest")
 	local bloomCanvas = love.graphics.newCanvas(width * msaa, height * msaa)
 	bloomCanvas:setFilter("nearest")
 
+	local reuseCanvas1 = love.graphics.newCanvas(width, height)
+	--reuseCanvas1:setFilter("nearest")
+	local reuseCanvas2 = love.graphics.newCanvas(width, height)
+	--reuseCanvas2:setFilter("nearest")
+	local reuseCanvas3 = love.graphics.newCanvas(width * 0.5, height * 0.5)
+	--reuseCanvas3:setFilter("nearest")
+	local reuseCanvas4 = love.graphics.newCanvas(width * 0.5, height * 0.5)
+	--reuseCanvas4:setFilter("nearest")
+	local reuseCanvas5 = love.graphics.newCanvas(width * 0.25, height * 0.25)
+	--reuseCanvas5:setFilter("nearest")
+	local reuseCanvas6 = love.graphics.newCanvas(width * 0.25, height * 0.25)
+	--reuseCanvas6:setFilter("nearest")
+
 	self.RenderCanvas = renderCanvas
 	self.DepthCanvas = depthCanvas
 	self.NormalCanvas = normalCanvas
-	self.ReuseCanvas1 = reuseCanvas1
-	self.ReuseCanvas2 = reuseCanvas2
 	self.PrepareCanvas = prepareCanvas
 	self.BloomCanvas = bloomCanvas
+	self.ReuseCanvas1 = reuseCanvas1
+	self.ReuseCanvas2 = reuseCanvas2
+	self.ReuseCanvas3 = reuseCanvas3
+	self.ReuseCanvas4 = reuseCanvas4
+	self.ReuseCanvas5 = reuseCanvas5
+	self.ReuseCanvas6 = reuseCanvas6
 	self.MSAA = msaa
 
 	-- update aspect ratio of the scene
@@ -506,6 +574,17 @@ function Scene3:setAO(strength, kernelScalar)
 end
 
 
+function Scene3:setAOQuality(quality)
+	assert(quality == 1 or quality == 0.5 or quality == 0.25, "Scene3:setAOQuality(quality) requires argument 'quality' to be 1, 0.5 or 0.25.")
+	self.AOQuality = quality
+	-- TODO: set blur size
+	--self.SSAOShader:send("aoQuality", quality)
+	--self.SSAOBlendShader:send("aoQuality", quality)
+	--self.BlurShader:send("aoQuality", quality)
+	self.SSAOShader:send("samples", quality == 1 and 24 or (quality == 0.5 and 16 or 8))
+end
+
+
 
 function Scene3:setDiffuse(strength)
 	self.Shader:send("diffuseStrength", strength)
@@ -517,6 +596,12 @@ function Scene3:setBloom(strength)
 	assert(type(strength) == "number", "Scene3:setBloom(strength) only accepts a number as the argument.")
 	self.BloomStrength = strength
 	self.BloomBlurShader:send("blurSize", strength)
+end
+
+function Scene3:setBloomQuality(quality)
+	assert(quality == 1 or quality == 0.5 or quality == 0.25, "Scene3:setBloomQuality(quality) requires argument 'quality' to be 1, 0.5 or 0.25.")
+	self.BloomQuality = quality
+	--self.BloomBlurShader:send("bloomQuality", quality)
 end
 
 
@@ -697,7 +782,10 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 	--assert(camera.isCamera(sceneCamera) or sceneCamera == nil, "scene3.newScene3(image, sceneCamera) only accepts a camera instance or nil for 'sceneCamera'")
 	module.TotalCreated = module.TotalCreated + 1
 
+	-- round screen size to multiple of 4 so that downscaling SSAO and bloom can be supported
 	local gWidth, gHeight = love.graphics.getWidth(), love.graphics.getHeight()
+	gWidth = math.ceil(gWidth / 4) * 4
+	gHeight = math.ceil(gHeight / 4) * 4
 	
 	local renderCanvas = love.graphics.newCanvas(gWidth * msaa, gHeight * msaa)
 	local depthCanvas = love.graphics.newCanvas(
@@ -711,17 +799,24 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 	)
 	depthCanvas:setFilter("nearest")
 	local normalCanvas = love.graphics.newCanvas(gWidth * msaa, gHeight * msaa)
-	normalCanvas:setFilter("nearest")
-	local reuseCanvas1 = love.graphics.newCanvas(gWidth, gHeight)
-	reuseCanvas1:setFilter("nearest")
-	local reuseCanvas2 = love.graphics.newCanvas(gWidth, gHeight)
-	reuseCanvas2:setFilter("nearest")
+	--normalCanvas:setFilter("nearest")
 	local prepareCanvas = love.graphics.newCanvas(gWidth * msaa, gHeight * msaa)
 	prepareCanvas:setFilter("nearest")
 	local bloomCanvas = love.graphics.newCanvas(gWidth * msaa, gHeight * msaa)
 	bloomCanvas:setFilter("nearest")
-	--local smallCanvas1 = love.graphics.newCanvas(gWidth * msaa, gHeight * msaa)
-	--local aoBlendCanvas = love.graphics.newCanvas(gWidth * msaa, gHeight * msaa)
+
+	local reuseCanvas1 = love.graphics.newCanvas(gWidth, gHeight)
+	--reuseCanvas1:setFilter("nearest")
+	local reuseCanvas2 = love.graphics.newCanvas(gWidth, gHeight)
+	--reuseCanvas2:setFilter("nearest")
+	local reuseCanvas3 = love.graphics.newCanvas(gWidth * 0.5, gHeight * 0.5)
+	--reuseCanvas3:setFilter("nearest")
+	local reuseCanvas4 = love.graphics.newCanvas(gWidth * 0.5, gHeight * 0.5)
+	--reuseCanvas4:setFilter("nearest")
+	local reuseCanvas5 = love.graphics.newCanvas(gWidth * 0.25, gHeight * 0.25)
+	--reuseCanvas5:setFilter("nearest")
+	local reuseCanvas6 = love.graphics.newCanvas(gWidth * 0.25, gHeight * 0.25)
+	--reuseCanvas6:setFilter("nearest")
 
 
 	local Object = {
@@ -741,19 +836,30 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 			["LightStrengths"] = true; -- same as above
 		};
 
+		["LastDrawSize"] = vector2(gWidth, gHeight); -- when you suddenly start drawing the scene at a different size, some shader variables need to be updated!
+
 		-- canvas properties, update whenever you change the render target
 		["RenderCanvas"] = renderCanvas;
 		["DepthCanvas"] = depthCanvas;
 		["NormalCanvas"] = normalCanvas;
-		["ReuseCanvas1"] = reuseCanvas1; -- intermediate canvas to render specific things to
-		["ReuseCanvas2"] = reuseCanvas2; -- intermediate canvas to render specific things to
 		["PrepareCanvas"] = prepareCanvas; -- higher resolution canvas for ambient occlusion & bloom, used to draw things to which are then combined with the render canvas
 		["BloomCanvas"] = bloomCanvas;
+
+		-- when applying SSAO, bloom, etc. you need multiple render passes. For that purpose 'reuse' canvases are created to play ping-pong with each pass
+		-- Considering that SSAO, bloom etc. might want to be downscaled for better FPS, there are canvases for full, half and quarter size
+		["ReuseCanvas1"] = reuseCanvas1; -- full quality 1
+		["ReuseCanvas2"] = reuseCanvas2; -- full quality 2
+		["ReuseCanvas3"] = reuseCanvas3; -- half quality 1
+		["ReuseCanvas4"] = reuseCanvas4; -- half quality 2
+		["ReuseCanvas5"] = reuseCanvas5; -- quarter quality 1
+		["ReuseCanvas6"] = reuseCanvas6; -- quarter quality 2
 
 		["MSAA"] = msaa;
 		["AOEnabled"] = true;
 		["DiffuseStrength"] = 1;
 		["BloomStrength"] = 0;
+		["AOQuality"] = 1; -- 1 = full quality, 0.5 = half quality, 0.25 = quarter quality
+		["BloomQuality"] = 1; -- 1 = full quality, 0.5 = half quality, 0.25 = quarter quality
 
 		-- render variables
 		["Background"] = bgImage; -- image, drawn first (so they appear in the back)
@@ -784,10 +890,17 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 	Object.ParticlesShader:send("fieldOfView", Object.Camera3.FieldOfView)
 	Object.SSAOShader:send("aoStrength", 0.5)
 	Object.SSAOShader:send("kernelScalar", 0.85) -- how 'large' ambient occlusion is
+	Object.SSAOShader:send("samples", 24)
 	--Object.SSAOShader:send("viewDistanceFactor", 0.2) -- when you zoom out ambient occlusion fades away, bigger number = need to zoom out more
 	local persp = matrix4.perspective(aspectRatio, Object.Camera3.FieldOfView, 1000, 0.1)
 	local c1, c2, c3, c4 = persp:columns()
 	Object.SSAOShader:send("perspectiveMatrix", {c1, c2, c3, c4})
+
+	-- bloom and AO quality shader vars
+	Object.BlurShader:send("screenSize", {gWidth, gHeight})
+	--Object.BlurShader:send("aoQuality", 1)
+	--Object.SSAOShader:send("aoQuality", 1)
+	Object.BloomBlurShader:send("screenSize", {gWidth, gHeight})
 
 	-- create and send noise image to SSAO shader
 	local imgData = love.image.newImageData(16, 16) --16, 16
@@ -798,7 +911,7 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 	love.math.setRandomSeed(seed)
 	love.math.setRandomState(state)
 	local noiseImage = love.graphics.newImage(imgData)
-	noiseImage:setFilter("nearest") -- using nearest instead of linear interpolation somehow increases FPS by 10%, probs Texel() is slow?
+	--noiseImage:setFilter("nearest") -- using nearest instead of linear interpolation somehow increases FPS by 10%, probs Texel() is slow?
 	noiseImage:setWrap("repeat")
 	Object.SSAOShader:send("noiseTexture", noiseImage)
 

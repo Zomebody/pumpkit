@@ -301,9 +301,11 @@ void effect() {
 		color = vec4(color.x * meshColor.x, color.y * meshColor.y, color.z * meshColor.z, color.w);
 	}
 	
+	/*
 	if (love_PixelCoord.x < 0 || love_PixelCoord.x > love_ScreenSize.x || love_PixelCoord.y < 0 || love_PixelCoord.y > love_ScreenSize.y) {
 		discard;
 	}
+	*/
 
 	
 

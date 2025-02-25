@@ -8,10 +8,11 @@ const float radius = 6;
 const float depthTolerance = 0.003;
 uniform vec2 blurDirection;
 uniform Image depthTexture;
+uniform vec2 screenSize;
 
 
 vec4 effect(vec4 color, Image texture, vec2 texture_coords, vec2 screen_coords) {
-	vec2 texelSize = blurDirection / love_ScreenSize.xy;
+	vec2 texelSize = blurDirection / screenSize;
 	float curDepth = Texel(depthTexture, texture_coords).r;
 	vec4 sum = vec4(0.0);
 	float totalWeight = 0.0;
