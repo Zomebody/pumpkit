@@ -41,8 +41,8 @@ table.insert(content, {
 table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "render";
-	["Arguments"] = {};
-	["Description"] = "Draws the current scene to the screen.";
+	["Arguments"] = {"canvas"};
+	["Description"] = "Draws the current scene to the screen. If 'canvas' is supplied, it will instead draw the world to the canvas.";
 })
 
 table.insert(content, {

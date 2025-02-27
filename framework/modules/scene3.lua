@@ -591,11 +591,11 @@ function Scene3:setDiffuse(strength)
 end
 
 
--- the strength parameter is how big the bloom blur will be in pixels. A strength of 0 disables blur
-function Scene3:setBloom(strength)
-	assert(type(strength) == "number", "Scene3:setBloom(strength) only accepts a number as the argument.")
-	self.BloomStrength = strength
-	self.BloomBlurShader:send("blurSize", strength)
+-- the size parameter is how big the bloom blur will be in pixels. A size of 0 disables blur
+function Scene3:setBloom(size)
+	assert(type(size) == "number", "Scene3:setBloom(size) only accepts a number as the argument.")
+	self.BloomStrength = size
+	self.BloomBlurShader:send("blurSize", size)
 end
 
 function Scene3:setBloomQuality(quality)

@@ -136,6 +136,13 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Method";
+	["Name"] = "applyBloom";
+	["Arguments"] = {};
+	["Description"] = "FOR INTERNAL USE ONLY. This will apply bloom to the canvas that is currently being prepared for rendering.";
+})
+
+table.insert(content, {
+	["Type"] = "Method";
 	["Name"] = "attachBasicMesh";
 	["Arguments"] = {"mesh3"};
 	["Description"] = "Adds a mesh3 instance to the scene's list of meshes that will be drawn. Each mesh takes up one draw call. A mesh cannot be added multiple times. If the mesh is already attached to a scene, it is first detached.";
@@ -188,6 +195,27 @@ table.insert(content, {
 	["Name"] = "setAO";
 	["Arguments"] = {"strength", "scale"};
 	["Description"] = "Sets the scene's ambient occlusion. 'strength' should be a value roughly between 0 and 1. A 'scale' of 1 means ambient occlusion spreads up to 1 unit out of corners.";
+})
+
+table.insert(content, {
+	["Type"] = "Method";
+	["Name"] = "setAOQuality";
+	["Arguments"] = {"quality"};
+	["Description"] = "Sets the quality of the ambient occlusion. 'quality' must be one of 1, 0.5 or 0.25. Right now the quality only impacts the number of samples taken (24, 16 or 8).";
+})
+
+table.insert(content, {
+	["Type"] = "Method";
+	["Name"] = "setBloom";
+	["Arguments"] = {"size"};
+	["Description"] = "Sets the size of the scene's bloom in pixels. A size of 0 disables bloom altogether. Note that bloom will appear larger on lower resolutions due to it being in pixels.";
+})
+
+table.insert(content, {
+	["Type"] = "Method";
+	["Name"] = "setBloomQuality";
+	["Arguments"] = {"quality"};
+	["Description"] = "Sets the quality at which bloom is rendered. 'quality' must be one of 1, 0.5 or 0.25 and will impact the resolution of the canvas it is drawn to. The difference between high and low quality is hard to see so consider using a low resolution. However, fps gains are minimal at lower resolution.";
 })
 
 table.insert(content, {
