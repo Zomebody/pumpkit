@@ -50,6 +50,9 @@ function load()
 	particles3 = require(filepath("../framework/modules/particles3", "."))
 	network = require(filepath("../framework/modules/network", "."))
 
+	-- fix cull-mode being the opposite
+	love.graphics.setFrontFaceWinding("cw")
+
 	-- initialization
 	callbacks:initialize()
 	ui:initialize()

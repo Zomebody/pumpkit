@@ -36,6 +36,7 @@ local SHADER_SSAO_PATH = "framework/shaders/ssao3d.c"
 local SHADER_SSAOBLEND_PATH = "framework/shaders/ssaoblend.c"
 local SHADER_BLUR_PATH = "framework/shaders/blur.c"
 local SHADER_BLOOMBLUR_PATH = "framework/shaders/bloomblur.c"
+local SHADER_SHADOWMAP_PATH = "framework/shaders/shadowmap.c"
 
 
 
@@ -204,6 +205,45 @@ end
 
 
 
+
+function Scene3:updateShadowMap()
+	-- prevent peter-panning: https://learnopengl.com/Advanced-Lighting/Shadows/Shadow-Mapping
+	love.graphics.setMeshCullMode("front")
+
+	-- prepare for drawing
+	love.graphics.setShader(self.ShadowMapShader)
+	love.graphics.setCanvas(self.ShadowCanvas, {depthstencil = self.ShadowDepthCanvas})
+	love.graphics.clear() -- we should clear since if you remove an object, the shadow in that area won't get overwritten
+	love.graphics.setDepthMode("less", true)
+
+	-- render all meshes and instanced meshes that have shadows enabled to the shadow canvas
+	local Mesh
+	for i = 1, #self.InstancedMeshes do
+		Mesh = self.InstancedMeshes[i]
+		if Mesh.CastShadow then
+			love.graphics.drawInstanced(Mesh.Mesh, Mesh.Count)
+		end
+	end
+	for i = 1, #self.BasicMeshes do
+		Mesh = self.BasicMeshes[i]
+		if Mesh.CastShadow then
+			-- TODO meshes need their own matrix instead of sending over and computing them every time in the shaders
+			self.Shader:send("meshPosition", Mesh.Position:array())
+			self.Shader:send("meshRotation", Mesh.Rotation:array())
+			self.Shader:send("meshScale", Mesh.Scale:array())
+			love.graphics.draw(self.BasicMeshes[i])
+		end
+	end
+
+	-- revert peter-panning
+	love.graphics.setMeshCullMode("back")
+
+	-- send over the shadow canvas to the main shader for sampling
+	self.Shader:send("shadowCanvas", self.ShadowCanvas)
+end
+
+
+
 function Scene3:draw(renderTarget) -- nil or a canvas
 	-- get some graphics settings so they can be reverted later
 	local prevCanvas = love.graphics.getCanvas()
@@ -277,6 +317,12 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 	end
 
 
+	-- if a shadow canvas is set, it means shadow mapping is turned on
+	if self.ShadowCanvas ~= nil then
+		self:updateShadowMap()
+	end
+
+
 	-- set render canvas as target and clear it so a normal image can be drawn to it
 	love.graphics.setCanvas({self.RenderCanvas, self.NormalCanvas, ["depthstencil"] = self.DepthCanvas}) -- set the main canvas so it can be cleared
 	love.graphics.clear()
@@ -301,13 +347,11 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 	love.graphics.setDepthMode("less", true)
 
 	-- draw all of the scene's meshes
-	love.graphics.setMeshCullMode("front")
+	love.graphics.setMeshCullMode("back")
 
 	local Mesh = nil
 	self.Shader:send("currentTime", love.timer.getTime())
 	self.Shader:send("uvVelocity", {0, 0})
-	--self.Shader:send("meshBrightness", 0)
-	--self.Shader:send("meshBloom", 0)
 	self.Shader:send("meshTransparency", 0)
 	self.Shader:send("isInstanced", true) -- tell the shader to use the attributes to calculate the model matrices
 	for i = 1, #self.InstancedMeshes do
@@ -605,6 +649,57 @@ function Scene3:setBloomQuality(quality)
 end
 
 
+function Scene3:setShadowMap(position, direction, size, canvasSize, sunColor, shadowStrength)
+	if position == nil then
+		self.ShadowCanvas = nil
+		self.ShadowDepthCanvas = nil
+		self.Shader:send("shadowsEnabled", false)
+	else
+		assert(vector3.isVector3(position), "Scene3:setShadowMap(position, direction, size, canvasSize, sunColor, shadowStrength) requires argument 'position' to be a vector3.")
+		assert(vector3.isVector3(direction), "Scene3:setShadowMap(position, direction, size, canvasSize, sunColor, shadowStrength) requires argument 'direction' to be a vector3.")
+		assert(vector2.isVector2(size), "Scene3:setShadowMap(position, direction, size, canvasSize, sunColor, shadowStrength) requires argument 'size' to be a vector2.")
+		assert(vector2.isVector2(canvasSize), "Scene3:setShadowMap(position, direction, size, canvasSize, sunColor, shadowStrength) requires argument 'canvasSize' to be a vector2.")
+		assert(sunColor == nil or color.isColor(sunColor), "Scene3:setShadowMap(position, direction, size, canvasSize, sunColor, shadowStrength) requires argument 'sunColor' to be a color or nil.")
+		assert(shadowStrength == nil or type(shadowStrength) == "number",
+			"Scene3:setShadowMap(position, direction, size, canvasSize, sunColor, shadowStrength) requires argument 'shadowStrength' to be a number or nil.")
+
+		self.Shader:send("shadowsEnabled", true)
+		if sunColor == nil then
+			self.Shader:send("sunColor", {1, 1, 1})
+		else
+			self.Shader:send("sunColor", {sunColor.r, sunColor.g, sunColor.b})
+		end
+		self.Shader:send("shadowStrength", shadowStrength ~= nil and shadowStrength or 0.5)
+		self.Shader:send("sunDirection", {direction.x, direction.y, direction.z})
+
+		-- create new canvases (but only if their sizes are different from the current ones)
+		-- this will make it possible to potentially move the shadowmap around every frame
+		if self.ShadowCanvas == nil or self.ShadowCanvas:getWidth() ~= canvasSize.x or self.ShadowCanvas:getHeight() ~= canvasSize.y then
+			local shadowCanvas = love.graphics.newCanvas(canvasSize.x, canvasSize.y)
+			self.ShadowCanvas = shadowCanvas
+			local shadowDepthCanvas = love.graphics.newCanvas(canvasSize.x, canvasSize.y,
+				{
+					["type"] = "2d";
+					["format"] = "depth16";
+					["readable"] = true;
+				}
+			)
+			self.ShadowDepthCanvas = shadowDepthCanvas
+		end
+
+		-- calculate and set over light transformation matrix
+		local orthoMatrix = matrix4.orthographic(-size.x / 2, size.x / 2, -size.y / 2, size.y / 2, 1000, 0.1):columns() -- perspective correction matrix
+		local sunMatrix = matrix4.lookAt(position, direction) -- matrix of where the sun is
+		local lightSpaceMatrix = orthoMatrix * sunMatrix
+		local c1, c2, c3, c4 = lightSpaceMatrix:columns()
+		self.ShadowMapShader:send("lightSpaceMatrix", {c1, c2, c3, c4})
+		self.Shader:send("lightSpaceMatrix", {c1, c2, c3, c4}) -- also send to main shader so we know how to sample shadow map
+		
+
+	end
+end
+
+
 
 
 function Scene3:attachBasicMesh(mesh)
@@ -627,7 +722,7 @@ end
 
 
 -- if texScale is nil, IsPlanar is false, else, IsPlanar is true and TextureScale becomes texScale
-function Scene3:addInstancedMesh(mesh, positions, rotations, scales, cols, bloom, brightness, texScale)
+function Scene3:addInstancedMesh(mesh, positions, rotations, scales, cols, bloom, brightness, castShadow, texScale)
 	assert(type(bloom) == "number" or bloom == nil, "Scene3:addInstancedMesh(mesh, positions, rotations, scales, cols, bloom, brightness, texScale) requires 'bloom' to be a number or nil")
 	assert(type(brightness) == "number" or brightness == nil, "Scene3:addInstancedMesh(mesh, positions, rotations, scales, cols, bloom, brightness, texScale) requires 'brightness' to be a number or nil")
 	assert(type(texScale) == "number" or texScale == nil, "Scene3:addInstancedMesh(mesh, positions, rotations, scales, cols, bloom, brightness, texScale) requires 'texScale' to be a number or nil")
@@ -686,6 +781,7 @@ function Scene3:addInstancedMesh(mesh, positions, rotations, scales, cols, bloom
 		["Instances"] = instanceMesh; -- the reason for exposing the instances is so that setVertexAttribute() can be used on individual instances to update them after batching
 		["Bloom"] = bloom ~= nil and bloom or 0;
 		["Brightness"] = brightness ~= nil and brightness or 0;
+		["CastShadow"] = false;
 		["IsTriplanar"] = texScale ~= nil; -- determines if the mesh's texture is applied using triplanar projection
 		["TextureScale"] = texScale ~= nil and texScale or 1; -- only used if IsTriplanar is true.
 		["Count"] = #positions;
@@ -828,6 +924,7 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 		["SSAOBlendShader"] = love.graphics.newShader(SHADER_SSAOBLEND_PATH); -- blend shader to blend ambient occlusion with the rendered scene
 		["BlurShader"] = love.graphics.newShader(SHADER_BLUR_PATH);
 		["BloomBlurShader"] = love.graphics.newShader(SHADER_BLOOMBLUR_PATH);
+		["ShadowMapShader"] = love.graphics.newShader(SHADER_SHADOWMAP_PATH);
 
 		["QueuedShaderVars"] = { -- whether during the next :draw() call the scene should update the shader variables below. These variables are introduced to minimize traffic to the shader!
 			["LightPositions"] = true; -- initialize to true to force the variables to be sent on the very first frame
@@ -844,6 +941,8 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 		["NormalCanvas"] = normalCanvas;
 		["PrepareCanvas"] = prepareCanvas; -- higher resolution canvas for ambient occlusion & bloom, used to draw things to which are then combined with the render canvas
 		["BloomCanvas"] = bloomCanvas;
+		["ShadowCanvas"] = nil; -- either nil, or a canvas when shadow map is enabled
+		["ShadowDepthCanvas"] = nil;  -- either nil, or a canvas when shadow map is enabled
 
 		-- when applying SSAO, bloom, etc. you need multiple render passes. For that purpose 'reuse' canvases are created to play ping-pong with each pass
 		-- Considering that SSAO, bloom etc. might want to be downscaled for better FPS, there are canvases for full, half and quarter size

@@ -113,6 +113,7 @@ local function new(meshRef, position, rotation, scale, col)
 		["Bloom"] = 0;
 		["Transparency"] = 0;
 		["UVVelocity"] = vector2(0, 0);
+		["CastShadow"] = false;
 		["IsTriplanar"] = false;
 		["TextureScale"] = 1;
 		["Scene"] = nil;

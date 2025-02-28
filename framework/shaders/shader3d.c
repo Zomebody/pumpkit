@@ -5,6 +5,7 @@
 uniform mat4 camMatrix;
 uniform float aspectRatio;
 uniform float fieldOfView;
+uniform mat4 lightSpaceMatrix;
 
 // attributes
 attribute vec3 VertexNormal;
@@ -13,14 +14,13 @@ attribute vec3 VertexNormal;
 const float zNear = 0.1;
 const float zFar = 1000.0;
 
-// IMPORTANT: in our world we apply rotation in the order Z, X, Y
 // mesh variables
-uniform vec3 meshPosition;
-uniform vec3 meshRotation;
-uniform vec3 meshScale;
-attribute vec3 instancePosition;
-attribute vec3 instanceRotation;
-attribute vec3 instanceScale;
+uniform vec3 meshPosition; // TODO: replace with a meshMatrix
+uniform vec3 meshRotation; // TODO: replace with a meshMatrix
+uniform vec3 meshScale; // TODO: replace with a meshMatrix
+attribute vec3 instancePosition; // TODO: replace with a meshMatrix
+attribute vec3 instanceRotation; // TODO: replace with a meshMatrix
+attribute vec3 instanceScale; // TODO: replace with a meshMatrix
 attribute vec3 instanceColor;
 varying vec3 instColor;
 uniform bool isInstanced;
@@ -28,12 +28,13 @@ uniform bool isInstanced;
 varying vec3 fragWorldPosition; // output automatically interpolated fragment world position
 varying vec3 fragNormal; // used for normal map for SSAO (in screen space)
 varying vec3 fragWorldNormal; // normal vector, but in world space this time
+varying vec4 fragPosLightSpace; // position of the fragment in light space so it can sample from the shadow map
 
 
 
 // I DON'T KNOW WHY, BUT THE FUNCTIONS GETROTATIONMATRIX AND GETSCALEMATRIX AND GETTRANSLATIONMATRIX ARE ALL TRANSPOSED AND IT JUST KIND OF WORKS (probably because of row/column major order shenanigans?)
 
-// Function to create a rotation matrix around the X axis
+// rotate around X-axis
 mat4 getRotationMatrixX(float angle) {
 	float c = cos(angle);
 	float s = sin(angle);
@@ -47,7 +48,7 @@ mat4 getRotationMatrixX(float angle) {
 
 
 
-// Function to create a rotation matrix around the Y axis
+// rotate around Y-axis
 mat4 getRotationMatrixY(float angle) {
 	float c = cos(angle);
 	float s = sin(angle);
@@ -60,8 +61,7 @@ mat4 getRotationMatrixY(float angle) {
 }
 
 
-
-// Function to create a rotation matrix around the Z axis
+// rotate around Z-axis
 mat4 getRotationMatrixZ(float angle) {
 	float c = cos(angle);
 	float s = sin(angle);
@@ -190,15 +190,6 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 
 	//vec4 vertexWorldPosition = translationMatrix * rotationMatrix * scaleMatrix * vertex_position;
 
-	// camera transformations
-	// camera translation
-	//				mat4 camTranslationMatrix = getTranslationMatrix(cameraPosition);
-	// camera rotation
-	//				mat4 camRotationMatrix = getRotationMatrixZ(cameraRotation) * getRotationMatrixX(cameraTilt);
-	// camera offset
-	//				mat4 camOffsetMatrix = getTranslationMatrix(vec3(0, 0, cameraOffset));
-	// combine it all to get the camera matrix
-	//				mat4 cameraWorldMatrix = camTranslationMatrix * camRotationMatrix * camOffsetMatrix; // offset first to create a pivot point to rotate around, then rotate, then translate to the right position
 	mat4 cameraWorldMatrix = camMatrix;
 
 
@@ -226,6 +217,8 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 	//fragWorldNormal = normalize(normalMatrix * VertexNormal);
 	fragWorldNormal = (rotationMatrix * scaleMatrix * vec4(VertexNormal, 0.0)).xyz;
 
+	fragPosLightSpace = lightSpaceMatrix * vec4(fragWorldPosition, 1.0);
+
 
 
 	// set variables for backface culling
@@ -250,6 +243,7 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 varying vec3 fragWorldPosition; // output automatically interpolated fragment world position
 varying vec3 fragNormal; // used for normal map
 varying vec3 fragWorldNormal;
+varying vec4 fragPosLightSpace;
 //varying float fragDistanceToCamera; // used for fog
 //varying vec3 cameraViewDirection;
 
@@ -265,6 +259,11 @@ uniform vec3 lightColors[16];
 uniform float lightRanges[16];
 uniform float lightStrengths[16];
 uniform vec3 ambientColor;
+
+// shadow map properties
+uniform vec3 sunColor = vec3(0.0); // used to brighten fragments that are lit by the sun
+uniform float shadowStrength; // used to make shadows more/less intense
+uniform vec3 sunDirection; // used to prevent shadow acne
 
 // colors
 uniform vec3 meshColor;
@@ -282,6 +281,7 @@ uniform float triplanarScale;
 // textures
 uniform Image MainTex; // used to be the 'tex' argument, but is now passed separately in this specific variable name because we switched to multi-canvas shading which has no arguments
 uniform Image normalMap;
+uniform Image shadowCanvas;
 
 
 
@@ -290,6 +290,24 @@ uniform Image normalMap;
 
 
 // fragment shader
+
+
+// https://learnopengl.com/Advanced-Lighting/Shadows/Shadow-Mapping
+float calculateShadow(fragPosLightSpace) {
+	vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+	projCoords = projCoords * 0.5 + 0.5;
+	float closestDepth = Texel(shadowCanvas, projCoords.xy).r;
+	float currentDepth = projCoords.z;
+
+	// acne solving
+	float bias = max(0.05 * (1.0 - dot(fragWorldNormal, sunDirection)), 0.005); // solve based on sun's angle with the surface
+	float shadow = currentDepth - bias > closestDepth ? 1.0 : 0.0;
+	return shadow;
+}
+
+
+
+
 
 void effect() {
 
@@ -370,6 +388,11 @@ void effect() {
 			//float diffStrength = diffuseStrength * (1.0 - meshBrightness); // if a mesh is fully bright, diffuse strength becomes 0 so that it has no efect
 			lighting += light * ((diffuseFactor * diffuseStrength) + (1.0 - diffuseStrength)); // if diffStrength==0, just add the color, otherwise, add based on angle between surface and light direction
 		}
+	}
+	// apply sun-light if not in shadow
+	if (shadowsEnabled) {
+		float shadow = calculateShadow(fragPosLightSpace);
+		lighting += sunColor * (1.0 - shadow * shadowStrength);
 	}
 
 	
