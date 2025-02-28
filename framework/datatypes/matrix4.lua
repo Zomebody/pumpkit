@@ -256,6 +256,46 @@ local function perspective(aspectRatio, fov, far, near)
 end
 
 
+local function orthographic(left, right, top, bottom, far, near)
+	if far == nil then far = 1000 end
+	if near == nil then near = 0.1 end
+
+	local m11 = 2 / (right - left)
+	local m22 = 2 / (top - bottom)
+	local m33 = -2 / (far - near)
+	local m41 = -(right + left) / (right - left)
+	local m42 = -(top + bottom) / (top - bottom)
+	local m43 = -(far + near) / (far - near)
+	local m44 = 1
+
+	return new(
+		m11, 0,   0,   0,
+		0,   m22, 0,   0,
+		0,   0,   m33, 0,
+		m41, m42, m43, m44
+	)
+end
+
+
+
+local function lookAt(position, direction, up)
+	up = up or vector3(0, 0, 1)
+
+	local zAxis = direction:norm() * -1 -- minus one is needed here
+	-- right-vector
+	local xAxis = up:cross(zAxis):norm()
+	-- (view-space) up-vector
+	local yAxis = zAxis:cross(xAxis)
+
+	return new(
+		xAxis.x, yAxis.x, zAxis.x, 0,
+		xAxis.y, yAxis.y, zAxis.y, 0,
+		xAxis.z, yAxis.z, zAxis.z, 0,
+		-xAxis:dot(position), -yAxis:dot(position), -zAxis:dot(position), 1
+	)
+end
+
+
 
 
 -- from euler angles and specify the euler order
@@ -650,6 +690,8 @@ module.rotationX = rotationX
 module.rotationY = rotationY
 module.rotationZ = rotationZ
 module.perspective = perspective
+module.orthographic = orthographic
+module.lookAt = lookAt
 module.translation = translation
 module.fromEuler = fromEuler
 module.fromQuaternion = fromQuaternion
