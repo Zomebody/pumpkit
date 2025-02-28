@@ -5,7 +5,8 @@
 uniform mat4 camMatrix;
 uniform float aspectRatio;
 uniform float fieldOfView;
-uniform mat4 lightSpaceMatrix;
+uniform mat4 sunWorldMatrix;
+uniform mat4 orthoMatrix;
 
 // attributes
 attribute vec3 VertexNormal;
@@ -217,7 +218,10 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 	//fragWorldNormal = normalize(normalMatrix * VertexNormal);
 	fragWorldNormal = (rotationMatrix * scaleMatrix * vec4(VertexNormal, 0.0)).xyz;
 
-	fragPosLightSpace = lightSpaceMatrix * vec4(fragWorldPosition, 1.0);
+	//fragPosLightSpace = lightSpaceMatrix * vec4(fragWorldPosition, 1.0);
+	mat4 sunViewMatrix = inverse(sunWorldMatrix);
+	//mat4 sunSpaceMatrix = sunViewMatrix *  modelWorldMatrix;
+	fragPosLightSpace = orthoMatrix * sunViewMatrix * vec4(fragWorldPosition, 1.0);
 
 
 
@@ -264,6 +268,7 @@ uniform vec3 ambientColor;
 uniform vec3 sunColor = vec3(0.0); // used to brighten fragments that are lit by the sun
 uniform float shadowStrength; // used to make shadows more/less intense
 uniform vec3 sunDirection; // used to prevent shadow acne
+uniform bool shadowsEnabled = false;
 
 // colors
 uniform vec3 meshColor;
@@ -293,7 +298,7 @@ uniform Image shadowCanvas;
 
 
 // https://learnopengl.com/Advanced-Lighting/Shadows/Shadow-Mapping
-float calculateShadow(fragPosLightSpace) {
+float calculateShadow(vec4 fragPosLightSpace) {
 	vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
 	projCoords = projCoords * 0.5 + 0.5;
 	float closestDepth = Texel(shadowCanvas, projCoords.xy).r;

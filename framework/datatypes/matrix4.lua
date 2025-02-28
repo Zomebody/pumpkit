@@ -265,7 +265,7 @@ local function orthographic(left, right, top, bottom, far, near)
 	local m33 = -2 / (far - near)
 	local m41 = -(right + left) / (right - left)
 	local m42 = -(top + bottom) / (top - bottom)
-	local m43 = -(far + near) / (far - near)
+	local m43 = (far + near) / (far - near)
 	local m44 = 1
 
 	return new(

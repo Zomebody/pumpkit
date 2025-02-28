@@ -68,6 +68,13 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Constructor";
+	["Name"] = "lookAtWorld";
+	["Arguments"] = {"position", "direction"};
+	["Description"] = "Returns a matrix4 at the given position which is rotated to face the given direction, all in world-space.";
+})
+
+table.insert(content, {
+	["Type"] = "Constructor";
 	["Name"] = "rotationX";
 	["Arguments"] = {"rot"};
 	["Description"] = "Returns a rotation matrix4 with a rotation along the X-axis.";

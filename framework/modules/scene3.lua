@@ -208,22 +208,25 @@ end
 
 function Scene3:updateShadowMap()
 	-- prevent peter-panning: https://learnopengl.com/Advanced-Lighting/Shadows/Shadow-Mapping
-	love.graphics.setMeshCullMode("front")
+	--love.graphics.setMeshCullMode("front")
 
 	-- prepare for drawing
 	love.graphics.setShader(self.ShadowMapShader)
-	love.graphics.setCanvas(self.ShadowCanvas, {depthstencil = self.ShadowDepthCanvas})
-	love.graphics.clear() -- we should clear since if you remove an object, the shadow in that area won't get overwritten
 	love.graphics.setDepthMode("less", true)
+	love.graphics.setCanvas({self.ShadowCanvas, ["depthstencil"] = self.ShadowDepthCanvas})
+	love.graphics.clear() -- we should clear since if you remove an object, the shadow in that area won't get overwritten
+	
 
 	-- render all meshes and instanced meshes that have shadows enabled to the shadow canvas
 	local Mesh
+	self.ShadowMapShader:send("isInstanced", true)
 	for i = 1, #self.InstancedMeshes do
 		Mesh = self.InstancedMeshes[i]
 		if Mesh.CastShadow then
 			love.graphics.drawInstanced(Mesh.Mesh, Mesh.Count)
 		end
 	end
+	self.ShadowMapShader:send("isInstanced", false)
 	for i = 1, #self.BasicMeshes do
 		Mesh = self.BasicMeshes[i]
 		if Mesh.CastShadow then
@@ -231,15 +234,15 @@ function Scene3:updateShadowMap()
 			self.Shader:send("meshPosition", Mesh.Position:array())
 			self.Shader:send("meshRotation", Mesh.Rotation:array())
 			self.Shader:send("meshScale", Mesh.Scale:array())
-			love.graphics.draw(self.BasicMeshes[i])
+			love.graphics.draw(self.BasicMeshes[i].Mesh)
 		end
 	end
 
 	-- revert peter-panning
-	love.graphics.setMeshCullMode("back")
+	--love.graphics.setMeshCullMode("back")
 
 	-- send over the shadow canvas to the main shader for sampling
-	self.Shader:send("shadowCanvas", self.ShadowCanvas)
+	self.Shader:send("shadowCanvas", self.ShadowDepthCanvas)
 end
 
 
@@ -670,6 +673,7 @@ function Scene3:setShadowMap(position, direction, size, canvasSize, sunColor, sh
 			self.Shader:send("sunColor", {sunColor.r, sunColor.g, sunColor.b})
 		end
 		self.Shader:send("shadowStrength", shadowStrength ~= nil and shadowStrength or 0.5)
+		direction = direction:clone():norm()
 		self.Shader:send("sunDirection", {direction.x, direction.y, direction.z})
 
 		-- create new canvases (but only if their sizes are different from the current ones)
@@ -687,13 +691,18 @@ function Scene3:setShadowMap(position, direction, size, canvasSize, sunColor, sh
 			self.ShadowDepthCanvas = shadowDepthCanvas
 		end
 
-		-- calculate and set over light transformation matrix
-		local orthoMatrix = matrix4.orthographic(-size.x / 2, size.x / 2, -size.y / 2, size.y / 2, 1000, 0.1):columns() -- perspective correction matrix
-		local sunMatrix = matrix4.lookAt(position, direction) -- matrix of where the sun is
-		local lightSpaceMatrix = orthoMatrix * sunMatrix
-		local c1, c2, c3, c4 = lightSpaceMatrix:columns()
-		self.ShadowMapShader:send("lightSpaceMatrix", {c1, c2, c3, c4})
-		self.Shader:send("lightSpaceMatrix", {c1, c2, c3, c4}) -- also send to main shader so we know how to sample shadow map
+		-- send over orthographic camera matrix
+		local orthoMatrix = matrix4.orthographic(-size.x / 2, size.x / 2, size.y / 2, -size.y / 2, 1000, 0.1) -- perspective correction matrix
+		--local orthoMatrix = matrix4.perspective(size.x/size.y, self.Camera3.FieldOfView, 1000, 0.1)
+		local c1, c2, c3, c4 = orthoMatrix:columns()
+		self.ShadowMapShader:send("orthoMatrix", {c1, c2, c3, c4})
+		self.Shader:send("orthoMatrix", {c1, c2, c3, c4}) -- also send to main shader so we know how to sample shadow map
+		
+		-- send over sun matrix
+		local sunWorldMatrix = matrix4.lookAtWorld(position, direction) -- matrix of where the sun is
+		local c1, c2, c3, c4 = sunWorldMatrix:columns()
+		self.ShadowMapShader:send("sunWorldMatrix", {c1, c2, c3, c4})
+		self.Shader:send("sunWorldMatrix", {c1, c2, c3, c4}) -- also send to main shader so we know how to sample shadow map
 		
 
 	end
@@ -781,7 +790,7 @@ function Scene3:addInstancedMesh(mesh, positions, rotations, scales, cols, bloom
 		["Instances"] = instanceMesh; -- the reason for exposing the instances is so that setVertexAttribute() can be used on individual instances to update them after batching
 		["Bloom"] = bloom ~= nil and bloom or 0;
 		["Brightness"] = brightness ~= nil and brightness or 0;
-		["CastShadow"] = false;
+		["CastShadow"] = castShadow;
 		["IsTriplanar"] = texScale ~= nil; -- determines if the mesh's texture is applied using triplanar projection
 		["TextureScale"] = texScale ~= nil and texScale or 1; -- only used if IsTriplanar is true.
 		["Count"] = #positions;
