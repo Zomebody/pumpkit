@@ -278,20 +278,21 @@ end
 
 
 
-local function lookAt(position, direction, up)
+local function lookAtWorld(position, direction, up)
 	up = up or vector3(0, 0, 1)
 
-	local zAxis = direction:norm() * -1 -- minus one is needed here
+	local zAxis = -direction:norm() -- minus one is needed here
 	-- right-vector
 	local xAxis = up:cross(zAxis):norm()
 	-- (view-space) up-vector
 	local yAxis = zAxis:cross(xAxis)
 
+
 	return new(
-		xAxis.x, yAxis.x, zAxis.x, 0,
-		xAxis.y, yAxis.y, zAxis.y, 0,
-		xAxis.z, yAxis.z, zAxis.z, 0,
-		-xAxis:dot(position), -yAxis:dot(position), -zAxis:dot(position), 1
+		xAxis.x, xAxis.y, xAxis.z, 0,
+		yAxis.x, yAxis.y, yAxis.z, 0,
+		zAxis.x, zAxis.y, zAxis.z, 0,
+		position.x, position.y, position.z, 1
 	)
 end
 
@@ -691,7 +692,7 @@ module.rotationY = rotationY
 module.rotationZ = rotationZ
 module.perspective = perspective
 module.orthographic = orthographic
-module.lookAt = lookAt
+module.lookAtWorld = lookAtWorld
 module.translation = translation
 module.fromEuler = fromEuler
 module.fromQuaternion = fromQuaternion
