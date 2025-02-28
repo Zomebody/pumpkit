@@ -699,7 +699,7 @@ function Scene3:setShadowMap(position, direction, size, canvasSize, sunColor, sh
 		self.Shader:send("orthoMatrix", {c1, c2, c3, c4}) -- also send to main shader so we know how to sample shadow map
 		
 		-- send over sun matrix
-		local sunWorldMatrix = matrix4.lookAtWorld(position, -direction) -- matrix of where the sun is
+		local sunWorldMatrix = matrix4.lookAtWorld(position, direction) -- matrix of where the sun is
 		local c1, c2, c3, c4 = sunWorldMatrix:columns()
 		self.ShadowMapShader:send("sunWorldMatrix", {c1, c2, c3, c4})
 		self.Shader:send("sunWorldMatrix", {c1, c2, c3, c4}) -- also send to main shader so we know how to sample shadow map
