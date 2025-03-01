@@ -208,7 +208,7 @@ end
 
 function Scene3:updateShadowMap()
 	-- prevent peter-panning: https://learnopengl.com/Advanced-Lighting/Shadows/Shadow-Mapping
-	--love.graphics.setMeshCullMode("front")
+	love.graphics.setMeshCullMode("none") -- "front" can be used to fix peter-panning, but prevents the backfaces from having any shadows!! that's why we set to "none"
 
 	-- prepare for drawing
 	love.graphics.setShader(self.ShadowMapShader)
@@ -223,6 +223,7 @@ function Scene3:updateShadowMap()
 	for i = 1, #self.InstancedMeshes do
 		Mesh = self.InstancedMeshes[i]
 		if Mesh.CastShadow then
+			--self.ShadowMapShader:send("hasTexture", Mesh.Mesh:getTexture() ~= nil)
 			love.graphics.drawInstanced(Mesh.Mesh, Mesh.Count)
 		end
 	end
@@ -230,16 +231,17 @@ function Scene3:updateShadowMap()
 	for i = 1, #self.BasicMeshes do
 		Mesh = self.BasicMeshes[i]
 		if Mesh.CastShadow then
+			--self.ShadowMapShader:send("hasTexture", Mesh.Mesh:getTexture() ~= nil)
 			-- TODO meshes need their own matrix instead of sending over and computing them every time in the shaders
-			self.Shader:send("meshPosition", Mesh.Position:array())
-			self.Shader:send("meshRotation", Mesh.Rotation:array())
-			self.Shader:send("meshScale", Mesh.Scale:array())
-			love.graphics.draw(self.BasicMeshes[i].Mesh)
+			self.ShadowMapShader:send("meshPosition", Mesh.Position:array())
+			self.ShadowMapShader:send("meshRotation", Mesh.Rotation:array())
+			self.ShadowMapShader:send("meshScale", Mesh.Scale:array())
+			love.graphics.draw(Mesh.Mesh)
 		end
 	end
 
 	-- revert peter-panning
-	--love.graphics.setMeshCullMode("back")
+	love.graphics.setMeshCullMode("back")
 
 	-- send over the shadow canvas to the main shader for sampling
 	self.Shader:send("shadowCanvas", self.ShadowDepthCanvas)
@@ -689,10 +691,12 @@ function Scene3:setShadowMap(position, direction, size, canvasSize, sunColor, sh
 				}
 			)
 			self.ShadowDepthCanvas = shadowDepthCanvas
+
+			self.Shader:send("shadowCanvasSize", {canvasSize.x, canvasSize.y})
 		end
 
 		-- send over orthographic camera matrix
-		local orthoMatrix = matrix4.orthographic(-size.x / 2, size.x / 2, size.y / 2, -size.y / 2, 1000, 0.1) -- perspective correction matrix
+		local orthoMatrix = matrix4.orthographic(-size.x / 2, size.x / 2, size.y / 2, -size.y / 2, 100, 0.1) -- perspective correction matrix
 		--local orthoMatrix = matrix4.perspective(size.x/size.y, self.Camera3.FieldOfView, 1000, 0.1)
 		local c1, c2, c3, c4 = orthoMatrix:columns()
 		self.ShadowMapShader:send("orthoMatrix", {c1, c2, c3, c4})

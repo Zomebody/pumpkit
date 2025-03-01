@@ -217,6 +217,7 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 	//mat3 normalMatrix = mat3(transpose(inverse(modelWorldMatrix)));
 	//fragWorldNormal = normalize(normalMatrix * VertexNormal);
 	fragWorldNormal = (rotationMatrix * scaleMatrix * vec4(VertexNormal, 0.0)).xyz;
+	//fragWorldNormal = normalize(mat3(modelWorldMatrix) * VertexNormal);
 
 	//fragPosLightSpace = lightSpaceMatrix * vec4(fragWorldPosition, 1.0);
 	mat4 sunViewMatrix = inverse(sunWorldMatrix);
@@ -269,6 +270,7 @@ uniform vec3 sunColor = vec3(0.0); // used to brighten fragments that are lit by
 uniform float shadowStrength; // used to make shadows more/less intense
 uniform vec3 sunDirection; // used to prevent shadow acne
 uniform bool shadowsEnabled = false;
+uniform vec2 shadowCanvasSize;
 
 // colors
 uniform vec3 meshColor;
@@ -301,12 +303,34 @@ uniform Image shadowCanvas;
 float calculateShadow(vec4 fragPosLightSpace) {
 	vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
 	projCoords = projCoords * 0.5 + 0.5;
+
+	// no shadows when outside the shadow canvas
+	if (projCoords.x < 0.0 || projCoords.x > 1.0 || projCoords.y < 0.0 || projCoords.y > 1.0)
+		return 0.0;
+
+
 	float closestDepth = Texel(shadowCanvas, projCoords.xy).r;
 	float currentDepth = projCoords.z;
 
-	// acne solving
-	float bias = max(0.05 * (1.0 - dot(fragWorldNormal, sunDirection)), 0.005); // solve based on sun's angle with the surface
-	float shadow = currentDepth - bias > closestDepth ? 1.0 : 0.0;
+	// adaptive bias
+	float normalOffset = clamp(dot(fragWorldNormal, sunDirection), 0.0, 1.0);
+	float bias = mix(0.0005, 0.0025, normalOffset);
+	//float bias = max(0.05 * (1.0 - dot(fragWorldNormal, sunDirection)), 0.005);  
+	bias *= clamp(1.0 - projCoords.z, 0.1, 1.0);
+
+	// apply PCF
+	float shadow = 0.0;
+    vec2 texelSize = 1.0 / shadowCanvasSize;
+
+	for (int x = -1; x <= 1; x++) {
+		for (int y = -1; y <= 1; y++) {
+			vec2 offset = vec2(x, y) * texelSize;
+			float pcfDepth = Texel(shadowCanvas, projCoords.xy + offset).r;
+			shadow += (currentDepth - bias > pcfDepth) ? 1.0 : 0.0;
+		}
+	}
+	shadow /= 9.0;
+
 	return shadow;
 }
 
@@ -330,6 +354,8 @@ void effect() {
 	}
 	*/
 
+	// calculate surface normal, used in triplanar projection AND in the shadow map, so it gets calculated here
+
 	
 
 	// sample the pixel to display from the supplied texture. For triplanar projection: use world coordinates and surface normal to sample. For regular meshes, use uv coordinates and uvvelocity
@@ -337,9 +363,9 @@ void effect() {
 	vec2 texture_coords;
 	if (triplanarScale > 0.0) { // project texture onto mesh using triplanar projection
 		// calculate surface normal using interpolated vertex normal and derivative wizardry
-		vec3 dFdx = dFdx(fragWorldPosition);
-		vec3 dFdy = dFdy(fragWorldPosition);
-		vec3 surfaceNormal = normalize(cross(dFdx, dFdy));
+		vec3 dFdxVar = dFdx(fragWorldPosition);
+		vec3 dFdyVar = dFdy(fragWorldPosition);
+		vec3 surfaceNormal = normalize(cross(dFdxVar, dFdyVar));
 		if (dot(surfaceNormal, fragWorldNormal) < 0.0) {
 			surfaceNormal = -surfaceNormal;
 		}

@@ -152,14 +152,17 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 	return result;
 }
 
-
 #endif
+
+
 
 #ifdef PIXEL
 
 vec4 effect(vec4 color, Image tex, vec2 texCoord, vec2 screenCoords) {
-	return vec4(0.5, 0.5, 0.5, 1.0);
+	if (Texel(tex, texCoord).a < 0.25) {
+		discard;
+	}
+	return color;
 }
-
 
 #endif
