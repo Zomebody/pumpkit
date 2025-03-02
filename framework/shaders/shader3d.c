@@ -293,18 +293,17 @@ uniform float triplanarScale;
 // textures
 uniform Image MainTex; // used to be the 'tex' argument, but is now passed separately in this specific variable name because we switched to multi-canvas shading which has no arguments
 uniform Image normalMap;
-uniform sampler2DShadow shadowCanvas;
-
-
-
-
-
+uniform sampler2DShadow shadowCanvas; // use Image when doing 'basic' sampling. Use sampler2DShadow when you want automatic bilinear filtering (but more prone to shadow acne :<)
 
 
 // fragment shader
 
 
-// https://learnopengl.com/Advanced-Lighting/Shadows/Shadow-Mapping
+
+
+// shadow map sampling using a basic texture and applying a 5x5 PCF kernel.
+// shadow acne starts happening around a 85 degree camera angle, but disabling the PCF or reducing the texelsize makes it support up to 89 degrees without acne
+/*
 float calculateShadow(vec4 fragPosLightSpace, vec3 surfaceNormal) {
 	vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
 	projCoords = projCoords * 0.5 + 0.5;
@@ -313,28 +312,15 @@ float calculateShadow(vec4 fragPosLightSpace, vec3 surfaceNormal) {
 	if (projCoords.x < 0.0 || projCoords.x > 1.0 || projCoords.y < 0.0 || projCoords.y > 1.0)
 		return 0.0;
 
-
-	//float closestDepth = texture(shadowCanvas, projCoords.xy).r;
 	float currentDepth = projCoords.z;
-
-	// adaptive bias
-	//float normalOffset = clamp(dot(surfaceNormal, sunDirection), 0.0, 1.0);
-	//float bias = mix(0.001, 0.005, normalOffset);
-	//float bias = max(0.05 * (1.0 - dot(fragWorldNormal, sunDirection)), 0.005);  
-	//bias *= clamp(1.0 - projCoords.z, 0.1, 1.0);
-
 	// bias calc taken from: http://www.opengl-tutorial.org/intermediate-tutorials/tutorial-16-shadow-mapping/#aliasing
 	float cosTheta = clamp(dot(surfaceNormal, sunDirection), 0.0, 1.0);
 	float bias = 0.005 * tan(acos(cosTheta)); // cosTheta is dot( n,l ), clamped between 0 and 1
-	bias = clamp(bias, 0, 0.01);
+	bias = clamp(bias, 0, 0.005);
 
-
-	//float shadow = (currentDepth - bias > texture(shadowCanvas, projCoords.xy).r) ? 1.0 : 0.0;
-	float shadow = texture(shadowCanvas, vec3(projCoords.xy, currentDepth - bias));
 	// apply PCF
-	/*
 	float shadow = 0.0;
-    vec2 texelSize = 1.0 / shadowCanvasSize;
+	vec2 texelSize = 0.5 / shadowCanvasSize; // changing the numerator here will impact when shadow acne starts happening. smaller value are better, but reduce shadow quality
 
 	for (int x = -2; x <= 2; x++) {
 		for (int y = -2; y <= 2; y++) {
@@ -344,7 +330,113 @@ float calculateShadow(vec4 fragPosLightSpace, vec3 surfaceNormal) {
 		}
 	}
 	shadow /= 25.0;
+	return shadow;
+}
+*/
+
+// https://learnopengl.com/Advanced-Lighting/Shadows/Shadow-Mapping
+// calculate shadow using sampler2DShadow, which uses bilinear filtering automatically for better shadows, but has bigger problems with shadow acne :<
+float calculateShadow(vec4 fragPosLightSpace, vec3 surfaceNormal) {
+	vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+	projCoords = projCoords * 0.5 + 0.5;
+
+	// no shadows when outside the shadow canvas
+	if (projCoords.x < 0.0 || projCoords.x > 1.0 || projCoords.y < 0.0 || projCoords.y > 1.0) {
+		return 0.0;
+	}
+
+
+	float currentDepth = projCoords.z;
+
+	// bias calc taken from: http://www.opengl-tutorial.org/intermediate-tutorials/tutorial-16-shadow-mapping/#aliasing
+	float cosTheta = clamp(dot(surfaceNormal, sunDirection), 0.0, 1.0);
+	float bias = 0.0025 * tan(acos(cosTheta)); // cosTheta is dot( n,l ), clamped between 0 and 1
+	bias = clamp(bias, 0, 0.0025); // used to be 0.005, but lowered because neighbor sampling works perfectly with reducing acne
+
+
+
+	// basic, simple, one-pixel bilinear filtering sampling:
+	// this will produce shadow acne on big flat surfaces starting at angles of ~85 degrees
+	//float shadow = texture(shadowCanvas, vec3(projCoords.xy, currentDepth - bias));
+
+
+	// PCF with bilinear filtering. Yields pretty results, but very obvious shadow acne on steep, flat surfaces
+	// this will produce shadow acne starting at angles of ~75 degrees
+	/*
+	float shadow = 0.0;
+	vec2 texelSize = 1.0 / shadowCanvasSize;
+
+	for (int x = -2; x <= 2; x++) {
+		for (int y = -2; y <= 2; y++) {
+			vec2 offset = vec2(x, y) * texelSize;
+			shadow += texture(shadowCanvas, vec3(projCoords.xy + offset, currentDepth - bias), bias);
+		}
+	}
+	shadow /= 25.0;
 	*/
+	
+
+	// sample depth at own position, but also sample 4 neighbors
+	// THIS ACTUALLY YIELDS INCREDIBLE RESULTS, I AM A GENIUS!!
+	
+	vec2 texelSize = 1.0 / shadowCanvasSize;
+	float s0 = texture(shadowCanvas, vec3(projCoords.xy, currentDepth - bias));
+	float sl = texture(shadowCanvas, vec3(projCoords.xy + vec2(-texelSize.x, 0.0), currentDepth - bias));
+	float sr = texture(shadowCanvas, vec3(projCoords.xy + vec2(texelSize.x, 0.0), currentDepth - bias));
+	float su = texture(shadowCanvas, vec3(projCoords.xy + vec2(0.0, -texelSize.y), currentDepth - bias));
+	float sd = texture(shadowCanvas, vec3(projCoords.xy + vec2(0.0, texelSize.y), currentDepth - bias));
+	float shadow = min(s0, min(sl, min(sr, min(su, sd))));
+	
+
+	
+
+	// the following combines neighbor sampling with a very small PCF kernel, however, the results aren't living up to expectation :<
+	/*
+	float shadow = 0.0;
+	vec2 texelSize = 1.0 / shadowCanvasSize;
+
+	for (int x = -1; x <= 1; x++) {
+		for (int y = -1; y <= 1; y++) {
+			vec2 offset = vec2(x, y) * texelSize;
+			vec2 sampleCoords = projCoords.xy + offset;
+
+			float s0 = texture(shadowCanvas, vec3(sampleCoords, currentDepth - bias));
+			float sl = texture(shadowCanvas, vec3(sampleCoords + vec2(-texelSize.x, 0.0), currentDepth - bias));
+			float sr = texture(shadowCanvas, vec3(sampleCoords + vec2(texelSize.x, 0.0), currentDepth - bias));
+			float su = texture(shadowCanvas, vec3(sampleCoords + vec2(0.0, -texelSize.y), currentDepth - bias));
+			float sd = texture(shadowCanvas, vec3(sampleCoords + vec2(0.0, texelSize.y), currentDepth - bias));
+
+			// Reduce acne by taking the min of neighbor depths
+			shadow += min(s0, min(sl, min(sr, min(su, sd))));
+		}
+	}
+	shadow /= 9.0;
+	*/
+	
+
+
+	//alternative to neighbor sampling: sample a 9x9 kernel, take the min of each column and row, then average those
+	/*
+	vec2 texelSize = 1.0 / shadowCanvasSize;
+	float s00 = texture(shadowCanvas, vec3(projCoords.xy + vec2(-texelSize.x, -texelSize.y), currentDepth - bias));
+	float s01 = texture(shadowCanvas, vec3(projCoords.xy + vec2(0.0, -texelSize.y), currentDepth - bias));
+	float s02 = texture(shadowCanvas, vec3(projCoords.xy + vec2(texelSize.x, -texelSize.y), currentDepth - bias));
+	float s10 = texture(shadowCanvas, vec3(projCoords.xy + vec2(-texelSize.x, 0.0), currentDepth - bias));
+	float s11 = texture(shadowCanvas, vec3(projCoords.xy, currentDepth - bias));
+	float s12 = texture(shadowCanvas, vec3(projCoords.xy + vec2(texelSize.x, 0.0), currentDepth - bias));
+	float s20 = texture(shadowCanvas, vec3(projCoords.xy + vec2(-texelSize.x, texelSize.y), currentDepth - bias));
+	float s21 = texture(shadowCanvas, vec3(projCoords.xy + vec2(0.0, texelSize.y), currentDepth - bias));
+	float s22 = texture(shadowCanvas, vec3(projCoords.xy + vec2(texelSize.x, texelSize.y), currentDepth - bias));
+	float shadow = (
+		min(s00, min(s01, s02))
+		+ min(s10, min(s11, s12))
+		+ min(s20, min(s21, s22))
+		+ min(s00, min(s10, s20))
+		+ min(s01, min(s11, s21))
+		+ min(s02, min(s12, s22))
+	) / 6.0;
+	*/
+
 
 	return shadow;
 }
