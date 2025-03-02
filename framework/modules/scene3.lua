@@ -207,7 +207,6 @@ end
 
 
 function Scene3:updateShadowMap()
-	-- prevent peter-panning: https://learnopengl.com/Advanced-Lighting/Shadows/Shadow-Mapping
 	love.graphics.setMeshCullMode("none") -- "front" can be used to fix peter-panning, but prevents the backfaces from having any shadows!! that's why we set to "none"
 
 	-- prepare for drawing
@@ -223,7 +222,6 @@ function Scene3:updateShadowMap()
 	for i = 1, #self.InstancedMeshes do
 		Mesh = self.InstancedMeshes[i]
 		if Mesh.CastShadow then
-			--self.ShadowMapShader:send("hasTexture", Mesh.Mesh:getTexture() ~= nil)
 			love.graphics.drawInstanced(Mesh.Mesh, Mesh.Count)
 		end
 	end
@@ -231,7 +229,6 @@ function Scene3:updateShadowMap()
 	for i = 1, #self.BasicMeshes do
 		Mesh = self.BasicMeshes[i]
 		if Mesh.CastShadow then
-			--self.ShadowMapShader:send("hasTexture", Mesh.Mesh:getTexture() ~= nil)
 			-- TODO meshes need their own matrix instead of sending over and computing them every time in the shaders
 			self.ShadowMapShader:send("meshPosition", Mesh.Position:array())
 			self.ShadowMapShader:send("meshRotation", Mesh.Rotation:array())
@@ -339,7 +336,7 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 
 	-- draw the background
 	if self.Background then
-		--love.graphics.setShader()
+		love.graphics.setShader() -- needs to be reset because shadow map might be enabled
 		love.graphics.setDepthMode("always", false)
 		local imgWidth, imgHeight = self.Background:getDimensions()
 		love.graphics.draw(self.Background, 0, 0, 0, renderWidth / imgWidth, renderHeight / imgHeight)
