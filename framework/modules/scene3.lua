@@ -691,8 +691,9 @@ function Scene3:setShadowMap(position, direction, size, canvasSize, sunColor, sh
 				}
 			)
 			self.ShadowDepthCanvas = shadowDepthCanvas
+			shadowDepthCanvas:setDepthSampleMode("less")
 
-			self.Shader:send("shadowCanvasSize", {canvasSize.x, canvasSize.y})
+			--self.Shader:send("shadowCanvasSize", {canvasSize.x, canvasSize.y})
 		end
 
 		-- send over orthographic camera matrix

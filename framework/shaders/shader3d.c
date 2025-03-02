@@ -1,4 +1,7 @@
 
+#pragma language glsl3
+
+
 #ifdef VERTEX
 
 // camera variables
@@ -245,6 +248,8 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 // Fragment Shader
 #ifdef PIXEL
 
+
+
 varying vec3 fragWorldPosition; // output automatically interpolated fragment world position
 varying vec3 fragNormal; // used for normal map
 varying vec3 fragWorldNormal;
@@ -288,7 +293,7 @@ uniform float triplanarScale;
 // textures
 uniform Image MainTex; // used to be the 'tex' argument, but is now passed separately in this specific variable name because we switched to multi-canvas shading which has no arguments
 uniform Image normalMap;
-uniform Image shadowCanvas;
+uniform sampler2DShadow shadowCanvas;
 
 
 
@@ -300,7 +305,7 @@ uniform Image shadowCanvas;
 
 
 // https://learnopengl.com/Advanced-Lighting/Shadows/Shadow-Mapping
-float calculateShadow(vec4 fragPosLightSpace) {
+float calculateShadow(vec4 fragPosLightSpace, vec3 surfaceNormal) {
 	vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
 	projCoords = projCoords * 0.5 + 0.5;
 
@@ -309,27 +314,37 @@ float calculateShadow(vec4 fragPosLightSpace) {
 		return 0.0;
 
 
-	float closestDepth = Texel(shadowCanvas, projCoords.xy).r;
+	//float closestDepth = texture(shadowCanvas, projCoords.xy).r;
 	float currentDepth = projCoords.z;
 
 	// adaptive bias
-	float normalOffset = clamp(dot(fragWorldNormal, sunDirection), 0.0, 1.0);
-	float bias = mix(0.0005, 0.0025, normalOffset);
+	//float normalOffset = clamp(dot(surfaceNormal, sunDirection), 0.0, 1.0);
+	//float bias = mix(0.001, 0.005, normalOffset);
 	//float bias = max(0.05 * (1.0 - dot(fragWorldNormal, sunDirection)), 0.005);  
-	bias *= clamp(1.0 - projCoords.z, 0.1, 1.0);
+	//bias *= clamp(1.0 - projCoords.z, 0.1, 1.0);
 
+	// bias calc taken from: http://www.opengl-tutorial.org/intermediate-tutorials/tutorial-16-shadow-mapping/#aliasing
+	float cosTheta = clamp(dot(surfaceNormal, sunDirection), 0.0, 1.0);
+	float bias = 0.005 * tan(acos(cosTheta)); // cosTheta is dot( n,l ), clamped between 0 and 1
+	bias = clamp(bias, 0, 0.01);
+
+
+	//float shadow = (currentDepth - bias > texture(shadowCanvas, projCoords.xy).r) ? 1.0 : 0.0;
+	float shadow = texture(shadowCanvas, vec3(projCoords.xy, currentDepth - bias));
 	// apply PCF
+	/*
 	float shadow = 0.0;
     vec2 texelSize = 1.0 / shadowCanvasSize;
 
-	for (int x = -1; x <= 1; x++) {
-		for (int y = -1; y <= 1; y++) {
+	for (int x = -2; x <= 2; x++) {
+		for (int y = -2; y <= 2; y++) {
 			vec2 offset = vec2(x, y) * texelSize;
 			float pcfDepth = Texel(shadowCanvas, projCoords.xy + offset).r;
 			shadow += (currentDepth - bias > pcfDepth) ? 1.0 : 0.0;
 		}
 	}
-	shadow /= 9.0;
+	shadow /= 25.0;
+	*/
 
 	return shadow;
 }
@@ -355,21 +370,20 @@ void effect() {
 	*/
 
 	// calculate surface normal, used in triplanar projection AND in the shadow map, so it gets calculated here
-
+	// calculate surface normal using interpolated vertex normal and derivative wizardry
+	vec3 dFdxVar = dFdx(fragWorldPosition);
+	vec3 dFdyVar = dFdy(fragWorldPosition);
+	vec3 surfaceNormal = normalize(cross(dFdxVar, dFdyVar));
+	if (dot(surfaceNormal, fragWorldNormal) < 0.0) {
+		surfaceNormal = -surfaceNormal;
+	}
+	surfaceNormal = normalize(surfaceNormal);
 	
 
 	// sample the pixel to display from the supplied texture. For triplanar projection: use world coordinates and surface normal to sample. For regular meshes, use uv coordinates and uvvelocity
 	vec4 texColor;
 	vec2 texture_coords;
 	if (triplanarScale > 0.0) { // project texture onto mesh using triplanar projection
-		// calculate surface normal using interpolated vertex normal and derivative wizardry
-		vec3 dFdxVar = dFdx(fragWorldPosition);
-		vec3 dFdyVar = dFdy(fragWorldPosition);
-		vec3 surfaceNormal = normalize(cross(dFdxVar, dFdyVar));
-		if (dot(surfaceNormal, fragWorldNormal) < 0.0) {
-			surfaceNormal = -surfaceNormal;
-		}
-		surfaceNormal = normalize(surfaceNormal);
 
 		float absNormX = abs(surfaceNormal.x); // fragWorldNormal
 		float absNormY = abs(surfaceNormal.y); // fragWorldNormal
@@ -422,7 +436,7 @@ void effect() {
 	}
 	// apply sun-light if not in shadow
 	if (shadowsEnabled) {
-		float shadow = calculateShadow(fragPosLightSpace);
+		float shadow = calculateShadow(fragPosLightSpace, surfaceNormal);
 		lighting += sunColor * (1.0 - shadow * shadowStrength);
 	}
 
