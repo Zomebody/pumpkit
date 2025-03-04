@@ -61,6 +61,13 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Constructor";
+	["Name"] = "orthographic";
+	["Arguments"] = {"left", "right", "top", "bottom", "far", "near"};
+	["Description"] = "Returns an orthographic projection matrix where the first 4 arguments are the bounds and the last 2 arguments are the far and near plane.";
+})
+
+table.insert(content, {
+	["Type"] = "Constructor";
 	["Name"] = "perspective";
 	["Arguments"] = {"aspectRatio", "verticalFov", "farPlane", "nearPlane"};
 	["Description"] = "Returns a perspective projection matrix.";

@@ -239,6 +239,13 @@ table.insert(content, {
 	["Description"] = "Sets the scene's camera to be used to the given Camera3 instance.";
 })
 
+table.insert(content, {
+	["Type"] = "Method";
+	["Name"] = "setShadowMap";
+	["Arguments"] = {"position", "direction", "size", "canvasSize", "sunColor", "shadowStrength"};
+	["Description"] = "Adds a shadow-map, which is essentially a sun emitting lighting in a given region, creating shadows that is cast onto geometry. Anything in shadow uses ambient occlusion.\n- position: A vector3 of where the sun is.\n- direction: a vector3 of the direction the light is going.\n- size: A vector2 describing the width and height of the shadow-map in world units.\n- canvasSize: How big the canvas is that shadows are rendered to, thus how detailed the shadow-map is.\n- sunColor: A color3 of the sun's light color that is added on top of the ambient color when geometry is in sunlight.\n- shadowStrength: 1 for dark shadows, 0 for no shadows, or something in between to interpolate.";
+})
+
 
 table.insert(content, {
 	["Type"] = "Header";
