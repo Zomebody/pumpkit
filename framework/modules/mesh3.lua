@@ -70,11 +70,14 @@ end
 
 function Mesh3:clone()
 	local Mesh = new(self.Mesh, self.Position, self.Rotation, self.Scale, self.Color)
+	Mesh.Brightness = self.Brightness
+	Mesh.Bloom = self.Bloom
+	Mesh.Transparency = self.Transparency
 	Mesh.UVVelocity = vector2(self.UVVelocity)
+	Mesh.CastShadow = self.CastShadow
 	Mesh.IsTriplanar = self.IsTriplanar
 	Mesh.TextureScale = self.TextureScale
-	Mesh.Transparency = self.Transparency
-	Mesh.Brightness = self.Brightness
+	
 	-- keep the scene nil
 	return Mesh
 end
