@@ -128,6 +128,7 @@ function Scene3:applyAmbientOcclusion()
 	love.graphics.draw(self.DepthCanvas, 0, 0, 0, 1 / self.MSAA, 1 / self.MSAA) -- set the ambient occlusion shader in motion
 
 
+	
 	-- apply horizontal and vertical gaussian blur in two passes, using the reuse canvas to draw to that, and then back to the ambient occlusion canvas
 	love.graphics.setCanvas(pongCanvas)
 	--love.graphics.clear()
@@ -140,6 +141,7 @@ function Scene3:applyAmbientOcclusion()
 	--love.graphics.clear()
 	self.BlurShader:send("blurDirection", {0, 1})
 	love.graphics.draw(pongCanvas)
+	
 
 
 	-- now blend the ambient occlusion result with whatever has been drawn already
@@ -154,7 +156,7 @@ function Scene3:applyAmbientOcclusion()
 	love.graphics.setShader()
 	love.graphics.setCanvas(self.RenderCanvas)
 	--love.graphics.clear()
-	love.graphics.setShader()
+	--love.graphics.setShader()
 	love.graphics.draw(self.PrepareCanvas)
 
 end
@@ -275,6 +277,7 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 
 
 	-- update positions of lights in the shader if any of the lights moved
+	--[[
 	if self.QueuedShaderVars.LightPositions then
 		self.QueuedShaderVars.LightPositions = false
 		local positions = {}
@@ -317,6 +320,21 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 		self.Shader:send("lightStrengths", unpack(strengths))
 		self.ParticlesShader:send("lightStrengths", unpack(strengths))
 	end
+	]]
+
+	-- update lights
+	local emptyInfo = {0, 0, 0, 0} -- lights that are not initialized get sent empty info. Define a drop-in here to avoid creating multiple tables
+	local lightsInfo = {}
+	for i = 1, #self.Lights do -- {posX, posY, posZ, range}, {colR, colG, colB, strength}
+		table.insert(lightsInfo, {self.Lights[i].Position.x, self.Lights[i].Position.y, self.Lights[i].Position.z, self.Lights[i].Range})
+		table.insert(lightsInfo, {self.Lights[i].Color.r, self.Lights[i].Color.g, self.Lights[i].Color.b, self.Lights[i].Strength})
+	end
+	for o = #self.Lights + 1, 16 do -- fill in the remaining 'empty' light slots with dummy data
+		table.insert(lightsInfo, emptyInfo)
+		table.insert(lightsInfo, emptyInfo)
+	end
+	self.Shader:send("lightsInfo", unpack(lightsInfo))
+	self.ParticlesShader:send("lightsInfo", unpack(lightsInfo))
 
 
 	-- if a shadow canvas is set, it means shadow mapping is turned on
@@ -562,7 +580,7 @@ end
 
 
 
-
+--[[
 function Scene3:setLight(index, position, col, range, strength)
 	assert(type(index) == "number", "Scene3:setLight(index, position, col, range, strength) requires argument 'index' to be a number")
 	assert(vector3.isVector3(position), "Scene3:setLight(index, position, col, range, strength) requires argument 'position' to be a vector3")
@@ -597,6 +615,8 @@ function Scene3:setLight(index, position, col, range, strength)
 	end
 	
 end
+]]
+
 
 
 
@@ -611,6 +631,7 @@ end
 
 
 function Scene3:setAO(strength, kernelScalar)
+	if strength == nil then strength = 0 end
 	local enabled = strength > 0
 	self.AOEnabled = enabled
 	self.SSAOShader:send("aoStrength", strength)
@@ -712,6 +733,29 @@ end
 
 
 
+function Scene3:attachLight(light)
+	assert(light3.isLight3(light), "Scene3:attachLight(light) requires argument 'light' to be a light3.")
+	if light.Scene ~= nil then
+		light:detach()
+	end
+
+	if #self.Lights >= 16 then
+		print("Scene3:attachLight(light) added a light that will not display as there are already 16 or more lights in the scene.")
+	end
+
+	local index = findOrderedInsertLocation(self.Lights, light)
+	table.insert(self.Lights, index, light)
+	light.Scene = self
+
+	if self.Events.LightAttached then
+		connection.doEvents(self.Events.LightAttached, light)
+	end
+
+	return light
+end
+
+
+
 
 function Scene3:attachBasicMesh(mesh)
 	assert(mesh3.isMesh3(mesh), "Scene3:attachBasicMesh(mesh) requires argument 'mesh' to be a mesh3.")
@@ -726,8 +770,8 @@ function Scene3:attachBasicMesh(mesh)
 	if self.Events.MeshAttached then
 		connection.doEvents(self.Events.MeshAttached, mesh)
 	end
+
 	return mesh
-	
 end
 
 
@@ -816,6 +860,25 @@ function Scene3:detachBasicMesh(meshOrSlot)
 
 		if self.Events.MeshDetached then
 			connection.doEvents(self.Events.MeshDetached, Item)
+		end
+
+		return true
+	end
+	return false
+end
+
+
+function Scene3:detachLight(lightOrSlot)
+	if type(lightOrSlot) ~= "number" then -- object was passed
+		assert(light3.isLight3(lightOrSlot), "Scene3:detachLight(lightOrSlot) requires argument 'lightOrSlot' to be either a light3 or an integer")
+		lightOrSlot = findObjectInOrderedArray(lightOrSlot, self.Lights)
+	end
+	local Item = table.remove(self.Lights, lightOrSlot)
+	if Item ~= nil then
+		Item.Scene = nil
+
+		if self.Events.LightDetached then
+			connection.doEvents(self.Events.LightDetached, Item)
 		end
 
 		return true
@@ -937,12 +1000,14 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 		["BloomBlurShader"] = love.graphics.newShader(SHADER_BLOOMBLUR_PATH);
 		["ShadowMapShader"] = love.graphics.newShader(SHADER_SHADOWMAP_PATH);
 
+		--[[
 		["QueuedShaderVars"] = { -- whether during the next :draw() call the scene should update the shader variables below. These variables are introduced to minimize traffic to the shader!
 			["LightPositions"] = true; -- initialize to true to force the variables to be sent on the very first frame
 			["LightColors"] = true; -- same as above
 			["LightRanges"] = true; -- same as above
 			["LightStrengths"] = true; -- same as above
 		};
+		]]
 
 		["LastDrawSize"] = vector2(gWidth, gHeight); -- when you suddenly start drawing the scene at a different size, some shader variables need to be updated!
 
@@ -1013,7 +1078,7 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 	Object.BloomBlurShader:send("screenSize", {gWidth, gHeight})
 
 	-- create and send noise image to SSAO shader
-	local imgData = love.image.newImageData(16, 16) --16, 16
+	local imgData = love.image.newImageData(8, 8) --16, 16
 	local seed = love.math.getRandomSeed()
 	local state = love.math.getRandomState()
 	love.math.setRandomSeed(1212)
@@ -1023,10 +1088,12 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 	local noiseImage = love.graphics.newImage(imgData)
 	--noiseImage:setFilter("nearest") -- using nearest instead of linear interpolation somehow increases FPS by 10%, probs Texel() is slow?
 	noiseImage:setWrap("repeat")
+	noiseImage:setFilter("nearest")
 	Object.SSAOShader:send("noiseTexture", noiseImage)
 
 
 	-- init lights with 0-strength white lights (re-enable this later when lights are enabled in the shader)
+	--[[
 	for i = 1, MAX_LIGHTS_PER_SCENE do
 		Object.Lights[i] = {
 			["Position"] = vector3(0, 0, 0);
@@ -1035,6 +1102,7 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 			["Strength"] = 0;
 		}
 	end
+	]]
 
 	-- set a default ambience
 	Object.Shader:send("ambientColor", {1, 1, 1, 1})
