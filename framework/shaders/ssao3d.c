@@ -10,23 +10,11 @@ uniform int samples;
 
 uniform Image noiseTexture; // assumed to be a 16x16 noise texture where r,g,b = x,y,z normal vector with z>0
 
-const float rangeCheckScalar = 10.0; // larger value == need to zoom out further for AO to fade away
+const float rangeCheckScalar = 20.0; // larger value == need to zoom out further for AO to fade away
 
 
-/*
-const vec3 samplingKernel[24] = vec3[]( // 9
-	vec3(3.536, 1.0, 0.671) / 5.5,
-	vec3(2.68, 2.919, 2.745) / 5.5,
-	vec3(0.995, 3.628, 1.154) / 5.5,
-	vec3(-0.6, 2.361, 4.117) / 5.5,
-	vec3(-0.267, 0.83, 1.434) / 5.5,
-	vec3(-0.797, -0.764, 3.68) / 5.5,
-	vec3(0.983, -1.23, 1.933) / 5.5,
-	vec3(2.302, -0.194, 3.301) / 5.5,
-	vec3(1.481, 1.68, 5.031) / 5.5
-);
-*/
-const vec3 samplingKernel[24] = vec3[]( // 9
+const vec3 samplingKernel[24] = vec3[](
+	/*
 	// 0.25x quality
 	vec3(-0.797, -0.764, 3.68) / 5.5,
 	vec3(-3.853, 0.547, 1.216) / 5.5,
@@ -56,6 +44,34 @@ const vec3 samplingKernel[24] = vec3[]( // 9
 	vec3(-2.681, 1.279, 1.703) / 5.5,
 	vec3(0.275, 1.058, 3.025) / 5.5,
 	vec3(3.379, 0.861, 1.175) / 5.5
+	*/
+
+	vec3(0.677, 1.156, 1.657) / 3.0,
+	vec3(-0.482, -0.006, 2.874) / 3.0,
+	vec3(-1.584, 0.518, 0.381) / 3.0,
+	vec3(1.921, -1.066, 1.289) / 3.0,
+	vec3(-0.285, -0.289, 0.849) / 3.0,
+	vec3(-1.407, -1.316, 0.557) / 3.0,
+	vec3(-0.541, 1.916, 0.575) / 3.0,
+	vec3(0.781, -0.946, 0.224) / 3.0,
+
+	vec3(0.949, 1.436, 0.882) / 3.0,
+	vec3(-0.039, 0.369, 0.252) / 3.0,
+	vec3(0.070, -1.155, 0.185) / 3.0,
+	vec3(2.455, 0.037, 1.373) / 3.0,
+	vec3(-1.191, -2.206, 0.727) / 3.0,
+	vec3(0.763, 0.037, 0.501) / 3.0,
+	vec3(-1.678, 1.436, 1.476) / 3.0,
+	vec3(0.249, 0.037, 1.825) / 3.0,
+
+	vec3(-0.762, 0.516, 0.995) / 3.0,
+	vec3(-0.480, -0.499, 0.265) / 3.0,
+	vec3(0.600, -1.991, 1.779) / 3.0,
+	vec3(1.260, 0.516, 0.335) / 3.0,
+	vec3(-0.053, -0.954, 1.058) / 3.0,
+	vec3(1.384, -0.667, 0.718) / 3.0,
+	vec3(-1.153, -0.443, 1.493) / 3.0,
+	vec3(-0.087, 2.333, 1.132) / 3.0
 );
 
 
@@ -126,7 +142,6 @@ vec3 rotateKernelVector(vec3 vector, float angle) {
 
 
 float calculateOcclusion(vec3 fragmentPos, vec3 normal, vec2 texCoord, Image depthTexture, mat4 invPerspectiveMatrix) {
-	float occlusion = 0.0;
 
 	// calculate a matrix that will transform a normal vector from world-space to surface-space
 	vec3 up = abs(normal.y) < 0.999 ? vec3(0.0, 1.0, 0.0) : vec3(1.0, 0.0, 0.0);
@@ -135,10 +150,13 @@ float calculateOcclusion(vec3 fragmentPos, vec3 normal, vec2 texCoord, Image dep
 	mat3 TBN = mat3(tangent, bitangent, normal); // transforms a vector from world-space to the surface normal space
 
 	vec2 noiseSamplePosition = vec2(
-		float(love_PixelCoord.x) / 13.17,
-		float(love_PixelCoord.y) / 13.17
+		float(love_PixelCoord.x) / 8.0,
+		float(love_PixelCoord.y) / 8.0
 	);
-	float sampledRotation = Texel(noiseTexture, noiseSamplePosition).x * 6.283; // sample a rotation for this pixel from the noise texture
+	float sampledRotation = Texel(noiseTexture, noiseSamplePosition).r * 6.283; // sample a rotation for this pixel from the noise texture
+
+
+	float occlusion = 0.0;
 
 
 	for (int i = 0; i < samples; i++) { // loop through each item in samplingKernel
