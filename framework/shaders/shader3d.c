@@ -36,7 +36,7 @@ varying vec4 fragPosLightSpace; // position of the fragment in light space so it
 
 
 
-// I DON'T KNOW WHY, BUT THE FUNCTIONS GETROTATIONMATRIX AND GETSCALEMATRIX AND GETTRANSLATIONMATRIX ARE ALL TRANSPOSED AND IT JUST KIND OF WORKS (probably because of row/column major order shenanigans?)
+// I DON'T KNOW WHY, BUT THE FUNCTIONS GETROTATIONMATRIX AND GETSCALEMATRIX AND GETTRANSLATIONMATRIX ARE ALL TRANSPOSED AND IT JUST KIND OF WORKS (probably because of row/column major order?)
 
 // rotate around X-axis
 mat4 getRotationMatrixX(float angle) {
@@ -264,10 +264,19 @@ uniform float diffuseStrength;
 uniform vec2 uvVelocity; // how quckly the UV scrolls on the X and Y axis, usually this equals 0,0
 
 // lights
+/*
 uniform vec3 lightPositions[16]; // non-transformed!
 uniform vec3 lightColors[16];
 uniform float lightRanges[16];
 uniform float lightStrengths[16];
+*/
+struct Light {
+	vec3 position;
+	vec3 color;
+	float range;
+	float strength;
+};
+uniform vec4 lightsInfo[16 * 2]; // array where each even index is {posX, posY, posZ, range} and each uneven index is {colR, colG, colB, strength}
 uniform vec3 ambientColor;
 
 // shadow map properties
@@ -299,40 +308,15 @@ uniform sampler2DShadow shadowCanvas; // use Image when doing 'basic' sampling. 
 // fragment shader
 
 
-
-
-// shadow map sampling using a basic texture and applying a 5x5 PCF kernel.
-// shadow acne starts happening around a 85 degree camera angle, but disabling the PCF or reducing the texelsize makes it support up to 89 degrees without acne
-/*
-float calculateShadow(vec4 fragPosLightSpace, vec3 surfaceNormal) {
-	vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
-	projCoords = projCoords * 0.5 + 0.5;
-
-	// no shadows when outside the shadow canvas
-	if (projCoords.x < 0.0 || projCoords.x > 1.0 || projCoords.y < 0.0 || projCoords.y > 1.0)
-		return 0.0;
-
-	float currentDepth = projCoords.z;
-	// bias calc taken from: http://www.opengl-tutorial.org/intermediate-tutorials/tutorial-16-shadow-mapping/#aliasing
-	float cosTheta = clamp(dot(surfaceNormal, sunDirection), 0.0, 1.0);
-	float bias = 0.005 * tan(acos(cosTheta)); // cosTheta is dot( n,l ), clamped between 0 and 1
-	bias = clamp(bias, 0, 0.005);
-
-	// apply PCF
-	float shadow = 0.0;
-	vec2 texelSize = 0.5 / shadowCanvasSize; // changing the numerator here will impact when shadow acne starts happening. smaller value are better, but reduce shadow quality
-
-	for (int x = -2; x <= 2; x++) {
-		for (int y = -2; y <= 2; y++) {
-			vec2 offset = vec2(x, y) * texelSize;
-			float pcfDepth = Texel(shadowCanvas, projCoords.xy + offset).r;
-			shadow += (currentDepth - bias > pcfDepth) ? 1.0 : 0.0;
-		}
-	}
-	shadow /= 25.0;
-	return shadow;
+Light getLight(int index) {
+	Light light;
+	light.position = lightsInfo[index * 2].xyz;
+	light.range = lightsInfo[index * 2].w;
+	light.color = lightsInfo[index * 2 + 1].xyz;
+	light.strength = lightsInfo[index * 2 + 1].w;
+	return light;
 }
-*/
+
 
 // https://learnopengl.com/Advanced-Lighting/Shadows/Shadow-Mapping
 // calculate shadow using sampler2DShadow, which uses bilinear filtering automatically for better shadows, but has bigger problems with shadow acne :<
@@ -345,35 +329,12 @@ float calculateShadow(vec4 fragPosLightSpace, vec3 surfaceNormal) {
 		return 0.0;
 	}
 
-
 	float currentDepth = projCoords.z;
 
 	// bias calc taken from: http://www.opengl-tutorial.org/intermediate-tutorials/tutorial-16-shadow-mapping/#aliasing
 	float cosTheta = clamp(dot(surfaceNormal, sunDirection), 0.0, 1.0);
 	float bias = 0.0025 * tan(acos(cosTheta)); // cosTheta is dot( n,l ), clamped between 0 and 1
 	bias = clamp(bias, 0, 0.0025); // used to be 0.005, but lowered because neighbor sampling works perfectly with reducing acne
-
-
-
-	// basic, simple, one-pixel bilinear filtering sampling:
-	// this will produce shadow acne on big flat surfaces starting at angles of ~85 degrees
-	//float shadow = texture(shadowCanvas, vec3(projCoords.xy, currentDepth - bias));
-
-
-	// PCF with bilinear filtering. Yields pretty results, but very obvious shadow acne on steep, flat surfaces
-	// this will produce shadow acne starting at angles of ~75 degrees
-	/*
-	float shadow = 0.0;
-	vec2 texelSize = 1.0 / shadowCanvasSize;
-
-	for (int x = -2; x <= 2; x++) {
-		for (int y = -2; y <= 2; y++) {
-			vec2 offset = vec2(x, y) * texelSize;
-			shadow += texture(shadowCanvas, vec3(projCoords.xy + offset, currentDepth - bias), bias);
-		}
-	}
-	shadow /= 25.0;
-	*/
 	
 
 	// sample depth at own position, but also sample 4 neighbors
@@ -387,57 +348,6 @@ float calculateShadow(vec4 fragPosLightSpace, vec3 surfaceNormal) {
 	float sd = texture(shadowCanvas, vec3(projCoords.xy + vec2(0.0, texelSize.y), currentDepth - bias));
 	float shadow = min(s0, min(sl, min(sr, min(su, sd))));
 	
-
-	
-
-	// the following combines neighbor sampling with a very small PCF kernel, however, the results aren't living up to expectation :<
-	/*
-	float shadow = 0.0;
-	vec2 texelSize = 1.0 / shadowCanvasSize;
-
-	for (int x = -1; x <= 1; x++) {
-		for (int y = -1; y <= 1; y++) {
-			vec2 offset = vec2(x, y) * texelSize;
-			vec2 sampleCoords = projCoords.xy + offset;
-
-			float s0 = texture(shadowCanvas, vec3(sampleCoords, currentDepth - bias));
-			float sl = texture(shadowCanvas, vec3(sampleCoords + vec2(-texelSize.x, 0.0), currentDepth - bias));
-			float sr = texture(shadowCanvas, vec3(sampleCoords + vec2(texelSize.x, 0.0), currentDepth - bias));
-			float su = texture(shadowCanvas, vec3(sampleCoords + vec2(0.0, -texelSize.y), currentDepth - bias));
-			float sd = texture(shadowCanvas, vec3(sampleCoords + vec2(0.0, texelSize.y), currentDepth - bias));
-
-			// Reduce acne by taking the min of neighbor depths
-			shadow += min(s0, min(sl, min(sr, min(su, sd))));
-		}
-	}
-	shadow /= 9.0;
-	*/
-	
-
-
-	//alternative to neighbor sampling: sample a 9x9 kernel, take the min of each column and row, then average those
-	/*
-	vec2 texelSize = 1.0 / shadowCanvasSize;
-	float s00 = texture(shadowCanvas, vec3(projCoords.xy + vec2(-texelSize.x, -texelSize.y), currentDepth - bias));
-	float s01 = texture(shadowCanvas, vec3(projCoords.xy + vec2(0.0, -texelSize.y), currentDepth - bias));
-	float s02 = texture(shadowCanvas, vec3(projCoords.xy + vec2(texelSize.x, -texelSize.y), currentDepth - bias));
-	float s10 = texture(shadowCanvas, vec3(projCoords.xy + vec2(-texelSize.x, 0.0), currentDepth - bias));
-	float s11 = texture(shadowCanvas, vec3(projCoords.xy, currentDepth - bias));
-	float s12 = texture(shadowCanvas, vec3(projCoords.xy + vec2(texelSize.x, 0.0), currentDepth - bias));
-	float s20 = texture(shadowCanvas, vec3(projCoords.xy + vec2(-texelSize.x, texelSize.y), currentDepth - bias));
-	float s21 = texture(shadowCanvas, vec3(projCoords.xy + vec2(0.0, texelSize.y), currentDepth - bias));
-	float s22 = texture(shadowCanvas, vec3(projCoords.xy + vec2(texelSize.x, texelSize.y), currentDepth - bias));
-	float shadow = (
-		min(s00, min(s01, s02))
-		+ min(s10, min(s11, s12))
-		+ min(s20, min(s21, s22))
-		+ min(s00, min(s10, s20))
-		+ min(s01, min(s11, s21))
-		+ min(s02, min(s12, s22))
-	) / 6.0;
-	*/
-
-
 	return shadow;
 }
 
@@ -513,17 +423,18 @@ void effect() {
 	vec3 lighting = ambientColor; // start with just ambient lighting on the surface
 	
 	// add the lighting contribution of all lights to the surface
-	for (int i = 0; i < 16; ++i) {
-		if (lightStrengths[i] > 0.0) { // Only consider lights with a strength above 0
-			vec3 lightDir = normalize(lightPositions[i] - fragWorldPosition);
-			float distance = length(lightPositions[i] - fragWorldPosition);
-			float attenuation = clamp(1.0 - pow(distance / lightRanges[i], 1.0), 0.0, 1.0);
+	for (int i = 0; i < 16; ++i) { // reducing lights from 16 to 1 will only really improve FPS from 235 to 245, so having 16 lights is fine
+		Light light = getLight(i);
+		if (light.strength > 0.0) { // Only consider lights with a strength above 0
+			vec3 lightDir = normalize(light.position - fragWorldPosition);
+			float distance = length(light.position - fragWorldPosition);
+			float attenuation = clamp(1.0 - pow(distance / light.range, 1.0), 0.0, 1.0);
 
 			// diffuse shading
 			float diffuseFactor = max(dot(fragWorldNormal, lightDir), 0.0);
-			vec3 light = lightColors[i] * lightStrengths[i] * attenuation;
-			//float diffStrength = diffuseStrength * (1.0 - meshBrightness); // if a mesh is fully bright, diffuse strength becomes 0 so that it has no efect
-			lighting += light * ((diffuseFactor * diffuseStrength) + (1.0 - diffuseStrength)); // if diffStrength==0, just add the color, otherwise, add based on angle between surface and light direction
+			vec3 lightingToAdd = light.color * light.strength * attenuation;
+			// if diffStrength == 0, just add the color, otherwise, add based on angle between surface and light direction
+			lighting += lightingToAdd * ((diffuseFactor * diffuseStrength) + (1.0 - diffuseStrength)); // if a mesh is fully bright, diffuse strength becomes 0 so that it has no efect
 		}
 	}
 	// apply sun-light if not in shadow

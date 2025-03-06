@@ -385,11 +385,31 @@ varying float lifetime;
 varying vec3 fragWorldPosition;
 
 // lights
+/*
 uniform vec3 lightPositions[16]; // non-transformed!
 uniform vec3 lightColors[16];
 uniform float lightRanges[16];
 uniform float lightStrengths[16];
+*/
+struct Light {
+	vec3 position;
+	vec3 color;
+	float range;
+	float strength;
+};
+uniform vec4 lightsInfo[16 * 2]; // array where each even index is {posX, posY, posZ, range} and each uneven index is {colR, colG, colB, strength}
 uniform vec3 ambientColor;
+
+
+
+Light getLight(int index) {
+	Light light;
+	light.position = lightsInfo[index * 2].xyz;
+	light.range = lightsInfo[index * 2].w;
+	light.color = lightsInfo[index * 2 + 1].xyz;
+	light.strength = lightsInfo[index * 2 + 1].w;
+	return light;
+}
 
 
 
@@ -420,13 +440,14 @@ vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
 
 	// add the lighting contribution of all lights to the surface
 	for (int i = 0; i < 16; ++i) {
-		if (lightStrengths[i] > 0) { // only consider lights with a strength above 0
+		Light light = getLight(i);
+		if (light.strength > 0) { // only consider lights with a strength above 0
 			// distance to the light
-			float distance = length(lightPositions[i] - fragWorldPosition);
+			float distance = length(light.position - fragWorldPosition);
 			// attenuation factor
-			float attenuation = clamp(1.0 - pow(distance / lightRanges[i], 1), 0.0, 1.0);
+			float attenuation = clamp(1.0 - pow(distance / light.range, 1), 0.0, 1.0);
 			// sum up the light contributions
-			lighting += lightColors[i] * lightStrengths[i] * attenuation;
+			lighting += light.color * light.strength * attenuation;
 			//totalInfluence = totalInfluence + attenuation;
 		}
 	}
