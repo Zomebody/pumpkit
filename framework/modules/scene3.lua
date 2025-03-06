@@ -329,12 +329,16 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 		table.insert(lightsInfo, {self.Lights[i].Position.x, self.Lights[i].Position.y, self.Lights[i].Position.z, self.Lights[i].Range})
 		table.insert(lightsInfo, {self.Lights[i].Color.r, self.Lights[i].Color.g, self.Lights[i].Color.b, self.Lights[i].Strength})
 	end
+	--[[
 	for o = #self.Lights + 1, 16 do -- fill in the remaining 'empty' light slots with dummy data
 		table.insert(lightsInfo, emptyInfo)
 		table.insert(lightsInfo, emptyInfo)
 	end
-	self.Shader:send("lightsInfo", unpack(lightsInfo))
-	self.ParticlesShader:send("lightsInfo", unpack(lightsInfo))
+	]]
+	if #lightsInfo > 0 then
+		self.Shader:send("lightsInfo", unpack(lightsInfo))
+		self.ParticlesShader:send("lightsInfo", unpack(lightsInfo))
+	end
 
 
 	-- if a shadow canvas is set, it means shadow mapping is turned on
@@ -739,13 +743,17 @@ function Scene3:attachLight(light)
 		light:detach()
 	end
 
-	if #self.Lights >= 16 then
-		print("Scene3:attachLight(light) added a light that will not display as there are already 16 or more lights in the scene.")
-	end
-
 	local index = findOrderedInsertLocation(self.Lights, light)
 	table.insert(self.Lights, index, light)
 	light.Scene = self
+
+	local lightCount = math.min(#self.Lights, 16)
+	self.Shader:send("lightCount", lightCount)
+	self.ParticlesShader:send("lightCount", lightCount)
+
+	if #self.Lights > lightCount then
+		print("Scene3:attachLight(light) added a light that will not display as there are already 16 or more lights in the scene.")
+	end
 
 	if self.Events.LightAttached then
 		connection.doEvents(self.Events.LightAttached, light)
@@ -876,6 +884,10 @@ function Scene3:detachLight(lightOrSlot)
 	local Item = table.remove(self.Lights, lightOrSlot)
 	if Item ~= nil then
 		Item.Scene = nil
+
+		local lightCount = math.min(#self.Lights, 16)
+		self.Shader:send("lightCount", lightCount)
+		self.ParticlesShader:send("lightCount", lightCount)
 
 		if self.Events.LightDetached then
 			connection.doEvents(self.Events.LightDetached, Item)
@@ -1061,8 +1073,10 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 	Object.Shader:send("aspectRatio", aspectRatio)
 	Object.Shader:send("fieldOfView", Object.Camera3.FieldOfView)
 	Object.Shader:send("diffuseStrength", 1)
+	Object.Shader:send("lightCount", 0)
 	Object.ParticlesShader:send("aspectRatio", aspectRatio)
 	Object.ParticlesShader:send("fieldOfView", Object.Camera3.FieldOfView)
+	Object.ParticlesShader:send("lightCount", 0)
 	Object.SSAOShader:send("aoStrength", 0.5)
 	Object.SSAOShader:send("kernelScalar", 0.85) -- how 'large' ambient occlusion is
 	Object.SSAOShader:send("samples", 24)

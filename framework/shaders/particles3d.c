@@ -398,6 +398,7 @@ struct Light {
 	float strength;
 };
 uniform vec4 lightsInfo[16 * 2]; // array where each even index is {posX, posY, posZ, range} and each uneven index is {colR, colG, colB, strength}
+uniform int lightCount;
 uniform vec3 ambientColor;
 
 
@@ -439,17 +440,16 @@ vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
 	//float totalInfluence = 0;
 
 	// add the lighting contribution of all lights to the surface
-	for (int i = 0; i < 16; ++i) {
+	for (int i = 0; i < lightCount; ++i) {
 		Light light = getLight(i);
-		if (light.strength > 0) { // only consider lights with a strength above 0
-			// distance to the light
-			float distance = length(light.position - fragWorldPosition);
-			// attenuation factor
-			float attenuation = clamp(1.0 - pow(distance / light.range, 1), 0.0, 1.0);
-			// sum up the light contributions
-			lighting += light.color * light.strength * attenuation;
-			//totalInfluence = totalInfluence + attenuation;
-		}
+		//if (light.strength > 0) { // only consider lights with a strength above 0
+		// distance to the light
+		float distance = length(light.position - fragWorldPosition);
+		// attenuation factor
+		float attenuation = clamp(1.0 - pow(distance / light.range, 1), 0.0, 1.0);
+		// sum up the light contributions
+		lighting += light.color * light.strength * attenuation;
+		//}
 	}
 	
 	

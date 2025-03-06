@@ -277,6 +277,7 @@ struct Light {
 	float strength;
 };
 uniform vec4 lightsInfo[16 * 2]; // array where each even index is {posX, posY, posZ, range} and each uneven index is {colR, colG, colB, strength}
+uniform int lightCount;
 uniform vec3 ambientColor;
 
 // shadow map properties
@@ -423,19 +424,19 @@ void effect() {
 	vec3 lighting = ambientColor; // start with just ambient lighting on the surface
 	
 	// add the lighting contribution of all lights to the surface
-	for (int i = 0; i < 16; ++i) { // reducing lights from 16 to 1 will only really improve FPS from 235 to 245, so having 16 lights is fine
+	for (int i = 0; i < lightCount; ++i) { // reducing lights from 16 to 1 will only really improve FPS from 235 to 245, so having 16 lights is fine
 		Light light = getLight(i);
-		if (light.strength > 0.0) { // Only consider lights with a strength above 0
-			vec3 lightDir = normalize(light.position - fragWorldPosition);
-			float distance = length(light.position - fragWorldPosition);
-			float attenuation = clamp(1.0 - pow(distance / light.range, 1.0), 0.0, 1.0);
+		//if (light.strength > 0.0) { // Only consider lights with a strength above 0
+		vec3 lightDir = normalize(light.position - fragWorldPosition);
+		float distance = length(light.position - fragWorldPosition);
+		float attenuation = clamp(1.0 - pow(distance / light.range, 1.0), 0.0, 1.0);
 
-			// diffuse shading
-			float diffuseFactor = max(dot(fragWorldNormal, lightDir), 0.0);
-			vec3 lightingToAdd = light.color * light.strength * attenuation;
-			// if diffStrength == 0, just add the color, otherwise, add based on angle between surface and light direction
-			lighting += lightingToAdd * ((diffuseFactor * diffuseStrength) + (1.0 - diffuseStrength)); // if a mesh is fully bright, diffuse strength becomes 0 so that it has no efect
-		}
+		// diffuse shading
+		float diffuseFactor = max(dot(fragWorldNormal, lightDir), 0.0);
+		vec3 lightingToAdd = light.color * light.strength * attenuation;
+		// if diffStrength == 0, just add the color, otherwise, add based on angle between surface and light direction
+		lighting += lightingToAdd * ((diffuseFactor * diffuseStrength) + (1.0 - diffuseStrength)); // if a mesh is fully bright, diffuse strength becomes 0 so that it has no efect
+		//}
 	}
 	// apply sun-light if not in shadow
 	if (shadowsEnabled) {
