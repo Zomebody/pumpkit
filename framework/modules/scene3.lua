@@ -238,6 +238,7 @@ function Scene3:updateShadowMap()
 			love.graphics.draw(Mesh.Mesh)
 		end
 	end
+	-- spritemeshes can't cast shadows so they are not included in here
 
 	-- revert peter-panning
 	love.graphics.setMeshCullMode("back")
@@ -373,6 +374,8 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 	-- draw all of the scene's meshes
 	love.graphics.setMeshCullMode("back")
 
+
+	-- first draw instanced meshes
 	local Mesh = nil
 	self.Shader:send("currentTime", love.timer.getTime())
 	self.Shader:send("uvVelocity", {0, 0})
@@ -385,10 +388,12 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 		self.Shader:send("meshBloom", Mesh.Bloom)
 		love.graphics.drawInstanced(Mesh.Mesh, Mesh.Count)
 	end
+
+
+	-- then draw all *opaque* basic meshes
+	local TransMeshes = {} -- create new array to put all basic meshes in that have a Transparency > 0. Their rendering is postponed. They will be sorted later
 	self.Shader:send("isInstanced", false) -- tell the shader to use the meshPosition, meshRotation, meshScale and meshColor uniforms to calculate the model matrices
-	-- create new array to put all basic meshes in that have a Transparency > 0. Their rendering is postponed. They will be sorted later
-	local TransMeshes = {}
-	self.Shader:send("meshTransparency", 0)
+	self.Shader:send("meshTransparency", 0) -- >0 transparency meshes are postponed until later
 	for i = 1, #self.BasicMeshes do
 		Mesh = self.BasicMeshes[i]
 		if Mesh.Transparency == 0 then
@@ -399,7 +404,6 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 			self.Shader:send("meshColor", Mesh.Color:array())
 			self.Shader:send("meshBrightness", Mesh.Brightness)
 			self.Shader:send("meshBloom", Mesh.Bloom)
-			--self.Shader:send("meshTransparency", Mesh.Transparency) -- no need to send over Transparency anymore since we're skipping any meshes with transparency > 0
 			self.Shader:send("triplanarScale", Mesh.IsTriplanar and Mesh.TextureScale or 0)
 			love.graphics.draw(Mesh.Mesh)
 		elseif Mesh.Transparency < 1 then -- ignore meshes with transparency == 1
@@ -407,7 +411,29 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 		end
 	end
 
-	-- now sort, then draw all meshes that were postponed
+	-- repeat the process, but for *opaque* spritemeshes
+	self.Shader:send("uvVelocity", {0, 0}) -- sprite meshes have no uv scrolling
+	self.Shader:send("triplanarScale", 0) -- sprite meshes also have no triplanar texture projection
+	self.Shader:send("isSpriteSheet", true) -- but they do need isSpriteSheet set to true for correct texture mapping
+	for i = 1, #self.SpriteMeshes do
+		Mesh = self.SpriteMeshes[i]
+		if Mesh.Transparency == 0 then
+			self.Shader:send("meshPosition", Mesh.Position:array())
+			self.Shader:send("meshRotation", Mesh.Rotation:array())
+			self.Shader:send("meshScale", Mesh.Scale:array())
+			self.Shader:send("meshColor", Mesh.Color:array())
+			self.Shader:send("meshBrightness", Mesh.Brightness)
+			self.Shader:send("meshBloom", Mesh.Bloom)
+			self.Shader:send("spritePosition", Mesh.SpritePosition)
+			self.Shader:send("spriteSheetSize", Mesh.SheetSize)
+			love.graphics.draw(Mesh.Mesh)
+		elseif Mesh.Transparency < 1 then -- ignore meshes with transparency == 1
+			table.insert(TransMeshes, Mesh)
+		end
+	end
+	self.Shader:send("isSpriteSheet", false)
+
+	-- now sort, then draw all basic/sprite meshes that were postponed
 	local cameraPosition = self.Camera3.Position
 	table.sort(
 		TransMeshes,
@@ -416,17 +442,29 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 				> (meshB.Position.x - cameraPosition.x)^2 + (meshB.Position.y - cameraPosition.y)^2 + (meshB.Position.z - cameraPosition.z)^2
 		end
 	)
+
+	-- since both basic meshes and sprite meshes need to be drawn in the right order, this loop gets a bit complicated
 	for i = 1, #TransMeshes do
+		-- need to add a small check here to distinguish between basic meshes and sprite meshes since they have somewhat different properties
 		Mesh = TransMeshes[i]
-		self.Shader:send("uvVelocity", Mesh.UVVelocity:array())
+		if mesh3.isMesh3(Mesh) then -- basic mesh
+			self.Shader:send("isSpriteSheet", false)
+			self.Shader:send("uvVelocity", Mesh.UVVelocity:array())
+			self.Shader:send("triplanarScale", Mesh.IsTriplanar and Mesh.TextureScale or 0)
+		else -- sprite mesh
+			self.Shader:send("isSpriteSheet", true)
+			self.Shader:send("uvVelocity", {0, 0})
+			self.Shader:send("triplanarScale", 0)
+			self.Shader:send("spritePosition", Mesh.SpritePosition)
+			self.Shader:send("spriteSheetSize", Mesh.SheetSize)
+		end
 		self.Shader:send("meshPosition", Mesh.Position:array())
 		self.Shader:send("meshRotation", Mesh.Rotation:array())
 		self.Shader:send("meshScale", Mesh.Scale:array())
 		self.Shader:send("meshColor", Mesh.Color:array())
 		self.Shader:send("meshBrightness", Mesh.Brightness)
 		self.Shader:send("meshBloom", Mesh.Bloom)
-		self.Shader:send("meshTransparency", Mesh.Transparency) -- now we do include transparency though!
-		self.Shader:send("triplanarScale", Mesh.IsTriplanar and Mesh.TextureScale or 0)
+		self.Shader:send("meshTransparency", Mesh.Transparency) -- now we can finally include transparency since these meshes are drawn in painter's algorithm order
 		love.graphics.draw(Mesh.Mesh)
 	end
 	
@@ -765,25 +803,6 @@ end
 
 
 
-function Scene3:attachBasicMesh(mesh)
-	assert(mesh3.isMesh3(mesh), "Scene3:attachBasicMesh(mesh) requires argument 'mesh' to be a mesh3.")
-	if mesh.Scene ~= nil then
-		mesh:detach()
-	end
-
-	local index = findOrderedInsertLocation(self.BasicMeshes, mesh)
-	table.insert(self.BasicMeshes, index, mesh)
-	mesh.Scene = self
-
-	if self.Events.MeshAttached then
-		connection.doEvents(self.Events.MeshAttached, mesh)
-	end
-
-	return mesh
-end
-
-
-
 -- if texScale is nil, IsPlanar is false, else, IsPlanar is true and TextureScale becomes texScale
 function Scene3:addInstancedMesh(mesh, positions, rotations, scales, cols, bloom, brightness, castShadow, texScale)
 	assert(type(bloom) == "number" or bloom == nil, "Scene3:addInstancedMesh(mesh, positions, rotations, scales, cols, bloom, brightness, texScale) requires 'bloom' to be a number or nil")
@@ -857,12 +876,45 @@ end
 
 
 
-function Scene3:detachBasicMesh(meshOrSlot)
-	if type(meshOrSlot) ~= "number" then -- object was passed
-		assert(mesh3.isMesh3(meshOrSlot), "Scene3:detachBasicMesh(meshOrSlot) requires argument 'meshOrSlot' to be either a mesh3 or an integer")
-		meshOrSlot = findObjectInOrderedArray(meshOrSlot, self.BasicMeshes)
+function Scene3:attachMesh(mesh)
+	--assert(mesh3.isMesh3(mesh), "Scene3:attachBasicMesh(mesh) requires argument 'mesh' to be a mesh3.")
+	if mesh.Scene ~= nil then
+		mesh:detach()
 	end
-	local Item = table.remove(self.BasicMeshes, meshOrSlot)
+
+	if mesh3.isMesh3(mesh) then
+		local index = findOrderedInsertLocation(self.BasicMeshes, mesh)
+		table.insert(self.BasicMeshes, index, mesh)
+	elseif spritemesh3.isSpritemesh3(mesh) then
+		local index = findOrderedInsertLocation(self.SpriteMeshes, mesh)
+		table.insert(self.SpriteMeshes, index, mesh)
+	else
+		error("Scene3:attachMesh(mesh) requires argument 'mesh' to be either a mesh3 or spritemesh3")
+	end
+	mesh.Scene = self
+
+	if self.Events.MeshAttached then
+		connection.doEvents(self.Events.MeshAttached, mesh)
+	end
+
+	return mesh
+end
+
+
+
+function Scene3:detachMesh(mesh) -- basic mesh or sprite mesh
+	local slot
+	local Item = nil
+	if mesh3.isMesh3(mesh) then
+		slot = findObjectInOrderedArray(mesh, self.BasicMeshes)
+		Item = table.remove(self.BasicMeshes, slot)
+	elseif spritemesh3.isSpritemesh3(mesh) then
+		slot = findObjectInOrderedArray(mesh, self.SpriteMeshes)
+		Item = table.remove(self.SpriteMeshes, slot)
+	else
+		error("Scene3:detachMesh(mesh) requires argument 'mesh' to be either a mesh3 or spritemesh3")
+	end
+	
 	if Item ~= nil then
 		Item.Scene = nil
 
@@ -874,6 +926,7 @@ function Scene3:detachBasicMesh(meshOrSlot)
 	end
 	return false
 end
+
 
 
 function Scene3:detachLight(lightOrSlot)
@@ -981,24 +1034,17 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 	)
 	depthCanvas:setFilter("nearest")
 	local normalCanvas = love.graphics.newCanvas(gWidth * msaa, gHeight * msaa)
-	--normalCanvas:setFilter("nearest")
 	local prepareCanvas = love.graphics.newCanvas(gWidth * msaa, gHeight * msaa)
 	prepareCanvas:setFilter("nearest")
 	local bloomCanvas = love.graphics.newCanvas(gWidth * msaa, gHeight * msaa)
 	bloomCanvas:setFilter("nearest")
 
 	local reuseCanvas1 = love.graphics.newCanvas(gWidth, gHeight)
-	--reuseCanvas1:setFilter("nearest")
 	local reuseCanvas2 = love.graphics.newCanvas(gWidth, gHeight)
-	--reuseCanvas2:setFilter("nearest")
 	local reuseCanvas3 = love.graphics.newCanvas(gWidth * 0.5, gHeight * 0.5)
-	--reuseCanvas3:setFilter("nearest")
 	local reuseCanvas4 = love.graphics.newCanvas(gWidth * 0.5, gHeight * 0.5)
-	--reuseCanvas4:setFilter("nearest")
 	local reuseCanvas5 = love.graphics.newCanvas(gWidth * 0.25, gHeight * 0.25)
-	--reuseCanvas5:setFilter("nearest")
 	local reuseCanvas6 = love.graphics.newCanvas(gWidth * 0.25, gHeight * 0.25)
-	--reuseCanvas6:setFilter("nearest")
 
 
 	local Object = {
@@ -1011,15 +1057,6 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 		["BlurShader"] = love.graphics.newShader(SHADER_BLUR_PATH);
 		["BloomBlurShader"] = love.graphics.newShader(SHADER_BLOOMBLUR_PATH);
 		["ShadowMapShader"] = love.graphics.newShader(SHADER_SHADOWMAP_PATH);
-
-		--[[
-		["QueuedShaderVars"] = { -- whether during the next :draw() call the scene should update the shader variables below. These variables are introduced to minimize traffic to the shader!
-			["LightPositions"] = true; -- initialize to true to force the variables to be sent on the very first frame
-			["LightColors"] = true; -- same as above
-			["LightRanges"] = true; -- same as above
-			["LightStrengths"] = true; -- same as above
-		};
-		]]
 
 		["LastDrawSize"] = vector2(gWidth, gHeight); -- when you suddenly start drawing the scene at a different size, some shader variables need to be updated!
 
@@ -1055,7 +1092,8 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 		-- scene elements
 		["Camera3"] = sceneCamera or camera3.new();
 		["InstancedMeshes"] = {}; -- simply an array of Love2D mesh objects
-		["BasicMeshes"] = {}; -- dictionary with properties: Mesh, Position, Rotation, Scale, Color
+		["BasicMeshes"] = {}; -- dictionary with Mesh instances
+		["SpriteMeshes"] = {}; -- spritemeshes dictionary
 		["Particles"] = {}; -- array of particle emitter instances. Particle emitters are always instanced for performance reasons
 		["Lights"] = {}; -- array with lights that have a Position, Color, Range and Strength
 
@@ -1105,18 +1143,6 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 	noiseImage:setFilter("nearest")
 	Object.SSAOShader:send("noiseTexture", noiseImage)
 
-
-	-- init lights with 0-strength white lights (re-enable this later when lights are enabled in the shader)
-	--[[
-	for i = 1, MAX_LIGHTS_PER_SCENE do
-		Object.Lights[i] = {
-			["Position"] = vector3(0, 0, 0);
-			["Color"] = color(0, 0, 0);
-			["Range"] = 0;
-			["Strength"] = 0;
-		}
-	end
-	]]
 
 	-- set a default ambience
 	Object.Shader:send("ambientColor", {1, 1, 1, 1})
