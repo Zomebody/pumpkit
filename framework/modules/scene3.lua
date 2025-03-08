@@ -105,19 +105,6 @@ function Scene3:applyAmbientOcclusion()
 	-- choose ping-pong canvases based on the quality you set
 	local pingCanvas = self.ReuseCanvas1
 	local pongCanvas = self.ReuseCanvas2
-	--[[
-	local pingCanvas, pongCanvas
-	if self.AOQuality == 1 then
-		pingCanvas = self.ReuseCanvas1
-		pongCanvas = self.ReuseCanvas2
-	elseif self.AOQuality == 0.5 then
-		pingCanvas = self.ReuseCanvas3
-		pongCanvas = self.ReuseCanvas4
-	else -- 0.25
-		pingCanvas = self.ReuseCanvas5
-		pongCanvas = self.ReuseCanvas6
-	end
-	]]
 
 
 	-- set ambient occlusion canvas as render target, and draw ambient occlusion data to the AO canvas
@@ -158,6 +145,11 @@ function Scene3:applyAmbientOcclusion()
 	--love.graphics.clear()
 	--love.graphics.setShader()
 	love.graphics.draw(self.PrepareCanvas)
+
+	-- revert canvas state
+	love.graphics.setShader(self.Shader)
+	love.graphics.setCanvas({self.RenderCanvas, self.NormalCanvas, self.BloomCanvas, ["depthstencil"] = self.DepthCanvas})
+	
 
 end
 
@@ -277,65 +269,14 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 	end
 
 
-	-- update positions of lights in the shader if any of the lights moved
-	--[[
-	if self.QueuedShaderVars.LightPositions then
-		self.QueuedShaderVars.LightPositions = false
-		local positions = {}
-		for i = 1, MAX_LIGHTS_PER_SCENE do
-			positions[i] = self.Lights[i].Position:array()
-		end
-		self.Shader:send("lightPositions", unpack(positions))
-		self.ParticlesShader:send("lightPositions", unpack(positions))
-	end
-
-	-- update colors of lights in the shader if any of the lights changed color
-	if self.QueuedShaderVars.LightColors then
-		self.QueuedShaderVars.LightColors = false
-		local colors = {}
-		for i = 1, MAX_LIGHTS_PER_SCENE do
-			colors[i] = {self.Lights[i].Color.r, self.Lights[i].Color.g, self.Lights[i].Color.b}
-		end
-		self.Shader:send("lightColors", unpack(colors))
-		self.ParticlesShader:send("lightColors", unpack(colors))
-	end
-
-	-- update ranges of lights in the shader if any of the lights changed their range
-	if self.QueuedShaderVars.LightRanges then
-		self.QueuedShaderVars.LightRanges = false
-		local ranges = {}
-		for i = 1, MAX_LIGHTS_PER_SCENE do
-			ranges[i] = self.Lights[i].Range
-		end
-		self.Shader:send("lightRanges", unpack(ranges))
-		self.ParticlesShader:send("lightRanges", unpack(ranges))
-	end
-
-	-- update strengths of lights in the shader if any of the lights changed strength
-	if self.QueuedShaderVars.LightStrengths then
-		self.QueuedShaderVars.LightStrengths = false
-		local strengths = {}
-		for i = 1, MAX_LIGHTS_PER_SCENE do
-			strengths[i] = self.Lights[i].Strength
-		end
-		self.Shader:send("lightStrengths", unpack(strengths))
-		self.ParticlesShader:send("lightStrengths", unpack(strengths))
-	end
-	]]
 
 	-- update lights
-	local emptyInfo = {0, 0, 0, 0} -- lights that are not initialized get sent empty info. Define a drop-in here to avoid creating multiple tables
 	local lightsInfo = {}
 	for i = 1, #self.Lights do -- {posX, posY, posZ, range}, {colR, colG, colB, strength}
 		table.insert(lightsInfo, {self.Lights[i].Position.x, self.Lights[i].Position.y, self.Lights[i].Position.z, self.Lights[i].Range})
 		table.insert(lightsInfo, {self.Lights[i].Color.r, self.Lights[i].Color.g, self.Lights[i].Color.b, self.Lights[i].Strength})
 	end
-	--[[
-	for o = #self.Lights + 1, 16 do -- fill in the remaining 'empty' light slots with dummy data
-		table.insert(lightsInfo, emptyInfo)
-		table.insert(lightsInfo, emptyInfo)
-	end
-	]]
+	
 	if #lightsInfo > 0 then
 		self.Shader:send("lightsInfo", unpack(lightsInfo))
 		self.ParticlesShader:send("lightsInfo", unpack(lightsInfo))
@@ -411,7 +352,13 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 		end
 	end
 
-	-- repeat the process, but for *opaque* spritemeshes
+	if self.AOEnabled then
+		love.graphics.setDepthMode("always", false)
+		self:applyAmbientOcclusion()
+		love.graphics.setDepthMode("less", true)
+	end
+
+	-- repeat the mesh drawing process, but for *opaque* spritemeshes
 	self.Shader:send("uvVelocity", {0, 0}) -- sprite meshes have no uv scrolling
 	self.Shader:send("triplanarScale", 0) -- sprite meshes also have no triplanar texture projection
 	self.Shader:send("isSpriteSheet", true) -- but they do need isSpriteSheet set to true for correct texture mapping
@@ -469,11 +416,7 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 	end
 	
 
-	if self.AOEnabled then
-		love.graphics.setDepthMode("always", false)
-		self:applyAmbientOcclusion()
-		love.graphics.setDepthMode("less", true)
-	end
+	
 
 	if self.BloomStrength > 0 then
 		love.graphics.setDepthMode("always", false)
