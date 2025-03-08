@@ -424,8 +424,8 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 			self.Shader:send("meshColor", Mesh.Color:array())
 			self.Shader:send("meshBrightness", Mesh.Brightness)
 			self.Shader:send("meshBloom", Mesh.Bloom)
-			self.Shader:send("spritePosition", Mesh.SpritePosition)
-			self.Shader:send("spriteSheetSize", Mesh.SheetSize)
+			self.Shader:send("spritePosition", {Mesh.SpritePosition.x - 1, Mesh.SpritePosition.y - 1})
+			self.Shader:send("spriteSheetSize", Mesh.SheetSize:array())
 			love.graphics.draw(Mesh.Mesh)
 		elseif Mesh.Transparency < 1 then -- ignore meshes with transparency == 1
 			table.insert(TransMeshes, Mesh)

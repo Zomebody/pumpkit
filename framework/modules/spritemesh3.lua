@@ -5,44 +5,44 @@ local module = {
 	["TotalCreated"] = 0;
 }
 
-local SpriteMesh3 = {}
-SpriteMesh3.__index = SpriteMesh3
-SpriteMesh3.__tostring = function(tab) return "{SpriteMesh3: " .. tostring(tab.Id) .. "}" end
+local Spritemesh3 = {}
+Spritemesh3.__index = Spritemesh3
+Spritemesh3.__tostring = function(tab) return "{Spritemesh3: " .. tostring(tab.Id) .. "}" end
 
 
 
 ----------------------------------------------------[[ == METHODS == ]]----------------------------------------------------
 
-local function isSpriteMesh3(t)
-	return getmetatable(t) == SpriteMesh3
+local function isSpritemesh3(t)
+	return getmetatable(t) == Spritemesh3
 end
 
 
 
-function SpriteMesh3:move(offset)
-	assert(vector3.isVector3(offset), "SpriteMesh3:move(offset) requires argument 'offset' to be of type vector3.")
+function Spritemesh3:move(offset)
+	assert(vector3.isVector3(offset), "Spritemesh3:move(offset) requires argument 'offset' to be of type vector3.")
 	self.Position = self.Position + offset
 end
 
 
 
-function SpriteMesh3:moveLocal(offset)
-	assert(vector3.isVector3(offset), "SpriteMesh3:moveLocal(offset) requires argument 'offset' to be of type vector3.")
+function Spritemesh3:moveLocal(offset)
+	assert(vector3.isVector3(offset), "Spritemesh3:moveLocal(offset) requires argument 'offset' to be of type vector3.")
 	local localVector = matrix4():rotateX(self.Rotation.x):rotateY(self.Rotation.y):rotateZ(self.Rotation.z):toWorldVector(offset)
 	self.Position = self.Position + localVector
 end
 
 
 
-function SpriteMesh3:rotate(rotation)
-	assert(vector3.isVector3(rotation), "SpriteMesh3:rotate(rotation) requires argument 'rotation' to be of type vector3.")
+function Spritemesh3:rotate(rotation)
+	assert(vector3.isVector3(rotation), "Spritemesh3:rotate(rotation) requires argument 'rotation' to be of type vector3.")
 	self.Rotation = self.Rotation + rotation
 end
 
 
 
-function SpriteMesh3:rotateLocal(rotation)
-	assert(vector3.isVector3(rotation), "SpriteMesh3:rotateLocal(rotation) requires argument 'rotation' to be of type vector3.")
+function Spritemesh3:rotateLocal(rotation)
+	assert(vector3.isVector3(rotation), "Spritemesh3:rotateLocal(rotation) requires argument 'rotation' to be of type vector3.")
 	local applyMatrix = matrix4():rotateX(rotation.x):rotateY(rotation.y):rotateZ(rotation.z)
 	local curMatrix = matrix4():rotateX(self.Rotation.x):rotateY(self.Rotation.y):rotateZ(self.Rotation.z)
 	local combinedMatrix = curMatrix * applyMatrix
@@ -51,7 +51,7 @@ end
 
 
 
-function SpriteMesh3:clone()
+function Spritemesh3:clone()
 	local Mesh = new(self.Mesh, self.Position, self.Rotation, self.Scale, self.Color)
 	Mesh.Brightness = self.Brightness
 	Mesh.Bloom = self.Bloom
@@ -63,7 +63,7 @@ end
 
 
 
-function SpriteMesh3:detach()
+function Spritemesh3:detach()
 	-- remove it from the scene
 	-- unlink the scene property
 	--local index = findMeshInOrderedArray(self.Scene.BasicMeshes, Obj)
@@ -77,12 +77,12 @@ end
 ----------------------------------------------------[[ == OBJECT CREATION == ]]----------------------------------------------------
 
 local function new(meshRef, sheetSize, position, rotation, scale, col)
-	assert(meshRef:getTexture() ~= nil, "SpriteMesh3.new(meshRef, sheetSize, position, rotation, scale, col) failed because meshRef does not have a texture set.")
-	assert(sheetSize == nil or vector2.isVector2(sheetSize), "SpriteMesh3.new(meshRef, sheetSize, position, rotation, scale, col) requires argument 'sheetSize' to be nil or a vector2.")
-	assert(position == nil or vector3.isVector3(position), "SpriteMesh3.new(meshRef, sheetSize, position, rotation, scale, col) requires argument 'position' to be nil or a vector3.")
-	assert(rotation == nil or vector3.isVector3(rotation), "SpriteMesh3.new(meshRef, sheetSize, position, rotation, scale, col) requires argument 'rotation' to be nil or a vector3.")
-	assert(scale == nil or vector3.isVector3(scale), "SpriteMesh3.new(meshRef, sheetSize, position, rotation, scale, col) requires argument 'scale' to be nil or a vector3.")
-	assert(col == nil or color.isColor(col), "SpriteMesh3.new(meshRef, position, sheetSize, rotation, scale, col) requires argument 'col' to be nil or a color.")
+	assert(meshRef:getTexture() ~= nil, "Spritemesh3.new(meshRef, sheetSize, position, rotation, scale, col) failed because meshRef does not have a texture set.")
+	assert(sheetSize == nil or vector2.isVector2(sheetSize), "Spritemesh3.new(meshRef, sheetSize, position, rotation, scale, col) requires argument 'sheetSize' to be nil or a vector2.")
+	assert(position == nil or vector3.isVector3(position), "Spritemesh3.new(meshRef, sheetSize, position, rotation, scale, col) requires argument 'position' to be nil or a vector3.")
+	assert(rotation == nil or vector3.isVector3(rotation), "Spritemesh3.new(meshRef, sheetSize, position, rotation, scale, col) requires argument 'rotation' to be nil or a vector3.")
+	assert(scale == nil or vector3.isVector3(scale), "Spritemesh3.new(meshRef, sheetSize, position, rotation, scale, col) requires argument 'scale' to be nil or a vector3.")
+	assert(col == nil or color.isColor(col), "Spritemesh3.new(meshRef, position, sheetSize, rotation, scale, col) requires argument 'col' to be nil or a color.")
 
 	module.TotalCreated = module.TotalCreated + 1
 
@@ -102,7 +102,7 @@ local function new(meshRef, sheetSize, position, rotation, scale, col)
 		["Scene"] = nil;
 	}
 
-	setmetatable(Obj, SpriteMesh3)
+	setmetatable(Obj, Spritemesh3)
 	
 	return Obj
 end
@@ -113,7 +113,7 @@ end
 
 -- pack up and return module
 module.new = new
-module.isSpriteMesh3 = isSpriteMesh3
+module.isSpritemesh3 = isSpritemesh3
 return setmetatable(module, {__call = function(_, ...) return new(...) end})
 
 

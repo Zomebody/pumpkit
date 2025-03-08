@@ -412,7 +412,7 @@ void effect() {
 	} else if (!isSpriteSheet) { // simply grab the uv coordinates for applying the texture
 		texture_coords = VaryingTexCoord.xy; // argument 'texture_coords' doesn't exist when doing multi-canvas operations, so extract it from VaryingTexCoord instead
 	} else { // it's a spritesheet, so sample from the right sub-section in the spritesheet
-		texture_coords = VaryingTexCoord.xy / spriteSheetSize + 1 / spritePosition;
+		texture_coords = VaryingTexCoord.xy / spriteSheetSize + spritePosition / spriteSheetSize;
 	}
 	texColor = Texel(MainTex, texture_coords - uvVelocity * currentTime) * vec4(1.0, 1.0, 1.0, 1.0 - meshTransparency);
 	//texColor = texColor + vec4(meshTransparency, uvVelocity.x, currentTime, 0.0) * 0.000000001; // debug surface normal visualization
