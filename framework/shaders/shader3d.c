@@ -280,6 +280,12 @@ uniform vec4 lightsInfo[16 * 2]; // array where each even index is {posX, posY, 
 uniform int lightCount;
 uniform vec3 ambientColor;
 
+// blob shadows
+uniform vec4 blobShadows[16]; // xyz = position, w = range
+uniform int blobShadowCount;
+uniform vec3 blobShadowColor;
+uniform float blobShadowStrength;
+
 // shadow map properties
 uniform vec3 sunColor = vec3(0.0); // used to brighten fragments that are lit by the sun
 uniform float shadowStrength; // used to make shadows more/less intense
@@ -433,7 +439,7 @@ void effect() {
 	// add the lighting contribution of all lights to the surface
 	for (int i = 0; i < lightCount; ++i) { // reducing lights from 16 to 1 will only really improve FPS from 235 to 245, so having 16 lights is fine
 		Light light = getLight(i);
-		//if (light.strength > 0.0) { // Only consider lights with a strength above 0
+		
 		vec3 lightDir = normalize(light.position - fragWorldPosition);
 		float distance = length(light.position - fragWorldPosition);
 		float attenuation = clamp(1.0 - pow(distance / light.range, 1.0), 0.0, 1.0);
@@ -443,12 +449,28 @@ void effect() {
 		vec3 lightingToAdd = light.color * light.strength * attenuation;
 		// if diffStrength == 0, just add the color, otherwise, add based on angle between surface and light direction
 		lighting += lightingToAdd * ((diffuseFactor * diffuseStrength) + (1.0 - diffuseStrength)); // if a mesh is fully bright, diffuse strength becomes 0 so that it has no efect
-		//}
 	}
-	// apply sun-light if not in shadow
+
+	// apply sun-light if not in shadow (from shadow map)
 	if (shadowsEnabled) {
 		float shadow = calculateShadow(fragPosLightSpace, surfaceNormal);
 		lighting += sunColor * (1.0 - shadow * shadowStrength);
+	}
+
+
+	// apply blob-shadow onto anything that isn't a spritemesh
+	if (!isSpriteSheet) {
+		float maxShadowFactor = 0.0;
+		for (int i = 0; i < blobShadowCount; ++i) {
+			vec3 blobPosition = blobShadows[i].xyz;
+			float blobRange = blobShadows[i].w;
+			float distance = length(blobPosition - fragWorldPosition);
+			float x = distance / blobRange;
+			float shadowFactor = 1.0 - clamp(x * x * x, 0.0, 1.0);
+			shadowFactor *= blobShadowStrength;
+			maxShadowFactor = max(maxShadowFactor, shadowFactor);
+		}
+		lighting = mix(lighting, blobShadowColor, maxShadowFactor);
 	}
 
 	

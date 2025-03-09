@@ -102,14 +102,12 @@ end
 
 
 function Scene3:applyAmbientOcclusion()
-	-- choose ping-pong canvases based on the quality you set
 	local pingCanvas = self.ReuseCanvas1
 	local pongCanvas = self.ReuseCanvas2
 
 
 	-- set ambient occlusion canvas as render target, and draw ambient occlusion data to the AO canvas
 	love.graphics.setCanvas(pingCanvas)
-	--love.graphics.clear()
 	love.graphics.setShader(self.SSAOShader)
 	self.SSAOShader:send("normalTexture", self.NormalCanvas)
 	love.graphics.draw(self.DepthCanvas, 0, 0, 0, 1 / self.MSAA, 1 / self.MSAA) -- set the ambient occlusion shader in motion
@@ -118,14 +116,11 @@ function Scene3:applyAmbientOcclusion()
 	
 	-- apply horizontal and vertical gaussian blur in two passes, using the reuse canvas to draw to that, and then back to the ambient occlusion canvas
 	love.graphics.setCanvas(pongCanvas)
-	--love.graphics.clear()
-	--love.graphics.setShader()
 	love.graphics.setShader(self.BlurShader)
 	self.BlurShader:send("depthTexture", self.DepthCanvas)
 	self.BlurShader:send("blurDirection", {1, 0})
 	love.graphics.draw(pingCanvas)
 	love.graphics.setCanvas(pingCanvas)
-	--love.graphics.clear()
 	self.BlurShader:send("blurDirection", {0, 1})
 	love.graphics.draw(pongCanvas)
 	
@@ -142,8 +137,6 @@ function Scene3:applyAmbientOcclusion()
 	-- copy result to render canvas
 	love.graphics.setShader()
 	love.graphics.setCanvas(self.RenderCanvas)
-	--love.graphics.clear()
-	--love.graphics.setShader()
 	love.graphics.draw(self.PrepareCanvas)
 
 	-- revert canvas state
@@ -272,14 +265,23 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 
 	-- update lights
 	local lightsInfo = {}
-	for i = 1, #self.Lights do -- {posX, posY, posZ, range}, {colR, colG, colB, strength}
-		table.insert(lightsInfo, {self.Lights[i].Position.x, self.Lights[i].Position.y, self.Lights[i].Position.z, self.Lights[i].Range})
-		table.insert(lightsInfo, {self.Lights[i].Color.r, self.Lights[i].Color.g, self.Lights[i].Color.b, self.Lights[i].Strength})
+	for _, light in ipairs(self.Lights) do -- {posX, posY, posZ, range}, {colR, colG, colB, strength}
+		table.insert(lightsInfo, {light.Position.x, light.Position.y, light.Position.z, light.Range})
+		table.insert(lightsInfo, {light.Color.r, light.Color.g, light.Color.b, light.Strength})
 	end
 	
 	if #lightsInfo > 0 then
 		self.Shader:send("lightsInfo", unpack(lightsInfo))
 		self.ParticlesShader:send("lightsInfo", unpack(lightsInfo))
+	end
+
+	-- update blob shadows
+	local blobsInfo = {}
+	for _, blob in ipairs(self.Blobs) do
+		table.insert(blobsInfo, {blob.Position.x, blob.Position.y, blob.Position.z, blob.Range})
+	end
+	if #blobsInfo > 0 then
+		self.Shader:send("blobShadows", unpack(blobsInfo))
 	end
 
 
@@ -629,10 +631,6 @@ end
 function Scene3:setAOQuality(quality)
 	assert(quality == 1 or quality == 0.5 or quality == 0.25, "Scene3:setAOQuality(quality) requires argument 'quality' to be 1, 0.5 or 0.25.")
 	self.AOQuality = quality
-	-- TODO: set blur size
-	--self.SSAOShader:send("aoQuality", quality)
-	--self.SSAOBlendShader:send("aoQuality", quality)
-	--self.BlurShader:send("aoQuality", quality)
 	self.SSAOShader:send("samples", quality == 1 and 24 or (quality == 0.5 and 16 or 8))
 end
 
@@ -640,6 +638,15 @@ end
 
 function Scene3:setDiffuse(strength)
 	self.Shader:send("diffuseStrength", strength)
+end
+
+
+function Scene3:setBlobColor(col)
+	self.Shader:send("blobShadowColor", {col.r, col.g, col.b})
+end
+
+function Scene3:setBlobStrength(strength)
+	self.Shader:send("blobShadowStrength", strength)
 end
 
 
@@ -714,33 +721,6 @@ function Scene3:setShadowMap(position, direction, size, canvasSize, sunColor, sh
 		
 
 	end
-end
-
-
-
-function Scene3:attachLight(light)
-	assert(light3.isLight3(light), "Scene3:attachLight(light) requires argument 'light' to be a light3.")
-	if light.Scene ~= nil then
-		light:detach()
-	end
-
-	local index = findOrderedInsertLocation(self.Lights, light)
-	table.insert(self.Lights, index, light)
-	light.Scene = self
-
-	local lightCount = math.min(#self.Lights, 16)
-	self.Shader:send("lightCount", lightCount)
-	self.ParticlesShader:send("lightCount", lightCount)
-
-	if #self.Lights > lightCount then
-		print("Scene3:attachLight(light) added a light that will not display as there are already 16 or more lights in the scene.")
-	end
-
-	if self.Events.LightAttached then
-		connection.doEvents(self.Events.LightAttached, light)
-	end
-
-	return light
 end
 
 
@@ -872,6 +852,33 @@ end
 
 
 
+function Scene3:attachLight(light)
+	assert(light3.isLight3(light), "Scene3:attachLight(light) requires argument 'light' to be a light3.")
+	if light.Scene ~= nil then
+		light:detach()
+	end
+
+	local index = findOrderedInsertLocation(self.Lights, light)
+	table.insert(self.Lights, index, light)
+	light.Scene = self
+
+	local lightCount = math.min(#self.Lights, 16)
+	self.Shader:send("lightCount", lightCount)
+	self.ParticlesShader:send("lightCount", lightCount)
+
+	if #self.Lights > lightCount then
+		print("Scene3:attachLight(light) added a light that will not display as there are already 16 or more lights in the scene.")
+	end
+
+	if self.Events.LightAttached then
+		connection.doEvents(self.Events.LightAttached, light)
+	end
+
+	return light
+end
+
+
+
 function Scene3:detachLight(lightOrSlot)
 	if type(lightOrSlot) ~= "number" then -- object was passed
 		assert(light3.isLight3(lightOrSlot), "Scene3:detachLight(lightOrSlot) requires argument 'lightOrSlot' to be either a light3 or an integer")
@@ -893,6 +900,57 @@ function Scene3:detachLight(lightOrSlot)
 	end
 	return false
 end
+
+
+
+
+function Scene3:attachBlob(blob)
+	assert(blob3.isBlob3(blob), "Scene3:attachBlob(blob) requires argument 'blob' to be a blob3.")
+	if blob.Scene ~= nil then
+		blob:detach()
+	end
+
+	local index = findOrderedInsertLocation(self.Blobs, blob)
+	table.insert(self.Blobs, index, blob)
+	blob.Scene = self
+
+	local blobCount = math.min(#self.Blobs, 16)
+	self.Shader:send("blobShadowCount", blobCount)
+
+	if #self.Lights > blobCount then
+		print("Scene3:attachBlob(blob) added a blob3 that will not display as there are already 16 or more blobs in the scene.")
+	end
+
+	if self.Events.BlobAttached then
+		connection.doEvents(self.Events.BlobAttached, blob)
+	end
+
+	return blob
+end
+
+
+
+function Scene3:detachBlob(blobOrSlot)
+	if type(blobOrSlot) ~= "number" then -- object was passed
+		assert(blob3.isBlob3(blobOrSlot), "Scene3:detachBlob(blobOrSlot) requires argument 'blobOrSlot' to be either a blob3 or an integer")
+		blobOrSlot = findObjectInOrderedArray(blobOrSlot, self.Lights)
+	end
+	local Item = table.remove(self.Blobs, blobOrSlot)
+	if Item ~= nil then
+		Item.Scene = nil
+
+		local blobCount = math.min(#self.Blobs, 16)
+		self.Shader:send("blobShadowCount", blobCount)
+
+		if self.Events.BlobDetached then
+			connection.doEvents(self.Events.BlobDetached, Item)
+		end
+
+		return true
+	end
+	return false
+end
+
 
 
 
@@ -1039,6 +1097,7 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 		["SpriteMeshes"] = {}; -- spritemeshes dictionary
 		["Particles"] = {}; -- array of particle emitter instances. Particle emitters are always instanced for performance reasons
 		["Lights"] = {}; -- array with lights that have a Position, Color, Range and Strength
+		["Blobs"] = {}; -- array with blob instances that have a Position and Range (they are blob shadows you should place below spritemeshes)
 
 		-- table with arrays of event functions stored under keys named after the events
 		["Events"] = {};
@@ -1055,6 +1114,9 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 	Object.Shader:send("fieldOfView", Object.Camera3.FieldOfView)
 	Object.Shader:send("diffuseStrength", 1)
 	Object.Shader:send("lightCount", 0)
+	Object.Shader:send("blobShadowCount", 0)
+	Object.Shader:send("blobShadowColor", {0, 0, 0})
+	Object.Shader:send("blobShadowStrength", 0.5)
 	Object.ParticlesShader:send("aspectRatio", aspectRatio)
 	Object.ParticlesShader:send("fieldOfView", Object.Camera3.FieldOfView)
 	Object.ParticlesShader:send("lightCount", 0)
