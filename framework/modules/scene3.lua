@@ -53,6 +53,26 @@ Scene3.__tostring = function(tab) return "{Scene3: " .. tostring(tab.Id) .. "}" 
 
 
 
+----------------------------------------------------[[ == IMAGES == ]]----------------------------------------------------
+
+local noiseData = love.image.newImageData(8, 8) --16, 16
+local seed = love.math.getRandomSeed()
+local state = love.math.getRandomState()
+love.math.setRandomSeed(1212)
+noiseData:mapPixel(function() local r = love.math.random() return r, r, r, 1 end)
+love.math.setRandomSeed(seed)
+love.math.setRandomState(state)
+local noiseImage = love.graphics.newImage(noiseData)
+noiseImage:setWrap("repeat")
+noiseImage:setFilter("nearest")
+
+
+local normalData = love.image.newImageData(1, 1)
+normalData:mapPixel(function() return 0.5, 0.5, 1 end)
+local normalImage = love.graphics.newImage(normalData)
+normalImage:setFilter("nearest")
+
+
 
 ----------------------------------------------------[[ == HELPERS == ]]----------------------------------------------------
 
@@ -326,9 +346,10 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 	self.Shader:send("isInstanced", true) -- tell the shader to use the attributes to calculate the model matrices
 	for i = 1, #self.InstancedMeshes do
 		Mesh = self.InstancedMeshes[i]
-		self.Shader:send("triplanarScale", Mesh.IsTriplanar and Mesh.TextureScale or 0)
+		self.Shader:send("normalMap", Mesh.NormalMap or normalImage)
 		self.Shader:send("meshBrightness", Mesh.Brightness)
 		self.Shader:send("meshBloom", Mesh.Bloom)
+		self.Shader:send("triplanarScale", Mesh.IsTriplanar and Mesh.TextureScale or 0)
 		love.graphics.drawInstanced(Mesh.Mesh, Mesh.Count)
 	end
 
@@ -340,6 +361,7 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 	for i = 1, #self.BasicMeshes do
 		Mesh = self.BasicMeshes[i]
 		if Mesh.Transparency == 0 then
+			self.Shader:send("normalMap", Mesh.NormalMap or normalImage)
 			self.Shader:send("uvVelocity", Mesh.UVVelocity:array())
 			self.Shader:send("meshPosition", Mesh.Position:array())
 			self.Shader:send("meshRotation", Mesh.Rotation:array())
@@ -397,6 +419,7 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 		-- need to add a small check here to distinguish between basic meshes and sprite meshes since they have somewhat different properties
 		Mesh = TransMeshes[i]
 		if mesh3.isMesh3(Mesh) then -- basic mesh
+			self.Shader:send("normalMap", Mesh.NormalMap or normalImage)
 			self.Shader:send("isSpriteSheet", false)
 			self.Shader:send("uvVelocity", Mesh.UVVelocity:array())
 			self.Shader:send("triplanarScale", Mesh.IsTriplanar and Mesh.TextureScale or 0)
@@ -517,7 +540,6 @@ function Scene3:rescaleCanvas(width, height, msaa)
 	)
 	depthCanvas:setFilter("nearest")
 	local normalCanvas = love.graphics.newCanvas(width * msaa, height * msaa)
-	--normalCanvas:setFilter("nearest")
 	local prepareCanvas = love.graphics.newCanvas(width * msaa, height * msaa)
 	prepareCanvas:setFilter("nearest")
 	local bloomCanvas = love.graphics.newCanvas(width * msaa, height * msaa)
@@ -789,6 +811,7 @@ function Scene3:addInstancedMesh(mesh, positions, rotations, scales, cols, bloom
 		["CastShadow"] = castShadow;
 		["IsTriplanar"] = texScale ~= nil; -- determines if the mesh's texture is applied using triplanar projection
 		["TextureScale"] = texScale ~= nil and texScale or 1; -- only used if IsTriplanar is true.
+		["NormalMap"] = nil;
 		["Count"] = #positions;
 	}
 
@@ -1134,18 +1157,7 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 	--Object.SSAOShader:send("aoQuality", 1)
 	Object.BloomBlurShader:send("screenSize", {gWidth, gHeight})
 
-	-- create and send noise image to SSAO shader
-	local imgData = love.image.newImageData(8, 8) --16, 16
-	local seed = love.math.getRandomSeed()
-	local state = love.math.getRandomState()
-	love.math.setRandomSeed(1212)
-	imgData:mapPixel(function() local r = love.math.random() return r, r, r, 1 end)
-	love.math.setRandomSeed(seed)
-	love.math.setRandomState(state)
-	local noiseImage = love.graphics.newImage(imgData)
-	--noiseImage:setFilter("nearest") -- using nearest instead of linear interpolation somehow increases FPS by 10%, probs Texel() is slow?
-	noiseImage:setWrap("repeat")
-	noiseImage:setFilter("nearest")
+	-- send noise image to SSAO shader
 	Object.SSAOShader:send("noiseTexture", noiseImage)
 
 

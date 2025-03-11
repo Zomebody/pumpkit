@@ -119,6 +119,7 @@ local function new(meshRef, position, rotation, scale, col)
 		["CastShadow"] = false;
 		["IsTriplanar"] = false;
 		["TextureScale"] = 1;
+		["NormalMap"] = nil;
 		["Scene"] = nil;
 	}
 

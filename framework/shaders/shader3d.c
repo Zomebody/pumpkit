@@ -218,9 +218,7 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 	fragNormal = (viewMatrix * rotationMatrix * vec4(VertexNormal, 0.0)).xyz; // fragNormal is stored in view-space because it's cheaper and easier that way to program ambient-occlusion!
 
 	//mat3 normalMatrix = mat3(transpose(inverse(modelWorldMatrix)));
-	//fragWorldNormal = normalize(normalMatrix * VertexNormal);
-	fragWorldNormal = (rotationMatrix * scaleMatrix * vec4(VertexNormal, 0.0)).xyz;
-	//fragWorldNormal = normalize(mat3(modelWorldMatrix) * VertexNormal);
+	fragWorldNormal = normalize((rotationMatrix * scaleMatrix * vec4(VertexNormal, 0.0)).xyz);
 
 	//fragPosLightSpace = lightSpaceMatrix * vec4(fragWorldPosition, 1.0);
 	mat4 sunViewMatrix = inverse(sunWorldMatrix);
@@ -377,21 +375,20 @@ void effect() {
 		color = vec4(color.x * meshColor.x, color.y * meshColor.y, color.z * meshColor.z, color.w);
 	}
 	
-	/*
+	
 	if (love_PixelCoord.x < 0 || love_PixelCoord.x > love_ScreenSize.x || love_PixelCoord.y < 0 || love_PixelCoord.y > love_ScreenSize.y) {
 		discard;
 	}
-	*/
+	
 
 	// calculate surface normal, used in triplanar projection AND in the shadow map, so it gets calculated here
 	// calculate surface normal using interpolated vertex normal and derivative wizardry
-	vec3 dFdxVar = dFdx(fragWorldPosition);
-	vec3 dFdyVar = dFdy(fragWorldPosition);
-	vec3 surfaceNormal = normalize(cross(dFdxVar, dFdyVar));
+	vec3 dp1 = dFdx(fragWorldPosition); // also re-used for the normal map below
+	vec3 dp2 = dFdy(fragWorldPosition);
+	vec3 surfaceNormal = normalize(cross(dp1, dp2));
 	if (dot(surfaceNormal, fragWorldNormal) < 0.0) {
 		surfaceNormal = -surfaceNormal;
 	}
-	surfaceNormal = normalize(surfaceNormal);
 	
 
 	// sample the pixel to display from the supplied texture. For triplanar projection: use world coordinates and surface normal to sample. For regular meshes, use uv coordinates and uvvelocity
@@ -421,12 +418,22 @@ void effect() {
 		texture_coords = VaryingTexCoord.xy / spriteSheetSize + spritePosition / spriteSheetSize;
 	}
 	texColor = Texel(MainTex, texture_coords - uvVelocity * currentTime) * vec4(1.0, 1.0, 1.0, 1.0 - meshTransparency);
-	//texColor = texColor + vec4(meshTransparency, uvVelocity.x, currentTime, 0.0) * 0.000000001; // debug surface normal visualization
-
+	
 	// check if the alpha of the texture color is below a threshold
 	if (texColor.a < 0.01) {
 		discard;  // discard fully transparent pixels
 	}
+
+	// sample normal map, then calculate TBN for normal map lighting stuff
+	vec3 sampledNormal = Texel(normalMap, texture_coords).rgb * 2.0 - 1.0;
+	//sampledNormal = -sampledNormal;
+	vec2 duv1 = dFdx(texture_coords);
+	vec2 duv2 = dFdy(texture_coords);
+	vec3 tangent = normalize(dp1 * duv2.y - dp2 * duv1.y);
+	vec3 bitangent = normalize(cross(surfaceNormal, tangent));
+
+	mat3 TBN = mat3(-tangent, -bitangent, fragWorldNormal);
+	vec3 normalMapNormal = normalize(TBN * sampledNormal); // in world-space
 
 
 	// the second canvas is the normals canvas. Output the surface normal to this canvas
@@ -445,7 +452,7 @@ void effect() {
 		float attenuation = clamp(1.0 - pow(distance / light.range, 1.0), 0.0, 1.0);
 
 		// diffuse shading
-		float diffuseFactor = max(dot(fragWorldNormal, lightDir), 0.0);
+		float diffuseFactor = max(dot(normalMapNormal, lightDir), 0.0);
 		vec3 lightingToAdd = light.color * light.strength * attenuation;
 		// if diffStrength == 0, just add the color, otherwise, add based on angle between surface and light direction
 		lighting += lightingToAdd * ((diffuseFactor * diffuseStrength) + (1.0 - diffuseStrength)); // if a mesh is fully bright, diffuse strength becomes 0 so that it has no efect
@@ -454,7 +461,8 @@ void effect() {
 	// apply sun-light if not in shadow (from shadow map)
 	if (shadowsEnabled) {
 		float shadow = calculateShadow(fragPosLightSpace, surfaceNormal);
-		lighting += sunColor * (1.0 - shadow * shadowStrength);
+		float sunFactor = max(dot(normalMapNormal, sunDirection), 0.0);
+		lighting += sunColor * (1.0 - shadow * shadowStrength) * (1.0 - sunFactor);
 	}
 
 
