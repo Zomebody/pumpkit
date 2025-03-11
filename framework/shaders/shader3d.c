@@ -343,8 +343,8 @@ float calculateShadow(vec4 fragPosLightSpace, vec3 surfaceNormal) {
 
 	// bias calc taken from: http://www.opengl-tutorial.org/intermediate-tutorials/tutorial-16-shadow-mapping/#aliasing
 	float cosTheta = clamp(dot(surfaceNormal, sunDirection), 0.0, 1.0);
-	float bias = 0.0025 * tan(acos(cosTheta)); // cosTheta is dot( n,l ), clamped between 0 and 1
-	bias = clamp(bias, 0, 0.0025); // used to be 0.005, but lowered because neighbor sampling works perfectly with reducing acne
+	float bias = 0.00025 * tan(acos(cosTheta)); // cosTheta is dot( n,l ), clamped between 0 and 1
+	bias = clamp(bias, 0, 0.00025); // used to be 0.005, but lowered because neighbor sampling works perfectly with reducing acne
 	
 
 	// sample depth at own position, but also sample 4 neighbors
@@ -462,6 +462,7 @@ void effect() {
 	if (shadowsEnabled) {
 		float shadow = calculateShadow(fragPosLightSpace, surfaceNormal);
 		float sunFactor = max(dot(normalMapNormal, sunDirection), 0.0);
+		//lighting += sunColor * (1.0 - shadow * shadowStrength) * (1.0 - sunFactor);
 		lighting += sunColor * (1.0 - shadow * shadowStrength) * (1.0 - sunFactor);
 	}
 

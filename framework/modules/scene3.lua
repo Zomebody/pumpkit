@@ -218,7 +218,7 @@ function Scene3:updateShadowMap()
 
 	-- prepare for drawing
 	love.graphics.setShader(self.ShadowMapShader)
-	love.graphics.setDepthMode("less", true)
+	love.graphics.setDepthMode("lequal", true)
 	love.graphics.setCanvas({self.ShadowCanvas, ["depthstencil"] = self.ShadowDepthCanvas})
 	love.graphics.clear() -- we should clear since if you remove an object, the shadow in that area won't get overwritten
 	
