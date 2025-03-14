@@ -534,7 +534,7 @@ function Scene3:rescaleCanvas(width, height, msaa)
 		height * msaa,
 		{
 			["type"] = "2d";
-			["format"] = "depth16";
+			["format"] = "depth24";
 			["readable"] = true;
 		}
 	)
@@ -718,7 +718,7 @@ function Scene3:setShadowMap(position, direction, size, canvasSize, sunColor, sh
 			local shadowDepthCanvas = love.graphics.newCanvas(canvasSize.x, canvasSize.y,
 				{
 					["type"] = "2d";
-					["format"] = "depth16";
+					["format"] = "depth24";
 					["readable"] = true;
 				}
 			)
@@ -1052,7 +1052,7 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 		gHeight * msaa,
 		{
 			["type"] = "2d";
-			["format"] = "depth16";
+			["format"] = "depth24";
 			["readable"] = true;
 		}
 	)
