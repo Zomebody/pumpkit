@@ -424,9 +424,11 @@ void effect() {
 		discard;  // discard fully transparent pixels
 	}
 
-	// sample normal map, then calculate TBN for normal map lighting stuff
+	// sample normal map & apply normal map strength
 	vec3 sampledNormal = Texel(normalMap, texture_coords).rgb * 2.0 - 1.0;
-	//sampledNormal = -sampledNormal;
+	float normalStrength = 1.0;
+	sampledNormal = normalize(mix(vec3(0.0, 0.0, 1.0), sampledNormal, normalStrength));
+	// calculate TBN for normal map lighting stuff
 	vec2 duv1 = dFdx(texture_coords);
 	vec2 duv2 = dFdy(texture_coords);
 	vec3 tangent = normalize(dp1 * duv2.y - dp2 * duv1.y);
@@ -442,7 +444,7 @@ void effect() {
 
 	// ended up implementing a very basic naive additive lighting system because it doesn't have any weird edge-cases
 	vec3 lighting = ambientColor; // start with just ambient lighting on the surface
-	
+
 	// add the lighting contribution of all lights to the surface
 	for (int i = 0; i < lightCount; ++i) { // reducing lights from 16 to 1 will only really improve FPS from 235 to 245, so having 16 lights is fine
 		Light light = getLight(i);
@@ -453,6 +455,7 @@ void effect() {
 
 		// diffuse shading
 		float diffuseFactor = max(dot(normalMapNormal, lightDir), 0.0);
+		//diffuseFactor = pow(diffuseFactor, 0.5);
 		vec3 lightingToAdd = light.color * light.strength * attenuation;
 		// if diffStrength == 0, just add the color, otherwise, add based on angle between surface and light direction
 		lighting += lightingToAdd * ((diffuseFactor * diffuseStrength) + (1.0 - diffuseStrength)); // if a mesh is fully bright, diffuse strength becomes 0 so that it has no efect
@@ -461,9 +464,9 @@ void effect() {
 	// apply sun-light if not in shadow (from shadow map)
 	if (shadowsEnabled) {
 		float shadow = calculateShadow(fragPosLightSpace, surfaceNormal);
-		float sunFactor = max(dot(normalMapNormal, sunDirection), 0.0);
+		float sunFactor = max(dot(-normalMapNormal, sunDirection), 0.0); // please don't ask me why * vec3(1.0, 1.0, -1.0) works... I'm super confused
 		//lighting += sunColor * (1.0 - shadow * shadowStrength) * (1.0 - sunFactor);
-		lighting += sunColor * (1.0 - shadow * shadowStrength) * (1.0 - sunFactor);
+		lighting += sunColor * (1.0 - shadow * shadowStrength) * (pow(sunFactor, 0.5)); // this was 1.0-sunFactor before but that didn't work well for normal maps idk why
 	}
 
 
@@ -484,7 +487,8 @@ void effect() {
 
 	
 	//set the color on the main canvas. Apply mesh brightness here as well. Higher brightness means less affected by ambient color
-	love_Canvases[0] = texColor * color * (vec4(lighting.x, lighting.y, lighting.z, 1.0) * (1.0 - meshBrightness) + vec4(1.0, 1.0, 1.0, 1.0) * meshBrightness);
+	vec4 resultingColor = texColor * color * (vec4(lighting.x, lighting.y, lighting.z, 1.0) * (1.0 - meshBrightness) + vec4(1.0, 1.0, 1.0, 1.0) * meshBrightness);
+	love_Canvases[0] = resultingColor;// * 0.0001 + 0.9999 * vec4(fragWorldNormal * 0.5 + 0.5, 1.0);
 
 	// apply bloom to canvas. Semi-transparent meshes will emit weaker bloom
 	love_Canvases[2] = vec4(color.x * meshBloom, color.y * meshBloom, color.z * meshBloom, 1.0 - meshTransparency);
