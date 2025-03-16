@@ -52,13 +52,15 @@ end
 
 
 function Spritemesh3:clone()
-	local Mesh = new(self.Mesh, self.Position, self.Rotation, self.Scale, self.Color)
-	Mesh.Brightness = self.Brightness
-	Mesh.Bloom = self.Bloom
-	Mesh.Transparency = self.Transparency
+	local SMesh = new(self.Mesh, self.Position, self.Rotation, self.Scale, self.Color)
+	SMesh.Brightness = self.Brightness
+	SMesh.Bloom = self.Bloom
+	SMesh.Transparency = self.Transparency
+	SMesh.SheetSize = vector2(self.SheetSize)
+	SMesh.SpritePosition = vector2(self.SpritePosition)
 	
 	-- keep the scene nil
-	return Mesh
+	return SMesh
 end
 
 

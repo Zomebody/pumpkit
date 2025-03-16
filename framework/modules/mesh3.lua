@@ -1,23 +1,6 @@
 
 ----------------------------------------------------[[ == BASE OBJECTS == ]]----------------------------------------------------
 
---[[
-Position
-Rotation
-Scale
-Color
-UVVelocity
-IsTriplanar
-
-:remove()
-:clone()
-:move()
-:moveLocal()
-:rotate()
-:rotateLocal()
-]]
-
-
 local module = {
 	["TotalCreated"] = 0;
 }
@@ -77,6 +60,7 @@ function Mesh3:clone()
 	Mesh.CastShadow = self.CastShadow
 	Mesh.IsTriplanar = self.IsTriplanar
 	Mesh.TextureScale = self.TextureScale
+	Mesh.NormalMap = self.NormalMap
 	
 	-- keep the scene nil
 	return Mesh
