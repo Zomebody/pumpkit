@@ -1,13 +1,13 @@
 
 local meta = {
-	["Name"] = "Mesh3";
+	["Name"] = "Spritemesh3";
 }
 
 local content = {}
 
 table.insert(content, {
 	["Type"] = "IntroHeader";
-	["Name"] = "The Mesh3 instance";
+	["Name"] = "The Spritemesh3 instance";
 	["Description"] = "A Camera3 is an object which contains properties and methods related to transforming 3D spaces. They are used in scene3s to properly draw the scene from the right position and angle. So far only perspective cameras are supported.";
 })
 
@@ -51,25 +51,9 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Property";
-	["ValueType"] = "boolean";
-	["Name"] = "IsTriplanar";
-	["Description"] = "When set to false, the mesh's UV coordinates are used to project the image onto the mesh. When set to true, the texture is projected onto the mesh along the X/Y/Z-axis depending on the direction each face is pointing to.";
-	["ReadOnly"] = false;
-})
-
-table.insert(content, {
-	["Type"] = "Property";
 	["ValueType"] = "mesh";
 	["Name"] = "Mesh";
-	["Description"] = "The reference to the Love2d mesh object. It is okay to reuse the same Love2d mesh when creating multiple different mesh3 instances as the mesh is only referenced.";
-	["ReadOnly"] = false;
-})
-
-table.insert(content, {
-	["Type"] = "Property";
-	["ValueType"] = "image";
-	["Name"] = "NormalMap";
-	["Description"] = "Optionally a normal map for better diffuse lighting calculations. Green channel goes upwards, red channel goes to the right.\n\nIf no normal map is a set, a replacement flat normal map is used.";
+	["Description"] = "The reference to the Love2d mesh object. It is okay to reuse the same Love2d mesh when creating multiple different spritemesh3 instances as the mesh is only referenced.";
 	["ReadOnly"] = false;
 })
 
@@ -99,9 +83,17 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Property";
-	["ValueType"] = "number";
-	["Name"] = "TextureScale";
-	["Description"] = "When 'IsTriplanar' is set to true, this property determines how large the image is when projected onto the mesh.";
+	["ValueType"] = "vector2";
+	["Name"] = "SheetSize";
+	["Description"] = "The size of the sprite sheet in *images* along the x-axis and y-axis.";
+	["ReadOnly"] = false;
+})
+
+table.insert(content, {
+	["Type"] = "Property";
+	["ValueType"] = "vector2";
+	["Name"] = "SpritePosition";
+	["Description"] = "The index of the current sprite to-be-drawn in reading order. Note that the top-left sprite starts at position (1,1)!";
 	["ReadOnly"] = false;
 })
 
@@ -114,13 +106,6 @@ table.insert(content, {
 })
 
 
-table.insert(content, {
-	["Type"] = "Property";
-	["ValueType"] = "vector2";
-	["Name"] = "UVVelocity";
-	["Description"] = "The speed at which the mesh's texture 'scrolls'. When using this property, make sure the mesh's image has its wrapping mode set to 'repeat'. This property can be used to make textures move along the surface of the mesh such as when creating waterfalls, lava, and so on.\n\nEach unit of speed corresponds to looping around the width/height of the texture once per second.";
-	["ReadOnly"] = false;
-})
 
 
 table.insert(content, {
@@ -133,14 +118,14 @@ table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "attach";
 	["Arguments"] = {"scene3"};
-	["Description"] = "Links the mesh3 to a scene3. If the mesh is already attached to another scene, it is detached before this is executed.";
+	["Description"] = "Links the spritemesh3 to a scene3. If the mesh is already attached to another scene, it is detached before this is executed.";
 })
 
 table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "clone";
 	["Arguments"] = {};
-	["Description"] = "Creates a new mesh3 instance with the same properties, except it is not attached to a scene3.";
+	["Description"] = "Creates a new spritemesh3 instance with the same properties, except it is not attached to a scene3.";
 })
 
 
@@ -148,35 +133,35 @@ table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "detach";
 	["Arguments"] = {};
-	["Description"] = "Detaches the mesh from the scene it's linked to. This does not destroy the mesh3, meaning it can be re-attached later.";
+	["Description"] = "Detaches the spritemesh3 from the scene it's linked to. This does not destroy the spritemesh3, meaning it can be re-attached later.";
 })
 
 table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "move";
 	["Arguments"] = {"offset"};
-	["Description"] = "Translates the position of the mesh3 in world space.";
+	["Description"] = "Translates the position of the spritemesh3 in world space.";
 })
 
 table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "moveLocal";
 	["Arguments"] = {"offset"};
-	["Description"] = "Translates the position of the mesh3 in object space.";
+	["Description"] = "Translates the position of the spritemesh3 in object space.";
 })
 
 table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "rotate";
 	["Arguments"] = {"rotation"};
-	["Description"] = "Rotates the mesh3 in world space.";
+	["Description"] = "Rotates the spritemesh3 in world space.";
 })
 
 table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "rotateLocal";
 	["Arguments"] = {"rotation"};
-	["Description"] = "Rotates the mesh3 in object space.";
+	["Description"] = "Rotates the spritemesh3 in object space.";
 })
 
 
