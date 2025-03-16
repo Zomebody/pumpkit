@@ -287,6 +287,9 @@ function initializeApp()
 					end
 					Navigation:positionContent(0, 0)
 					Body:positionContent(0, 0)
+					for i = 1, #Body.Children do
+						Body.Children[i]:positionContent(0, 0)
+					end
 					if shownNavigation ~= nil then
 						shownNavigation:hide()
 					end
@@ -351,6 +354,7 @@ function love.keypressed(key)
 	end
 end
 
+
 function love.resize(w, h)
 	TopBar:resize(0, 0, w, DisplayVars.TopBarThickness)
 	Container:resize(0, 0, Container.Size.Offset.x, h)
@@ -358,9 +362,11 @@ function love.resize(w, h)
 	Body:resize(0, 0, Body.Size.Offset.x, h)
 end
 
+
 function love.update()
 	wx, wy, ww, wh = love.window.getSafeArea()
 end
+
 
 function love.draw()
 	ui:render()
