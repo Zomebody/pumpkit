@@ -265,7 +265,7 @@ local function create_doc(BodyRef, NavigationRef, data, DisplayVars, superClass)
 			]]
 			Button:on("FullPress", function(x, y, button)
 				if button == 1 and not ui.DragActive then
-					BodyRef.Parent:positionContent(0, -JumpToObject.Position.Offset.y)
+					BodyRef:positionContent(0, -JumpToObject.Position.Offset.y)
 				end
 			end)
 			if Item.Type == "Header" or Item.Type == "IntroHeader" then
