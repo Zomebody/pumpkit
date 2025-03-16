@@ -46,7 +46,7 @@ function Spritemesh3:rotateLocal(rotation)
 	local applyMatrix = matrix4():rotateX(rotation.x):rotateY(rotation.y):rotateZ(rotation.z)
 	local curMatrix = matrix4():rotateX(self.Rotation.x):rotateY(self.Rotation.y):rotateZ(self.Rotation.z)
 	local combinedMatrix = curMatrix * applyMatrix
-	self.Rotation = combinedMatrix:toEuler("xyz")
+	self.Rotation = combinedMatrix:toEulerXYZ()
 end
 
 
