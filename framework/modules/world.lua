@@ -20,7 +20,7 @@ local module = { -- the world module
 
 
 ----------------------------------------------------[[ == MODULE INITIALIZATION == ]]----------------------------------------------------
-
+--[[
 function module:initialize()
 	if not self.Initialized then
 		self.Initialized = true
@@ -35,6 +35,7 @@ function module:initialize()
 		-- TODO: world update code and such!
 	end
 end
+]]
 
 
 

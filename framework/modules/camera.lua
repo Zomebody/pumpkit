@@ -27,6 +27,7 @@ function module:initialize()
 		return
 	end
 
+	--[[
 	local oldResize = love.resize or function() end
 	love.resize = function(...)
 		oldResize(...)
@@ -35,6 +36,16 @@ function module:initialize()
 			self.AllCameras[i]:updateTransform()
 		end
 	end
+	]]
+	
+	local resize = function()
+		for i = 1, #self.AllCameras do
+			self.AllCameras[i]:updateTransform()
+		end
+	end
+	
+
+	return resize
 end
 
 

@@ -41,11 +41,14 @@ function module:initialize()
 	end
 
 	-- Monkey Patching love.update such that animations are updated at the end
+	--[[
 	local update = love.update or function() end
 	love.update = function()
 		update()
 		self:update()
 	end
+	]]
+	return self.update
 end
 
 

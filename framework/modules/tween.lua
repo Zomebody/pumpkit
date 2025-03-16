@@ -213,11 +213,14 @@ function module:initialize()
 	end
 
 	-- Monkey Patching love.update such that tweens are played at the start
+	--[[
 	local update = love.update or function() end
 	love.update = function()
 		update()
 		self:update()
 	end
+	]]
+	return self.update
 end
 
 -- update all tweens

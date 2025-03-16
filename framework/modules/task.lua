@@ -21,11 +21,14 @@ function module:initialize()
 	end
 
 	-- Monkey Patching love.update such that tasks are executed at the start of the update loop
+	--[[
 	local update = love.update or function() end
 	love.update = function()
 		update()
 		self:update()
 	end
+	]]
+	return self.update
 end
 
 

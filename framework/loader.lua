@@ -57,13 +57,63 @@ function load()
 	love.graphics.setFrontFaceWinding("cw")
 
 	-- initialization
-	callbacks:initialize()
-	ui:initialize()
-	task:initialize()
-	tween:initialize()
-	animation:initialize()
-	world:initialize()
-	camera:initialize()
+	callbacks:initialize() -- monkey patches all callbacks except for update, draw, errhand, errorhandler, load
+	
+	local update_ui, mousepressed_ui, mousemoved_ui, mousereleased_ui, wheelmoved_ui, keypressed_ui, resize_ui = ui:initialize()
+	local update_task = task:initialize()
+	local update_tween = tween:initialize()
+	local update_animation = animation:initialize()
+	local resize_camera = camera:initialize()
+	
+	local update = love.update or function() end
+	love.update = function(...)
+		update(...)
+		update_ui(...)
+		-- since the :update() method is returned in task, tween, animation, pass them as the first argument so that 'self' can be indexed
+		update_task(task, ...) -- task after UI because it might want to access the latest ui.CursorFocus
+		update_tween(tween, ...) -- tween after task because if a task creates and runs a tween you want to update the tween asap
+		update_animation(animation, ...)
+	end
+
+	local resize = love.resize or function() end
+	love.resize = function(...)
+		resize(...)
+		resize_ui(...)
+		resize_camera(...)
+	end
+
+	local mousepressed = love.mousepressed or function() end
+	love.mousepressed = function(...)
+		mousepressed(...)
+		mousepressed_ui(...)
+	end
+
+	local mousemoved = love.mousemoved or function() end
+	love.mousemoved = function(...)
+		mousemoved(...)
+		mousemoved_ui(...)
+	end
+
+	local mousereleased = love.mousereleased or function() end
+	love.mousereleased = function(...)
+		mousereleased(...)
+		mousereleased_ui(...)
+	end
+
+	local wheelmoved = love.wheelmoved or function() end
+	love.wheelmoved = function(...)
+		wheelmoved(...)
+		wheelmoved_ui(...)
+	end
+
+	local keypressed = love.keypressed or function() end
+	love.keypressed = function(...)
+		keypressed(...)
+		keypressed_ui(...)
+	end
+	
+
+
 end
 
 return load
@@ -78,10 +128,6 @@ love.update:
 	- task -- task should go second
 	- tween -- tween should go after task so that a task could create a tween and that same tween can the be updated within the same frame
 	- animation
-	- world -- world goes last because it may use... (I forgot)
-
-love.draw:
-	- world
 
 love.resize:
 	- callbacks

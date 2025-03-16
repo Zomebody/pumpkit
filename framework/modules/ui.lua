@@ -297,9 +297,8 @@ function module:initialize() -- autoRender
 	end]]
 
 	-- Monkey Patching love.mousemoved (at start)
-	local mousemoved = love.mousemoved or function() end -- define new mousemoved function if it doesn't exist yet
-	love.mousemoved = function(x, y, dx, dy, istouch)
-		mousemoved(x, y, dx, dy, istouch)
+	local mousemoved = function(x, y, dx, dy, istouch)
+		--mousemoved(x, y, dx, dy, istouch)
 		local oldFocus = self.CursorFocus
 		self.CursorFocus = self:at(x, y)
 
@@ -341,12 +340,11 @@ function module:initialize() -- autoRender
 	end
 
 	-- Monkey Patching love.update (at end)
-	local update = love.update or function() end -- define new update function if it doesn't exist yet
 	local prevX = love.mouse.getX()
 	local prevY = love.mouse.getY()
 	local skipSpeedUpdate = false
-	love.update = function(...)
-		update(...)
+	local update = function(...)
+		--update(...)
 
 		-- call the resize event on the resized elements this frame
 		for i = 1, #resizedElements do
@@ -387,10 +385,9 @@ function module:initialize() -- autoRender
 		end
 	end
 
-	-- Monkey Patching love.resize (at start)
-	local resize = love.resize or function() end -- define new resize function if it doesn't exist yet
-	love.resize = function(...)
-		resize(...)
+	
+	local resize = function(...)
+		--resize(...)
 
 		self.Changed = true
 		local screenW, screenH = self.Size.x, self.Size.y
@@ -414,10 +411,9 @@ function module:initialize() -- autoRender
 		resizedElementsCache = {}
 	end
 
-	-- Monkey Patching mouse pressed and mouse released
-	local mousepressed = love.mousepressed or function() end
-	love.mousepressed = function(x, y, button, istouch, presses)
-		mousepressed(x, y, button, istouch, presses, self.CursorFocus ~= nil)
+	
+	local mousepressed = function(x, y, button, istouch, presses)
+		--mousepressed(x, y, button, istouch, presses, self.CursorFocus ~= nil)
 
 		-- cancel current keyboard focus if cancel mode if set to 'click'
 		local loseKeyboardFocus = false
@@ -502,9 +498,8 @@ function module:initialize() -- autoRender
 
 
 
-	local mousereleased = love.mousereleased or function() end
-	love.mousereleased = function(x, y, button, istouch, presses)
-		mousereleased(x, y, button, istouch, presses, self.CursorFocus ~= nil)
+	local mousereleased = function(x, y, button, istouch, presses)
+		--mousereleased(x, y, button, istouch, presses, self.CursorFocus ~= nil)
 
 		if self.CursorFocus ~= nil then
 			local Target = self.CursorFocus
@@ -550,10 +545,9 @@ function module:initialize() -- autoRender
 		--self.DragSpeed:set(0, 0)
 	end
 
-	-- Monkey patching mousescroll
-	local wheelmoved = love.wheelmoved or function() end
-	love.wheelmoved = function(x, y)
-		wheelmoved(x, y, self.CursorFocus ~= nil)
+	
+	local wheelmoved = function(x, y)
+		--wheelmoved(x, y, self.CursorFocus ~= nil)
 		if self.CursorFocus ~= nil then
 			if self.CursorFocus.Events.Scroll ~= nil then
 				connection.doEvents(self.CursorFocus.Events.Scroll, x, y)
@@ -571,10 +565,9 @@ function module:initialize() -- autoRender
 		end
 	end
 
-	-- Monkey Patching love.keypressed
-	local keypressed = love.keypressed or function() end
-	love.keypressed = function(key, scancode, isrepeat)
-		keypressed(key, scancode, isrepeat)
+	
+	local keypressed  = function(key, scancode, isrepeat)
+		--keypressed(key, scancode, isrepeat)
 		-- check if you need to release keyboard focus
 		if self.KeyboardFocusMode[1] == "key" then
 			if type(self.KeyboardFocusMode[2]) == "table" then
@@ -597,19 +590,10 @@ function module:initialize() -- autoRender
 		end
 	end
 
-	-- Monkey Patching love.draw if auto-render is enabled
-	--[[
-	if autoRender == true then
-		self.AutoRendering = true
-		local draw = love.draw or function() end
-		love.draw = function()
-			draw()
-			self:render()
-		end
-	else
-		self.AutoRendering = false
-	end
-	]]
+	
+
+	return update, mousepressed, mousemoved, mousereleased, wheelmoved, keypressed, resize
+
 end
 
 
@@ -1170,6 +1154,8 @@ function UIBase:putNextTo(Obj, side, offset)
 	end
 end
 
+
+
 -- increase the offset of a UI element by offsetX and offsetY
 function UIBase:shift(offsetX, offsetY)
 	if vector2.isVector2(offsetX) then
@@ -1178,6 +1164,8 @@ function UIBase:shift(offsetX, offsetY)
 		self:reposition(self.Position.Scale, self.Position.Offset + vector2(offsetX, offsetY))
 	end
 end
+
+
 
 -- increase the ContentOffset of a UI element by offsetX and offsetY
 function UIBase:shiftContent(offsetX, offsetY)
@@ -1190,6 +1178,8 @@ function UIBase:shiftContent(offsetX, offsetY)
 	module.Changed = true
 end
 
+
+
 -- set the ContentOffset of a UI element to offsetX, offsetY
 function UIBase:positionContent(offsetX, offsetY)
 	if vector2.isVector2(offsetX) then
@@ -1200,6 +1190,8 @@ function UIBase:positionContent(offsetX, offsetY)
 	updateAbsolutePosition(self)
 	module.Changed = true
 end
+
+
 
 -- make it so children are no longer positioned based on their position property, but rather based on their order in the Children list and based on the parent's alignment settings
 function UIBase:alignChildren(direction, xAlign, yAlign)
@@ -1240,6 +1232,7 @@ function UIBase:alignX(side)
 	module.Changed = true
 end
 
+
 -- vertically align the element to a side, valid options: "bottom" / "center" / "top"
 function UIBase:alignY(side)
 	self.Position.Offset.y = 0
@@ -1257,6 +1250,8 @@ function UIBase:alignY(side)
 	module.Changed = true
 end
 
+
+
 -- update the style of the component
 function UIBase:setBorder(col, width)
 	if type(col) == "number" then
@@ -1269,6 +1264,7 @@ function UIBase:setBorder(col, width)
 		self:setImageFit(self.ImageFit)
 	end
 end
+
 
 
 -- create an invisible border of a certain thickness in pixels, used to offset inner elements and text

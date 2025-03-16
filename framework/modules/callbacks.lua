@@ -26,8 +26,7 @@ function module:initialize()
 		-- overwrite callback with one that also checks if there are connected events!
 		love[eventName] = function(...)
 			oldFunction(...)
-			-- 
-			if self.Events[eventName] ~= nil then
+			if self.Events[eventName] ~= nil then -- if there are callbacks registered, run them
 				connection.doEvents(self.Events[eventName], ...) -- call the event with the default callback parameters
 			end
 		end
