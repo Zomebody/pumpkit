@@ -104,19 +104,22 @@ function initializeApp()
 		end
 		return false
 	end
+	local function getShownChild(Item)
+		for o = 1, #Item.Children do
+			if not Item.Children[o].Hidden then
+				return Item.Children[o]
+			end
+		end
+	end
+
+
 	-- set events
 	local Scrollables = {{Navigation, 30}, {Body, 50}}
 	for i = 1, #Scrollables do
-		local function getShownChild(Item)
-			for o = 1, #Item.Children do
-				if not Item.Children[o].Hidden then
-					return Item.Children[o]
-				end
-			end
-		end
+		
 		local scrollTween = nil
 		local Obj = Scrollables[i][1]
-		--Obj.OnNestedScroll = function(x, y)
+		
 		Obj:on("NestedScroll", function(x, y)
 			if i == 2 and hasScrollEvents(ui.CursorFocus) then
 				return
@@ -131,24 +134,25 @@ function initializeApp()
 				end
 			end
 		end)
-		--Obj.OnNestedDrag = function(dx, dy, button)
+		
 		Obj:on("NestedDrag", function(dx, dy, button)
 			if button == 1 then
 				if i == 2 and hasPressEvents(ui.DragTarget) then
 					return
 				end
-				Obj:shiftContent(0, dy)
 				local ShownChild = getShownChild(Obj)
+				
 				if ShownChild ~= nil then
-					if Obj.ContentOffset.y > 0 then
-						Obj:positionContent(0, 0)
-					elseif Obj.ContentOffset.y < -ShownChild.Children[#ShownChild.Children].Position.Offset.y then
-						Obj:positionContent(0, -ShownChild.Children[#ShownChild.Children].Position.Offset.y)
+					ShownChild:shiftContent(0, dy)
+					if ShownChild.ContentOffset.y > 0 then
+						ShownChild:positionContent(0, 0)
+					elseif ShownChild.ContentOffset.y < -ShownChild.Children[#ShownChild.Children].Position.Offset.y then
+						ShownChild:positionContent(0, -ShownChild.Children[#ShownChild.Children].Position.Offset.y)
 					end
 				end
 			end
 		end)
-		--Obj.OnNestedDragEnd = function(_, _, button)
+		
 		Obj:on("NestedDragEnd", function(_, _, button)
 			if button == 1 then
 				if i == 2 and hasPressEvents(ui.DragTarget) then
@@ -164,19 +168,19 @@ function initializeApp()
 					local sign = ValueObject.Value / math.abs(ValueObject.Value)
 					scrollTween = tween(ValueObject, "linear", math.sqrt(sign * ValueObject.Value / 30), {["Value"] = 0})
 					scrollTween:play()
-					--scrollTween.OnUpdate = function()
 					scrollTween:on("Update", function()
-						Obj:shiftContent(0, ValueObject.Value)
-						if Obj.ContentOffset.y > 0 then
-							Obj:positionContent(0, 0)
-						elseif Obj.ContentOffset.y < -ShownChild.Children[#ShownChild.Children].Position.Offset.y then
-							Obj:positionContent(0, -ShownChild.Children[#ShownChild.Children].Position.Offset.y)
+						ShownChild:shiftContent(0, ValueObject.Value)
+						if ShownChild.ContentOffset.y > 0 then
+							ShownChild:positionContent(0, 0)
+						elseif ShownChild.ContentOffset.y < -ShownChild.Children[#ShownChild.Children].Position.Offset.y then
+							ShownChild:positionContent(0, -ShownChild.Children[#ShownChild.Children].Position.Offset.y)
 						end
+						
 					end)
 				end
 			end
 		end)
-		--Obj.OnNestedPressStart = function()
+		
 		Obj:on("NestedPressStart", function()
 			if scrollTween ~= nil then
 				scrollTween:stop()
@@ -184,6 +188,25 @@ function initializeApp()
 			end
 		end)
 	end
+	
+	task.spawn(
+		function()
+			local direction = 0
+			if love.keyboard.isDown("down") then direction = direction - 1 end
+			if love.keyboard.isDown("up") then direction = direction + 1 end
+			if direction ~= 0 then
+				local ShownChild = getShownChild(Body)
+				if ShownChild == nil then return end
+				ShownChild:shiftContent(0, love.timer.getDelta() * direction * 200)
+				if ShownChild.ContentOffset.y > 0 then
+					ShownChild:positionContent(0, 0)
+				elseif ShownChild.ContentOffset.y < -ShownChild.Children[#ShownChild.Children].Position.Offset.y then
+					ShownChild:positionContent(0, -ShownChild.Children[#ShownChild.Children].Position.Offset.y)
+				end
+			end
+		end, 0, math.huge, 0
+	)
+	
 
 	-- create and fill in the top bar
 	TopBar = ui.newFrame(love.graphics.getWidth(), DisplayVars.TopBarThickness, Colors.Background)
@@ -346,6 +369,10 @@ function love.draw()
 	love.graphics.print(tostring(love.timer.getFPS()), 10, wy + wh - 30)
 	love.graphics.print(garbage, 10, wy + wh - 50)
 	love.graphics.print("draws: " .. tostring(stats.drawcalls) .. ", imgs: " .. tostring(stats.images) .. ", tex_mem: " .. tostring(stats.texturememory) .. ", fnts: " .. tostring(stats.fonts), 10, wy + wh - 70)
+
+	love.graphics.print("tasks running: " .. tostring(#task.Running), 10, wy + wh - 90)
+	love.graphics.print("tweens running: " .. tostring(#tween.Active), 10, wy + wh - 110)
+
 end
 
 
