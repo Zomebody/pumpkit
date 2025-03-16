@@ -122,13 +122,6 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Method";
-	["Name"] = "addParticles";
-	["Arguments"] = {"particles3"};
-	["Description"] = "Adds a particles3 instance to the scene's list of particles that will be drawn. Each particles3 instance takes up one draw call.";
-})
-
-table.insert(content, {
-	["Type"] = "Method";
 	["Name"] = "applyAmbientOcclusion";
 	["Arguments"] = {};
 	["Description"] = "FOR INTERNAL USE ONLY. This will apply ambient occlusion to the canvas that is currently being prepared for rendering.";
@@ -143,16 +136,58 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Method";
-	["Name"] = "attachBasicMesh";
-	["Arguments"] = {"mesh3"};
-	["Description"] = "Adds a mesh3 instance to the scene's list of meshes that will be drawn. Each mesh takes up one draw call. A mesh cannot be added multiple times. If the mesh is already attached to a scene, it is first detached.";
+	["Name"] = "attachBlob";
+	["Arguments"] = {"blob3"};
+	["Description"] = "Adds a blob3 blob shadow to the scene. Blob shadows cast shadows onto any mesh or surface, except for spritemesh3's. Any blobs above the limit will not be drawn, but they still exist.";
 })
 
 table.insert(content, {
 	["Type"] = "Method";
-	["Name"] = "detachBasicMesh";
-	["Arguments"] = {"mesh3"};
-	["Description"] = "Removes a basic mesh3 from the scene's list of meshes. This does not destroy the mesh, so they can be added back later.";
+	["Name"] = "attachLight";
+	["Arguments"] = {"light3"};
+	["Description"] = "Adds a light3 to the scene which will apply point-light lighting to any surfaces in range. These lights do not casts shadows. There is a light limit and any lights above the limit aren't shown, but they still exist.";
+})
+
+table.insert(content, {
+	["Type"] = "Method";
+	["Name"] = "attachMesh";
+	["Arguments"] = {"mesh3/spritemesh3"};
+	["Description"] = "Adds either a mesh3 instance or spritemesh3 instance to the scene's list of meshes that will be drawn. These meshes takes up one draw call each. A mesh cannot be added multiple times. If the mesh is already attached to a scene, it is first detached.";
+})
+
+table.insert(content, {
+	["Type"] = "Method";
+	["Name"] = "attachParticles";
+	["Arguments"] = {"particles3"};
+	["Description"] = "Adds a particles3 instance to the scene's list of particles that will be drawn. Each particles3 instance takes up one draw call.";
+})
+
+table.insert(content, {
+	["Type"] = "Method";
+	["Name"] = "detachBlob";
+	["Arguments"] = {"blob3"};
+	["Description"] = "Removes the blob3 from the scene's list of blobs. This does not destroy the blob3, so they can be added back later.";
+})
+
+table.insert(content, {
+	["Type"] = "Method";
+	["Name"] = "detachLight";
+	["Arguments"] = {"light3"};
+	["Description"] = "Removes the light3 from the scene's list of lights. This does not destroy the light3, so they can be added back later.";
+})
+
+table.insert(content, {
+	["Type"] = "Method";
+	["Name"] = "detachMesh";
+	["Arguments"] = {"mesh3/spritemesh3"};
+	["Description"] = "Removes the mesh3 or spritemesh3 from the scene's list of meshes. This does not destroy the mesh, so they can be added back later.";
+})
+
+table.insert(content, {
+	["Type"] = "Method";
+	["Name"] = "detachParticles";
+	["Arguments"] = {"particles3"};
+	["Description"] = "Removes the particles3 instance from the scene's list of particles. This does not destroy the particles, meaning they can be added back later.";
 })
 
 table.insert(content, {
@@ -234,13 +269,6 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Method";
-	["Name"] = "setLight";
-	["Arguments"] = {"Camera3"};
-	["Description"] = "Sets the scene's camera to be used to the given Camera3 instance.";
-})
-
-table.insert(content, {
-	["Type"] = "Method";
 	["Name"] = "setShadowMap";
 	["Arguments"] = {"position", "direction", "size", "canvasSize", "sunColor", "shadowStrength"};
 	["Description"] = "Adds a shadow-map, which is essentially a sun emitting lighting in a given region, creating shadows that is cast onto geometry. Anything in shadow uses ambient occlusion.\n- position: A vector3 of where the sun is.\n- direction: a vector3 of the direction the light is going.\n- size: A vector2 describing the width and height of the shadow-map in world units.\n- canvasSize: How big the canvas is that shadows are rendered to, thus how detailed the shadow-map is.\n- sunColor: A color3 of the sun's light color that is added on top of the ambient color when geometry is in sunlight.\n- shadowStrength: 1 for dark shadows, 0 for no shadows, or something in between to interpolate.";
@@ -251,6 +279,20 @@ table.insert(content, {
 	["Type"] = "Header";
 	["Name"] = "Events";
 	["Description"] = "";
+})
+
+table.insert(content, {
+	["Type"] = "Event";
+	["Name"] = "BlobAttached";
+	["Arguments"] = {"blob3"};
+	["Description"] = "Called when a blob3 is added to the scene, supplies the blob3 that was attached. This still fires if the added blob doesn't get drawn due to the blobs limit.";
+})
+
+table.insert(content, {
+	["Type"] = "Event";
+	["Name"] = "BlobDetached";
+	["Arguments"] = {"blob3"};
+	["Description"] = "Called when a blob3 is detached from the scene, supplies the blob3 that was detached.";
 })
 
 table.insert(content, {
@@ -269,6 +311,20 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Event";
+	["Name"] = "LightAttached";
+	["Arguments"] = {"light3"};
+	["Description"] = "Called when a light3 is added to the scene, supplies the light3 that was attached. This still fires if the added light doesn't get drawn due to the lights limit.";
+})
+
+table.insert(content, {
+	["Type"] = "Event";
+	["Name"] = "LightDetached";
+	["Arguments"] = {"light3"};
+	["Description"] = "Called when a light3 is detached from the scene, supplies the light3 that was detached.";
+})
+
+table.insert(content, {
+	["Type"] = "Event";
 	["Name"] = "Loading";
 	["Arguments"] = {};
 	["Description"] = "Called when the scene3 is set as the world's current scene.";
@@ -277,15 +333,15 @@ table.insert(content, {
 table.insert(content, {
 	["Type"] = "Event";
 	["Name"] = "MeshAttached";
-	["Arguments"] = {"mesh3"};
-	["Description"] = "Called when a basic mesh is added to the scene, supplies the mesh3 that was attached.";
+	["Arguments"] = {"mesh3/spritemesh3"};
+	["Description"] = "Called when a mesh3 or spritemesh3 is added to the scene, supplies the mesh that was attached.";
 })
 
 table.insert(content, {
 	["Type"] = "Event";
 	["Name"] = "MeshDetached";
-	["Arguments"] = {"mesh3"};
-	["Description"] = "Called when a basic mesh is detached from the scene, supplies the mesh3 that was detached.";
+	["Arguments"] = {"mesh3/spritemesh3"};
+	["Description"] = "Called when a mesh3 or spritemesh3 is detached from the scene, supplies the mesh that was detached.";
 })
 
 table.insert(content, {
