@@ -70,6 +70,7 @@ noiseImage:setFilter("nearest")
 local normalData = love.image.newImageData(1, 1)
 normalData:mapPixel(function() return 0.5, 0.5, 1 end)
 local normalImage = love.graphics.newImage(normalData)
+normalImage:setWrap("repeat")
 normalImage:setFilter("nearest")
 
 
