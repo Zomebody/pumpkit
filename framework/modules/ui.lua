@@ -18,6 +18,26 @@ local resizedElementsCache = {} -- cache with resized elements in case an elemen
 
 
 
+----------------------------------------------------[[ == IMAGEFRAME MASK FRAGMENT SHADER == ]]----------------------------------------------------
+
+local maskShader = love.graphics.newShader([[
+
+uniform Image maskImage;
+uniform float maskThreshold;
+
+vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
+	vec4 imgColor = Texel(tex, texture_coords) * color;
+	float value = Texel(maskImage, texture_coords).r; // let's just use the red channel for the mask for now
+	float multiplier = step(value, maskThreshold); // 1.0 if maskValue <= threshold, else 0.0
+
+	return vec4(imgColor.rgb, imgColor.a * multiplier);
+}
+
+
+]])
+
+
+
 ----------------------------------------------------[[ == BASE OBJECTS == ]]----------------------------------------------------
 
 --[[
@@ -1778,6 +1798,13 @@ function ImageFrame:draw()
 		
 		-- draw image, using a stencil for rounded corners
 		addCornerStencil(self)
+
+		if self.MaskImage ~= nil then
+			maskShader:send("maskImage", self.MaskImage)
+			maskShader:send("maskThreshold", self.MaskThreshold)
+			love.graphics.setShader(maskShader)
+		end
+
 		if self.ImageFit == "stretch" or (self.Tiled and (not self.ImageFit == "contain")) then
 			love.graphics.draw(self.ReferenceImage, self.Quad, -self.AbsoluteSize.x * self.Pivot.x + self.BorderWidth, -self.AbsoluteSize.y * self.Pivot.y + self.BorderWidth, 0, (self.AbsoluteSize.x - self.BorderWidth*2) / self.AbsoluteSize.x, (self.AbsoluteSize.y - self.BorderWidth*2) / self.AbsoluteSize.y)
 		elseif self.ImageFit == "cover" then
@@ -1805,6 +1832,12 @@ function ImageFrame:draw()
 		else -- default: I don't actually know what the default is supposed to be
 			love.graphics.draw(self.ReferenceImage, self.Quad, -self.AbsoluteSize.x * self.Pivot.x + self.BorderWidth, -self.AbsoluteSize.y * self.Pivot.y + self.BorderWidth, 0, (self.AbsoluteSize.x - self.BorderWidth * 2) / imgWidth, (self.AbsoluteSize.y - self.BorderWidth * 2) / imgHeight)
 		end
+
+		if self.MaskImage ~= nil then
+			love.graphics.setShader()
+		end
+
+
 		clearCornerStencil(self)
 
 		-- draw border
@@ -1960,6 +1993,7 @@ function SlicedFrame:draw()
 		-- draw(img, quad, x, y, 0, sx, sy)
 
 		addCornerStencil(self)
+		
 		-- in reading order, top row
 		if stretchYTop > 0 then
 			if stretchXLeft > 0 then
@@ -2247,10 +2281,14 @@ local function newImageFrame(img, w, h, col) -- tiled: if true, tile the image, 
 	-- set fitting
 	Obj["ImageFit"] = "stretch" -- stretch / cover / contain (stretch = proportions may be messed up, but exact width/height, cover = clipped, contain = open space)
 
+	-- masking options
+	Obj["MaskImage"] = nil
+	Obj["MaskThreshold"] = 0
 
 	setmetatable(Obj, ImageFrame)
 	return Obj
 end
+
 
 -- create new AnimatedFrame object
 local function newAnimatedFrame(anim, w, h, col)
@@ -2260,6 +2298,7 @@ local function newAnimatedFrame(anim, w, h, col)
 	setmetatable(Obj, AnimatedFrame)
 	return Obj
 end
+
 
 -- create new SlicedFrame object
 local function newSlicedFrame(img, topLeft, bottomRight, w, h, col, corScale)
