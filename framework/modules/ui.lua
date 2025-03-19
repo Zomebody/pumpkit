@@ -1333,7 +1333,11 @@ function UIBase:setText(fontname, textData, size, lineCountOrScale)
 		--local w = self.AbsoluteSize.x - 2 * self.Padding.x
 		--local h = self.AbsoluteSize.y - 2 * self.Padding.y
 		local tb = textblock(self, fontname, size, textData, lineCount)
-		tb:fitText()
+		if lineCount == 0 then -- this if-statement is a bit verbose but whatever
+			tb:fitText()
+		else -- if lineCount is set, (even if it's just 1), always scale the text to fit the area
+			tb:fitText(true)
+		end
 		self.TextBlock = tb
 	else
 		--local w = self.AbsoluteSize.x - 2 * self.Padding.x
