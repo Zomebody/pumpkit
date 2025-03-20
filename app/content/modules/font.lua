@@ -26,15 +26,28 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Header";
+	["Name"] = "Properties";
+	["Description"] = "";
+})
+
+table.insert(content, {
+	["Type"] = "Property";
+	["Name"] = "Cache";
+	["ReadOnly"] = true;
+	["Description"] = "A double-dictionary in the form cache[fontname][size]=font which stores which fonts have been created at which sizes and stores them for caching.";
+})
+
+table.insert(content, {
+	["Type"] = "Header";
 	["Name"] = "Methods";
 	["Description"] = "";
 })
 
 table.insert(content, {
 	["Type"] = "Method";
-	["Name"] = "dereference";
-	["Arguments"] = {"filename", "size"};
-	["Description"] = "FOR INTERNAL USE ONLY. When a UI object is removed and it has text, its font is dereferenced if the font at the given size is no longer in use, opening up more memory!";
+	["Name"] = "clearCache";
+	["Arguments"] = {"fontname"};
+	["Description"] = "If no argument is provided this will clear all cached fonts. Otherwise, it clears all font sizes of the given font name";
 })
 
 table.insert(content, {
@@ -46,7 +59,6 @@ table.insert(content, {
 		local Container = ui.newFrame(200, 200, color(0, 0, 0))
 		Container:setPadding(6)
 		local fontList = font:getSupportedFonts()
-		print(#fontList)
 		local str = ""
 		for i = 1, #fontList do
 			str = str .. fontList[i] .. "\n"

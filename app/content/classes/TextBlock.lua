@@ -160,7 +160,7 @@ table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "fitText";
 	["Arguments"] = {"remainScaled"};
-	["Description"] = "Changes the dimensions of the given text block and resizes the text such that it best fits within text block without overflowing. Finding the right size is done by using a O(log(n)) search of trying different text sizes.\n\n'remainScaled' is a boolean indicating if TextScales should be set to true or false after fitting the text (or unchanged if nil).\n\nIf 'MaxLines' is set to any value other than 0, the text will be scaled such that exactly that many lines of text fit within the text block.";
+	["Description"] = "Changes the dimensions of the given text block and resizes the text such that it best fits within text block without overflowing. Finding the right size is done by using a O(log(n)) search of trying different text sizes. It does not try every possible size, instead it searching through a list of 64 different sizes since created fonts are cached, and this helps manage memory usage. Generally you won't notice it if a font could have been slightly bigger to fit the space.\n\n'remainScaled' is a boolean indicating if TextScales should be set to true or false after fitting the text (or unchanged if nil).\n\nIf 'MaxLines' is set to any value other than 0, the text will be scaled such that exactly that many lines of text fit within the text block.";
 })
 
 table.insert(content, {
