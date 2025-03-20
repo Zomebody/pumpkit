@@ -20,21 +20,7 @@ local resizedElementsCache = {} -- cache with resized elements in case an elemen
 
 ----------------------------------------------------[[ == IMAGEFRAME MASK FRAGMENT SHADER == ]]----------------------------------------------------
 
-local maskShaderRel = love.graphics.newShader([[
-
-uniform Image maskImage;
-uniform float maskThreshold;
-
-vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
-	vec4 imgColor = Texel(tex, texture_coords) * color;
-	float value = Texel(maskImage, texture_coords).r; // let's just use the red channel for the mask for now
-	float multiplier = step(value, maskThreshold); // 1.0 if maskValue <= threshold, else 0.0
-
-	return vec4(imgColor.rgb, imgColor.a * multiplier);
-}
-]])
-
-local maskShaderAbs = love.graphics.newShader([[
+local maskShader = love.graphics.newShader([[
 
 uniform Image maskImage;
 uniform float maskThreshold;
@@ -1640,6 +1626,13 @@ function UIBase:drawText()
 		end
 		--local r, g, b, a = love.graphics.getColor()
 		love.graphics.setColor(self.TextBlock.Color:components())
+
+		-- if a mask is applied, set the shader
+		if self.MaskImage ~= nil then
+			--no need to send shader variables as they're still initialized
+			love.graphics.setShader(maskShader)
+		end
+
 		if self.TextBlock.AlignmentY == "top" then
 			love.graphics.draw(self.TextBlock.Text, -self.AbsoluteSize.x * self.Pivot.x + self.Padding.x, -self.AbsoluteSize.y * self.Pivot.y + self.Padding.y)
 		elseif self.TextBlock.AlignmentY == "center" then
@@ -1649,6 +1642,10 @@ function UIBase:drawText()
 		end
 		-- no need to reset the color because it happens right after drawText() is called in the ui draw functions
 		--love.graphics.setColor(r, g, b, a)
+
+		if self.MaskImage ~= nil then
+			love.graphics.setShader()
+		end
 	end
 end
 
@@ -1829,9 +1826,10 @@ function ImageFrame:draw()
 		addCornerStencil(self)
 
 		if self.MaskImage ~= nil then
-			maskShaderRel:send("maskImage", self.MaskImage)
-			maskShaderRel:send("maskThreshold", self.MaskThreshold)
-			love.graphics.setShader(maskShaderRel)
+			maskShader:send("maskImage", self.MaskImage)
+			maskShader:send("maskThreshold", self.MaskThreshold)
+			maskShader:send("screenRect", {self.AbsolutePosition.x, self.AbsolutePosition.y, self.AbsolutePosition.x + self.AbsoluteSize.x, self.AbsolutePosition.y + self.AbsoluteSize.y})
+			love.graphics.setShader(maskShader)
 		end
 
 		if self.ImageFit == "stretch" or (self.Tiled and (not self.ImageFit == "contain")) then
@@ -2024,10 +2022,10 @@ function SlicedFrame:draw()
 		addCornerStencil(self)
 
 		if self.MaskImage ~= nil then
-			maskShaderAbs:send("maskImage", self.MaskImage)
-			maskShaderAbs:send("maskThreshold", self.MaskThreshold)
-			maskShaderAbs:send("screenRect", {self.AbsolutePosition.x, self.AbsolutePosition.y, self.AbsolutePosition.x + absSize.x, self.AbsolutePosition.y + absSize.y})
-			love.graphics.setShader(maskShaderAbs)
+			maskShader:send("maskImage", self.MaskImage)
+			maskShader:send("maskThreshold", self.MaskThreshold)
+			maskShader:send("screenRect", {self.AbsolutePosition.x, self.AbsolutePosition.y, self.AbsolutePosition.x + absSize.x, self.AbsolutePosition.y + absSize.y})
+			love.graphics.setShader(maskShader)
 		end
 		
 		-- in reading order, top row
