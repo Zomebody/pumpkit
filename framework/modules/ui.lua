@@ -283,30 +283,32 @@ local function updateAbsoluteSize(Obj, ignoreParentSize) -- ignoreParentSize is 
 		end
 	end
 	local prevX, prevY = Obj.AbsoluteSize.x, Obj.AbsoluteSize.y
-	Obj.AbsoluteSize:set(math.floor(sX), math.floor(sY))
-	-- store the resized element in a cache so that the 'resize' event can be called at the end of the love.update or love.resize function
-	if prevX ~= math.floor(sX) or prevY ~= math.floor(sY) then
+	local newX, newY = math.floor(sX), math.floor(sY)
+	Obj.AbsoluteSize:set(newX, newY)
+	
+	-- check if the size actually changed. If so, update other stuff
+	if prevX ~= newX or prevY ~= newY then
+		-- store the resized element in a cache so that the 'resize' event can be called at the end of the love.update or love.resize function
 		if resizedElementsCache[Obj] == nil then
 			resizedElementsCache[Obj] = true
 			resizedElements[#resizedElements + 1] = Obj -- elements are ordered in Parent -> Child order so a child can always check its parent's size and it will be up-to-date
 		end
-	end
 
-	if Obj.TextBlock ~= nil then
-		--Obj.TextBlock:setWidth(Obj.AbsoluteSize.x - 2 * Obj.Padding.x)
-		Obj.TextBlock:updateWidth()
-		--if Obj.FitTextOnResize then
-		if Obj.TextBlock.TextScales then
-			local w = Obj.AbsoluteSize.x - 2 * Obj.Padding.x
-			local h = Obj.AbsoluteSize.y - 2 * Obj.Padding.y
-			Obj.TextBlock:fitText()
+		if Obj.TextBlock ~= nil then
+			--Obj.TextBlock:setWidth(Obj.AbsoluteSize.x - 2 * Obj.Padding.x)
+			Obj.TextBlock:updateWidth()
+			--if Obj.FitTextOnResize then
+			if Obj.TextBlock.TextScales then
+				Obj.TextBlock:fitText()
+			end
+		end
+
+		if Obj.ImageFit ~= nil then
+			Obj:setImageFit(Obj.ImageFit)
 		end
 	end
 
-	if Obj.ImageFit ~= nil then
-		Obj:setImageFit(Obj.ImageFit)
-	end
-
+	-- now evaluate children
 	for i = 1, #Obj.Children do
 		-- if a child's Size.Scale.x and Size.Scale.y both are 0, there is no use in updating them (because their AbsoluteSize will remain the same anyway!)
 		if not (Obj.Children[i].Size.Scale.x == 0 and Obj.Children[i].Size.Scale.y == 0) then
@@ -1628,6 +1630,14 @@ end
 function UIBase:drawText()
 	-- draw text on top
 	if self.TextBlock ~= nil then
+		-- if font:clearCache() is called and the font used by the textblock is cleared, make sure to create a new one right now because else you'll get an error!
+		if font.Cache[self.TextBlock.FontFile] == nil then
+			if self.TextBlock.TextScales then
+				self.TextBlock:fitText()
+			else
+				self.TextBlock:setFont(self.TextBlock.FontFile)
+			end
+		end
 		--local r, g, b, a = love.graphics.getColor()
 		love.graphics.setColor(self.TextBlock.Color:components())
 		if self.TextBlock.AlignmentY == "top" then

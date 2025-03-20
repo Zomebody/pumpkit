@@ -112,6 +112,16 @@ function textblock:getText(isColored)
 end
 
 
+
+-- fitText won't try *every* font size since that would be overkill (and be bad for memory usage when using large fonts)
+-- so instead it skips over certain font sizes, especially at larger sizes since the different between 99 and 100 isn't noticible
+local SIZES = {
+	1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+	21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 32, 34, 36, 38, 40, 42, 44, 46, 48, 50,
+	52, 54, 56, 58, 60, 63, 66, 69, 72, 75, 78, 81, 84, 87, 90, 95, 100, 105, 110, 120,
+	130, 140, 160, 180
+}
+
 -- resize the text to fit within the given width and height
 function textblock:fitText(remainScaled)
 	local w = self.Width
@@ -121,13 +131,12 @@ function textblock:fitText(remainScaled)
 
 	local ceil = math.huge -- upper bound: text of that size does not fit
 	local floor = 0 -- lower bound: text of that size fits
-	local curTry = 32 -- tweak this number to optimize the number of iterations. Must be power of 2!
+	local curTry = 16 -- tweak this number to optimize the number of iterations. Must be power of 2!
 	local lastFit = nil -- the last size that did fit in the box
 	local doesFit = false
 
 	repeat
-		
-		local createdFont = font.new(self.FontFile, curTry, true)
+		local createdFont = font.new(self.FontFile, SIZES[curTry])
 		self.Text:setFont(createdFont)
 
 		-- check if the current size fits
@@ -141,9 +150,9 @@ function textblock:fitText(remainScaled)
 		end
 
 		if doesFit then
-			lastFit = curTry
+			lastFit = SIZES[curTry]
 			floor = curTry
-			if ceil == math.huge then
+			if ceil == math.huge and curTry * 2 <= #SIZES then
 				curTry = curTry * 2
 			else
 				curTry = (curTry + ceil) / 2
@@ -152,7 +161,8 @@ function textblock:fitText(remainScaled)
 			ceil = curTry
 			curTry = (curTry + floor) / 2
 		end
-	until curTry % 1 ~= 0
+	until SIZES[curTry] == nil -- make sure you don't jump out of the array or index something like 2.5 or whatever
+	
 
 	if remainScaled ~= nil then
 		self.TextScales = (remainScaled == true)
@@ -220,7 +230,7 @@ end
 -- called when the object that uses the textblock is being removed
 function textblock:clearFont()
 	self.Font = nil
-	font:dereference(self.FontFile, self.FontSize)
+	--font:dereference(self.FontFile, self.FontSize) -- no longer exists
 end
 
 
