@@ -18,21 +18,21 @@ table.insert(content, {
 })
 
 table.insert(content, {
-	["Type"] = "Constructor";
+	["Type"] = "Method";
 	["Name"] = "fire";
 	["Arguments"] = {"name", "..."};
 	["Description"] = "Fire a signal with the given name. All Listeners that are listening to that signal name will have their function called with all arguments - after the name argument - passed.";
 })
 
 table.insert(content, {
-	["Type"] = "Constructor";
+	["Type"] = "Method";
 	["Name"] = "listen";
 	["Arguments"] = {"name", "function"};
 	["Description"] = "Listen to the given signal name. When the fire method is called with that name, the passed function argument will be called. This method returns a 'connection' object which can be used to disconnect the signal listener at a later moment.";
 })
 
 table.insert(content, {
-	["Type"] = "Constructor";
+	["Type"] = "Method";
 	["Name"] = "once";
 	["Arguments"] = {"name", "function"};
 	["Description"] = "Similar to the listen method, but this function only works once. This method also returns a connection object.";
