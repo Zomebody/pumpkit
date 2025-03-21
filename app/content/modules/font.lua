@@ -20,7 +20,7 @@ table.insert(content, {
 table.insert(content, {
 	["Type"] = "Constructor";
 	["Name"] = "new";
-	["Arguments"] = {"filename", "size", "isTemporary"};
+	["Arguments"] = {"filename", "size"};
 	["Description"] = "FOR INTERNAL USE ONLY. Creates a new font using the given file name and at the given size. isTemporary is set to true if this font should not be kept in a cache. The boolean is used when a UI object is resized and the FitTextOnResize property is set to true.";
 })
 
@@ -33,6 +33,7 @@ table.insert(content, {
 table.insert(content, {
 	["Type"] = "Property";
 	["Name"] = "Cache";
+	["ValueType"] = "dictionary";
 	["ReadOnly"] = true;
 	["Description"] = "A double-dictionary in the form cache[fontname][size]=font which stores which fonts have been created at which sizes and stores them for caching.";
 })
