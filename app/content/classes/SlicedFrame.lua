@@ -68,7 +68,7 @@ table.insert(content, {
 	["Type"] = "Property";
 	["ValueType"] = "number";
 	["Name"] = "MaskThreshold";
-	["Description"] = "A number between 0 and 1. If a MaskImage is set, it is overlayed over the SlicedFrame. Any pixels in the MaskImage with a value in the red-channel lower than MaskThreshold will make the pixels in the SlicedFrame's image transparent.\n\nNote that 9-slicing does not affect the mask.";
+	["Description"] = "A number between 0 and 1. If a MaskImage is set, it is overlayed over the ImageFrame and any text if added. Any pixels in the MaskImage with a value in the red-channel lower than MaskThreshold will make the pixels in the ImageFrame's image transparent.";
 	["ReadOnly"] = false;
 })
 
