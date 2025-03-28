@@ -159,7 +159,7 @@ function Camera3:setFOV(fov)
 		local aspectRatio = self.Scene3.RenderCanvas:getWidth() / self.Scene3.RenderCanvas:getHeight()
 		local persp = matrix4.perspective(aspectRatio, fov, 1000, 0.1)
 		local c1, c2, c3, c4 = persp:columns()
-		Object.SSAOShader:send("perspectiveMatrix", {c1, c2, c3, c4})
+		self.Scene3.SSAOShader:send("perspectiveMatrix", {c1, c2, c3, c4})
 
 	end
 end
