@@ -200,13 +200,6 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Method";
-	["Name"] = "setWrap";
-	["Arguments"] = {"boolean"};
-	["Description"] = "Sets whether or not the text should wrap onto the next line. If set to false, the text will overflow or cut off on the side of the element it resides in.";
-})
-
-table.insert(content, {
-	["Type"] = "Method";
 	["Name"] = "updateWidth";
 	["Arguments"] = {};
 	["Description"] = "Changes the width (in pixels) of the text block in which the text resides. This is called automatically when the parent element is resized.";

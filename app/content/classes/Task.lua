@@ -102,6 +102,13 @@ table.insert(content, {
 	["Description"] = "Stops the current task and sets its \"Active\" property to false.";
 })
 
+table.insert(content, {
+	["Type"] = "Method";
+	["Name"] = "wait";
+	["Arguments"] = {"seconds"};
+	["Description"] = "Yields the task for the given number of seconds. This method can only be called from *within* the task's function itself. If a task or function tries to call :wait() on a different task, it will error.";
+})
+
 
 table.insert(content, {
 	["Type"] = "Header";
