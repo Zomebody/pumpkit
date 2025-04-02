@@ -43,9 +43,14 @@ local function new(parent, fontname, size, textData, lineCount)
 		--["WrapEnabled"] = true; -- if text should wrap or stay on one line (replaced with MaxLines)
 		["TextScales"] = size == nil;
 		["MaxLines"] = lineCount; -- if 0, there is no maximum. Otherwise, this defines the maximum number of lines that will fit in the box when automatic text scaling is enabled
+
+		["FontHeight"] = 0;
+		["Events"] = {}; -- "FontHeightChanged"
 	}
 	Obj.Font = Obj.Text:getFont()
 	Obj.Text:setf(textData, w, "left")
+	local height = Obj.Font:getHeight()
+	Obj.FontHeight = height
 	--if w == math.huge then
 	--	Obj.Width = Obj.Text:getWidth()
 	--end
@@ -99,6 +104,18 @@ function textblock:setText(textData)
 	--self.Text:set(self.ColoredText)
 	--local maxWidth = self.Text:getWidth()
 	self.Text:setf(self.ColoredText, self.Parent.AbsoluteSize.x - self.Parent.Padding.x * 2, self.AlignmentX)
+	if self.TextScales then -- calling fitText will also call FontHeightChanged, which is why there's an if-else here to avoid duplicate work
+		self:fitText()
+	else
+		local newHeight = self.Font:getHeight()
+		if newHeight ~= self.FontHeight then
+			self.FontHeight = newHeight
+			if self.Events["FontHeightChanged"] ~= nil then
+				connection.doEvents(self.Events.FontHeightChanged, newHeight)
+			end
+		end
+	end
+	
 	--end
 end
 
@@ -173,9 +190,20 @@ function textblock:fitText(remainScaled)
 	end
 	
 	self.FontSize = lastFit
-	self.Text:setFont(font.new(self.FontFile, lastFit))
+	self.Font = font.new(self.FontFile, lastFit)
+	self.Text:setFont(self.Font)
+
+	local newHeight = self.Font:getHeight()
+	if newHeight ~= self.FontHeight then
+		self.FontHeight = newHeight
+		if self.Events["FontHeightChanged"] ~= nil then
+			connection.doEvents(self.Events.FontHeightChanged, newHeight)
+		end
+	end
+
 	return lastFit
 end
+
 
 
 -- enables text scaling and refits the text to fit the given line count
@@ -185,6 +213,7 @@ function textblock:setMaxLines(count)
 		count = 0
 	end
 
+	self.MaxLines = count
 	self.TextScales = true
 	self:fitText()
 end
@@ -193,12 +222,26 @@ end
 
 -- change the font to one from the fonts directory, CAN BE SLOW IF CALLED EVERY FRAME!
 function textblock:setFont(name)
-	if love.filesystem.getInfo(fontDirectory .. name) then
-		self:clearFont()
-		self.FontFile = name
-		self.Font = font.new(name, self.FontSize)--love.graphics.newFont(fontDirectory .. name, self.FontSize)
-		self.Text:setFont(self.Font)
+	--if love.filesystem.getInfo(fontDirectory .. name) then
+	self:clearFont()
+	self.FontFile = name
+	self.Font = font.new(name, self.FontSize)--love.graphics.newFont(fontDirectory .. name, self.FontSize)
+	self.Text:setFont(self.Font)
+
+	if self.TextScales then -- calling fitText will also call FontHeightChanged, which is why there's an if-else here to avoid duplicate work
+		self:fitText()
+	else
+		local newHeight = self.Font:getHeight()
+		if newHeight ~= self.FontHeight then
+			self.FontHeight = newHeight
+			if self.Events["FontHeightChanged"] ~= nil then
+				connection.doEvents(self.Events.FontHeightChanged, newHeight)
+			end
+
+		end
 	end
+
+	
 end
 
 
@@ -210,12 +253,21 @@ function textblock:setTextSize(size)
 		self.FontSize = size
 		self.Font = font.new(self.FontFile, self.FontSize)--love.graphics.newFont(fontDirectory .. self.FontFile, self.FontSize)
 		self.Text:setFont(self.Font)
+
+		local newHeight = self.Font:getHeight()
+		if newHeight ~= self.FontHeight then
+			self.FontHeight = newHeight
+			if self.Events["FontHeightChanged"] ~= nil then
+				connection.doEvents(self.Events.FontHeightChanged, newHeight)
+			end
+		end
 	end
 	self.TextScales = false -- by setting a size explicitly, you disable automatic text scaling
 end
 
 
 -- set a new maximum width for the textblock
+-- should only be called internally
 function textblock:updateWidth()
 	self.Width = self.Parent.AbsoluteSize.x - self.Parent.Padding.x * 2
 	if self.TextScales then
@@ -231,6 +283,20 @@ end
 function textblock:clearFont()
 	self.Font = nil
 	--font:dereference(self.FontFile, self.FontSize) -- no longer exists
+end
+
+
+
+-- eventName is the name of the event to call. All event name strings are accepted, but not all of them may trigger
+-- func is the function to link
+function textblock:on(eventName, func)
+	if self.Events[eventName] == nil then
+		self.Events[eventName] = {}
+	end
+	local index = #self.Events[eventName] + 1
+	local Conn = connection.new(self, eventName)
+	self.Events[eventName][index] = {func, Conn}
+	return Conn
 end
 
 
