@@ -269,7 +269,7 @@ local function updateAbsoluteSize(Obj, ignoreParentSize) -- ignoreParentSize is 
 		end
 	end
 	local prevX, prevY = Obj.AbsoluteSize.x, Obj.AbsoluteSize.y
-	local newX, newY = math.floor(sX), math.floor(sY)
+	local newX, newY = math.max(math.floor(sX), 0), math.max(math.floor(sY), 0)
 	Obj.AbsoluteSize:set(newX, newY)
 	
 	-- check if the size actually changed. If so, update other stuff
