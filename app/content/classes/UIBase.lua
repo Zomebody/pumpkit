@@ -421,8 +421,8 @@ table.insert(content, {
 table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "alignChildren";
-	["Arguments"] = {"direction", "side", "padding"};
-	["Description"] = "Aligns the children of the given object in a row. Hidden children are skipped over. You should call this method again when resizing or reparenting any of the aligned children as it does not update children automatically. This method is implemented by calling the :putNextTo() method internally.\n\n- 'direction' must be either \"horizontal\" or \"vertical\".\n- 'side' must be one of \"left\", \"center\" or \"right\" if 'direction' is set to \"vertical\". Otherwise, the parameter must be one of \"top\", \"center\" or \"bottom\".\n- 'padding' is the spacing between child elements in pixels.";
+	["Arguments"] = {"direction", "xAlign", "yAlign"};
+	["Description"] = "Aligns the children of the given object in a row or column.\n\n- 'direction' must be either 'horizontal' or 'vertical'.\n- 'xAlign' must be 'left', 'center' or 'right'.\n- 'yAlign' must be 'top', 'center' or 'bottom'.\n\nCalling this method with no arguments will reset the layout to none at all.";
 })
 
 table.insert(content, {
