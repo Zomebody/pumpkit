@@ -283,7 +283,6 @@ local function updateAbsoluteSize(Obj, ignoreParentSize) -- ignoreParentSize is 
 		if Obj.TextBlock ~= nil then
 			--Obj.TextBlock:setWidth(Obj.AbsoluteSize.x - 2 * Obj.Padding.x)
 			Obj.TextBlock:updateWidth()
-			--if Obj.FitTextOnResize then
 			if Obj.TextBlock.TextScales then
 				Obj.TextBlock:fitText()
 			end
@@ -2254,7 +2253,6 @@ local function newBase(w, h, col)
 			["Scale"] = 0; -- scale uses the min(AbsoluteSize.x, AbsoluteSize.y) multiplied by this number
 			["Offset"] = 0; -- regular pixels
 		};
-		--["FitTextOnResize"] = false;
 		["Hidden"] = false;
 		["Id"] = module.TotalCreated;
 		["Layout"] = "none";
@@ -2262,8 +2260,6 @@ local function newBase(w, h, col)
 		["LayoutAlignY"] = "center";
 		["Name"] = "Object"; -- The name of the instance. Names are not unique. They can be used with the :child() method to find a child with a given name inside some parent instance.
 		["Opacity"] = 1; -- if 0, this object is not drawn (but children are!)
-		--["PaddingX"] = 0; -- an invisible border that creates a smaller inner-window to contain children and text.
-		--["PaddingY"] = 0;
 		["Padding"] = vector2(0, 0); -- an invisible border that creates a smaller inner-window to contain children and text. If 0 < padding < 1, then it's interpreted as a percentage / ratio
 		["Parent"] = nil;
 		["Pivot"] = vector2(0.5, 0.5); -- when working with rotations, pivot determines where rotation is applied, 0,0 = top left, 1,1 = bottom right
