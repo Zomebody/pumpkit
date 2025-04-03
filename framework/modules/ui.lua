@@ -621,6 +621,7 @@ end
 
 -- add a child to the root UI element
 function module:addChild(Obj)
+	assert(Obj ~= nil, "ui:addChild(Obj) was called while Obj equals nil.")
 	-- remove old parent of object
 	if Obj.Parent ~= nil then
 		local Parent = Obj.Parent
@@ -999,12 +1000,15 @@ function UIBase:remove()
 		children[i]:remove()
 	end
 	self.Children = {}
+
 	-- first, remove focus (this is done before unlinking any events, so they can still trigger if there were do be unfocus-events support down the line)
 	if self:hasKeyboardFocus() then
 		ui:unfocusKeyboard(self)
 	end
+
 	-- clear all tags
 	self:clearTags()
+
 	-- clear any events (TODO: just setting the event list to nil should be good enough for the garbage collector)
 	for eventName, eventList in pairs(self.Events) do
 		for index, dataPair in pairs(eventList) do
@@ -1017,13 +1021,26 @@ function UIBase:remove()
 		end
 		self.Events[eventName] = nil
 	end
-	-- remove any fonts from memory
+
+	-- clean up text block
 	if self.TextBlock ~= nil then
+		for eventName, eventList in pairs(self.TextBlock.Events) do
+			for index, dataPair in pairs(eventList) do
+				if dataPair[2] ~= nil and dataPair[2].Connected then
+					dataPair[2]:disconnect()
+				end
+				dataPair[1] = nil
+				dataPair[2] = nil
+				eventList[index] = nil
+			end
+			self.TextBlock.Events[eventName] = nil
+		end
 		self.TextBlock.Parent = nil
 		self.TextBlock:clearFont()
-		self.TextBlock.Text:release()
+		self.TextBlock.Text:release() -- TODO: double-check if this is allowed
 		self.TextBlock.Text = nil
 	end
+
 	if self.Parent ~= nil then
 		local Par = self.Parent
 		for i = 1, #Par.Children do
@@ -1033,6 +1050,7 @@ function UIBase:remove()
 			end
 		end
 	end
+
 	self.Parent = nil
 	module.Changed = true
 end
