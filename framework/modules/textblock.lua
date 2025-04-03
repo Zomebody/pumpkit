@@ -87,6 +87,7 @@ end
 
 -- replace the textblock data with new textData
 function textblock:setText(textData)
+	local oldRaw = self.RawText
 	local raw = ""
 	if type(textData) == "string" then
 		raw = textData
@@ -114,6 +115,10 @@ function textblock:setText(textData)
 				connection.doEvents(self.Events.FontHeightChanged, newHeight)
 			end
 		end
+	end
+
+	if raw ~= oldRaw and self.Events["TextChanged"] ~= nil then
+		connection.doEvents(self.Events.TextChanged, raw)
 	end
 	
 	--end

@@ -205,6 +205,29 @@ table.insert(content, {
 	["Description"] = "Changes the width (in pixels) of the text block in which the text resides. This is called automatically when the parent element is resized.";
 })
 
+
+table.insert(content, {
+	["Type"] = "Header";
+	["Name"] = "Events";
+	["Description"] = "";
+})
+
+
+table.insert(content, {
+	["Type"] = "Event";
+	["Name"] = "FontHeightChanged";
+	["Arguments"] = {"height"};
+	["Description"] = "Called when the height of the font used in the TextBlock changes. This does not trigger if the font is changed to a different font with the same font height.";
+})
+
+
+table.insert(content, {
+	["Type"] = "Event";
+	["Name"] = "TextChanged";
+	["Arguments"] = {"rawText"};
+	["Description"] = "Called when the text inside the textblock changed.";
+})
+
 return {
 	["Meta"] = meta;
 	["Content"] = content;
