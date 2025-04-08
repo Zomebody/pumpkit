@@ -101,8 +101,7 @@ end
 -- returns true if the given vector is inside the triangle (TODO: what about on the edge of the triangle?)
 function triangle:encloses(v)
 	assert(vector2.isVector2(v), "triangle:encloses(v) takes one argument of type <vector>, given: " .. tostring(v))
-	-- Calculate barycentric coordinates
-	-- with some help from ChatGPT
+	-- calculate barycentric coordinates
 	local v1 = self.Line1.from
 	local v2 = self.Line2.from
 	local v3 = self.Line3.from
@@ -111,7 +110,7 @@ function triangle:encloses(v)
 	local beta = ((v3.y - v1.y) * (v.x - v3.x) + (v1.x - v3.x) * (v.y - v3.y)) / detT
 	local gamma = 1 - alpha - beta
 
-	-- Check if the point is inside the triangle
+	-- check if the point is inside the triangle
 	return alpha >= 0 and beta >= 0 and gamma >= 0
 end
 

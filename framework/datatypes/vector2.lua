@@ -180,9 +180,9 @@ function vector2:__tostring()
 end
 
 -- get the distance between two vector2s
-function vector2.dist(a,b)
-	assert(isVector2(a) and isVector2(b), "dist: wrong argument types (expected <vector> and <vector>)")
-	return math.sqrt((a.x-b.x)^2 + (a.y-b.y)^2)
+function vector2:dist(v)
+	assert(isVector2(v), "dist: wrong argument types (expected <vector> and <vector>)")
+	return math.sqrt((self.x - v.x)^2 + (self.y - v.y)^2)
 end
 
 -- return the dot product of the vector2
