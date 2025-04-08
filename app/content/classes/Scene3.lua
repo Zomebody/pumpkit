@@ -30,14 +30,22 @@ table.insert(content, {
 	["ValueType"] = "Image";
 	["Name"] = "Background";
 	["Description"] = "A background image drawn behind the scene when it is being rendered.";
-	["ReadOnly"] = true;
+	["ReadOnly"] = false;
 })
 
 table.insert(content, {
 	["Type"] = "Property";
 	["ValueType"] = "table";
 	["Name"] = "BasicMeshes";
-	["Description"] = "An array containing mesh3 instances (work in progress). These each take up one draw call.";
+	["Description"] = "An array containing mesh3 instances. These each take up one draw call.";
+	["ReadOnly"] = true;
+})
+
+table.insert(content, {
+	["Type"] = "Property";
+	["ValueType"] = "table";
+	["Name"] = "Blobs";
+	["Description"] = "An array containing blob3 instances (work in progress), which are blob shadows that can be displayed below SpriteMeshes.";
 	["ReadOnly"] = true;
 })
 
@@ -62,7 +70,7 @@ table.insert(content, {
 	["ValueType"] = "Image";
 	["Name"] = "Foreground";
 	["Description"] = "An overlaying image drawn on top of the scene after is has been rendered.";
-	["ReadOnly"] = true;
+	["ReadOnly"] = false;
 })
 
 table.insert(content, {
@@ -85,7 +93,7 @@ table.insert(content, {
 	["Type"] = "Property";
 	["ValueType"] = "table";
 	["Name"] = "Lights";
-	["Description"] = "An array containing exactly 16 lights (might change in the future). Each light has the properties:\n- Position (vector3)\n- Color (color)\n- Range (number)\n- Strength (number)\nLights are disabled if their strength and/or range is set to 0.";
+	["Description"] = "An array containing light3 instances. Only a maximum of 16 (may change) lights will be drawn at once for performance reasons. More lights can be added but will be ignored.";
 	["ReadOnly"] = true;
 })
 
@@ -102,6 +110,14 @@ table.insert(content, {
 	["ValueType"] = "table";
 	["Name"] = "Particles";
 	["Description"] = "An array containing particles3 instances. Particles are added to the scene3 through the addParticles() method.";
+	["ReadOnly"] = true;
+})
+
+table.insert(content, {
+	["Type"] = "Property";
+	["ValueType"] = "table";
+	["Name"] = "SpriteMeshes";
+	["Description"] = "An array containing spritemesh3 instances that are drawn onto the scene.";
 	["ReadOnly"] = true;
 })
 
