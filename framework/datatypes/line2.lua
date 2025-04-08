@@ -117,6 +117,38 @@ function line2:dist(v, inf)
 end
 
 
+-- based on the Lua implementation here: https://stackoverflow.com/questions/2824478/shortest-distance-between-two-line-segments
+function line2:closestLine(l)
+	local epsilon = 0.000001
+	local r = l.from - self.from
+	local u = self.to - self.from
+	local v = l.to - l.from
+	local ru = r:dot(u)
+	local rv = r:dot(v)
+	local uu = u:dot(u)
+	local uv = u:dot(v)
+	local vv = v:dot(v)
+
+	local determinant = uu * vv - uv * uv
+	local s1, t1
+
+	if determinant < epsilon * uu * vv then
+		s1 = math.max(math.min(ru / uu, 1), 0)
+		t1 = 0
+	else
+		s1 = math.max(math.min((ru * vv - rv * uv) / determinant, 1), 0)
+		t1 = math.max(math.min((ru * uv - rv * uu) / determinant, 1), 0)
+	end
+
+	local s2 = math.max(math.min((t1 * uv + ru) / uu, 1), 0)
+	local t2 = math.max(math.min((s1 * uv - rv) / vv, 1), 0)
+
+	local a = self.from + s2 * u
+	local b = l.from + t2 * v
+	return new(a, b)
+end
+
+
 -- returns a vector2 describing the point at which this line intersects line lin2
 -- http://www.jeffreythompson.org/collision-detection/line-line.php
 function line2:intersect(lin2)

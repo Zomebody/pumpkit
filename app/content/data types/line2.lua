@@ -63,6 +63,13 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Method";
+	["Name"] = "closestLine";
+	["Arguments"] = {"line2"};
+	["Description"] = "Creates a new line2 that spans the shortest distance between the current line2 segment and the provided line2 segment.";
+})
+
+table.insert(content, {
+	["Type"] = "Method";
 	["Name"] = "closestTo";
 	["Arguments"] = {"vector2", "inf"};
 	["Description"] = "Returns a position on the line2 that is closest to the given vector2. The second argument is a boolean indicating if the line2 should be treated as a line of infinite length in both directions.";
