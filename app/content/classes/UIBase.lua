@@ -236,6 +236,16 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Property";
+	["ValueType"] = "number";
+	["Name"] = "Order";
+	["Description"] = "Determines the order in which the object is drawn and appears in the list of the parent's children. This also determines the order in which elements appear when :alignChildren() is called.";
+	["ReadOnly"] = true;
+	["CodeMarkup"] = nil;
+	["Demo"] = nil;
+})
+
+table.insert(content, {
+	["Type"] = "Property";
 	["ValueType"] = "vector2";
 	["Name"] = "Padding";
 	["Description"] = "Adds a padding to the UIBase.\n\n- Padding.x determines the padding in pixels on the left and right.\n- Padding.y determines the padding in pixels at the top and bottom.\n\nThis property applies to child elements and the UIBase's TextBlock. This value can be changed with :setPadding().";
@@ -688,6 +698,50 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Method";
+	["Name"] = "setOrder";
+	["Arguments"] = {"order"};
+	["Description"] = "Sets the order of the element among its siblings. Elements with a higher Order are drawn on top of elements with a lower Order. This also decides the order in :alignChildren().";
+	["Demo"] = function()
+		local Container = ui.newFrame(300, 330, color(0, 0, 0))
+		
+		local positions = {vector2(20, 20 + 30), vector2(20, 120 + 30), vector2(120, 20 + 30), vector2(120, 120 + 30)}
+		local colors = {color(0.6, 0.6, 0), color(0.6, 0, 0.6), color(0, 0.6, 0.6), color(0.3, 0.3, 0.6)}
+		for i = 1, #positions do
+			local Frame = ui.newFrame(160, 160, colors[i])
+			Frame:reposition(positions[i].x, positions[i].y)
+			Frame:setText("LieraSansMedium.ttf", "Order: " .. tostring(i), 12)
+			Frame.TextBlock:alignX("center")
+			Frame.TextBlock:alignY("center")
+			Frame:setOrder(i)
+
+			Frame:on(
+				"FullPress",
+				function(x, y, button)
+					if button == 1 then
+						Frame:setOrder(Frame.Order + 1)
+						Frame.TextBlock:setText("Order: " .. tostring(Frame.Order))
+					elseif button == 2 then
+						Frame:setOrder(Frame.Order - 1)
+						Frame.TextBlock:setText("Order: " .. tostring(Frame.Order))
+					end
+				end
+			)
+			Container:addChild(Frame)
+		end
+
+		local Text = ui.newFrame(vector2(1, 0), vector2(0, 30))
+		Text.Opacity = 0
+		Text:setText("LieraSansMedium.ttf", "Left- or right-click on each box to increase / decrease their order:", nil, 2)
+		Text.TextBlock:alignX("center")
+		Text.TextBlock:alignY("center")
+		Container:addChild(Text)
+
+		return Container
+	end
+})
+
+table.insert(content, {
+	["Type"] = "Method";
 	["Name"] = "setPadding";
 	["Arguments"] = {"x", "y"};
 	["Description"] = "Sets the horizontal and vertical padding of an element. If the second argument is missing, the first argument replaces it. Additionally, a vector2 can be passed instead of two numbers. Horizontal and vertical padding applies on both of their edges. Padding will apply to the object's childrens' positions and the object's TextBlock.";
@@ -797,7 +851,7 @@ table.insert(content, {
 	["Arguments"] = {};
 	["Description"] = "Sets the Hidden property to false. This makes it possible for the element to be drawn. Events will also work again.";
 })
-
+--[[
 table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "toBack";
@@ -850,6 +904,7 @@ table.insert(content, {
 		return Container
 	end;
 })
+]]
 
 table.insert(content, {
 	["Type"] = "Method";

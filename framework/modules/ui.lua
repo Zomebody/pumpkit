@@ -1488,7 +1488,7 @@ function UIBase:getDescendants(addSelf)
 	return Elements
 end
 
-
+--[[
 -- put the UI element to the back by moving it to the first index in the parent's Children array
 function UIBase:toBack()
 	if self.Parent ~= nil and self.Parent.Children ~= nil then
@@ -1518,32 +1518,36 @@ function UIBase:toFront()
 	end
 	return false
 end
+]]
 
 
--- log2(n) insert search to support large numbers of tagged objects!
-local function findOrderedUIInsertLocation(tbl, Obj)
-	local l, r = 1, #tbl
-	-- TODO: this will error if #tbl == 0, because the statement below will be true, nd then tbl[index] will be nil
+
+
+-- log2(n) insert search to support large numbers of objects!
+local function findInsertIndexInOrderedArray(prop, value, arr)
+	local l, r = 1, #arr
+	-- this will error if #arr == 0, because the statement below will be true, and then arr[index] will be nil
 	while l ~= r do
 		local index = math.floor((l + r) / 2)
-		if tbl[index].Id < Obj.Id then
+		if arr[index][prop] < value then
 			l = math.min(r, index + 1)
 		else
 			r = math.max(l, index - 1)
 		end
 	end
-	return (Obj.Id > tbl[l].Id) and (l + 1) or (l)
+	return (value > arr[l][prop]) and (l + 1) or (l)
 end
 
 
-local function findObjectIndexInOrderedArray(tbl, Obj)
-	local l, r = 1, #tbl
+-- if no exact match is found, this returns a nearby value, so don't use it if you're not 100% sure if the value exists in the array!
+local function findIndexWithValueInOrderedArray(prop, value, arr)
+	local l, r = 1, #arr
 	while l ~= r do
 		local index = math.floor((l + r) / 2)
-		if tbl[index] == Obj then
+		if arr[index][prop] == value then
 			return index
 		else
-			if tbl[index].Id < Obj.Id then
+			if arr[index][prop] < value then
 				l = math.min(r, index + 1)
 			else
 				r = math.max(l, index - 1)
@@ -1552,6 +1556,47 @@ local function findObjectIndexInOrderedArray(tbl, Obj)
 	end
 	return l
 end
+
+
+
+function UIBase:setOrder(order)
+	assert(type(order) == "number", "UIBase:setOrder(order) requires argument 'order' to be of type 'number'.")
+	if self.Parent ~= nil then -- need to reorder the parent's Children array
+		-- find an index with the same Order. In case there are multiple this may not always return yourself!
+		local Children = self.Parent.Children -- variable name not to be confused with self.Children!
+		local closeIndex = findIndexWithValueInOrderedArray("Order", self.Order, Children)
+
+		-- if not yourself, check neighbors until you find yourself
+		local index = nil
+		if Children[closeIndex] == self then
+			index = closeIndex
+		else
+			local checkIndex = closeIndex
+			repeat
+				checkIndex = checkIndex + 1
+			until Children[checkIndex] == nil or Children[checkIndex].Order > self.Order or Children[checkIndex] == self
+			if Children[checkIndex] == self then
+				index = checkIndex
+			else
+				-- at this point your element MUST be somewhere earlier in the array. An infinite loop where you run out of bounds should be theoretically *impossible*
+				repeat
+					closeIndex = closeIndex - 1
+				until Children[closeIndex] == self
+				index = closeIndex
+			end
+		end
+
+		-- remove yourself from parent's children
+		table.remove(Children, index)
+
+		-- find the new location to insert yourself at
+		local insertIndex = findInsertIndexInOrderedArray("Order", order, Children)
+		table.insert(Children, insertIndex, self)
+	end
+	self.Order = order
+end
+
+
 
 
 function UIBase:addTag(tag)
@@ -1568,7 +1613,7 @@ function UIBase:addTag(tag)
 	if markedObjects[tag] == nil then
 		markedObjects[tag] = {self}
 	else
-		local i = findOrderedUIInsertLocation(markedObjects[tag], self)
+		local i = findInsertIndexInOrderedArray("Id", self.Id, markedObjects[tag])
 		table.insert(markedObjects[tag], i, self)
 	end
 end
@@ -1593,7 +1638,7 @@ function UIBase:removeTag(tag)
 
 	-- if the tag has been removed from the object, also remove it from the markedObjects list
 	if removed ~= nil then
-		local index = findObjectIndexInOrderedArray(markedObjects[tag], self)
+		local index = findIndexWithValueInOrderedArray("Id", self.Id, markedObjects[tag])
 		table.remove(markedObjects[tag], index)
 	end
 
@@ -2278,6 +2323,7 @@ local function newBase(w, h, col)
 		["LayoutAlignY"] = "center";
 		["Name"] = "Object"; -- The name of the instance. Names are not unique. They can be used with the :child() method to find a child with a given name inside some parent instance.
 		["Opacity"] = 1; -- if 0, this object is not drawn (but children are!)
+		["Order"] = 0; -- UI elements are sorted in the Children table based on the Order property
 		["Padding"] = vector2(0, 0); -- an invisible border that creates a smaller inner-window to contain children and text. If 0 < padding < 1, then it's interpreted as a percentage / ratio
 		["Parent"] = nil;
 		["Pivot"] = vector2(0.5, 0.5); -- when working with rotations, pivot determines where rotation is applied, 0,0 = top left, 1,1 = bottom right
