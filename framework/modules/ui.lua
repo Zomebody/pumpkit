@@ -634,7 +634,18 @@ function module:addChild(Obj)
 	end
 	-- set new parent of object
 	Obj.Parent = self
-	self.Children[#self.Children + 1] = Obj
+
+	-- find the furthest place to insert it based on the Order property
+	
+	local index = 1
+	while self.Children[index] ~= nil and self.Children[index].Order <= Obj.Order do
+		index = index + 1
+	end
+	table.insert(self.Children, index, Obj)
+	
+
+	--self.Children[#self.Children + 1] = Obj
+
 	updateAbsoluteSize(Obj)
 	updateAbsolutePosition(Obj)
 	if self.Events.ChildAdded ~= nil then
@@ -944,7 +955,16 @@ function UIBase:addChild(Obj)
 	end
 	-- set new parent of object
 	Obj.Parent = self
-	self.Children[#self.Children + 1] = Obj
+
+	--self.Children[#self.Children + 1] = Obj
+	-- find the furthest place to insert it based on the Order property
+	local index = 1
+	while self.Children[index] ~= nil and self.Children[index].Order <= Obj.Order do
+		index = index + 1
+	end
+	table.insert(self.Children, index, Obj)
+	
+	
 	updateAbsoluteSize(Obj)
 	updateAbsolutePosition(Obj)
 	module.Changed = true
@@ -1562,36 +1582,20 @@ end
 function UIBase:setOrder(order)
 	assert(type(order) == "number", "UIBase:setOrder(order) requires argument 'order' to be of type 'number'.")
 	if self.Parent ~= nil then -- need to reorder the parent's Children array
-		-- find an index with the same Order. In case there are multiple this may not always return yourself!
-		local Children = self.Parent.Children -- variable name not to be confused with self.Children!
-		local closeIndex = findIndexWithValueInOrderedArray("Order", self.Order, Children)
-
-		-- if not yourself, check neighbors until you find yourself
-		local index = nil
-		if Children[closeIndex] == self then
-			index = closeIndex
-		else
-			local checkIndex = closeIndex
-			repeat
-				checkIndex = checkIndex + 1
-			until Children[checkIndex] == nil or Children[checkIndex].Order > self.Order or Children[checkIndex] == self
-			if Children[checkIndex] == self then
-				index = checkIndex
-			else
-				-- at this point your element MUST be somewhere earlier in the array. An infinite loop where you run out of bounds should be theoretically *impossible*
-				repeat
-					closeIndex = closeIndex - 1
-				until Children[closeIndex] == self
-				index = closeIndex
+		-- linearly search through parent's Children, which should be fast enough for hundreds of elements
+		local Children = self.Parent.Children
+		for i = 1, #Children do
+			if Children[i] == self then
+				table.remove(Children, i)
+				break
 			end
 		end
-
-		-- remove yourself from parent's children
-		table.remove(Children, index)
-
-		-- find the new location to insert yourself at
-		local insertIndex = findInsertIndexInOrderedArray("Order", order, Children)
-		table.insert(Children, insertIndex, self)
+		-- re-insert at the furthest spot
+		local index = 1
+		while Children[index] ~= nil and Children[index].Order <= order do
+			index = index + 1
+		end
+		table.insert(Children, index, self)
 	end
 	self.Order = order
 end
