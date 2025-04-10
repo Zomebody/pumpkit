@@ -64,6 +64,12 @@ function Spritemesh3:clone()
 end
 
 
+function Spritemesh3:attach(scene3d)
+	assert(scene3.isScene3(scene3d), "spritemesh3:attach(scene3) requires argument 'scene3' to be a scene3.")
+	scene3d:attachMesh(self)
+end
+
+
 
 function Spritemesh3:detach()
 	-- remove it from the scene

@@ -750,6 +750,7 @@ end
 
 
 -- if texScale is nil, IsPlanar is false, else, IsPlanar is true and TextureScale becomes texScale
+--[[
 function Scene3:addInstancedMesh(mesh, positions, rotations, scales, cols, bloom, brightness, castShadow, texScale)
 	assert(type(bloom) == "number" or bloom == nil, "Scene3:addInstancedMesh(mesh, positions, rotations, scales, cols, bloom, brightness, texScale) requires 'bloom' to be a number or nil")
 	assert(type(brightness) == "number" or brightness == nil, "Scene3:addInstancedMesh(mesh, positions, rotations, scales, cols, bloom, brightness, texScale) requires 'brightness' to be a number or nil")
@@ -820,6 +821,7 @@ function Scene3:addInstancedMesh(mesh, positions, rotations, scales, cols, bloom
 	
 	return Data
 end
+]]
 
 
 
@@ -835,8 +837,11 @@ function Scene3:attachMesh(mesh)
 	elseif spritemesh3.isSpritemesh3(mesh) then
 		local index = findOrderedInsertLocation(self.SpriteMeshes, mesh)
 		table.insert(self.SpriteMeshes, index, mesh)
+	elseif mesh3group.isMesh3Group(mesh) then
+		local index = findOrderedInsertLocation(self.InstancedMeshes, mesh)
+		table.insert(self.InstancedMeshes, index, mesh)
 	else
-		error("Scene3:attachMesh(mesh) requires argument 'mesh' to be either a mesh3 or spritemesh3")
+		error("Scene3:attachMesh(mesh) requires argument 'mesh' to be either a mesh3, spritemesh3 or mesh3group")
 	end
 	mesh.Scene = self
 
@@ -858,8 +863,11 @@ function Scene3:detachMesh(mesh) -- basic mesh or sprite mesh
 	elseif spritemesh3.isSpritemesh3(mesh) then
 		slot = findObjectInOrderedArray(mesh, self.SpriteMeshes)
 		Item = table.remove(self.SpriteMeshes, slot)
+	elseif mesh3group.isMesh3Group(mesh) then
+		slot = findObjectInOrderedArray(mesh, self.InstancedMeshes)
+		Item = table.remove(self.InstancedMeshes, slot)
 	else
-		error("Scene3:detachMesh(mesh) requires argument 'mesh' to be either a mesh3 or spritemesh3")
+		error("Scene3:detachMesh(mesh) requires argument 'mesh' to be either a mesh3, spritemesh3 or mesh3group")
 	end
 	
 	if Item ~= nil then

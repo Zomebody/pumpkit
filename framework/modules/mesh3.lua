@@ -67,12 +67,15 @@ function Mesh3:clone()
 end
 
 
+function Mesh3:attach(scene3d)
+	assert(scene3.isScene3(scene3d), "mesh3:attach(scene3) requires argument 'scene3' to be a scene3.")
+	scene3d:attachMesh(self)
+end
+
 
 function Mesh3:detach()
 	-- remove it from the scene
-	-- unlink the scene property
-	--local index = findMeshInOrderedArray(self.Scene.BasicMeshes, Obj)
-	self.Scene:detachBasicMesh(self)
+	self.Scene:detachMesh(self)
 end
 
 
