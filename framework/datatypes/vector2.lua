@@ -181,7 +181,7 @@ end
 
 -- get the distance between two vector2s
 function vector2:dist(v)
-	assert(isVector2(v), "dist: wrong argument types (expected <vector> and <vector>)")
+	assert(isVector2(v), "dist: wrong argument types (expected <vector2> and <vector2>)")
 	return math.sqrt((self.x - v.x)^2 + (self.y - v.y)^2)
 end
 

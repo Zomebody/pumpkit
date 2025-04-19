@@ -26,7 +26,7 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Constructor";
-	["Name"] = "fromImage";
+	["Name"] = "fromImageData";
 	["Arguments"] = {"pathToImage"};
 	["Description"] = "Creates a new floodmap where the width equals the image's width and the height equals the image's height. A tile is walkable if a pixel's red component is > 0.5. Otherwise, it's a wall.";
 })
@@ -148,7 +148,7 @@ table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "getPath";
 	["Arguments"] = {"toVec2"};
-	["Description"] = "Returns an ordered array of vector2s describing which tiles are visited on the path from the start point to the given point (including start and end).";
+	["Description"] = "Returns an ordered array of vector2s describing which tiles are visited on the path from the start point to the given point (including start and end). If no path is found, this returns nil.";
 })
 
 table.insert(content, {
@@ -192,7 +192,7 @@ table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "isWall";
 	["Arguments"] = {"vec2"};
-	["Description"] = "Returns if the given tile is blocked off and prevents any traversal.";
+	["Description"] = "Returns if the given tile is blocked off and prevents any traversal. This method will error if the suppied position is out-of-bounds, so it is recommended to check :inBounds() first.";
 })
 
 table.insert(content, {

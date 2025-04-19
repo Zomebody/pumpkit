@@ -188,7 +188,7 @@ table.insert(content, {
 	["Type"] = "Callback";
 	["Name"] = "Update";
 	["Arguments"] = {};
-	["Description"] = "Called anytime the tween's values are updated.";
+	["Description"] = "Called anytime the tween's values are updated. If a tween is about to stop by reaching its target naturally, update will still be called on this final step before 'Stop' is called.";
 })
 
 
