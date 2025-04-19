@@ -79,6 +79,7 @@ function Floodmap:getPath(toVec2)
 		if lowestAdjacent then
 			curVec = lowestAdjacent
 		else
+			path = nil
 			break -- no path to target
 		end
 	end
@@ -289,8 +290,11 @@ end
 
 
 
-local function fromImage(pathToImg)
-	local imgData = love.image.newImageData(pathToImg)
+local function fromImageData(imgData)
+	--local imgData = love.image.newImageData(pathToImg)
+	if type(imgData) == "string" then
+		imgData = love.image.newImageData(imgData)
+	end
 	local w, h = imgData:getDimensions()
 
 	local Obj = newObject(w, h)
@@ -305,10 +309,10 @@ local function fromImage(pathToImg)
 			Obj.CostMap[x][y] = 1
 			-- don't need to set CostMap[x][y] here since :setCost() will do that anyway
 			local r, g, b, a = imgData:getPixel(x - 1, y - 1)
-			if r > 0.5 then -- white, thus walkable
-				Obj.Map[x][y] = 0
-			else -- black, thus a wall
+			if r == 0 and g == 0 and b == 0 then -- black, thus a wall
 				Obj.Map[x][y] = 1
+			else -- white, thus walkable
+				Obj.Map[x][y] = 0
 			end
 		end
 	end
@@ -322,7 +326,7 @@ end
 
 -- pack up and return module
 module.new = new
-module.fromImage = fromImage
+module.fromImageData = fromImageData
 module.isFloodmap = isFloodmap
 return setmetatable(module, {__call = function(_, ...) return new(...) end})
 
