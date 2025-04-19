@@ -8,7 +8,7 @@ local totalConnectionsMade = 0
 
 
 
-local function FindConnectionInSortedArray(Obj, pairArray)
+local function findConnectionInSortedArray(Obj, pairArray)
 	local left, right = 1, #pairArray
 	local pivot
 	while left <= right do
@@ -59,7 +59,7 @@ function conn:disconnect()
 	local Element = self.LinkedElement
 	if Element ~= nil then
 		if Element.Events[self.EventName] ~= nil then
-			local objIndex = FindConnectionInSortedArray(self, Element.Events[self.EventName])
+			local objIndex = findConnectionInSortedArray(self, Element.Events[self.EventName])
 			if objIndex ~= nil then
 				table.remove(Element.Events[self.EventName], objIndex) -- table.remove guarantees the ascending connection id order, and no gaps will be left behind in the array
 				if #Element.Events[self.EventName] == 0 then

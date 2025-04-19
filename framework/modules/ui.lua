@@ -1029,31 +1029,24 @@ function UIBase:remove()
 	-- clear all tags
 	self:clearTags()
 
-	-- clear any events (TODO: just setting the event list to nil should be good enough for the garbage collector)
+	-- clear any events
 	for eventName, eventList in pairs(self.Events) do
-		for index, dataPair in pairs(eventList) do
-			if dataPair[2] ~= nil and dataPair[2].Connected then
-				dataPair[2]:disconnect()
+		for i = 1, #eventList do
+			if eventList[1][2].Connected then
+				eventList[1][2]:disconnect()
 			end
-			dataPair[1] = nil
-			dataPair[2] = nil
-			eventList[index] = nil
 		end
-		self.Events[eventName] = nil
 	end
 
 	-- clean up text block
 	if self.TextBlock ~= nil then
-		for eventName, eventList in pairs(self.TextBlock.Events) do
-			for index, dataPair in pairs(eventList) do
-				if dataPair[2] ~= nil and dataPair[2].Connected then
-					dataPair[2]:disconnect()
+		-- clear any events
+		for eventName, eventList in pairs(self.TextBlock.Events) do -- TODO: replace this with a new TextBlock:remove() function
+			for i = 1, #eventList do
+				if eventList[1][2].Connected then
+					eventList[1][2]:disconnect()
 				end
-				dataPair[1] = nil
-				dataPair[2] = nil
-				eventList[index] = nil
 			end
-			self.TextBlock.Events[eventName] = nil
 		end
 		self.TextBlock.Parent = nil
 		self.TextBlock:clearFont()
@@ -2190,15 +2183,13 @@ function AnimatedFrame:remove()
 	end
 	-- clear all tags
 	self:clearTags()
-	-- clear any events (TODO: just setting the event list to nil should be good enough for the garbage collector)
+	-- clear any events
 	for eventName, eventList in pairs(self.Events) do
-		for index, dataPair in pairs(eventList) do
-			if dataPair[2] ~= nil and dataPair[2].Connected then
-				dataPair[2]:disconnect()
+		for i = 1, #eventList do
+			if eventList[1][2].Connected then
+				eventList[1][2]:disconnect()
 			end
-			eventList[index] = nil
 		end
-		self.Events[eventName] = nil
 	end
 	-- stop the referenced animation to remove it from the animation.Active array, so it can get dereferenced
 	-- WARNING: IF ONE ANIMATION REFERENCE IS SHARED ACROSS ANIMATED FRAMES, REMOVING ONE OF THEM WILL STOP THE OTHER ANIMATED FRAMES!
@@ -2206,6 +2197,14 @@ function AnimatedFrame:remove()
 	self.ReferenceAnimation:stop()
 	-- remove any fonts from memory
 	if self.TextBlock ~= nil then
+		-- clean up text block
+		for eventName, eventList in pairs(self.TextBlock.Events) do -- TODO: replace this with a new TextBlock:remove() function
+			for i = 1, #eventList do
+				if eventList[1][2].Connected then
+					eventList[1][2]:disconnect()
+				end
+			end
+		end
 		self.TextBlock.Parent = nil
 		self.TextBlock:clearFont()
 		self.TextBlock.Text:release()
