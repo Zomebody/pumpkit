@@ -526,7 +526,7 @@ table.insert(content, {
 			end, math.huge, 0
 		)
 		Frame:on("HoverStart", function()
-			t:resume()
+			t:run()
 		end)
 		Frame:on("HoverEnd", function()
 			t:stop()

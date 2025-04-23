@@ -366,7 +366,6 @@ function module:initialize() -- autoRender
 	local prevY = love.mouse.getY()
 	local skipSpeedUpdate = false
 	local update = function(...)
-		--update(...)
 
 		-- call the resize event on the resized elements this frame
 		for i = 1, #resizedElements do
@@ -2435,6 +2434,10 @@ local function newSlicedFrame(img, topLeft, bottomRight, w, h, col, corScale)
 		love.graphics.newQuad(topLeft.x, bottomRight.y, bottomRight.x - topLeft.x, imgPixelHeight - bottomRight.y, Obj.ReferenceImage);
 		love.graphics.newQuad(bottomRight.x, bottomRight.y, imgPixelWidth - bottomRight.x, imgPixelHeight - bottomRight.y, Obj.ReferenceImage);
 	}
+
+	-- masking options
+	Obj["MaskImage"] = nil
+	Obj["MaskThreshold"] = 0
 
 	-- return
 	setmetatable(Obj, SlicedFrame)
