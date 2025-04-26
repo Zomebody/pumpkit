@@ -1,13 +1,13 @@
 
 local meta = {
-	["Name"] = "matrix3";
+	["Name"] = "matrix4";
 }
 
 local content = {}
 
 table.insert(content, {
 	["Type"] = "IntroHeader";
-	["Name"] = "The matrix3 Module";
+	["Name"] = "The matrix4 Module";
 	["Description"] = "A module used to construct 4x4 matrices. Matrices are constructed and interpreted in row-major order. Individual cells can be indexed using Object[1] through Object[16].";
 })
 
@@ -48,8 +48,8 @@ table.insert(content, {
 table.insert(content, {
 	["Type"] = "Constructor";
 	["Name"] = "new";
-	["Arguments"] = {"number1", "...", "number16"};
-	["Description"] = "Constructs and returns a matrix4 where each cell is assigned the number from the matching argument.";
+	["Arguments"] = {"{n1,n2,n3,n4}", "{n5,n6,n7,n8}", "{n9,n10,n11,n12}", "{n13,n14,n15,n16}"};
+	["Description"] = "Constructs and returns a matrix4 using 4 rows of input numbers.";
 })
 
 table.insert(content, {
