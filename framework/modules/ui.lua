@@ -310,13 +310,6 @@ end
 function module:initialize() -- autoRender
 	if initialized then return end
 	initialized = true
-	--if autoRender == nil then autoRender = true end
-	--[[
-	if not self.Initialized then
-		self.Initialized = true
-	else
-		return
-	end]]
 
 	-- Monkey Patching love.mousemoved (at start)
 	local mousemoved = function(x, y, dx, dy, istouch)
@@ -408,8 +401,6 @@ function module:initialize() -- autoRender
 
 	
 	local resize = function(...)
-		--resize(...)
-
 		self.Changed = true
 		local screenW, screenH = self.Size.x, self.Size.y
 		self.Size = vector2(love.graphics.getDimensions())
@@ -434,8 +425,6 @@ function module:initialize() -- autoRender
 
 	
 	local mousepressed = function(x, y, button, istouch, presses)
-		--mousepressed(x, y, button, istouch, presses, self.CursorFocus ~= nil)
-
 		-- cancel current keyboard focus if cancel mode if set to 'click'
 		local loseKeyboardFocus = false
 		if self.KeyboardFocusMode[1] == "click" then
@@ -520,8 +509,6 @@ function module:initialize() -- autoRender
 
 
 	local mousereleased = function(x, y, button, istouch, presses)
-		--mousereleased(x, y, button, istouch, presses, self.CursorFocus ~= nil)
-
 		if self.CursorFocus ~= nil then
 			local Target = self.CursorFocus
 			if Target.Events.PressEnd ~= nil then
@@ -568,7 +555,6 @@ function module:initialize() -- autoRender
 
 	
 	local wheelmoved = function(x, y)
-		--wheelmoved(x, y, self.CursorFocus ~= nil)
 		if self.CursorFocus ~= nil then
 			if self.CursorFocus.Events.Scroll ~= nil then
 				connection.doEvents(self.CursorFocus.Events.Scroll, x, y)
@@ -588,7 +574,6 @@ function module:initialize() -- autoRender
 
 	
 	local keypressed  = function(key, scancode, isrepeat)
-		--keypressed(key, scancode, isrepeat)
 		-- check if you need to release keyboard focus
 		if self.KeyboardFocusMode[1] == "key" then
 			if type(self.KeyboardFocusMode[2]) == "table" then

@@ -371,8 +371,9 @@ end
 function love.draw()
 	ui:render()
 	--love.graphics.print(tostring(love.timer.getFPS()) .. ", drag active: " .. tostring(ui.DragActive) .. ", dragged ID: " .. tostring(ui.DragTarget ~= nil and ui.DragTarget.Id or nil), 10, wy + wh - 30)
-	local stats = love.graphics.getStats()
 	love.graphics.print(tostring(love.timer.getFPS()), 10, wy + wh - 30)
+	local stats = love.graphics.getStats()
+	
 	love.graphics.print(garbage, 10, wy + wh - 50)
 	love.graphics.print("draws: " .. tostring(stats.drawcalls) .. ", imgs: " .. tostring(stats.images) .. ", tex_mem: " .. tostring(stats.texturememory) .. ", fnts: " .. tostring(stats.fonts), 10, wy + wh - 70)
 
