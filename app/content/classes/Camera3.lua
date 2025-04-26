@@ -89,6 +89,13 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Method";
+	["Name"] = "getLookVector";
+	["Arguments"] = {};
+	["Description"] = "Returns a normalized vector3 pointing in the direction the camera is looking into.";
+})
+
+table.insert(content, {
+	["Type"] = "Method";
 	["Name"] = "move";
 	["Arguments"] = {"vec3"};
 	["Description"] = "Translate the camera3 in world-space coordinates.";

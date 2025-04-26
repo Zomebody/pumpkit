@@ -82,6 +82,11 @@ function Camera3:setMatrix(m)
 end
 
 
+function Camera3:getLookVector()
+	return self.Matrix:toWorldVector(vector3(0, 0, -1))
+end
+
+
 
 function Camera3:pitch(angle)
 	self.Rotation = self.Rotation + vector3(angle, 0, 0)
