@@ -83,6 +83,7 @@ function Floodmap:getPath(toVec2)
 			break -- no path to target
 		end
 	end
+	table.insert(path, 1, vector2(self.Start))
 
 	return path
 
