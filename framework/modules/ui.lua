@@ -1557,6 +1557,7 @@ end
 
 
 function UIBase:setOrder(order)
+	if order == self.Order then return end
 	assert(type(order) == "number", "UIBase:setOrder(order) requires argument 'order' to be of type 'number'.")
 	if self.Parent ~= nil then -- need to reorder the parent's Children array
 		-- linearly search through parent's Children, which should be fast enough for hundreds of elements
