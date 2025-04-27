@@ -282,10 +282,10 @@ local function updateAbsoluteSize(Obj, ignoreParentSize) -- ignoreParentSize is 
 
 		if Obj.TextBlock ~= nil then
 			--Obj.TextBlock:setWidth(Obj.AbsoluteSize.x - 2 * Obj.Padding.x)
-			Obj.TextBlock:updateWidth()
-			if Obj.TextBlock.TextScales then
-				Obj.TextBlock:fitText()
-			end
+			Obj.TextBlock:updateWidth() -- updateWidth() will call fitText is TextScales, so no need to do it again!!
+			--if Obj.TextBlock.TextScales then
+			--	Obj.TextBlock:fitText()
+			--end
 		end
 
 		if Obj.ImageFit ~= nil then
