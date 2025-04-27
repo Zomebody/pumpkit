@@ -1739,35 +1739,39 @@ function Frame:draw()
 	end
 
 	local gw, gh = love.graphics.getDimensions()
-	-- bounds check optimization. This will reduce GPU used! (GPU went down from 17% to 14% in a recent test)
-	if not (self.AbsolutePosition.x > gw or self.AbsolutePosition.x + self.AbsoluteSize.x < 0 or self.AbsolutePosition.y > gh or self.AbsolutePosition.y + self.AbsoluteSize.y < 0) then
-		local oldR, oldG, oldB, oldA = love.graphics.getColor()
-		local r, g, b, a = self.Color.r, self.Color.g, self.Color.b, self.Color.a
-		if module.PressedElement == self then
-			r, g, b, a = self.ColorHold.r, self.ColorHold.g, self.ColorHold.b, self.ColorHold.a
-		elseif module.CursorFocus == self then
-			r, g, b, a = self.ColorFocus.r, self.ColorFocus.g, self.ColorFocus.b, self.ColorFocus.a
+	-- bounds check optimization
+	if self.Opacity > 0 or self.TextBlock ~= nil then
+		if not (self.AbsolutePosition.x > gw or self.AbsolutePosition.x + self.AbsoluteSize.x < 0 or self.AbsolutePosition.y > gh or self.AbsolutePosition.y + self.AbsoluteSize.y < 0) then
+			local oldR, oldG, oldB, oldA = love.graphics.getColor()
+			local r, g, b, a = self.Color.r, self.Color.g, self.Color.b, self.Color.a
+			if module.PressedElement == self then
+				r, g, b, a = self.ColorHold.r, self.ColorHold.g, self.ColorHold.b, self.ColorHold.a
+			elseif module.CursorFocus == self then
+				r, g, b, a = self.ColorFocus.r, self.ColorFocus.g, self.ColorFocus.b, self.ColorFocus.a
+			end
+
+			love.graphics.push() -- push current graphics coordinate state
+			--love.graphics.translate(self.AbsolutePosition.x + self.AbsoluteSize.x / 2, self.AbsolutePosition.y + self.AbsoluteSize.y / 2)
+			love.graphics.translate(self.AbsolutePosition.x + self.AbsoluteSize.x * self.Pivot.x, self.AbsolutePosition.y + self.AbsoluteSize.y * self.Pivot.y)
+			love.graphics.rotate(math.rad(self.Rotation))
+
+			if self.Opacity > 0 then
+				local cornerArg = (self.CornerRadius.Scale > 0 or self.CornerRadius.Offset > 0) and (math.min(self.AbsoluteSize.x, self.AbsoluteSize.y) * self.CornerRadius.Scale + self.CornerRadius.Offset) or nil
+				if self.BorderWidth > 0 then
+					love.graphics.setColor(self.BorderColor.r, self.BorderColor.g, self.BorderColor.b, self.BorderColor.a*self.Opacity)
+					love.graphics.setLineWidth(self.BorderWidth)
+					love.graphics.rectangle("line", -self.AbsoluteSize.x * self.Pivot.x + self.BorderWidth / 2, -self.AbsoluteSize.y * self.Pivot.y + self.BorderWidth / 2, self.AbsoluteSize.x - self.BorderWidth, self.AbsoluteSize.y - self.BorderWidth, cornerArg and cornerArg - self.BorderWidth / 2)
+				end
+				love.graphics.setColor(r, g, b, a*self.Opacity)
+				--love.graphics.rectangle("fill", self.AbsolutePosition.x + self.BorderWidth, self.AbsolutePosition.y + self.BorderWidth, self.AbsoluteSize.x - self.BorderWidth*2, self.AbsoluteSize.y - self.BorderWidth*2)
+				love.graphics.rectangle("fill", -self.AbsoluteSize.x * self.Pivot.x + self.BorderWidth, -self.AbsoluteSize.y * self.Pivot.y + self.BorderWidth, self.AbsoluteSize.x - self.BorderWidth*2, self.AbsoluteSize.y - self.BorderWidth*2, cornerArg and math.max(0, cornerArg - self.BorderWidth))
+			end
+			-- draw text on top
+			self:drawText()
+			love.graphics.setColor(oldR, oldG, oldB, oldA)
+
+			love.graphics.pop() -- revert to previous graphics coordinate state
 		end
-
-		love.graphics.push() -- push current graphics coordinate state
-		--love.graphics.translate(self.AbsolutePosition.x + self.AbsoluteSize.x / 2, self.AbsolutePosition.y + self.AbsoluteSize.y / 2)
-		love.graphics.translate(self.AbsolutePosition.x + self.AbsoluteSize.x * self.Pivot.x, self.AbsolutePosition.y + self.AbsoluteSize.y * self.Pivot.y)
-		love.graphics.rotate(math.rad(self.Rotation))
-
-		local cornerArg = (self.CornerRadius.Scale > 0 or self.CornerRadius.Offset > 0) and (math.min(self.AbsoluteSize.x, self.AbsoluteSize.y) * self.CornerRadius.Scale + self.CornerRadius.Offset) or nil
-		if self.BorderWidth > 0 then
-			love.graphics.setColor(self.BorderColor.r, self.BorderColor.g, self.BorderColor.b, self.BorderColor.a*self.Opacity)
-			love.graphics.setLineWidth(self.BorderWidth)
-			love.graphics.rectangle("line", -self.AbsoluteSize.x * self.Pivot.x + self.BorderWidth / 2, -self.AbsoluteSize.y * self.Pivot.y + self.BorderWidth / 2, self.AbsoluteSize.x - self.BorderWidth, self.AbsoluteSize.y - self.BorderWidth, cornerArg and cornerArg - self.BorderWidth / 2)
-		end
-		love.graphics.setColor(r, g, b, a*self.Opacity)
-		--love.graphics.rectangle("fill", self.AbsolutePosition.x + self.BorderWidth, self.AbsolutePosition.y + self.BorderWidth, self.AbsoluteSize.x - self.BorderWidth*2, self.AbsoluteSize.y - self.BorderWidth*2)
-		love.graphics.rectangle("fill", -self.AbsoluteSize.x * self.Pivot.x + self.BorderWidth, -self.AbsoluteSize.y * self.Pivot.y + self.BorderWidth, self.AbsoluteSize.x - self.BorderWidth*2, self.AbsoluteSize.y - self.BorderWidth*2, cornerArg and math.max(0, cornerArg - self.BorderWidth))
-		-- draw text on top
-		self:drawText()
-		love.graphics.setColor(oldR, oldG, oldB, oldA)
-
-		love.graphics.pop() -- revert to previous graphics coordinate state
 	end
 
 	for i = 1, #self.Children do
