@@ -54,6 +54,9 @@ function load()
 	particles3 = require(filepath("../framework/modules/particles3", "."))
 	network = require(filepath("../framework/modules/network", "."))
 
+	-- profiling
+	profiler = require(filepath("./profiler", "."))
+
 	-- fix cull-mode being the opposite
 	love.graphics.setFrontFaceWinding("cw")
 
@@ -68,49 +71,107 @@ function load()
 	
 	local update = love.update or function() end
 	love.update = function(...)
+		profiler:pushLabel("update")
+		profiler:pushLabel("update-standard")
 		update(...)
+		profiler:popLabel()
+		profiler:pushLabel("update-ui")
 		update_ui(...)
+		profiler:popLabel()
 		-- since the :update() method is returned in task, tween, animation, pass them as the first argument so that 'self' can be indexed
+		profiler:pushLabel("update-task")
 		update_task(task, ...) -- task after UI because it might want to access the latest ui.CursorFocus
+		profiler:popLabel()
+		profiler:pushLabel("update-tween")
 		update_tween(tween, ...) -- tween after task because if a task creates and runs a tween you want to update the tween asap
+		profiler:popLabel()
+		profiler:pushLabel("update-animation")
 		update_animation(animation, ...)
+		profiler:popLabel()
+		profiler:popLabel()
 	end
 
 	local resize = love.resize or function() end
 	love.resize = function(...)
+		profiler:pushLabel("resize")
+		profiler:pushLabel("resize-standard")
 		resize(...)
+		profiler:popLabel()
+		profiler:pushLabel("resize-ui")
 		resize_ui(...)
+		profiler:popLabel()
+		profiler:pushLabel("resize-camera")
 		resize_camera(...)
+		profiler:popLabel()
+		profiler:popLabel()
 	end
 
 	local mousepressed = love.mousepressed or function() end
 	love.mousepressed = function(...)
+		profiler:pushLabel("mousepressed")
+		profiler:pushLabel("pressed-standard")
 		mousepressed(...)
+		profiler:popLabel()
+		profiler:pushLabel("pressed-ui")
 		mousepressed_ui(...)
+		profiler:popLabel()
+		profiler:popLabel()
 	end
 
 	local mousemoved = love.mousemoved or function() end
 	love.mousemoved = function(...)
+		profiler:pushLabel("mousemoved")
+		profiler:pushLabel("moved-standard")
 		mousemoved(...)
+		profiler:popLabel()
+		profiler:pushLabel("moved-ui")
 		mousemoved_ui(...)
+		profiler:popLabel()
+		profiler:popLabel()
 	end
 
 	local mousereleased = love.mousereleased or function() end
 	love.mousereleased = function(...)
+		profiler:pushLabel("mousereleased")
+		profiler:pushLabel("release-standard")
 		mousereleased(...)
+		profiler:popLabel()
+		profiler:pushLabel("release-ui")
 		mousereleased_ui(...)
+		profiler:popLabel()
+		profiler:popLabel()
 	end
 
 	local wheelmoved = love.wheelmoved or function() end
 	love.wheelmoved = function(...)
+		profiler:pushLabel("wheelmoved")
+		profiler:pushLabel("wheel-standard")
 		wheelmoved(...)
+		profiler:popLabel()
+		profiler:pushLabel("wheel-ui")
 		wheelmoved_ui(...)
+		profiler:popLabel()
+		profiler:popLabel()
 	end
 
 	local keypressed = love.keypressed or function() end
 	love.keypressed = function(...)
+		profiler:pushLabel("keypressed")
+		profiler:pushLabel("key-standard")
 		keypressed(...)
+		profiler:popLabel()
+		profiler:pushLabel("key-ui")
 		keypressed_ui(...)
+		profiler:popLabel()
+		profiler:popLabel()
+	end
+
+	local draw = love.draw or function() end
+	love.draw = function(...)
+		profiler:pushLabel("draw")
+		draw(...)
+		profiler:popLabel()
+		profiler:finishFrame()
 	end
 	
 
