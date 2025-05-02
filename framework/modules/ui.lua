@@ -105,10 +105,10 @@ AnimatedFrame.__tostring = function(tab) return "{AnimatedFrame: \"" .. tostring
 local contentOffsetX = 0
 local contentOffsetY = 0
 local OP = nil -- Obj.Parent
-local function updateAbsolutePosition(Obj, wX, wY, wWidth, wHeight, ignoreParentPosition) -- ignoreParentPosition is used in combination with :renderTo() to correctly position children that are rendered without parent
+local function updateAbsolutePosition(Obj, ignoreParentPosition, wX, wY, wWidth, wHeight) -- ignoreParentPosition is used in combination with :renderTo() to correctly position children that are rendered without parent
 	if Obj == nil or Obj == module then
 		for i = 1, #module.Children do
-			updateAbsolutePosition(module.Children[i], wX, wY, wWidth, wHeight)
+			updateAbsolutePosition(module.Children[i], nil, wX, wY, wWidth, wHeight)
 		end
 		return
 	end
@@ -205,7 +205,7 @@ local function updateAbsolutePosition(Obj, wX, wY, wWidth, wHeight, ignoreParent
 			end
 			if OP.LayoutAlignY == "center" then -- align in center
 				absY = wY + wHeight / 2 - sumOfChildren / 2 + sumBefore + contentOffsetY
-			else -- align on the right
+			else -- align on the bottom
 				absY = wY + wHeight - sumOfChildren + sumBefore + contentOffsetY
 			end
 		end
@@ -223,11 +223,15 @@ local function updateAbsolutePosition(Obj, wX, wY, wWidth, wHeight, ignoreParent
 	end
 
 	-- apply position, and then evaluate children recursively
-	Obj.AbsolutePosition:set(math.floor(absX), math.floor(absY))
+	local prevX, prevY = Obj.AbsolutePosition.x, Obj.AbsolutePosition.y
+	local newX, newY = math.floor(absX), math.floor(absY)
+	Obj.AbsolutePosition:set(newX, newY)
 
+	--if prevX ~= newX or prevY ~= newY then
 	for i = 1, #Obj.Children do
-		updateAbsolutePosition(Obj.Children[i], absX, absY, Obj.AbsoluteSize.x, Obj.AbsoluteSize.y)
+		updateAbsolutePosition(Obj.Children[i], nil, absX, absY, Obj.AbsoluteSize.x, Obj.AbsoluteSize.y)
 	end
+	--end
 end
 
 
@@ -293,11 +297,13 @@ local function updateAbsoluteSize(Obj, ignoreParentSize) -- ignoreParentSize is 
 		end
 	end
 
-	-- now evaluate children
-	for i = 1, #Obj.Children do
-		-- if a child's Size.Scale.x and Size.Scale.y both are 0, there is no use in updating them (because their AbsoluteSize will remain the same anyway!)
-		if not (Obj.Children[i].Size.Scale.x == 0 and Obj.Children[i].Size.Scale.y == 0) then
-			updateAbsoluteSize(Obj.Children[i])
+	-- now evaluate children, but only if the element actually resized
+	if prevX ~= newX or prevY ~= newY then
+		for i = 1, #Obj.Children do
+			-- if a child's Size.Scale.x and Size.Scale.y both are 0, there is no use in updating them (because their AbsoluteSize will remain the same anyway!)
+			if not (Obj.Children[i].Size.Scale.x == 0 and Obj.Children[i].Size.Scale.y == 0) then
+				updateAbsoluteSize(Obj.Children[i])
+			end
 		end
 	end
 end
@@ -832,7 +838,7 @@ function module:renderTo(canv, mipmap)
 	self.Size:set(canvasX, canvasY) -- setting this somehow screws things up
 	love.graphics.setCanvas(canv, mipmap or 1)
 	updateAbsoluteSize(self, nil)
-	updateAbsolutePosition(self, nil, nil, nil, nil, true)
+	updateAbsolutePosition(self, true)
 	self:render()
 	self.Size:set(curWidth, curHeight)
 	love.graphics.setCanvas(curCanvas)
@@ -917,7 +923,7 @@ function UIBase:renderTo(canv, mipmap)
 	module.Size = vector2(canvasX, canvasY)
 	love.graphics.setCanvas(canv, mipmap or 1)
 	updateAbsoluteSize(self, true) -- update size while ignoring the parent's position and size
-	updateAbsolutePosition(self, nil, nil, nil, nil, true) -- update position while ignoring the parent's position and size
+	updateAbsolutePosition(self, true) -- update position while ignoring the parent's position and size
 	self:draw() -- UIBase has no draw function, but its metatable should always have one! (draw the UI onto the canvas)
 	module.Size = vector2(curWidth, curHeight)
 	love.graphics.setCanvas(curCanvas)
@@ -950,7 +956,14 @@ function UIBase:addChild(Obj)
 	
 	
 	updateAbsoluteSize(Obj)
-	updateAbsolutePosition(Obj)
+	if self.Layout ~= nil then -- if you have a layout, force an update on yourself & children (since the added element might be slotted in between somewhere)
+		updateAbsolutePosition(self)
+		--updateAbsoluteSize(self)
+	else
+		updateAbsolutePosition(Obj)
+		--updateAbsoluteSize(Obj)
+	end
+
 	module.Changed = true
 end
 
@@ -1066,14 +1079,26 @@ end
 
 -- hides the UI element
 function UIBase:hide()
-	self.Hidden = true
-	module.Changed = true
+	if not self.Hidden then
+		self.Hidden = true
+		module.Changed = true
+		-- if parent has a Layout, update position of parent & children
+		if self.Parent ~= nil and self.Parent.Layout ~= nil then
+			updateAbsolutePosition(self.Parent)
+		end
+	end
 end
 
 -- hides the UI element
 function UIBase:show()
-	self.Hidden = false
-	module.Changed = true
+	if self.Hidden then
+		self.Hidden = false
+		module.Changed = true
+		-- if parent has a Layout, update position of parent & children
+		if self.Parent ~= nil and self.Parent.Layout ~= nil then
+			updateAbsolutePosition(self.Parent)
+		end
+	end
 end
 
 -- return the UI element being drawn at location (x, y)
@@ -1122,17 +1147,31 @@ function UIBase:resize(sw, sh, ow, oh)
 		self.Size.Offset:set(sw, sh)
 	end
 	
-	--self.Size.Scale:set(sw, sh)
-	--self.Size.Offset:set(ow, oh)
 	updateAbsoluteSize(self)
-	--if self.TextBlock ~= nil then
-	--	self.TextBlock:setWidth(self.AbsoluteSize.x - 2 * self.Padding.x)
-	--end
+
+	-- okay this looks like a mess but I don't know why these arguments are needed anymore, but I don't want to break anything so they stay here for now
+	--[[
 	if self.Parent ~= nil and self.Parent ~= module then
-		updateAbsolutePosition(self, self.Parent.AbsolutePosition.x, self.Parent.AbsolutePosition.y, self.Parent.AbsoluteSize.x, self.Parent.AbsoluteSize.y)
+		if self.Parent.Layout ~= nil then
+			if self.Parent.Parent ~= nil and self.Parent.Parent ~= module then
+				updateAbsolutePosition(self.Parent, self.Parent.Parent.AbsolutePosition.x, self.Parent.Parent.AbsolutePosition.y, self.Parent.Parent.AbsoluteSize.x, self.Parent.Parent.AbsoluteSize.y)
+			else
+				updateAbsolutePosition(self.Parent)
+			end
+		else
+			updateAbsolutePosition(self, self.Parent.AbsolutePosition.x, self.Parent.AbsolutePosition.y, self.Parent.AbsoluteSize.x, self.Parent.AbsoluteSize.y)
+		end
 	else
 		updateAbsolutePosition(self) -- TODO: THIS LINE OF CODE IS NOT TESTED
 	end
+	]]
+
+	if self.Parent ~= nil and self.Parent.Layout ~= nil then
+		updateAbsolutePosition(self.Parent)
+	else
+		updateAbsolutePosition(self)
+	end
+
 	module.Changed = true
 end
 
@@ -1165,11 +1204,12 @@ function UIBase:setSizeAxes(axes)
 	if oldAxes ~= axes then
 		self.SizeAxes = axes
 		updateAbsoluteSize(self)
-		if self.Parent ~= nil and self.Parent ~= module then
-			updateAbsolutePosition(self, self.Parent.AbsolutePosition.x, self.Parent.AbsolutePosition.y, self.Parent.AbsoluteSize.x, self.Parent.AbsoluteSize.y)
-		else
-			updateAbsolutePosition(self) -- TODO: THIS LINE OF CODE IS NOT TESTED
-		end
+		updateAbsolutePosition(self)
+		--if self.Parent ~= nil and self.Parent ~= module then
+		--	updateAbsolutePosition(self, self.Parent.AbsolutePosition.x, self.Parent.AbsolutePosition.y, self.Parent.AbsoluteSize.x, self.Parent.AbsoluteSize.y)
+		--else
+		--	updateAbsolutePosition(self) -- TODO: THIS LINE OF CODE IS NOT TESTED
+		--end
 		module.Changed = true
 	end
 end
@@ -1246,7 +1286,7 @@ function UIBase:alignChildren(direction, xAlign, yAlign)
 	self.LayoutAlignX = xAlign
 	self.LayoutAlignY = yAlign
 
-	updateAbsoluteSize(self)
+	--updateAbsoluteSize(self) -- TODO: is this required?
 	updateAbsolutePosition(self)
 end
 
