@@ -106,7 +106,10 @@ function textblock:setText(textData)
 	--local maxWidth = self.Text:getWidth()
 	self.Text:setf(self.ColoredText, self.Parent.AbsoluteSize.x - self.Parent.Padding.x * 2, self.AlignmentX)
 	if self.TextScales then -- calling fitText will also call FontHeightChanged, which is why there's an if-else here to avoid duplicate work
-		self:fitText()
+		-- if the number of lines of text is set, its size won't change, so no need to re-fit the text!
+		if self.MaxLines == 0 then
+			self:fitText()
+		end
 	else
 		local newHeight = self.Font:getHeight()
 		if newHeight ~= self.FontHeight then
