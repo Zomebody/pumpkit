@@ -432,7 +432,7 @@ table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "alignChildren";
 	["Arguments"] = {"direction", "xAlign", "yAlign"};
-	["Description"] = "Aligns the children of the given object in a row or column.\n\n- 'direction' must be either 'horizontal' or 'vertical'.\n- 'xAlign' must be 'left', 'center' or 'right'.\n- 'yAlign' must be 'top', 'center' or 'bottom'.\n\nCalling this method with no arguments will reset the layout to none at all.";
+	["Description"] = "Aligns the children of the given object in a row or column.\n\n- 'direction' must be either 'horizontal' or 'vertical'.\n- 'xAlign' must be 'left', 'center' or 'right'.\n- 'yAlign' must be 'top', 'center' or 'bottom'.\nCalling this method with no arguments will reset the layout to none at all.\n\nIf you are populating an element with children it is recommended to temporarily turn off the layout as adding a child, resizing it or hiding/showing it will trigger a position update on all children within the layout. This can be detrimental for performance! By disabling the layout, then making all changes and then re-enabling the layout, you guarantee only one position update is triggered on all children in the layout.";
 })
 
 table.insert(content, {
