@@ -433,6 +433,48 @@ table.insert(content, {
 	["Name"] = "alignChildren";
 	["Arguments"] = {"direction", "xAlign", "yAlign"};
 	["Description"] = "Aligns the children of the given object in a row or column.\n\n- 'direction' must be either 'horizontal' or 'vertical'.\n- 'xAlign' must be 'left', 'center' or 'right'.\n- 'yAlign' must be 'top', 'center' or 'bottom'.\nCalling this method with no arguments will reset the layout to none at all.\n\nIf you are populating an element with children it is recommended to temporarily turn off the layout as adding a child, resizing it or hiding/showing it will trigger a position update on all children within the layout. This can be detrimental for performance! By disabling the layout, then making all changes and then re-enabling the layout, you guarantee only one position update is triggered on all children in the layout.";
+	["Demo"] = function()
+		local Container = ui.newFrame(300, 150, color(0, 0, 0))
+		local Left = ui.newFrame(150, 150, color(0, 0, 0.2))
+		local Right = ui.newFrame(150, 150, color(0.2, 0, 0))
+		Right:alignX("right")
+
+		Left:alignChildren("vertical", "left", "center")
+		local RedL = ui.newFrame(vector2(0.4, 0), vector2(0, 30), color(0.8, 0.2, 0.2))
+		RedL.VisualOnly = true
+		RedL:setOrder(1)
+		local GreenL = ui.newFrame(vector2(0, 0.2), vector2(30, 0), color(0.2, 0.8, 0.2))
+		GreenL.VisualOnly = true
+		GreenL:setOrder(3)
+		local BlueL = ui.newFrame(vector2(0, 0), vector2(100, 20), color(0.2, 0.2, 0.8))
+		BlueL.VisualOnly = true
+		BlueL:setOrder(2)
+
+		Left:addChild(RedL)
+		Left:addChild(GreenL)
+		Left:addChild(BlueL)
+
+
+		local RedR = ui.newFrame(vector2(0.3, 0), vector2(0, 40), color(0.8, 0.2, 0.2))
+		RedR.VisualOnly = true
+		RedR:setOrder(1)
+		local GreenR = ui.newFrame(vector2(0, 0.2), vector2(30, 0), color(0.2, 0.8, 0.2))
+		GreenR.VisualOnly = true
+		GreenR:setOrder(3)
+		local BlueR = ui.newFrame(vector2(0, 0), vector2(20, 100), color(0.2, 0.2, 0.8))
+		BlueR.VisualOnly = true
+		BlueR:setOrder(2)
+
+		Right:addChild(RedR)
+		Right:addChild(GreenR)
+		Right:addChild(BlueR)
+
+		Right:alignChildren("horizontal", "right", "top")
+
+		Container:addChild(Left)
+		Container:addChild(Right)
+		return Container
+	end
 })
 
 table.insert(content, {

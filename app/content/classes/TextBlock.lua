@@ -109,7 +109,7 @@ table.insert(content, {
 	["Type"] = "Property";
 	["ValueType"] = "boolean";
 	["Name"] = "TextScales";
-	["Description"] = "Whether the text inside the text block will automatically increase of decrease in size when the parent element is resized, new text is added, or the MaxLines changes.";
+	["Description"] = "Whether the text inside the text block will automatically increase or decrease in size when the parent element is resized, new text is added, or the MaxLines changes.";
 	["ReadOnly"] = true;
 })
 
