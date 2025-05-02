@@ -1288,6 +1288,7 @@ function UIBase:alignChildren(direction, xAlign, yAlign)
 
 	--updateAbsoluteSize(self) -- TODO: is this required?
 	updateAbsolutePosition(self)
+	module.Changed = true
 end
 
 
