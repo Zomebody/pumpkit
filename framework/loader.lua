@@ -64,6 +64,8 @@ function load()
 	callbacks:initialize() -- monkey patches all callbacks except for update, draw, errhand, errorhandler, load
 	
 	local update_ui, mousepressed_ui, mousemoved_ui, mousereleased_ui, wheelmoved_ui, keypressed_ui, resize_ui = ui:initialize()
+	local textblock = require(filepath("../framework/modules/textblock", "."))
+	local update_textblock = textblock:initialize()
 	local update_task = task:initialize()
 	local update_tween = tween:initialize()
 	local update_animation = animation:initialize()
@@ -78,6 +80,11 @@ function load()
 		profiler:pushLabel("update-ui")
 		update_ui(...)
 		profiler:popLabel()
+
+		profiler:pushLabel("update-textblock")
+		update_textblock(...)
+		profiler:popLabel()
+
 		-- since the :update() method is returned in task, tween, animation, pass them as the first argument so that 'self' can be indexed
 		profiler:pushLabel("update-task")
 		update_task(task, ...) -- task after UI because it might want to access the latest ui.CursorFocus

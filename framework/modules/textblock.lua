@@ -59,6 +59,37 @@ local function new(parent, fontname, size, textData, lineCount)
 end
 
 
+
+local queuedHeightChanges = {} -- {Obj, newHeight}
+
+
+
+----------------------------------------------------[[ == INITIALIZE == ]]----------------------------------------------------
+
+-- this initialize method exists to postpone FontHeightChanged events until later in the frame
+-- the reason for this is because otherwise FontHeightChanged would get called while updating the absolute size of a UI hierarchy hasn't completed yet
+-- this can be troublesome when programming something like two text labels, where one uses auto-scaling and the other one copies the first one's font size
+-- you might still have to wait until later in the frame using task.spawn(), but at least this works more consistently!
+function module:initialize()
+	local function update()
+		local newArray = {}
+		for i = 1, #queuedHeightChanges do -- copy over array to ensure no new items get added to the array & immediately evaluated while called the events
+			newArray[i] = queuedHeightChanges[i]
+		end
+		for i = 1, #newArray do
+			if newArray[i][1].Events.FontHeightChanged ~= nil then
+				connection.doEvents(newArray[i][1].Events.FontHeightChanged, newArray[i][2])
+			end
+		end
+		queuedHeightChanges = {}
+	end
+	return update
+end
+
+
+
+----------------------------------------------------[[ == METHODS == ]]----------------------------------------------------
+
 -- "left", "right", "center", "justify"
 function textblock:alignX(side)
 	assert(side == "left" or side == "center" or side == "right" or side == "justify", "Method textblock:alignX(side) expects argument 'side' to be one of ('left', 'center', 'right', 'justify')")
@@ -115,7 +146,8 @@ function textblock:setText(textData)
 		if newHeight ~= self.FontHeight then
 			self.FontHeight = newHeight
 			if self.Events["FontHeightChanged"] ~= nil then
-				connection.doEvents(self.Events.FontHeightChanged, newHeight)
+				--connection.doEvents(self.Events.FontHeightChanged, newHeight)
+				table.insert(queuedHeightChanges, {self, newHeight})
 			end
 		end
 	end
@@ -205,7 +237,8 @@ function textblock:fitText(remainScaled)
 	if newHeight ~= self.FontHeight then
 		self.FontHeight = newHeight
 		if self.Events["FontHeightChanged"] ~= nil then
-			connection.doEvents(self.Events.FontHeightChanged, newHeight)
+			--connection.doEvents(self.Events.FontHeightChanged, newHeight)
+			table.insert(queuedHeightChanges, {self, newHeight})
 		end
 	end
 
@@ -243,7 +276,8 @@ function textblock:setFont(name)
 		if newHeight ~= self.FontHeight then
 			self.FontHeight = newHeight
 			if self.Events["FontHeightChanged"] ~= nil then
-				connection.doEvents(self.Events.FontHeightChanged, newHeight)
+				--connection.doEvents(self.Events.FontHeightChanged, newHeight)
+				table.insert(queuedHeightChanges, {self, newHeight})
 			end
 
 		end
@@ -266,7 +300,8 @@ function textblock:setTextSize(size)
 		if newHeight ~= self.FontHeight then
 			self.FontHeight = newHeight
 			if self.Events["FontHeightChanged"] ~= nil then
-				connection.doEvents(self.Events.FontHeightChanged, newHeight)
+				--connection.doEvents(self.Events.FontHeightChanged, newHeight)
+				table.insert(queuedHeightChanges, {self, newHeight})
 			end
 		end
 	end
