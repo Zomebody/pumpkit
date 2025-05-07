@@ -217,7 +217,7 @@ table.insert(content, {
 	["Type"] = "Event";
 	["Name"] = "FontHeightChanged";
 	["Arguments"] = {"height"};
-	["Description"] = "Called when the height of the font used in the TextBlock changes. This does not trigger if the font is changed to a different font with the same font height. To get the corresponding new font size, simply index TextBlock.FontSize";
+	["Description"] = "Called towards the end of the frame when the height of the font used in the TextBlock changes. This does not trigger if the font is changed to a different font with the same font height. To get the corresponding new font size, simply index TextBlock.FontSize";
 })
 
 
