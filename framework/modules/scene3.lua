@@ -255,6 +255,81 @@ end
 
 
 
+local particleMixShader = love.graphics.newShader(
+	[[
+		//uniform Image colorCanvas;
+		uniform Image countCanvas;
+
+		vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
+			//vec4 sumColor = Texel(colorCanvas, texture_coords);
+			vec4 data = Texel(countCanvas, texture_coords);
+			float pixelsOnFrag = data.r;
+			float sumAlpha = data.g; // alphas were squared, so we gotta compensate down below
+			float avgAlpha = sumAlpha / min(1.0, pixelsOnFrag);
+			//float newAlpha = 1.0 - pow(1.0 - pow(avgAlpha, 0.5), pixelsOnFrag); // use sqrt to compensate for squaring when adding to the colorCanvas
+			float newAlpha = sumAlpha / pixelsOnFrag;
+			return vec4(color.rgb / pixelsOnFrag, newAlpha); // return average color and a 'middle ground' new alpha value
+		}
+	]]
+)
+
+
+
+function Scene3:drawParticles()
+	local blendMode, alphaMode = love.graphics.getBlendMode()
+
+	--particleMixShader:send("colorCanvas", self.ParticleCanvas1)
+	--particleMixShader:send("countCanvas", self.ParticleCanvas2)
+
+	
+	local comp, write = love.graphics.getDepthMode()
+
+	-- draw any particles that have no blending whatsoever directly to the render canvas. Typically these are fully opaque particles
+	love.graphics.setShader(self.ParticlesShader)
+	love.graphics.setCanvas({self.RenderCanvas, ["depthstencil"] = self.DepthCanvas}) -- draw directly to the scene
+	love.graphics.setDepthMode("less", true) -- front-most non-blending particles appear on top
+	self.ParticlesShader:send("blends", false)
+	for i = 1, #self.Particles do
+		if not self.Particles[i].Blends then
+			self.Particles[i]:draw(self.ParticlesShader)
+		end
+	end
+	
+
+
+	-- start accumulating color of any particles that 'blend'
+	love.graphics.setCanvas({self.ParticleCanvas1, self.ParticleCanvas2})
+	love.graphics.clear(0, 0, 0, 1)
+	love.graphics.setDepthMode("less", false)
+	love.graphics.setBlendMode("add")
+	self.ParticlesShader:send("blends", true)
+	for i = 1, #self.Particles do
+		if self.Particles[i].Blends then
+			self.Particles[i]:draw(self.ParticlesShader)
+		end
+	end
+
+	-- start blending the particles that have blends=true onto the render canvas
+	-- we draw to the render canvas using default blend settings, but the shader itself will 'blend' the particle fragments with each other during the write operation
+	love.graphics.setCanvas({self.RenderCanvas, ["depthstencil"] = self.DepthCanvas})
+	love.graphics.setBlendMode(blendMode, alphaMode)
+	love.graphics.setDepthMode("less", false) -- don't set depth, but do compare against it so they don't appear in front of stuff
+	--love.graphics.setDepthMode("always", false)
+	love.graphics.setShader(particleMixShader)
+	--love.graphics.setShader()
+	love.graphics.setColor(1, 1, 1, 1)
+	--love.graphics.rectangle("fill", 0, 0, self.RenderCanvas:getWidth(), self.RenderCanvas:getHeight())
+	love.graphics.draw(self.ParticleCanvas1)
+	love.graphics.setDepthMode(comp, write)
+
+	-- no need to reset the shader here as it's done literally the next line after returning from this function
+end
+
+
+
+
+
+
 function Scene3:draw(renderTarget) -- nil or a canvas
 	-- get some graphics settings so they can be reverted later
 	local prevCanvas = love.graphics.getCanvas()
@@ -455,12 +530,16 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 
 	if #self.Particles > 0 then
 		-- now draw all the particles in the scene
+		self:drawParticles()
+		--[[
+		-- now draw all the particles in the scene
 		-- don't need to send any info to the shader because the particles when they update themselves, also update the mesh attributes that encodes any required info
 		love.graphics.setCanvas({self.RenderCanvas, ["depthstencil"] = self.DepthCanvas}) -- remove normals canvas and bloom canvas from render target. We won't need it anymore
 		love.graphics.setShader(self.ParticlesShader)
 		for i = 1, #self.Particles do
 			self.Particles[i]:draw(self.ParticlesShader)
 		end
+		]]
 	end
 
 	-- setShader() can be called here since if self.Foreground ~= nil then setting setShader() in there makes no sense since the shader will be set to nil anyway right after when drawing the canvas to the screen
@@ -545,6 +624,22 @@ function Scene3:rescaleCanvas(width, height, msaa)
 	prepareCanvas:setFilter("nearest")
 	local bloomCanvas = love.graphics.newCanvas(width * msaa, height * msaa)
 	bloomCanvas:setFilter("nearest")
+	local particleCanvas1 = love.graphics.newCanvas( -- sums up colors and alpha
+		width * msaa,
+		height * msaa,
+		{
+			["format"] = "rgba16f";
+			["readable"] = true;
+		}
+	)
+	local particleCanvas2 = love.graphics.newCanvas( -- keeps track of particle count per pixel
+		width * msaa,
+		height * msaa,
+		{
+			["format"] = "rgba16f"; -- red stores particle count, green stores sum alpha
+			["readable"] = true;
+		}
+	)
 
 	local reuseCanvas1 = love.graphics.newCanvas(width, height)
 	--reuseCanvas1:setFilter("nearest")
@@ -564,6 +659,8 @@ function Scene3:rescaleCanvas(width, height, msaa)
 	self.NormalCanvas = normalCanvas
 	self.PrepareCanvas = prepareCanvas
 	self.BloomCanvas = bloomCanvas
+	self.ParticleCanvas1 = particleCanvas1
+	self.ParticleCanvas2 = particleCanvas2
 	self.ReuseCanvas1 = reuseCanvas1
 	self.ReuseCanvas2 = reuseCanvas2
 	self.ReuseCanvas3 = reuseCanvas3
@@ -586,46 +683,14 @@ function Scene3:rescaleCanvas(width, height, msaa)
 		--local i1, i2, i3, i4 = invPersp:columns()
 		--self.SSAOShader:send("invPerspectiveMatrix", {i1, i2, i3, i4})
 	end
+
+	-- init particle mix shader
+	--self.ParticleMixShader:send("colorCanvas", particleCanvas1)
+	self.ParticleMixShader:send("countCanvas", particleCanvas2)
 end
 
 
 
---[[
-function Scene3:setLight(index, position, col, range, strength)
-	assert(type(index) == "number", "Scene3:setLight(index, position, col, range, strength) requires argument 'index' to be a number")
-	assert(vector3.isVector3(position), "Scene3:setLight(index, position, col, range, strength) requires argument 'position' to be a vector3")
-	assert(color.isColor(col), "Scene3:setLight(index, position, col, range, strength) requires argument 'col' to be a color")
-	assert(type(range) == "number", "Scene3:setLight(index, position, col, range, strength) requires argument 'range' to be a number")
-	assert(type(strength) == "number", "Scene3:setLight(index, position, col, range, strength) requires argument 'strength' to be a number")
-	local currentPosition = self.Lights[index].Position
-	local currentColor = self.Lights[index].Color
-	local currentRange = self.Lights[index].Range
-	local currentStrength = self.Lights[index].Strength
-
-	local Light = {
-		["Position"] = vector3(position);
-		["Color"] = color(col);
-		["Range"] = range;
-		["Strength"] = strength;
-	}
-
-	self.Lights[index] = Light
-
-	if self.QueuedShaderVars.LightPositions == false and currentPosition ~= position then
-		self.QueuedShaderVars.LightPositions = true
-	end
-	if self.QueuedShaderVars.LightColors == false and currentColor ~= col then
-		self.QueuedShaderVars.LightColors = true
-	end
-	if self.QueuedShaderVars.LightRanges == false and currentRange ~= range then
-		self.QueuedShaderVars.LightRanges = true
-	end
-	if self.QueuedShaderVars.LightStrengths == false and currentStrength ~= strength then
-		self.QueuedShaderVars.LightStrengths = true
-	end
-	
-end
-]]
 
 
 
@@ -1071,6 +1136,22 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 	prepareCanvas:setFilter("nearest")
 	local bloomCanvas = love.graphics.newCanvas(gWidth * msaa, gHeight * msaa)
 	bloomCanvas:setFilter("nearest")
+	local particleCanvas1 = love.graphics.newCanvas( -- sums up colors and alphas
+		gWidth * msaa,
+		gHeight * msaa,
+		{
+			["format"] = "rgba16f";
+			["readable"] = true;
+		}
+	)
+	local particleCanvas2 = love.graphics.newCanvas( -- keeps track of number of particles on a pixel
+		gWidth * msaa,
+		gHeight * msaa,
+		{
+			["format"] = "rgba16f"; -- red stores particle count, green stores sum alpha
+			["readable"] = true;
+		}
+	)
 
 	local reuseCanvas1 = love.graphics.newCanvas(gWidth, gHeight)
 	local reuseCanvas2 = love.graphics.newCanvas(gWidth, gHeight)
@@ -1085,6 +1166,7 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 
 		["Shader"] = love.graphics.newShader(SHADER_PATH); -- create one shader per scene so you can potentially 
 		["ParticlesShader"] = love.graphics.newShader(SHADER_PARTICLES_PATH);
+		["ParticleMixShader"] = particleMixShader;
 		["SSAOShader"] = love.graphics.newShader(SHADER_SSAO_PATH); -- screen-space ambient occlusion shader
 		["SSAOBlendShader"] = love.graphics.newShader(SHADER_SSAOBLEND_PATH); -- blend shader to blend ambient occlusion with the rendered scene
 		["BlurShader"] = love.graphics.newShader(SHADER_BLUR_PATH);
@@ -1099,6 +1181,8 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 		["NormalCanvas"] = normalCanvas;
 		["PrepareCanvas"] = prepareCanvas; -- higher resolution canvas for ambient occlusion & bloom, used to draw things to which are then combined with the render canvas
 		["BloomCanvas"] = bloomCanvas;
+		["ParticleCanvas1"] = particleCanvas1; -- stores sum of colors and sum of alpha
+		["ParticleCanvas2"] = particleCanvas2; -- stores 
 		["ShadowCanvas"] = nil; -- either nil, or a canvas when shadow map is enabled
 		["ShadowDepthCanvas"] = nil;  -- either nil, or a canvas when shadow map is enabled
 
@@ -1162,9 +1246,11 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 
 	-- bloom and AO quality shader vars
 	Object.BlurShader:send("screenSize", {gWidth, gHeight})
-	--Object.BlurShader:send("aoQuality", 1)
-	--Object.SSAOShader:send("aoQuality", 1)
 	Object.BloomBlurShader:send("screenSize", {gWidth, gHeight})
+
+	-- init particle mix shader
+	--particleMixShader:send("colorCanvas", particleCanvas1)
+	particleMixShader:send("countCanvas", particleCanvas2)
 
 	-- send noise image to SSAO shader
 	Object.SSAOShader:send("noiseTexture", noiseImage)

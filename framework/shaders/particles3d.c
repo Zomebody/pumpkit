@@ -375,6 +375,8 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 //varying vec3 instColor;
 //varying bool tooOld;
 
+uniform Image MainTex;
+
 uniform Image dataTexture; // data texture containing (currently) the color gradient and size curve
 uniform float currentTime;
 uniform float brightness;
@@ -383,6 +385,7 @@ uniform float brightness;
 varying float emittedAt;
 varying float lifetime;
 varying vec3 fragWorldPosition;
+uniform bool blends;
 
 // lights
 /*
@@ -415,7 +418,8 @@ Light getLight(int index) {
 
 
 // fragment shader
-vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
+//(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
+void effect() {
 	float ageFraction = (currentTime - emittedAt) / lifetime;
 	if (ageFraction > 1) {
 		discard;
@@ -427,7 +431,7 @@ vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
 	vec4 gradientColor = Texel(dataTexture, gradientUV);
 
 	// Check if a texture is applied by sampling from it
-	vec4 texColor = Texel(tex, texture_coords);
+	vec4 texColor = Texel(MainTex, VaryingTexCoord.xy);
 
 	// Check if the alpha of the texture color is below a threshold
 	
@@ -451,9 +455,23 @@ vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
 		lighting += light.color * light.strength * attenuation;
 		//}
 	}
-	
-	
-	return (texColor * gradientColor) * brightness + (texColor * gradientColor * vec4(lighting.x, lighting.y, lighting.z, 1.0)) * (1.0 - brightness);
+
+	vec4 litColor = (texColor * gradientColor) * brightness + (texColor * gradientColor * vec4(lighting.x, lighting.y, lighting.z, 1.0)) * (1.0 - brightness);
+
+	// if the particle has 'blends' set to true, start accumulating colors onto the canvas with some maths
+	// however, if the particle has 'blends' set to false, simply just draw the particle color
+	if (blends) {
+		// in this case, blend mode is set to additive and two canvases are used (ParticleCanvas1, ParticleCanvas2)
+		love_Canvases[0] = vec4(litColor.rgb * litColor.a, 1.0); // Q: why not store alpha here? A: docs says thet blend mode 'add': The alpha of the screen is not modified, hence moved to other canvas
+		// for red, simply add '1' to red to count the number of fragments being written
+		// for green, square the alpha to give a higher priority 
+		//love_Canvases[1] = vec4(1.0, pow(litColor.a, 2.0), 0.0, 1.0);
+		love_Canvases[1] = vec4(litColor.a, litColor.a, 1.0, 1.0);
+	} else {
+		// in this case, blend mode is set to the default (alpha) one and the output canvase is the RenderCanvas
+		love_Canvases[0] = litColor;
+	}
+
 }
 
 #endif

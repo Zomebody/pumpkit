@@ -286,6 +286,7 @@ local function new(img, maxParticles, properties)
 	local drag = properties.Drag or 0
 	local brightness = properties.Brightness or 1
 	local zOffset = properties.ZOffset or 0
+	local blends = properties.Blends or false
 	
 	local c, s1, s2, high1, low1, high2, low2
 	local data = love.image.newImageData(64, 2)
@@ -313,6 +314,7 @@ local function new(img, maxParticles, properties)
 		["Id"] = module.TotalCreated;
 		["Gradient"] = gradient; -- the color the particle has at a given moment in time
 		["Source"] = source; -- location from which particles are emitted
+		["Blends"] = blends; -- if false, particle is directly drawn to screen w/ depth registered (prone to sorting issues). If true, blends with other particles order-independently
 		["ZOffset"] = zOffset;
 		["Direction"] = direction; -- the direction the particles get emitted from
 		["DirectionDeviation"] = directionDeviation; -- when the particle is emitted, it deviates from the direction with at most this angle (at random)
