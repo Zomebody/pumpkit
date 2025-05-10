@@ -257,18 +257,21 @@ end
 
 local particleMixShader = love.graphics.newShader(
 	[[
-		//uniform Image colorCanvas;
 		uniform Image countCanvas;
 
 		vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
-			//vec4 sumColor = Texel(colorCanvas, texture_coords);
 			vec4 data = Texel(countCanvas, texture_coords);
+
+			vec4 canvColor = Texel(tex, texture_coords);
 			float pixelsOnFrag = data.r;
 			float sumAlpha = data.g; // alphas were squared, so we gotta compensate down below
-			float avgAlpha = sumAlpha / min(1.0, pixelsOnFrag);
-			//float newAlpha = 1.0 - pow(1.0 - pow(avgAlpha, 0.5), pixelsOnFrag); // use sqrt to compensate for squaring when adding to the colorCanvas
-			float newAlpha = sumAlpha / pixelsOnFrag;
-			return vec4(color.rgb / pixelsOnFrag, newAlpha); // return average color and a 'middle ground' new alpha value
+
+			float avgAlpha = sumAlpha / max(1.0, pixelsOnFrag);
+			float newAlpha = 1.0 - pow(1.0 - pow(avgAlpha, 0.5), pixelsOnFrag); // use sqrt to compensate for squaring when adding to the colorCanvas
+			//float newAlpha = 1.0 - pow(avgAlpha, sumAlpha); //sumAlpha / pixelsOnFrag;
+			//return vec4(canvColor.rgb / sumAlpha, newAlpha); // return average color and a 'middle ground' new alpha value
+
+			return vec4(canvColor.rgb / sumAlpha, newAlpha);
 		}
 	]]
 )
@@ -298,7 +301,7 @@ function Scene3:drawParticles()
 
 
 	-- start accumulating color of any particles that 'blend'
-	love.graphics.setCanvas({self.ParticleCanvas1, self.ParticleCanvas2})
+	love.graphics.setCanvas({self.ParticleCanvas1, self.ParticleCanvas2, ["depthstencil"] = self.DepthCanvas})
 	love.graphics.clear(0, 0, 0, 1)
 	love.graphics.setDepthMode("less", false)
 	love.graphics.setBlendMode("add")
