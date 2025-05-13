@@ -41,8 +41,8 @@ table.insert(content, {
 table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "render";
-	["Arguments"] = {"canvas"};
-	["Description"] = "Draws the current scene to the screen. If 'canvas' is supplied, it will instead draw the world to the canvas.";
+	["Arguments"] = {"canvas", "x", "y"};
+	["Description"] = "Draws the current scene to the screen. If 'canvas' is supplied, it will instead draw the world to the canvas. If x and/or y are supplied, the world will be drawn with that offset from the top-left corner.";
 })
 
 table.insert(content, {

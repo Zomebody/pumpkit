@@ -301,8 +301,9 @@ function Scene3:drawParticles()
 
 
 	-- start accumulating color of any particles that 'blend'
-	love.graphics.setCanvas({self.ParticleCanvas1, self.ParticleCanvas2, ["depthstencil"] = self.DepthCanvas})
+	love.graphics.setCanvas({self.ParticleCanvas1, self.ParticleCanvas2})
 	love.graphics.clear(0, 0, 0, 1)
+	love.graphics.setCanvas({self.ParticleCanvas1, self.ParticleCanvas2, ["depthstencil"] = self.DepthCanvas})
 	love.graphics.setDepthMode("less", false)
 	love.graphics.setBlendMode("add")
 	self.ParticlesShader:send("blends", true)
@@ -314,9 +315,9 @@ function Scene3:drawParticles()
 
 	-- start blending the particles that have blends=true onto the render canvas
 	-- we draw to the render canvas using default blend settings, but the shader itself will 'blend' the particle fragments with each other during the write operation
-	love.graphics.setCanvas({self.RenderCanvas, ["depthstencil"] = self.DepthCanvas})
+	love.graphics.setCanvas({self.RenderCanvas})
 	love.graphics.setBlendMode(blendMode, alphaMode)
-	love.graphics.setDepthMode("less", false) -- don't set depth, but do compare against it so they don't appear in front of stuff
+	love.graphics.setDepthMode("always", false) -- don't set depth, but do compare against it so they don't appear in front of stuff
 	--love.graphics.setDepthMode("always", false)
 	love.graphics.setShader(particleMixShader)
 	--love.graphics.setShader()
@@ -333,7 +334,9 @@ end
 
 
 
-function Scene3:draw(renderTarget) -- nil or a canvas
+function Scene3:draw(renderTarget, x, y) -- nil or a canvas
+	if x == nil then x = 0 end
+	if y == nil then y = 0 end
 	-- get some graphics settings so they can be reverted later
 	local prevCanvas = love.graphics.getCanvas()
 	local prevDepthMode, prevWrite = love.graphics.getDepthMode()
@@ -562,15 +565,19 @@ function Scene3:draw(renderTarget) -- nil or a canvas
 		-- if a render target is set, adjust the scaling so that it fits inside the render target
 		local scaleX = renderTarget:getWidth() / self.RenderCanvas:getWidth()
 		local scaleY = renderTarget:getHeight() / self.RenderCanvas:getHeight()
+		local scaleX = 1 / self.MSAA
+		local scaleY = 1 / self.MSAA
 		-- a pretty important caveat here: if you are drawing to a render target it's VERY RECOMMENDED that the render target has the same dimensions as the screen
 		-- if your render target is smaller however, e.g. when using split-screen, you should 100% call Scene3:rescaleCanvas() with your target width and height.
 		-- because if you are drawing to a smaller render canvas but the scene has a fullscreen render canvas, you're tanking your FPS for no reason (better anti-aliasing though I guess)
-		love.graphics.draw(self.RenderCanvas, 0, renderTarget:getHeight(), 0, scaleX, -scaleY)
+		love.graphics.draw(self.RenderCanvas, x, renderTarget:getHeight() * scaleY + y, 0, scaleX, -scaleY) -- TODO: fix the math here since render offset was introduced
 	else
 		-- if no render target is set, the scene is drawn to the screen, so use the screen's dimensions
-		local scaleX = love.graphics.getWidth() / self.RenderCanvas:getWidth()
-		local scaleY = love.graphics.getHeight() / self.RenderCanvas:getHeight()
-		love.graphics.draw(self.RenderCanvas, 0, love.graphics.getHeight(), 0, scaleX, -scaleY)
+		--local scaleX = love.graphics.getWidth() / self.RenderCanvas:getWidth()
+		--local scaleY = love.graphics.getHeight() / self.RenderCanvas:getHeight()
+		local scaleX = 1 / self.MSAA
+		local scaleY = 1 / self.MSAA
+		love.graphics.draw(self.RenderCanvas, x, self.RenderCanvas:getHeight() * scaleY + y, 0, scaleX, -scaleY)
 	end
 	
 
@@ -605,6 +612,9 @@ function Scene3:rescaleCanvas(width, height, msaa)
 
 	if width == nil or height == nil then
 		width, height = love.graphics.getDimensions()
+	else
+		width = math.floor(width)
+		height = math.floor(height)
 	end
 
 	-- round to a multiple of 4 so that we can downsample bloom/SSAO to half and quarter resolution
@@ -817,79 +827,7 @@ end
 
 
 
--- if texScale is nil, IsPlanar is false, else, IsPlanar is true and TextureScale becomes texScale
---[[
-function Scene3:addInstancedMesh(mesh, positions, rotations, scales, cols, bloom, brightness, castShadow, texScale)
-	assert(type(bloom) == "number" or bloom == nil, "Scene3:addInstancedMesh(mesh, positions, rotations, scales, cols, bloom, brightness, texScale) requires 'bloom' to be a number or nil")
-	assert(type(brightness) == "number" or brightness == nil, "Scene3:addInstancedMesh(mesh, positions, rotations, scales, cols, bloom, brightness, texScale) requires 'brightness' to be a number or nil")
-	assert(type(texScale) == "number" or texScale == nil, "Scene3:addInstancedMesh(mesh, positions, rotations, scales, cols, bloom, brightness, texScale) requires 'texScale' to be a number or nil")
-	assert(type(positions) == "table",
-		"Scene3:addInstancedMesh(mesh, positions, rotations, scales, cols, bloom, brightness, texScale) requires argument 'positions' to be a table of vector3s, given is nil")
-	if rotations == nil then
-		rotations = {}
-		for i = 1, #positions do rotations[i] = vector3(0, 0, 0) end
-	else
-		assert(type(rotations) == "table" and #rotations == #positions,
-			"Scene3:addInstancedMesh(mesh, positions, rotations, scales, cols, bloom, brightness, texScale) requires argument 'rotations' to be nil or a table with vector3s of the same length as 'positions'")
-	end
-	if scales == nil then
-		scales = {}
-		for i = 1, #positions do scales[i] = vector3(1, 1, 1) end
-	else
-		assert(type(scales) == "table" and #scales == #positions,
-			"Scene3:addInstancedMesh(mesh, positions, rotations, scales, cols, bloom, brightness, texScale) requires argument 'scales' to be nil or a table with vector3s of the same length as 'positions'")
-	end
-	if cols == nil then
-		cols = {}
-		for i = 1, #positions do cols[i] = color(1, 1, 1) end
-	else
-		assert(type(cols) == "table" and #cols == #positions,
-			"Scene3:addInstancedMesh(mesh, positions, rotations, scales, cols, bloom, brightness, texScale) requires argument 'cols' to be nil or a table with colors of the same length as 'positions'")
-	end
 
-	local instancesData = {}
-	for i = 1, #positions do
-		table.insert(
-			instancesData,
-			{positions[i].x, positions[i].y, positions[i].z, rotations[i].x, rotations[i].y, rotations[i].z, scales[i].x, scales[i].y, scales[i].z, cols[i].r, cols[i].g, cols[i].b}
-		)
-	end
-
-
-	local instanceMesh = love.graphics.newMesh(
-		{
-			{"instancePosition", "float", 3},
-			{"instanceRotation", "float", 3},
-			{"instanceScale", "float", 3},
-			{"instanceColor", "float", 3}
-		},
-		instancesData,
-		"triangles",
-		"static"
-	)
-
-	mesh:attachAttribute("instancePosition", instanceMesh, "perinstance") -- first vertex attribute
-	mesh:attachAttribute("instanceRotation", instanceMesh, "perinstance") -- second vertex attribute
-	mesh:attachAttribute("instanceScale", instanceMesh, "perinstance") -- third vertex attribute
-	mesh:attachAttribute("instanceColor", instanceMesh, "perinstance") -- fourth vertex attribute
-
-	local Data = {
-		["Mesh"] = mesh;
-		["Instances"] = instanceMesh; -- the reason for exposing the instances is so that setVertexAttribute() can be used on individual instances to update them after batching
-		["Bloom"] = bloom ~= nil and bloom or 0;
-		["Brightness"] = brightness ~= nil and brightness or 0;
-		["CastShadow"] = castShadow;
-		["IsTriplanar"] = texScale ~= nil; -- determines if the mesh's texture is applied using triplanar projection
-		["TextureScale"] = texScale ~= nil and texScale or 1; -- only used if IsTriplanar is true.
-		["NormalMap"] = nil;
-		["Count"] = #positions;
-	}
-
-	table.insert(self.InstancedMeshes, Data)
-	
-	return Data
-end
-]]
 
 
 
