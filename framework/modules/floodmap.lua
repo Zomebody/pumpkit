@@ -49,12 +49,13 @@ end
 
 
 
--- returns an array of vector2s that describes the path to the given tile from where the map was being filled in
+-- returns an array of vector2s that describes the path to the given tile from where the map was being filled in, alongside an array with corresponding weights
 function Floodmap:getPath(toVec2)
 	assert(self:inBounds(toVec2), "Floodmap:getPath(toVec2) failed because the given coordinate falls outside the map.")
 	assert(self.Filled, "Floodmap:getPath(toVec2) can only be called when the floodmap has first been filled with Floodmap:fill().")
 	local curVec = vector2(toVec2)
 	local path = {}
+	local weights = {}
 
 	local offsets = {
 		vector2(-1, 0),
@@ -65,6 +66,7 @@ function Floodmap:getPath(toVec2)
 
 	while curVec ~= self.Start do
 		table.insert(path, 1, vector2(curVec))
+		table.insert(weights, 1, self.WeightMap[curVec.x][curVec.y])
 		local lowestAdjacent = nil
 		local lowestCost = math.huge
 
@@ -84,15 +86,19 @@ function Floodmap:getPath(toVec2)
 		end
 	end
 	table.insert(path, 1, vector2(self.Start))
+	table.insert(weights, 1, 0)
 
-	return path
+	return path, weights
 
 end
 
 
--- applies flood fill at the given coordinate
-function Floodmap:fill(vec2)
+-- applies flood fill at the given coordinate, or array of coordinates
+function Floodmap:fill(vec2, maxWeight)
 	assert(self:inBounds(vec2), "Floodmap:fill(vec2) failed because the given coordinate falls outside the map.")
+
+	if maxWeight == nil then maxWeight = math.huge end
+	
 	
 	if self.Filled then
 		self:clearWeights()
@@ -114,9 +120,12 @@ function Floodmap:fill(vec2)
 		local checkTile = vector2()
 		for i = 1, #offsets do
 			checkTile:set(poppedTile.x + offsets[i].x, poppedTile.y + offsets[i].y)
-			if self:inBounds(checkTile) and (not self:isWall(checkTile)) and self.WeightMap[checkTile.x][checkTile.y] > curCost + self.CostMap[checkTile.x][checkTile.y] then
-				self.WeightMap[checkTile.x][checkTile.y] = curCost + self.CostMap[checkTile.x][checkTile.y]
-				table.insert(pending, vector2(checkTile))
+			if self:inBounds(checkTile) and (not self:isWall(checkTile)) then
+				local newWeight = curCost + self.CostMap[checkTile.x][checkTile.y]
+				if newWeight < self.WeightMap[checkTile.x][checkTile.y] and newWeight <= maxWeight then
+					self.WeightMap[checkTile.x][checkTile.y] = newWeight
+					table.insert(pending, vector2(checkTile))
+				end
 			end
 		end
 	until #pending == 0
@@ -227,6 +236,28 @@ function Floodmap:isWall(vec2)
 	assert(self:inBounds(vec2), "Floodmap:isWall(vec2) failed because the given coordinate falls outside the map.")
 	assert(vector2.isVector2(vec2) or type(vec2) == "table", "Floodmap:isWall(vec2) requires argument 'vec2' to be a vector2.")
 	return self.Map[vec2.x][vec2.y] == 1
+end
+
+
+
+-- return the cells containing the largest (non-infinite) weights if filled
+function Floodmap:getHighestWeights()
+	assert(self.Filled, "Floodmap:getHighestWeights() can only be called when the floodmap is filled.")
+	local largest = -math.huge
+	local cells = {}
+	for x = 1, #self.WeightMap do
+		for y = 1, #self.WeightMap[x] do
+			if self.WeightMap[x][y] < math.huge then -- ignore infinite
+				if self.WeightMap[x][y] == largest then
+					table.insert(cells, vector2(x, y))
+				elseif self.WeightMap[x][y] > largest then
+					largest = self.WeightMap[x][y]
+					cells = {vector2(x, y)}
+				end
+			end
+		end
+	end
+	return cells, largest
 end
 
 

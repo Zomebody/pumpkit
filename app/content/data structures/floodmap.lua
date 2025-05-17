@@ -109,8 +109,8 @@ table.insert(content, {
 table.insert(content, {
 	["Type"] = "Method";
 	["Name"] = "fill";
-	["Arguments"] = {"fromVec2"};
-	["Description"] = "Fills the map starting at the given vector2. Will error if the given tile is out of bounds.";
+	["Arguments"] = {"fromVec2", "maxWeight"};
+	["Description"] = "Fills the map starting at the given vector2. Will error if the given tile is out of bounds. If maxWeight is supplied, stop flood filling when that weight is reached.";
 	["CodeMarkup"] = "<k>local</k> walls = {<f>vector2</f>(<n>3</n>, <n>1</n>), <f>vector2</f>(<n>3</n>, <n>2</n>),\n\t\t\t<f>vector2</f>(<n>2</n>, <n>3</n>), <f>vector2</f>(<n>5</n>, <n>2</n>),\n\t\t\t<f>vector2</f>(<n>5</n>, <n>4</n>), <f>vector2</f>(<n>5</n>, <n>5</n>)\n\t\t\t<f>vector2</f>(<n>6</n>, <n>3</n>), <f>vector2</f>(<n>7</n>, <n>3</n>)}\n<k>local</k> fm = <f>floodmap</f>(<n>9</n>, <n>5</n>)\n<k>for</k> i = <n>1</n>, <k>#</k>walls <k>do</k>\n\tfm:<f>setWall</f>(walls[i], <b>true</b>)\n<k>end</k>\nfm:<f>fill</f>(<f>vector2</f>(<n>2</n>, <n>2</n>))\n<k>local</k> path = fm:<f>getPath</f>(<f>vector2</f>(<n>6</n>, <n>5</n>))\n<c>-- visualize path here</c>";
 	["Demo"] = function()
 		local canvas = love.graphics.newCanvas(270, 150)
@@ -146,9 +146,16 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Method";
+	["Name"] = "getHighestWeights";
+	["Arguments"] = {};
+	["Description"] = "If the floodmap is filled in, this returns an array of cells that have the highest weights alongside their weight. Cells with an infinite weight are ignored.";
+})
+
+table.insert(content, {
+	["Type"] = "Method";
 	["Name"] = "getPath";
 	["Arguments"] = {"toVec2"};
-	["Description"] = "Returns an ordered array of vector2s describing which tiles are visited on the path from the start point to the given point (including start and end). If no path is found, this returns nil.";
+	["Description"] = "Returns an ordered array of vector2s describing which cells are visited on the path from the start point to the given point (including start and end), alongside an array of weights to reach each cell.\n\nIf no path is found, this returns nil.";
 })
 
 table.insert(content, {
