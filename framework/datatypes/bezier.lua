@@ -32,17 +32,60 @@ function bezier:unpack()
 end
 
 
-function bezier:getPoint(t)
-	assert(type(t) == "number" and t >= 0 and t <= 1, "bezier:getPoint(t) expects argument t to be a number between 0 and 1")
+
+local function deCasteljau(points, t)
+	while #points > 1 do
+		local newPoints = {}
+		for i = 1, #points - 1 do
+			newPoints[i] = points[i] * (1 - t) + points[i + 1] * t
+		end
+		points = newPoints
+	end
+	return points[1]
+end
+
+
+function bezier:getVelocityAt(a, t)
+	assert(type(a) == "number" and a >= 0 and a <= 1, "bezier:getVelocityAt(a, t) expects 'a' to be a number between 0 and 1.")
+	assert(type(t) == "number" and t > 0, "bezier:getVelocityAt(a, t) expects 't' to be a positive number.")
+
+	local n = #self.Points - 1
+	if n == 0 then
+		if self.Dimensions == 2 then
+			return vector2(0, 0)
+		else
+			return vector3(0, 0, 0)
+		end
+	end
+
+
+	local derivatives = {}
+	for i = 1, n do
+		derivatives[i] = (self.Points[i + 1] - self.Points[i]) * n
+	end
+
+	-- evaluate at given point
+	local tangent = deCasteljau(derivatives, a)
+	local velocity = tangent / t
+	return velocity
+
+end
+
+
+
+function bezier:getPoint(a)
+	assert(type(a) == "number" and a >= 0 and a <= 1, "bezier:getPoint(a) expects argument a to be a number between 0 and 1.")
 	local points = self.Points
 	while #points > 1 do
 		local newPoints = {}
 		for i = 1, #points - 1 do
 			local p1 = points[i]
 			local p2 = points[i + 1]
-			local x = (1 - t) * p1.x + t * p2.x
-			local y = (1 - t) * p1.y + t * p2.y
-			table.insert(newPoints, vector2(x, y))
+			local newPoint = (1 - a) * p1 + a * p2
+			table.insert(newPoints, newPoint)
+			--local x = (1 - a) * p1.x + a * p2.x
+			--local y = (1 - a) * p1.y + a * p2.y
+			--table.insert(newPoints, vector2(x, y))
 		end
 		points = newPoints
 	end
@@ -52,25 +95,50 @@ end
 
 -- makes a new bezier
 new = function(...)
-	local t = {...}
-	assert(#t > 0, "bezier.new(...) expects at least one argument, given is 0.")
-	if type(t[1]) == "table" and not vector2.isVector2(t[1]) then
-		t = t[1]
+	local vecs = {...}
+	assert(#vecs > 0, "bezier.new(...) expects at least one argument, given are 0 arguments.")
+	if type(vecs[1]) == "table" then
+		vecs = vecs[1]
 	end
+
+
 	local Obj = {
+		["Dimensions"] = 0;
 		["Points"] = {};
 	}
-	for i = 1, #t do
-		assert(vector2.isVector2(t[i]), "bezier.new(...) only accepts vector2s or a table of vector2s (got " .. type(t[i]) .. ")")
-		Obj.Points[i] = vector2(t[i].x, t[i].y)
+
+	if vector2.isVector2(vecs[1]) then
+		for i = 1, #vecs do
+			if vector2.isVector2(vecs[i]) then
+				Obj.Points[i] = vector2(vecs[i].x, vecs[i].y)
+			else
+				error("bezier.new(...) failed because not all vectors are of the same type.")
+			end
+		end
+		Obj.Dimenions = 2
+	elseif vector3.isVector3(vecs[1]) then
+		for i = 1, #vecs do
+			if vector3.isVector3(vecs[i]) then
+				Obj.Points[i] = vector3(vecs[i].x, vecs[i].y, vecs[i].z)
+			else
+				error("bezier.new(...) failed because not all vectors are of the same type.")
+			end
+		end
+		Obj.Dimensions = 3
+	else
+		error("bezier.new(...) failed because a table of unknown vectors was given.")
 	end
+
 
 	return setmetatable(Obj, bezier)
 end
 
+
+
 -- meta function to add a vector to a bezier to offset the bezier
 function bezier.__add(a, b)
-	assert(isBezier(a) and vector2.isVector2(b), "add: wrong argument types: (expected <bezier> and <vector2>)")
+	--assert(isBezier(a) and vector2.isVector2(b), "add: wrong argument types: (expected <bezier> and <vector2>)")
+	assert(isBezier(a) and ((vector2.isVector2(b) and a.Dimensions == 2) or (vector3.isVector3(b) and a.Dimensions == 3)), "add: wrong argument types: (expected <bezier> and <vector2/3>)")
 	local points = {}
 	for i = 1, #a.Points do
 		points[i] = a.Points[i] + b
