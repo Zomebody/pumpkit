@@ -55,6 +55,13 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Method";
+	["Name"] = "getVelocityAt";
+	["Arguments"] = {"a", "t"};
+	["Description"] = "Assuming 'a' is an alpha between 0 and 1 that describes the position on the curve and 't' is how long it takes to fully move across the curve, this method returns the velocity at the given point 'a'.";
+})
+
+table.insert(content, {
+	["Type"] = "Method";
 	["Name"] = "unpack";
 	["Arguments"] = {};
 	["Description"] = "Returns the bezier curve's points as a tuple in the form x1, y1, x2, y2, ...";
