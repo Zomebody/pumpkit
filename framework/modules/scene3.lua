@@ -367,9 +367,12 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 
 	-- update lights
 	local lightsInfo = {}
-	for _, light in ipairs(self.Lights) do -- {posX, posY, posZ, range}, {colR, colG, colB, strength}
-		table.insert(lightsInfo, {light.Position.x, light.Position.y, light.Position.z, light.Range})
-		table.insert(lightsInfo, {light.Color.r, light.Color.g, light.Color.b, light.Strength})
+	if self.LightsDirty then
+		for _, light in ipairs(self.Lights) do -- {posX, posY, posZ, range}, {colR, colG, colB, strength}
+			table.insert(lightsInfo, {light.Position.x, light.Position.y, light.Position.z, light.Range})
+			table.insert(lightsInfo, {light.Color.r, light.Color.g, light.Color.b, light.Strength})
+		end
+		self.LightsDirty = false
 	end
 	
 	if #lightsInfo > 0 then
@@ -379,8 +382,11 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 
 	-- update blob shadows
 	local blobsInfo = {}
-	for _, blob in ipairs(self.Blobs) do
-		table.insert(blobsInfo, {blob.Position.x, blob.Position.y, blob.Position.z, blob.Range})
+	if self.BlobsDirty then
+		for _, blob in ipairs(self.Blobs) do
+			table.insert(blobsInfo, {blob.Position.x, blob.Position.y, blob.Position.z, blob.Range})
+		end
+		self.BlobsDirty = false
 	end
 	if #blobsInfo > 0 then
 		self.Shader:send("blobShadows", unpack(blobsInfo))
@@ -912,6 +918,8 @@ function Scene3:attachLight(light)
 		connection.doEvents(self.Events.LightAttached, light)
 	end
 
+	self.LightsDirty = true
+
 	return light
 end
 
@@ -933,6 +941,8 @@ function Scene3:detachLight(lightOrSlot)
 		if self.Events.LightDetached then
 			connection.doEvents(self.Events.LightDetached, Item)
 		end
+
+		self.LightsDirty = true
 
 		return true
 	end
@@ -963,6 +973,8 @@ function Scene3:attachBlob(blob)
 		connection.doEvents(self.Events.BlobAttached, blob)
 	end
 
+	self.BlobsDirty = true
+
 	return blob
 end
 
@@ -983,6 +995,8 @@ function Scene3:detachBlob(blobOrSlot)
 		if self.Events.BlobDetached then
 			connection.doEvents(self.Events.BlobDetached, Item)
 		end
+
+		self.BlobsDirty = true
 
 		return true
 	end
@@ -1115,6 +1129,8 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 		["ShadowMapShader"] = love.graphics.newShader(SHADER_SHADOWMAP_PATH);
 
 		["LastDrawSize"] = vector2(gWidth, gHeight); -- when you suddenly start drawing the scene at a different size, some shader variables need to be updated!
+		["LightsDirty"] = true; -- if true, update lights data in the shaders and set this to false (until a light gets attached/detached)
+		["BlobsDirty"] = true; -- same as above, but for blobs
 
 		-- canvas properties, update whenever you change the render target
 		["RenderCanvas"] = renderCanvas;
