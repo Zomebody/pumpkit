@@ -104,56 +104,6 @@ end
 
 
 
--- emit a certain number of particles at once from the source
---[[
-function Particles3:emit(count)
-	local t = love.timer.getTime()
-	for i = 1, count do
-		local randomVector = getVectorInCone(self.Direction, self.DirectionDeviation)
-		table.insert(self.Spawned, {t, self.Lifetime:randomDecimal(), self.Rotation:randomDecimal(), self.RotationSpeed:randomDecimal(), randomVector, self.Speed:randomDecimal(), love.math.random() * 2 - 1})
-	end
-	if #self.Spawned > self.MaxParticles then
-		local toRemove = #self.Spawned - self.MaxParticles
-		for i = 1, toRemove do
-			table.remove(self.Spawned, 1) -- remove the oldest particles
-		end
-	end
-end
-]]
-
-
--- update the position and size of each particle. TODO: probably rename this to :render() or something, since you'll only need to update the info when you're going to render the particles
--- and you won't be rendering the particle emitter multiple times per frame if you're smart
--- or maybe not. Maybe the play is to manually choose when to update particles so you can have them frozen in time or something
---[[
-function Particles3:update()
-	local time = love.timer.getTime()
-	local index = 1
-	while index <= #self.Spawned do
-
-		-- remove any particles that are too old
-		if time - self.Spawned[index][1] > self.Spawned[index][2] then
-			self.Spawned[index] = self.Spawned[#self.Spawned]
-			self.Spawned[#self.Spawned] = nil
-			--table.remove(self.Spawned, index) -- remove the index from the table, shifting all indices after it 1 forwards
-		else
-			local vars = self.Spawned[index]
-
-			-- if the particle wasn't removed, update its size, position and rotation
-			local newPosition = self.Source + vars[5] * vars[6] * (time - vars[1]) + 0.5 * self.Gravity * (time - vars[1])^2
-			local newRotation = vars[3] + vars[4] * (time - vars[1])
-			local x = (time - vars[1]) / vars[2]
-			local newSize = vars[7] * self.SizeDeviation:getNumber(x) + self.Size:getNumber(x)
-			local newColor = self.Gradient:getColor(x)
-
-			-- +10fps for doing this instead of setting each vertex attribute separately
-			self.Instances:setVertex(index, newPosition.x, newPosition.y, newPosition.z, newRotation, newSize, newColor.r, newColor.g, newColor.b)
-
-			index = index + 1 -- item was not removed, so move the index one further
-		end
-	end
-end
-]]
 
 function Particles3:emit(count)
 	local emittedAt = love.timer.getTime()
@@ -195,11 +145,6 @@ function Particles3:emit(count)
 end
 
 
---[[
-function Particles3:update()
-
-end
-]]
 
 
 function Particles3:draw(shaderRef)
@@ -209,6 +154,7 @@ function Particles3:draw(shaderRef)
 	shaderRef:send("drag", self.Drag)
 	shaderRef:send("brightness", self.Brightness)
 	shaderRef:send("zOffset", self.ZOffset)
+	shaderRef:send("flipbookData", {self.FlipbookSize, self.FlipbookFrames}) -- pack into vec2 to reduce send calls I guess
 	love.graphics.drawInstanced(self.Mesh, self.MaxParticles) -- draw all the particles, but in practice most of them will be drawn at a scale of 0 because they're inactive
 end
 
@@ -287,6 +233,8 @@ local function new(img, maxParticles, properties)
 	local brightness = properties.Brightness or 1
 	local zOffset = properties.ZOffset or 0
 	local blends = properties.Blends or false
+	local fbSize = properties.FlipbookSize or 1
+	local fbFrames = properties.FlipbookFrames or 1
 	
 	local c, s1, s2, high1, low1, high2, low2
 	local data = love.image.newImageData(64, 2)
@@ -330,6 +278,8 @@ local function new(img, maxParticles, properties)
 		["FacesVelocity"] = facesVelocity; -- if true and facesCamera is false, particle aligns with velocity. If true and facesCamera is true, billboard behavior with rotation based on screen space velocity
 		["Drag"] = drag;
 		["Brightness"] = brightness;
+		["FlipbookSize"] = fbSize; -- size of the flipbook image. A size of 3 means 9 cells, 4 = 16 cells, 5 = 25 cells etc.
+		["FlipbookFrames"] = fbFrames; -- the number of frames to play during the particle's lifetime
 
 		["DataTexture"] = dataTexture; -- contains curves encoded into an image for faster look-ups on the GPU
 

@@ -380,6 +380,7 @@ uniform Image MainTex;
 uniform Image dataTexture; // data texture containing (currently) the color gradient and size curve
 uniform float currentTime;
 uniform float brightness;
+uniform vec2 flipbookData; // x = size, y = frame count (in reading order)
 
 
 varying float emittedAt;
@@ -388,12 +389,6 @@ varying vec3 fragWorldPosition;
 uniform bool blends;
 
 // lights
-/*
-uniform vec3 lightPositions[16]; // non-transformed!
-uniform vec3 lightColors[16];
-uniform float lightRanges[16];
-uniform float lightStrengths[16];
-*/
 struct Light {
 	vec3 position;
 	vec3 color;
@@ -430,11 +425,17 @@ void effect() {
 	vec2 gradientUV = vec2(gradientU, 0.25); // Top row (assume 2-pixel tall texture, so Y = 0.25 for the top row)
 	vec4 gradientColor = Texel(dataTexture, gradientUV);
 
-	// Check if a texture is applied by sampling from it
-	vec4 texColor = Texel(MainTex, VaryingTexCoord.xy);
+	// sample from texture using flipbook data. If default flipbook properties are used, this is equal to just sampling from a static image
+	float flipbookSize = flipbookData.x;
+	float flipbookFrames = flipbookData.y;
+	float curFrame = floor(ageFraction * flipbookFrames);
+	float frameX = mod(curFrame, flipbookSize);
+	float frameY = mod(floor(curFrame / flipbookSize), flipbookSize);
+	vec2 cellSize = vec2(1.0 / flipbookSize);
+	vec2 sampleUV = VaryingTexCoord.xy * cellSize + vec2(frameX, frameY) * cellSize;
+	vec4 texColor = Texel(MainTex, sampleUV);
 
-	// Check if the alpha of the texture color is below a threshold
-	
+	// check if the alpha of the texture color is below a threshold
 	if (texColor.a < 0.01) {
 		discard;  // Discard fully transparent pixels
 	}
