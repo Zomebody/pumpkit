@@ -98,6 +98,9 @@ local function new(mesh, positions, rotations, scales, cols)
 		["Instances"] = instanceMesh;
 		["Brightness"] = 0;
 		["Bloom"] = 0;
+		["FresnelColor"] = color(1, 1, 1);
+		["FresnelStrength"] = 0;
+		["FresnelPower"] = 1;
 		["CastShadow"] = false;
 		["IsTriplanar"] = false;
 		["TextureScale"] = 1;

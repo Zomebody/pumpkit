@@ -296,6 +296,8 @@ uniform vec3 meshColor;
 uniform float meshBrightness; // if 1, mesh is not affected by diffuse shading at all
 uniform float meshTransparency; // how transparent the mesh is
 uniform float meshBloom;
+uniform vec2 meshFresnel; // x = strength, y = power
+uniform vec3 meshFresnelColor; // vec3 since fresnel won't be supporting transparency (but still works on transparent meshes)
 varying vec3 instColor;
 
 
@@ -420,7 +422,7 @@ void effect() {
 	texColor = Texel(MainTex, texture_coords - uvVelocity * currentTime) * vec4(1.0, 1.0, 1.0, 1.0 - meshTransparency);
 	
 	// check if the alpha of the texture color is below a threshold
-	if (texColor.a < 0.01) {
+	if (texColor.a < 0.01 && meshFresnel.x <= 0.0) {
 		discard;  // discard fully transparent pixels
 	}
 
@@ -485,9 +487,12 @@ void effect() {
 		lighting = mix(lighting, blobShadowColor, maxShadowFactor);
 	}
 
+	// calculate fresnel
+	float fresnel = pow(1.0 - max(dot(fragNormal, vec3(0.0, 0.0, 1.0)), 0.0), meshFresnel.y) * meshFresnel.x; // fragNormal is in view-space, meshFresnel: x = strength, y = power
 	
 	//set the color on the main canvas. Apply mesh brightness here as well. Higher brightness means less affected by ambient color
-	vec4 resultingColor = texColor * color * (vec4(lighting.x, lighting.y, lighting.z, 1.0) * (1.0 - meshBrightness) + vec4(1.0, 1.0, 1.0, 1.0) * meshBrightness);
+	vec4 resultingColor = mix(texColor * color, vec4(meshFresnelColor, 1.0), fresnel) // mix fresnel with texture color
+		* (vec4(lighting.x, lighting.y, lighting.z, 1.0) * (1.0 - meshBrightness) + vec4(1.0, 1.0, 1.0, 1.0) * meshBrightness); // multiply by lighting (& mix with brightness)
 	love_Canvases[0] = resultingColor;// * 0.0001 + 0.9999 * vec4(fragWorldNormal * 0.5 + 0.5, 1.0);
 
 	// apply bloom to canvas. Semi-transparent meshes will emit weaker bloom

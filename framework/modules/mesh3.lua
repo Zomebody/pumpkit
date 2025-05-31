@@ -55,6 +55,9 @@ function Mesh3:clone()
 	local Mesh = new(self.Mesh, self.Position, self.Rotation, self.Scale, self.Color)
 	Mesh.Brightness = self.Brightness
 	Mesh.Bloom = self.Bloom
+	Mesh.FresnelColor = self.FresnelColor
+	Mesh.FresnelStrength = self.FresnelStrength
+	Mesh.FresnelPower = self.FresnelPower
 	Mesh.Transparency = self.Transparency
 	Mesh.UVVelocity = vector2(self.UVVelocity)
 	Mesh.CastShadow = self.CastShadow
@@ -101,6 +104,9 @@ local function new(meshRef, position, rotation, scale, col)
 		["Color"] = col ~= nil and color(col) or color(1, 1, 1);
 		["Brightness"] = 0;
 		["Bloom"] = 0;
+		["FresnelColor"] = color(1, 1, 1);
+		["FresnelStrength"] = 0;
+		["FresnelPower"] = 1;
 		["Transparency"] = 0;
 		["UVVelocity"] = vector2(0, 0);
 		["CastShadow"] = false;

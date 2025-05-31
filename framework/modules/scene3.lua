@@ -437,6 +437,8 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 		self.Shader:send("normalMap", Mesh.NormalMap or normalImage)
 		self.Shader:send("meshBrightness", Mesh.Brightness)
 		self.Shader:send("meshBloom", Mesh.Bloom)
+		self.Shader:send("meshFresnel", {Mesh.FresnelStrength, Mesh.FresnelPower})
+		self.Shader:send("meshFresnelColor", {Mesh.FresnelColor.r, Mesh.FresnelColor.g, Mesh.FresnelColor.b})
 		self.Shader:send("triplanarScale", Mesh.IsTriplanar and Mesh.TextureScale or 0)
 		love.graphics.drawInstanced(Mesh.Mesh, Mesh.Count)
 	end
@@ -457,9 +459,11 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 			self.Shader:send("meshColor", Mesh.Color:array())
 			self.Shader:send("meshBrightness", Mesh.Brightness)
 			self.Shader:send("meshBloom", Mesh.Bloom)
+			self.Shader:send("meshFresnel", {Mesh.FresnelStrength, Mesh.FresnelPower})
+			self.Shader:send("meshFresnelColor", {Mesh.FresnelColor.r, Mesh.FresnelColor.g, Mesh.FresnelColor.b})
 			self.Shader:send("triplanarScale", Mesh.IsTriplanar and Mesh.TextureScale or 0)
 			love.graphics.draw(Mesh.Mesh)
-		elseif Mesh.Transparency < 1 then -- ignore meshes with transparency == 1
+		elseif Mesh.Transparency < 1 or Mesh.FresnelStrength > 0 then -- ignore meshes with transparency == 1 (unless they have fresnel)
 			table.insert(TransMeshes, Mesh)
 		end
 	end
@@ -473,6 +477,7 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 	-- repeat the mesh drawing process, but for *opaque* spritemeshes
 	self.Shader:send("uvVelocity", {0, 0}) -- sprite meshes have no uv scrolling
 	self.Shader:send("triplanarScale", 0) -- sprite meshes also have no triplanar texture projection
+	self.Shader:send("meshFresnel", {0, 1}) -- no need to update fresnelColor since fresnel strength == 0 disables it already
 	self.Shader:send("isSpriteSheet", true) -- but they do need isSpriteSheet set to true for correct texture mapping
 	for i = 1, #self.SpriteMeshes do
 		Mesh = self.SpriteMeshes[i]
@@ -524,6 +529,8 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 		self.Shader:send("meshColor", Mesh.Color:array())
 		self.Shader:send("meshBrightness", Mesh.Brightness)
 		self.Shader:send("meshBloom", Mesh.Bloom)
+		self.Shader:send("meshFresnel", {Mesh.FresnelStrength, Mesh.FresnelPower})
+		self.Shader:send("meshFresnelColor", {Mesh.FresnelColor.r, Mesh.FresnelColor.g, Mesh.FresnelColor.b})
 		self.Shader:send("meshTransparency", Mesh.Transparency) -- now we can finally include transparency since these meshes are drawn in painter's algorithm order
 		love.graphics.draw(Mesh.Mesh)
 	end
