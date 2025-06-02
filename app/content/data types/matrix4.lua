@@ -218,6 +218,13 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Method";
+	["Name"] = "toQuaternion";
+	["Arguments"] = {};
+	["Description"] = "Returns a vector4 describing the matrix's orientation as a quaternion.";
+})
+
+table.insert(content, {
+	["Type"] = "Method";
 	["Name"] = "toWorldVector";
 	["Arguments"] = {"vector3"};
 	["Description"] = "Assuming the given vector is a direction vector in the matrix's space, this method returns the vector translated back to world-space.";
