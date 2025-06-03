@@ -81,7 +81,7 @@ end
 
 
 
-local function fromQuaternion(q)
+local function fromQuaternion(q) -- vector4s are also allowed
 	local xx = q.x^2
 	local yy = q.y^2
 	local zz = q.z^2
@@ -102,7 +102,7 @@ end
 
 
 
-
+--[[
 -- helper function for interpolate
 local function lerp(a, b, t)
 	return a + (b - a) * t
@@ -139,6 +139,7 @@ local function slerpQuaternion(q1, q2, t)
 		q1.w * w1 + q2.w * w2
 	):norm()
 end
+]]
 
 
 -- interpolate from one matrix4 to another matrix4, useful when moving cameras from one place to another
@@ -150,15 +151,10 @@ local function interpolate(m1, m2, t)
 	local newP = lerp(p1, p2, t) -- works correctly
 
 	-- get rotations
-	--print("matrix 1")
-	--print(m1)
 	local q1 = m1:toQuaternion() -- worked correctly in online converter
-	--print("quaternion 1")
-	--print(q1)
 	local q2 = m2:toQuaternion()
-	local newQ = slerpQuaternion(q1, q2, t)
-	--print("slerped quaternion")
-	--print(newQ)
+	--local newQ = slerpQuaternion(q1, q2, t)
+	local newQ = quaternion.slerp(q1, q2, t)
 
 	-- get scales
 	local s1 = m1:getScale()
@@ -390,7 +386,7 @@ function matrix4:toQuaternion()
 		end
 	end
 
-	return vector4(qx, qy, qz, qw)
+	return quaternion(qx, qy, qz, qw)
 
 end
 
@@ -451,6 +447,11 @@ end
 
 
 function matrix4:translate(x, y, z)
+	if vector3.isVector3(x) then
+		z = x.z
+		y = x.y
+		x = x.x
+	end
 	self[13] = self[13] + x
 	self[14] = self[14] + y
 	self[15] = self[15] + z
@@ -462,53 +463,24 @@ end
 function matrix4:rotateX(angle)
 	local rx = rotationX(angle)
 	return self * rx
-	--[[
-	local newMatrix = self * rx
-	for i = 1, 16 do
-		self[i] = newMatrix[i]
-	end
-	return self
-	]]
 end
 
 -- rotate a matrix along the Y-axis by a certain angle
 function matrix4:rotateY(angle)
 	local ry = rotationY(angle)
 	return self * ry
-	--[[
-	local newMatrix = self * ry
-	for i = 1, 16 do
-		self[i] = newMatrix[i]
-	end
-	return self
-	]]
 end
 
 -- rotate a matrix along the Z-axis by a certain angle
 function matrix4:rotateZ(angle)
 	local rz = rotationZ(angle)
 	return self * rz
-	--[[
-	local newMatrix = self * rz
-	for i = 1, 16 do
-		self[i] = newMatrix[i]
-	end
-	return self
-	]]
 end
 
 
 -- return the transpose of the matrix
 function matrix4:transpose()
-	--[[
-	self[2], self[5] = self[5], self[2]
-	self[3], self[9] = self[9], self[3]
-	self[7], self[10] = self[10], self[7]
-	self[4], self[13] = self[13], self[4]
-	self[8], self[14] = self[14], self[8]
-	self[12], self[15] = self[15], self[12]
-	return self
-	]]
+
 	return new(self[1], self[5], self[9], self[13], self[2], self[6], self[10], self[14], self[3], self[7], self[11], self[15], self[4], self[8], self[12], self[16])
 end
 
