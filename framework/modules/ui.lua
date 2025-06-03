@@ -102,29 +102,73 @@ AnimatedFrame.__tostring = function(tab) return "{AnimatedFrame: \"" .. tostring
 
 ----------------------------------------------------[[ == UI POSITIONING / SIZING FUNCTIONS == ]]----------------------------------------------------
 
+-- TODO: split updateAbsolutePosition() into two functions, one for regular elements and one for elements with a layout
+-- pseudo-code:
+--[[
+
+
+
+function updateAbsolutePosition(Element)
+	update position
+
+	if layout then
+		for all children
+			calculate child abs position
+			updateAbsPosInLayout(Element, childAbsPosition)
+		end
+	else
+		for all children
+			updateAbsolutePosition(child)
+		end
+	end
+end
+
+
+function updateAbsPosInLayout(Child, calculatedPosition)
+	set position to calculatedPosition
+	if layout then
+		for all children
+			calculate child abs position
+			updateAbsPosInLayout(Element, childAbsPosition)
+		end
+	else
+		for all children
+			updateAbsolutePositiont(child)
+		end
+	end
+end
+
+
+
+]]
+
+
 local contentOffsetX = 0
 local contentOffsetY = 0
 local OP = nil -- Obj.Parent
-local function updateAbsolutePosition(Obj, ignoreParentPosition, wX, wY, wWidth, wHeight) -- ignoreParentPosition is used in combination with :renderTo() to correctly position children that are rendered without parent
+-- if you call updateAbsolutePosition, make sure AbsoluteSize has already been updated, otherwise this logic falls apart!
+--local function updateAbsolutePosition(Obj, ignoreParentPosition, wX, wY, wWidth, wHeight)
+local function updateAbsolutePosition(Obj, ignoreParentPosition) -- ignoreParentPosition is used in combination with :renderTo() to correctly position children that are rendered without parent
 	if Obj == nil or Obj == module then
 		for i = 1, #module.Children do
-			updateAbsolutePosition(module.Children[i], nil, wX, wY, wWidth, wHeight)
+			updateAbsolutePosition(module.Children[i])
 		end
 		return
 	end
 	-- set value depending on if this is a top-level element, or if there is a parent
 	-- calculate parent 'window' x, y, width, height
+	local wX, wY, wWidth, wHeight
 	OP = Obj.Parent
 	if OP and OP ~= module and (not ignoreParentPosition) then
-		wX = (wX == nil and OP.AbsolutePosition.x or wX) + OP.Padding.x
-		wY = (wY == nil and OP.AbsolutePosition.y or wY) + OP.Padding.y
-		wWidth = (wWidth == nil and OP.AbsoluteSize.x or wWidth) - 2 * OP.Padding.x
-		wHeight = (wHeight == nil and OP.AbsoluteSize.y or wHeight) - 2 * OP.Padding.y
+		wX = OP.AbsolutePosition.x + OP.Padding.x
+		wY = OP.AbsolutePosition.y + OP.Padding.y
+		wWidth = OP.AbsoluteSize.x - 2 * OP.Padding.x
+		wHeight = OP.AbsoluteSize.y - 2 * OP.Padding.y
 	else
-		wX = wX == nil and 0 or wX
-		wY = wY == nil and 0 or wY
-		wWidth = wWidth == nil and module.Size.x or wWidth
-		wHeight = wHeight == nil and module.Size.y or wHeight
+		wX = 0
+		wY = 0
+		wWidth = module.Size.x
+		wHeight = module.Size.y
 	end
 
 	-- apply content offset from all ancestors
@@ -229,7 +273,7 @@ local function updateAbsolutePosition(Obj, ignoreParentPosition, wX, wY, wWidth,
 
 	--if prevX ~= newX or prevY ~= newY then
 	for i = 1, #Obj.Children do
-		updateAbsolutePosition(Obj.Children[i], nil, absX, absY, Obj.AbsoluteSize.x, Obj.AbsoluteSize.y)
+		updateAbsolutePosition(Obj.Children[i])
 	end
 	--end
 end
