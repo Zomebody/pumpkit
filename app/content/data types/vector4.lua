@@ -77,6 +77,13 @@ table.insert(content, {
 	["Description"] = "Returns the Pythagorian distance between the current vector4 and the supplied vector4.";
 })
 
+table.insert(content, {
+	["Type"] = "Method";
+	["Name"] = "dot";
+	["Arguments"] = {"vector4"};
+	["Description"] = "Returns the dot product between itself and the given vector4.";
+})
+
 
 table.insert(content, {
 	["Type"] = "Method";

@@ -115,6 +115,11 @@ function vector4.dist(a, b)
 	return math.sqrt(dx^2 + dy^2 + dz^2 + dw^2)
 end
 
+function vector4:dot(v)
+	assert(isVector4(v), "dot: wrong argument type (expected <vector4>, got "..type(v)..")")
+	return self.x * v.x + self.y * v.y + self.z * v.z + self.w * v.w
+end
+
 -- normalize the vector (give it a magnitude of 1)
 function vector4:norm()
 	local m = self:getMag()
