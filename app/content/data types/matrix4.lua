@@ -168,6 +168,20 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Method";
+	["Name"] = "getPosition";
+	["Arguments"] = {};
+	["Description"] = "Returns a vector3 with the position/translation component of the matrix4.";
+})
+
+table.insert(content, {
+	["Type"] = "Method";
+	["Name"] = "getScale";
+	["Arguments"] = {};
+	["Description"] = "Returns a vector3 with the scaling component of the matrix4.";
+})
+
+table.insert(content, {
+	["Type"] = "Method";
 	["Name"] = "identity";
 	["Arguments"] = {};
 	["Description"] = "Resets the matrix to an identity matrix.";
