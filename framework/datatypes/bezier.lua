@@ -53,8 +53,10 @@ function bezier:getVelocityAt(a, t)
 	if n == 0 then
 		if self.Dimensions == 2 then
 			return vector2(0, 0)
-		else
+		elseif self.Dimensions == 3 then
 			return vector3(0, 0, 0)
+		else
+			return vector4(0, 0, 0, 0)
 		end
 	end
 
@@ -83,7 +85,7 @@ end
 local new = function(...)
 	local vecs = {...}
 	assert(#vecs > 0, "bezier.new(...) expects at least one argument, given are 0 arguments.")
-	if type(vecs[1]) == "table" then
+	if type(vecs[1]) == "table" and not (vector2.isVector2(vecs[1]) or vector3.isVector3(vecs[1]) or vector4.isVector4(vecs[1])) then
 		vecs = vecs[1]
 	end
 
