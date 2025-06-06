@@ -101,13 +101,13 @@ local function fromQuaternion(q) -- vector4s are also allowed
 end
 
 
-
---[[
 -- helper function for interpolate
 local function lerp(a, b, t)
 	return a + (b - a) * t
 end
 
+
+--[[
 -- helper function for interpolate
 local function slerpQuaternion(q1, q2, t)
 	local dot = q1.x * q2.x + q1.y * q2.y + q1.z * q2.z + q1.w * q2.w
@@ -321,9 +321,8 @@ end
 
 
 -- using the same calculation as found here: https://github.com/CoppeliaRobotics/lua/blob/master/matrix.lua
-function matrix4:toEulerXYZ() -- assumes xyz order
-	--local euler = vector3(0, 0, 0)
 
+function matrix4:toEulerXYZ() -- assumes xyz order
 	return vector3(
 		math.atan2(self[7], self[11]),
 		math.atan2(-self[3], math.sqrt(self[7]^2 + self[11]^2)),
