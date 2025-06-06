@@ -16,11 +16,19 @@ end
 local function new(x, y, z, w)
 	if isQuaternion(x) then
 		return setmetatable({x = x.x or 0, y = x.y or 0, z = x.z or 0, w = x.w or 0}, quaternion)
+	elseif vector3.isVector3(x) then
+		return setmetatable({x = x.x or 0, y = x.y or 0, z = x.z or 0, w = 0}, quaternion)
 	else
 		return setmetatable({x = x or 0, y = y or 0, z = z or 0, w = w or 0}, quaternion)
 	end
 end
 
+
+function fromAxisAngle(axis, angle)
+	local half = angle / 2
+	local s = math.sin(half)
+	return new(axis.x * s, axis.y * s, axis.z * s, math.cos(half))
+end
 
 
 
@@ -62,6 +70,11 @@ local function slerp(q1, q2, t)
 end
 
 
+-- get the magnitude of a quaternion
+function quaternion:getMag()
+	return math.sqrt(self.x^2 + self.y^2 + self.z^2 + self.w^2)
+end
+
 
 local function exp(v3)
 	local angle = v3:getMag()
@@ -102,11 +115,6 @@ function quaternion:clone()
 	return new(self.x, self.y, self.z, self.w)
 end
 
--- get the magnitude of a quaternion
-function quaternion:getMag()
-	return math.sqrt(self.x^2 + self.y^2 + self.z^2 + self.w^2)
-end
-
 
 -- set the magnitude of a quaternion
 function quaternion:setMag(mag)
@@ -117,19 +125,43 @@ function quaternion:setMag(mag)
 end
 
 
+function quaternion:conjugate()
+	return new(-self.x, -self.y, -self.z, self.w)
+end
+
 
 function quaternion:inverse()
-	return new(-self.x, -self.y, -self.z, self.w)
+	local lenSquared = self.x^2 + self.y^2 + self.z^2 + self.w^2
+	if lenSquared == 0 then
+		error("quaternion:inverse() failed because the quaternion has length 0.")
+	end
+	return new(-self.x / lenSquared, -self.y / lenSquared, -self.z / lenSquared, self.w / lenSquared)
 end
 
 
 function quaternion:log()
 	local v = vector3(self.x, self.y, self.z)
 	local length = v:getMag()
-	if length < 1e-6 then return vector3(0, 0, 0) end
+	if length < 1e-6 then return new(0, 0, 0, 0) end
 	local theta = math.acos(self.w)
-	return v:norm() * theta
+	local normalized = v:norm() * theta
+	return new(normalized.x, normalized.y, normalized.z, 0)
 end
+
+
+-- from: https://www.euclideanspace.com/maths/geometry/rotations/conversions/quaternionToAngle/index.htm
+function quaternion:toAxisAngle()
+	local q = self
+	if self.w > 1 then q = new(self):norm() end
+	local angle = 2 * math.acos(q.w)
+	local s = math.sqrt(1 - q.w^2)
+	if s < 0.0001 then -- avoid dividing by zero
+		return vector3(q.x, q.y, q.z)
+	else
+		return vector3(q.x / s, q.y / s, q.z / s)
+	end
+end
+
 
 
 
@@ -143,18 +175,18 @@ end
 
 
 local function multQuatVec3(q, v)
-	local n1 = self.x * 2
-	local n2 = self.y * 2
-	local n3 = self.z * 2
-	local n4 = self.x * n1
-	local n5 = self.y * n2
-	local n6 = self.z * n3
-	local n7 = self.x * n2
-	local n8 = self.x * n3
-	local n9 = self.y * n3
-	local n10 = self.w * n1
-	local n11 = self.w * n2
-	local n12 = self.w * n3
+	local n1 = q.x * 2
+	local n2 = q.y * 2
+	local n3 = q.z * 2
+	local n4 = q.x * n1
+	local n5 = q.y * n2
+	local n6 = q.z * n3
+	local n7 = q.x * n2
+	local n8 = q.x * n3
+	local n9 = q.y * n3
+	local n10 = q.w * n1
+	local n11 = q.w * n2
+	local n12 = q.w * n3
 	local x = (((1 - (n5 + n6)) * v.x) + ((n7 - n12) * v.y)) + ((n8 + n11) * v.z)
 	local y = (((n7 + n12) * v.x) + ((1 - (n4 + n6)) * v.y)) + ((n9 - n10) * v.z)
 	local z = (((n8 - n11) * v.x) + ((n9 + n10) * v.y)) + ((1 - (n4 + n5)) * v.z)
@@ -188,6 +220,11 @@ end
 function quaternion.__div(a, b)
 	assert(isQuaternion(a) and type(b) == "number", "div: wrong argument types (expected <quaternion> and <number>)")
 	return new(a.x / b, a.y / b, a.z / b, a.w / b)
+end
+
+function quaternion.__add(a, b)
+	assert(isQuaternion(a) and isQuaternion(b), "add: wrong argument types (expected <quaternion> and <quaternion>)")
+	return new(a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w)
 end
 
 
@@ -238,5 +275,6 @@ end
 module.new = new
 module.isQuaternion = isQuaternion
 module.exp = exp -- exponential mapping, i.e. converting angular velocity (axis-angle form) into a unit quaternion
+module.fromAxisAngle = fromAxisAngle
 module.slerp = slerp
 return setmetatable(module, {__call = function(_,...) return new(...) end})
