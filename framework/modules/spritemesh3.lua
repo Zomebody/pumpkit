@@ -52,7 +52,7 @@ end
 
 
 function Spritemesh3:clone()
-	local SMesh = new(self.Mesh, self.Position, self.Rotation, self.Scale, self.Color)
+	local SMesh = new(self.Mesh, self.SheetSize, self.Position, self.Rotation, self.Scale, self.Color)
 	SMesh.Brightness = self.Brightness
 	SMesh.Bloom = self.Bloom
 	SMesh.Transparency = self.Transparency
@@ -72,10 +72,7 @@ end
 
 
 function Spritemesh3:detach()
-	-- remove it from the scene
-	-- unlink the scene property
-	--local index = findMeshInOrderedArray(self.Scene.BasicMeshes, Obj)
-	self.Scene:detachSpriteMesh(self)
+	self.Scene:detachMesh(self)
 end
 
 
