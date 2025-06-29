@@ -30,8 +30,10 @@ function Camera3:updateCameraMatrices()
 	self.Matrix = camMatrix
 	if self.Scene3 ~= nil then
 		local c1, c2, c3, c4 = camMatrix:columns()
-		self.Scene3.Shader:send("camMatrix", {c1, c2, c3, c4})
-		self.Scene3.ParticlesShader:send("camMatrix", {c1, c2, c3, c4})
+		local arr = {c1, c2, c3, c4}
+		self.Scene3.Shader:send("camMatrix", arr)
+		self.Scene3.RippleShader:send("camMatrix", arr)
+		self.Scene3.ParticlesShader:send("camMatrix", arr)
 	end
 end
 
@@ -157,6 +159,7 @@ function Camera3:setFOV(fov)
 	-- update the scene's field-of-view if this camera is attached to one
 	if self.Scene3 ~= nil then
 		self.Scene3.Shader:send("fieldOfView", fov)
+		self.Scene3.RippleShader:send("fieldOfView", fov)
 		self.Scene3.ParticlesShader:send("fieldOfView", fov)
 
 		self:updateCameraMatrices()
