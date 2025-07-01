@@ -55,6 +55,7 @@ end
 
 function Ripplemesh3:clone()
 	local RMesh = new(self.Mesh, self.Position, self.Rotation, self.Scale, self.Color, self.FoamColor)
+	RMesh.Texture = self.Texture
 	RMesh.Brightness = self.Brightness
 	RMesh.Bloom = self.Bloom
 	RMesh.WaterVelocity = vector4(self.WaterVelocity)
@@ -87,7 +88,6 @@ end
 ----------------------------------------------------[[ == OBJECT CREATION == ]]----------------------------------------------------
 
 new = function(meshRef, position, rotation, scale, col, foamCol)
-	assert(meshRef:getTexture() ~= nil, "Ripplemesh3.new(meshRef, position, rotation, scale, col, foamCol) failed because meshRef does not have a texture set.")
 	assert(position == nil or vector3.isVector3(position), "Ripplemesh3.new(meshRef, position, rotation, scale, col, foamCol) requires argument 'position' to be nil or a vector3.")
 	assert(rotation == nil or vector3.isVector3(rotation), "Ripplemesh3.new(meshRef, position, rotation, scale, col, foamCol) requires argument 'rotation' to be nil or a vector3.")
 	assert(scale == nil or vector3.isVector3(scale), "Ripplemesh3.new(meshRef, position, rotation, scale, col, foamCol) requires argument 'scale' to be nil or a vector3.")
@@ -99,6 +99,7 @@ new = function(meshRef, position, rotation, scale, col, foamCol)
 	local Obj = {
 		["Id"] = module.TotalCreated;
 		["Mesh"] = meshRef;
+		["Texture"] = nil;
 		["Position"] = position ~= nil and vector3(position) or vector3(0, 0, 0);
 		["Rotation"] = rotation ~= nil and vector3(rotation) or vector3(0, 0, 0);
 		["Scale"] = scale ~= nil and vector3(scale) or vector3(1, 1, 1);

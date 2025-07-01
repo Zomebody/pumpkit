@@ -53,6 +53,7 @@ end
 
 function Mesh3:clone()
 	local Mesh = new(self.Mesh, self.Position, self.Rotation, self.Scale, self.Color)
+	Mesh.Texture = self.Texture
 	Mesh.Brightness = self.Brightness
 	Mesh.Bloom = self.Bloom
 	Mesh.FresnelColor = color(self.FresnelColor)
@@ -97,6 +98,7 @@ local function new(meshRef, position, rotation, scale, col)
 	local Obj = {
 		["Id"] = module.TotalCreated;
 		["Mesh"] = meshRef;
+		["Texture"] = nil;
 		["Position"] = position ~= nil and vector3(position) or vector3(0, 0, 0);
 		["Rotation"] = rotation ~= nil and vector3(rotation) or vector3(0, 0, 0);
 		["Scale"] = scale ~= nil and vector3(scale) or vector3(1, 1, 1);

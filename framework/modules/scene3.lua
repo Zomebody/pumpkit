@@ -76,6 +76,12 @@ local normalImage = love.graphics.newImage(normalData)
 normalImage:setWrap("repeat")
 normalImage:setFilter("nearest")
 
+local whitePixel = love.image.newImageData(1, 1)
+whitePixel:setPixel(0, 0, 1, 1, 1, 1)
+local blankImage = love.graphics.newImage(whitePixel)
+blankImage:setWrap("repeat")
+blankImage:setFilter("nearest")
+
 local dataMap = love.image.newImageData(1, 1) -- specifically for ripplemeshes. No distortion, no noise/foam
 dataMap:mapPixel(function() return 0, 0, 1, 0 end)
 local dataImage = love.graphics.newImage(dataMap)
@@ -239,6 +245,7 @@ function Scene3:updateShadowMap()
 	for i = 1, #self.InstancedMeshes do
 		Mesh = self.InstancedMeshes[i]
 		if Mesh.CastShadow then
+			self.ShadowMapShader:send("meshTexture", Mesh.Texture or blankImage)
 			love.graphics.drawInstanced(Mesh.Mesh, Mesh.Count)
 		end
 	end
@@ -247,6 +254,7 @@ function Scene3:updateShadowMap()
 		Mesh = self.BasicMeshes[i]
 		if Mesh.CastShadow then
 			-- TODO meshes need their own matrix instead of sending over and computing them every time in the shaders
+			self.ShadowMapShader:send("meshTexture", Mesh.Texture or blankImage)
 			self.ShadowMapShader:send("meshPosition", Mesh.Position:array())
 			self.ShadowMapShader:send("meshRotation", Mesh.Rotation:array())
 			self.ShadowMapShader:send("meshScale", Mesh.Scale:array())
@@ -439,6 +447,7 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 	self.Shader:send("isInstanced", true) -- tell the shader to use the attributes to calculate the model matrices
 	for i = 1, #self.InstancedMeshes do
 		Mesh = self.InstancedMeshes[i]
+		self.Shader:send("meshTexture", Mesh.Texture or blankImage)
 		self.Shader:send("normalMap", Mesh.NormalMap or normalImage)
 		self.Shader:send("meshBrightness", Mesh.Brightness)
 		self.Shader:send("meshBloom", Mesh.Bloom)
@@ -459,6 +468,7 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 		if Mesh.Transparency == 0 then
 			self.Shader:send("normalMap", Mesh.NormalMap or normalImage)
 			self.Shader:send("uvVelocity", Mesh.UVVelocity:array())
+			self.Shader:send("meshTexture", Mesh.Texture or blankImage)
 			self.Shader:send("meshPosition", Mesh.Position:array())
 			self.Shader:send("meshRotation", Mesh.Rotation:array())
 			self.Shader:send("meshScale", Mesh.Scale:array())
@@ -490,6 +500,7 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 	for i = 1, #self.SpriteMeshes do
 		Mesh = self.SpriteMeshes[i]
 		if Mesh.Transparency == 0 then
+			self.Shader:send("meshTexture", Mesh.Texture or blankImage)
 			self.Shader:send("meshPosition", Mesh.Position:array())
 			self.Shader:send("meshRotation", Mesh.Rotation:array())
 			self.Shader:send("meshScale", Mesh.Scale:array())
@@ -517,6 +528,7 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 		self.RippleShader:send("currentTime", love.timer.getTime())
 		for i = 1, #self.RippleMeshes do
 			local RMesh = self.RippleMeshes[i]
+			self.RippleShader:send("meshTexture", RMesh.Texture or blankImage)
 			self.RippleShader:send("meshPosition", RMesh.Position:array())
 			self.RippleShader:send("meshRotation", RMesh.Rotation:array())
 			self.RippleShader:send("meshScale", RMesh.Scale:array())
@@ -563,6 +575,7 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 			self.Shader:send("spritePosition", Mesh.SpritePosition)
 			self.Shader:send("spriteSheetSize", Mesh.SheetSize)
 		end
+		self.Shader:send("meshTexture", Mesh.Texture or blankImage)
 		self.Shader:send("meshPosition", Mesh.Position:array())
 		self.Shader:send("meshRotation", Mesh.Rotation:array())
 		self.Shader:send("meshScale", Mesh.Scale:array())
@@ -590,15 +603,6 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 	if #self.Particles > 0 then
 		-- now draw all the particles in the scene
 		self:drawParticles()
-		--[[
-		-- now draw all the particles in the scene
-		-- don't need to send any info to the shader because the particles when they update themselves, also update the mesh attributes that encodes any required info
-		love.graphics.setCanvas({self.RenderCanvas, ["depthstencil"] = self.DepthCanvas}) -- remove normals canvas and bloom canvas from render target. We won't need it anymore
-		love.graphics.setShader(self.ParticlesShader)
-		for i = 1, #self.Particles do
-			self.Particles[i]:draw(self.ParticlesShader)
-		end
-		]]
 	end
 
 	-- setShader() can be called here since if self.Foreground ~= nil then setting setShader() in there makes no sense since the shader will be set to nil anyway right after when drawing the canvas to the screen

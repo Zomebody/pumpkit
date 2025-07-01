@@ -55,6 +55,7 @@ uniform float triplanarScale;
 
 // textures
 uniform Image MainTex; // used to be the 'tex' argument, but is now passed separately in this specific variable name because we switched to multi-canvas shading which has no arguments
+uniform Image meshTexture; // replaces MainTex. Instead of using mesh:setTexture(), they are now passed separately so that a mesh can be reused with different textures on them
 uniform Image normalMap;
 uniform sampler2DShadow shadowCanvas; // use Image when doing 'basic' sampling. Use sampler2DShadow when you want automatic bilinear filtering (but more prone to shadow acne :<)
 
@@ -117,7 +118,6 @@ float calculateShadow(vec4 fragPosLightSpace, vec3 surfaceNormal) {
 void effect() {
 
 	vec4 color = VaryingColor; // argument 'color' doesn't exist when using multiple canvases, so use built-in VaryingColor
-	//Image tex = MainTex;
 	if (isInstanced) {
 		color = vec4(color.x * instColor.x, color.y * instColor.y, color.z * instColor.z, color.w);
 	} else {
@@ -166,7 +166,8 @@ void effect() {
 	} else { // it's a spritesheet, so sample from the right sub-section in the spritesheet
 		texture_coords = VaryingTexCoord.xy / spriteSheetSize + spritePosition / spriteSheetSize;
 	}
-	texColor = Texel(MainTex, texture_coords - uvVelocity * currentTime) * vec4(1.0, 1.0, 1.0, 1.0 - meshTransparency);
+	//texColor = Texel(MainTex, texture_coords - uvVelocity * currentTime) * vec4(1.0, 1.0, 1.0, 1.0 - meshTransparency);
+	texColor = Texel(meshTexture, texture_coords - uvVelocity * currentTime) * vec4(1.0, 1.0, 1.0, 1.0 - meshTransparency);
 	
 	// check if the alpha of the texture color is below a threshold
 	if (texColor.a < 0.95 && meshFresnel.x <= 0.0) {

@@ -53,6 +53,7 @@ end
 
 function Spritemesh3:clone()
 	local SMesh = new(self.Mesh, self.SheetSize, self.Position, self.Rotation, self.Scale, self.Color)
+	SMesh.Texture = self.Texture
 	SMesh.Brightness = self.Brightness
 	SMesh.Bloom = self.Bloom
 	SMesh.Transparency = self.Transparency
@@ -82,7 +83,6 @@ end
 ----------------------------------------------------[[ == OBJECT CREATION == ]]----------------------------------------------------
 
 local function new(meshRef, sheetSize, position, rotation, scale, col)
-	assert(meshRef:getTexture() ~= nil, "Spritemesh3.new(meshRef, sheetSize, position, rotation, scale, col) failed because meshRef does not have a texture set.")
 	assert(sheetSize == nil or vector2.isVector2(sheetSize), "Spritemesh3.new(meshRef, sheetSize, position, rotation, scale, col) requires argument 'sheetSize' to be nil or a vector2.")
 	assert(position == nil or vector3.isVector3(position), "Spritemesh3.new(meshRef, sheetSize, position, rotation, scale, col) requires argument 'position' to be nil or a vector3.")
 	assert(rotation == nil or vector3.isVector3(rotation), "Spritemesh3.new(meshRef, sheetSize, position, rotation, scale, col) requires argument 'rotation' to be nil or a vector3.")
@@ -94,6 +94,7 @@ local function new(meshRef, sheetSize, position, rotation, scale, col)
 	local Obj = {
 		["Id"] = module.TotalCreated;
 		["Mesh"] = meshRef;
+		["Texture"] = nil;
 		["Position"] = position ~= nil and vector3(position) or vector3(0, 0, 0);
 		["Rotation"] = rotation ~= nil and vector3(rotation) or vector3(0, 0, 0);
 		["Scale"] = scale ~= nil and vector3(scale) or vector3(1, 1, 1);

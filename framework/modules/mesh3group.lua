@@ -95,6 +95,7 @@ local function new(mesh, positions, rotations, scales, cols)
 	local Obj = {
 		["Id"] = module.TotalCreated;
 		["Mesh"] = mesh;
+		["Texture"] = nil;
 		["Instances"] = instanceMesh;
 		["Brightness"] = 0;
 		["Bloom"] = 0;

@@ -26,8 +26,9 @@ uniform vec2 meshFresnel; // x = strength, y = power
 uniform vec3 meshFresnelColor; // vec3 since fresnel won't be supporting transparency (but still works on transparent meshes)
 
 // textures
-uniform Image MainTex; // used to be the 'tex' argument, but is now passed separately in this specific variable name because we switched to multi-canvas shading which has no arguments
-uniform Image normalMap;
+//uniform Image MainTex; // used to be the 'tex' argument, but is now passed separately in this specific variable name because we switched to multi-canvas shading which has no arguments
+uniform Image meshTexture; // replaces MainTex. Instead of using mesh:setTexture(), they are now passed separately so that a mesh can be reused with different textures on them
+uniform Image normalMap; // unused, might be implemented later down the line idk
 // TODO: re-implement foaminess
 // if noise1 < noise2 * foaminess, render foam
 // thus if alpha values range from 0.1 to 0.9, you'll need a foaminess of at least 9 to have 100% foam coverage
@@ -111,7 +112,8 @@ void effect() {
 	vec2 sampleCoordsWater = uv + distortion + vec2(-waterVelocity.x, waterVelocity.y) * currentTime;
 	vec2 sampleCoordsFoam1 = uv + distortion + vec2(-foamVelocity.x, foamVelocity.y) * currentTime;
 	vec2 sampleCoordsFoam2 = uv + distortion + vec2(-foamVelocity.z, foamVelocity.w) * currentTime;
-	vec4 texColor = Texel(MainTex, sampleCoordsWater);
+	//vec4 texColor = Texel(MainTex, sampleCoordsWater);
+	vec4 texColor = Texel(meshTexture, sampleCoordsWater);
 
 	// if foam, overwrite texture color
 	float foam1Value = Texel(dataMap, sampleCoordsFoam1).z;
