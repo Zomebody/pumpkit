@@ -357,7 +357,7 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 	local prevCanvas = love.graphics.getCanvas()
 	local prevDepthMode, prevWrite = love.graphics.getDepthMode()
 
-
+	profiler:pushLabel("scene3")
 	
 	-- no camera? don't draw anything!
 	if self.Camera3 == nil then
@@ -380,6 +380,7 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 	end
 
 
+	profiler:pushLabel("upd-light")
 
 	-- update lights
 	local lightsInfo = {}
@@ -408,10 +409,14 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 		self.Shader:send("blobShadows", unpack(blobsInfo))
 	end
 
+	profiler:popLabel()
+
 
 	-- if a shadow canvas is set, it means shadow mapping is turned on
 	if self.ShadowCanvas ~= nil then
+		profiler:pushLabel("shadow")
 		self:updateShadowMap()
+		profiler:popLabel("mesh")
 	end
 
 
@@ -426,10 +431,12 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 
 	-- draw the background
 	if self.Background then
+		profiler:pushLabel("bg")
 		love.graphics.setShader() -- needs to be reset because shadow map might be enabled
 		love.graphics.setDepthMode("always", false)
 		local imgWidth, imgHeight = self.Background:getDimensions()
 		love.graphics.draw(self.Background, 0, 0, 0, renderWidth / imgWidth, renderHeight / imgHeight)
+		profiler:popLabel()
 	end
 
 	-- prep render settings
@@ -440,6 +447,7 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 
 
 	-- draw instanced meshes
+	profiler:pushLabel("inst")
 	local Mesh = nil
 	self.Shader:send("currentTime", love.timer.getTime())
 	self.Shader:send("uvVelocity", {0, 0})
@@ -456,6 +464,7 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 		self.Shader:send("triplanarScale", Mesh.IsTriplanar and Mesh.TextureScale or 0)
 		love.graphics.drawInstanced(Mesh.Mesh, Mesh.Count)
 	end
+	profiler:popLabel()
 
 
 	-- then draw all *opaque* basic meshes
@@ -487,12 +496,15 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 
 	-- apply ambient occlusion to geometry so far (which excludes semi-transparent meshes and ripple meshes)
 	if self.AOEnabled then
+		profiler:pushLabel("ao")
 		love.graphics.setDepthMode("always", false)
 		self:applyAmbientOcclusion()
 		love.graphics.setDepthMode("less", true)
+		profiler:popLabel()
 	end
 
 	-- repeat the mesh drawing process, but for *opaque* spritemeshes
+	profiler:pushLabel("spr-mesh")
 	self.Shader:send("uvVelocity", {0, 0}) -- sprite meshes have no uv scrolling
 	self.Shader:send("triplanarScale", 0) -- sprite meshes also have no triplanar texture projection
 	self.Shader:send("meshFresnel", {0, 1}) -- no need to update fresnelColor since fresnel strength == 0 disables it already
@@ -515,6 +527,7 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 		end
 	end
 	self.Shader:send("isSpriteSheet", false)
+	profiler:popLabel()
 
 
 	-- draw ripplemeshes after AO since having AO lines around liquids just feels wrong?
@@ -560,6 +573,7 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 	)
 
 	-- since both basic meshes and sprite meshes need to be drawn in the right order, this loop gets a bit complicated
+	profiler:pushLabel("trans")
 	for i = 1, #TransMeshes do
 		-- need to add a small check here to distinguish between basic meshes and sprite meshes since they have somewhat different properties
 		Mesh = TransMeshes[i]
@@ -587,14 +601,17 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 		self.Shader:send("meshTransparency", Mesh.Transparency) -- now we can finally include transparency since these meshes are drawn in painter's algorithm order
 		love.graphics.draw(Mesh.Mesh)
 	end
+	profiler:popLabel()
 	
 
 	
 
 	if self.BloomStrength > 0 then
+		profiler:pushLabel("bloom")
 		love.graphics.setDepthMode("always", false)
 		self:applyBloom()
 		love.graphics.setDepthMode("less", true)
+		profiler:popLabel()
 	end
 
 	-- disable culling for particles so they can be seen from both sides
@@ -602,7 +619,9 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 
 	if #self.Particles > 0 then
 		-- now draw all the particles in the scene
+		profiler:pushLabel("particles")
 		self:drawParticles()
+		profiler:popLabel()
 	end
 
 	-- setShader() can be called here since if self.Foreground ~= nil then setting setShader() in there makes no sense since the shader will be set to nil anyway right after when drawing the canvas to the screen
@@ -610,12 +629,15 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 
 	-- draw the foreground
 	if self.Foreground then
+		profiler:pushLabel("fg")
 		love.graphics.setDepthMode("always", false)
 		local imgWidth, imgHeight = self.Foreground:getDimensions()
 		love.graphics.draw(self.Foreground, 0, 0, 0, renderWidth / imgWidth, renderHeight / imgHeight)
+		profiler:popLabel()
 	end
 
 	-- reset the canvas to the render target & render the scene
+	profiler:pushLabel("write")
 	love.graphics.setCanvas(renderTarget)
 	if renderTarget ~= nil then
 		love.graphics.clear()
@@ -636,11 +658,14 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 		local scaleY = 1 / self.MSAA
 		love.graphics.draw(self.RenderCanvas, x, self.RenderCanvas:getHeight() * scaleY + y, 0, scaleX, -scaleY)
 	end
+	profiler:popLabel()
 	
 
 	-- revert some graphics settings
 	love.graphics.setCanvas(prevCanvas)
 	love.graphics.setDepthMode(prevDepthMode, prevWrite)
+
+	profiler:popLabel()
 end
 
 
