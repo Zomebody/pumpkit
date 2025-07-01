@@ -169,7 +169,7 @@ void effect() {
 	texColor = Texel(MainTex, texture_coords - uvVelocity * currentTime) * vec4(1.0, 1.0, 1.0, 1.0 - meshTransparency);
 	
 	// check if the alpha of the texture color is below a threshold
-	if (texColor.a < 0.01 && meshFresnel.x <= 0.0) {
+	if (texColor.a < 0.95 && meshFresnel.x <= 0.0) {
 		discard;  // discard fully transparent pixels
 	}
 
