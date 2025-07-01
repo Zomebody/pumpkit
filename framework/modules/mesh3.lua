@@ -55,7 +55,7 @@ function Mesh3:clone()
 	local Mesh = new(self.Mesh, self.Position, self.Rotation, self.Scale, self.Color)
 	Mesh.Brightness = self.Brightness
 	Mesh.Bloom = self.Bloom
-	Mesh.FresnelColor = self.FresnelColor
+	Mesh.FresnelColor = color(self.FresnelColor)
 	Mesh.FresnelStrength = self.FresnelStrength
 	Mesh.FresnelPower = self.FresnelPower
 	Mesh.Transparency = self.Transparency
@@ -64,7 +64,6 @@ function Mesh3:clone()
 	Mesh.IsTriplanar = self.IsTriplanar
 	Mesh.TextureScale = self.TextureScale
 	Mesh.NormalMap = self.NormalMap
-	
 	-- keep the scene nil
 	return Mesh
 end
