@@ -134,7 +134,7 @@ void effect() {
 	
 	if (shadowsEnabled) {
 		float shadow = calculateShadow(fragPosLightSpace, surfaceNormal);
-		float sunFactor = max(dot(-surfaceNormal, sunDirection), 0.0);
+		float sunFactor = max(dot(-fragWorldNormal, sunDirection), 0.0);
 		lighting += sunColor * (1.0 - shadow * shadowStrength) * (pow(sunFactor, 0.5)); // this was 1.0-sunFactor before but that didn't work well for normal maps idk why
 	}
 	
