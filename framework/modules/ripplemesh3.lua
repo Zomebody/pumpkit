@@ -60,8 +60,10 @@ function Ripplemesh3:clone()
 	RMesh.Bloom = self.Bloom
 	RMesh.WaterVelocity = vector4(self.WaterVelocity)
 	RMesh.FoamVelocity = vector4(self.FoamVelocity)
-	RMesh.DistortionVelocity = vector2(self.DistortionVelocity)
-	RMesh.NormalMap = self.NormalMap
+	--RMesh.DistortionVelocity = vector4(self.DistortionVelocity)
+	RMesh.FresnelColor = color(self.FresnelColor)
+	RMesh.FresnelStrength = self.FresnelStrength
+	RMesh.FresnelPower = self.FresnelPower
 	RMesh.DataMap = self.DataMap
 	
 	-- keep the scene nil
