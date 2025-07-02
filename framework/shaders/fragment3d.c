@@ -170,9 +170,9 @@ void effect() {
 	texColor = Texel(meshTexture, texture_coords - uvVelocity * currentTime) * vec4(1.0, 1.0, 1.0, 1.0 - meshTransparency);
 	
 	// check if the alpha of the texture color is below a threshold
-	if (texColor.a < 0.95 && meshFresnel.x <= 0.0) {
-		discard;  // discard fully transparent pixels
-	}
+	//if (texColor.a < 0.95 && meshFresnel.x <= 0.0) {
+	//	discard;  // discard fully transparent pixels
+	//}
 
 	// sample normal map & apply normal map strength
 	vec3 sampledNormal = Texel(normalMap, texture_coords).rgb * 2.0 - 1.0;
@@ -189,7 +189,7 @@ void effect() {
 
 
 	// the second canvas is the normals canvas. Output the surface normal to this canvas
-	love_Canvases[1] = vec4(fragNormal.x / 2 + 0.5, fragNormal.y / 2 + 0.5, fragNormal.z / 2 + 0.5, 1.0); // Pack normals into an RGBA format
+	//love_Canvases[1] = vec4(fragNormal.x / 2 + 0.5, fragNormal.y / 2 + 0.5, fragNormal.z / 2 + 0.5, 1.0); // Pack normals into an RGBA format
 
 
 	// ended up implementing a very basic naive additive lighting system because it doesn't have any weird edge-cases
@@ -245,7 +245,17 @@ void effect() {
 	//set the color on the main canvas. Apply mesh brightness here as well. Higher brightness means less affected by ambient color
 	vec4 resultingColor = mix(texColor * color, vec4(meshFresnelColor, 1.0), fresnel) // mix fresnel with texture color
 		* (vec4(lighting.x, lighting.y, lighting.z, 1.0) * (1.0 - meshBrightness) + vec4(1.0, 1.0, 1.0, 1.0) * meshBrightness); // multiply by lighting (& mix with brightness)
+
+	// moved discarding all the way down here
+	// why? because for some reason black outlines appear otherwise. I don't know why, but this fixes it
+	// but it's it bad to discard later rather than early? Probably! But at least this fixes it
+	if (resultingColor.a < 0.95 * (1.0 - meshTransparency) && meshFresnel.x <= 0.0) {
+		discard;  // discard fully transparent pixels
+	}
+
 	love_Canvases[0] = resultingColor;// * 0.0001 + 0.9999 * vec4(fragWorldNormal * 0.5 + 0.5, 1.0);
+
+	love_Canvases[1] = vec4(fragNormal.x / 2 + 0.5, fragNormal.y / 2 + 0.5, fragNormal.z / 2 + 0.5, 1.0); // Pack normals into an RGBA format
 
 	// apply bloom to canvas. Semi-transparent meshes will emit weaker bloom
 	love_Canvases[2] = vec4(color.x * meshBloom, color.y * meshBloom, color.z * meshBloom, 1.0 - meshTransparency);
