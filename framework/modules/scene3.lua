@@ -1247,7 +1247,7 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 		["ReuseCanvas6"] = reuseCanvas6; -- quarter quality 2
 
 		["MSAA"] = msaa;
-		["AOEnabled"] = true;
+		["AOEnabled"] = false;
 		["DiffuseStrength"] = 1;
 		["BloomStrength"] = 0;
 		["AOQuality"] = 1; -- 1 = full quality, 0.5 = half quality, 0.25 = quarter quality
