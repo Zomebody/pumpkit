@@ -494,7 +494,34 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 	end
 	profiler:popLabel()
 
-	-- apply ambient occlusion to geometry so far (which excludes semi-transparent meshes and ripple meshes)
+	
+	profiler:pushLabel("ripple")
+	if #self.RippleMeshes > 0 then
+		love.graphics.setShader(self.RippleShader)
+		self.RippleShader:send("currentTime", love.timer.getTime())
+		for i = 1, #self.RippleMeshes do
+			local RMesh = self.RippleMeshes[i]
+			self.RippleShader:send("meshTexture", RMesh.Texture or blankImage)
+			self.RippleShader:send("meshPosition", RMesh.Position:array())
+			self.RippleShader:send("meshRotation", RMesh.Rotation:array())
+			self.RippleShader:send("meshScale", RMesh.Scale:array())
+			self.RippleShader:send("meshColor", {RMesh.Color.r, RMesh.Color.g, RMesh.Color.b})
+			self.RippleShader:send("meshBrightness", RMesh.Brightness)
+			self.RippleShader:send("meshBloom", RMesh.Bloom)
+			self.RippleShader:send("meshFresnel", {RMesh.FresnelStrength, RMesh.FresnelPower})
+			self.RippleShader:send("meshFresnelColor", {RMesh.FresnelColor.r, RMesh.FresnelColor.g, RMesh.FresnelColor.b})
+			self.RippleShader:send("dataMap", RMesh.DataMap or dataImage)
+			self.RippleShader:send("foamColor", {RMesh.FoamColor.r, RMesh.FoamColor.g, RMesh.FoamColor.b})
+			self.RippleShader:send("waterVelocity", RMesh.WaterVelocity:array())
+			self.RippleShader:send("foamVelocity", RMesh.FoamVelocity:array())
+			--self.RippleShader:send("distortionVelocity", RMesh.DistortionVelocity:array())
+			love.graphics.draw(RMesh.Mesh)
+		end
+		love.graphics.setShader(self.Shader)
+	end
+	profiler:popLabel()
+
+	-- apply ambient occlusion to geometry so far (which excludes semi-transparent meshes & sprite meshes)
 	if self.AOEnabled then
 		profiler:pushLabel("ao")
 		love.graphics.setDepthMode("always", false)
@@ -527,38 +554,6 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 		end
 	end
 	self.Shader:send("isSpriteSheet", false)
-	profiler:popLabel()
-
-
-	-- draw ripplemeshes after AO since having AO lines around liquids just feels wrong?
-	-- also draw these after other meshes so that you could potentially have semi-transparency on the mesh
-	-- HOWEVER that does mean that any semi-transparent objects inside water won't render as semi-transparent objects are postponed
-	-- and once they get drawn the depth stencil is already overwritten
-	-- also it may cause some issues with multiple RippleMeshes fighting over priority but whatever, use with caution I suppose!
-	profiler:pushLabel("ripple")
-	if #self.RippleMeshes > 0 then
-		love.graphics.setShader(self.RippleShader)
-		self.RippleShader:send("currentTime", love.timer.getTime())
-		for i = 1, #self.RippleMeshes do
-			local RMesh = self.RippleMeshes[i]
-			self.RippleShader:send("meshTexture", RMesh.Texture or blankImage)
-			self.RippleShader:send("meshPosition", RMesh.Position:array())
-			self.RippleShader:send("meshRotation", RMesh.Rotation:array())
-			self.RippleShader:send("meshScale", RMesh.Scale:array())
-			self.RippleShader:send("meshColor", {RMesh.Color.r, RMesh.Color.g, RMesh.Color.b})
-			self.RippleShader:send("meshBrightness", RMesh.Brightness)
-			self.RippleShader:send("meshBloom", RMesh.Bloom)
-			self.RippleShader:send("meshFresnel", {RMesh.FresnelStrength, RMesh.FresnelPower})
-			self.RippleShader:send("meshFresnelColor", {RMesh.FresnelColor.r, RMesh.FresnelColor.g, RMesh.FresnelColor.b})
-			self.RippleShader:send("dataMap", RMesh.DataMap or dataImage)
-			self.RippleShader:send("foamColor", {RMesh.FoamColor.r, RMesh.FoamColor.g, RMesh.FoamColor.b})
-			self.RippleShader:send("waterVelocity", RMesh.WaterVelocity:array())
-			self.RippleShader:send("foamVelocity", RMesh.FoamVelocity:array())
-			--self.RippleShader:send("distortionVelocity", RMesh.DistortionVelocity:array())
-			love.graphics.draw(RMesh.Mesh)
-		end
-		love.graphics.setShader(self.Shader)
-	end
 	profiler:popLabel()
 
 
