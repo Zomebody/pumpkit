@@ -8,7 +8,7 @@ local content = {}
 table.insert(content, {
 	["Type"] = "IntroHeader";
 	["Name"] = "The Mesh3 instance";
-	["Description"] = "A Camera3 is an object which contains properties and methods related to transforming 3D spaces. They are used in scene3s to properly draw the scene from the right position and angle. So far only perspective cameras are supported.";
+	["Description"] = "A Mesh3 is an object containing a 3d mesh and related properties to visualize that mesh in some way. Mesh3 objects are attached to a Scene3. These objects are not instanced, for instanced meshes see Mesh3group.";
 })
 
 table.insert(content, {
@@ -35,9 +35,41 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Property";
+	["ValueType"] = "boolean";
+	["Name"] = "CastShadow";
+	["Description"] = "When set to true the object will cast a shadow if shadow-mapping is enabled. Semi-transparent still cast full shadows unless they are fully transparent.";
+	["ReadOnly"] = false;
+})
+
+table.insert(content, {
+	["Type"] = "Property";
 	["ValueType"] = "color";
 	["Name"] = "Color";
 	["Description"] = "The mesh's color. Any textures or lighting applied to the mesh's surface is multiplied by the color So a red mesh with a blue texture will appear black.";
+	["ReadOnly"] = false;
+})
+
+table.insert(content, {
+	["Type"] = "Property";
+	["ValueType"] = "color";
+	["Name"] = "FresnelColor";
+	["Description"] = "The mesh's fresnel color if fresnel is enabled. Fresnel applies a glow around the edges of the mesh in this color.";
+	["ReadOnly"] = false;
+})
+
+table.insert(content, {
+	["Type"] = "Property";
+	["ValueType"] = "number";
+	["Name"] = "FresnelPower";
+	["Description"] = "The positive 'power' in the fresnel formula. Higher values give more gradual fresnel. Lower values - especially below 1 - give sporadic fresnel.";
+	["ReadOnly"] = false;
+})
+
+table.insert(content, {
+	["Type"] = "Property";
+	["ValueType"] = "number";
+	["Name"] = "FresnelStrength";
+	["Description"] = "A value between 0 and 1. This defaults to 0 which disables the fresnel. As it increases to 1 the fresnel becomes more apparent until it's fully enabled at a value of 1.";
 	["ReadOnly"] = false;
 })
 
@@ -85,7 +117,7 @@ table.insert(content, {
 	["Type"] = "Property";
 	["ValueType"] = "vector3";
 	["Name"] = "Rotation";
-	["Description"] = "The mesh's rotation in euler angles XYZ.";
+	["Description"] = "The mesh's rotation in (world space?) euler angles XYZ.";
 	["ReadOnly"] = false;
 })
 
@@ -94,6 +126,14 @@ table.insert(content, {
 	["ValueType"] = "vector3";
 	["Name"] = "Scale";
 	["Description"] = "The mesh's scale.";
+	["ReadOnly"] = false;
+})
+
+table.insert(content, {
+	["Type"] = "Property";
+	["ValueType"] = "texture";
+	["Name"] = "Texture";
+	["Description"] = "The mesh's texture. If no texture is supplied a default 1x1 white pixel will be used as a substitute in the shader. Textures with non-opaque pixels are allowed and will not be clipped unless they are almost fully transparent, but transparency may be prone to artefacts.\n\nWhen using semi-transparent pixels consider setting the mesh's Transparency to 0.999 or lower to enable proper sorting at the cost of some performance.";
 	["ReadOnly"] = false;
 })
 
@@ -109,7 +149,7 @@ table.insert(content, {
 	["Type"] = "Property";
 	["ValueType"] = "number";
 	["Name"] = "Transparency";
-	["Description"] = "A value between 0 and 1 which is defaulted to 0. Currently, draw calls aren't sorted to transparency does not apply properly.";
+	["Description"] = "A value between 0 and 1 which is defaulted to 0. When set to 1 the object isn't drawn. If set to a value between 0 and 1 the object is sorted and blended with other semi-transparent meshes.";
 	["ReadOnly"] = false;
 })
 
