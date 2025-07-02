@@ -151,6 +151,8 @@ void effect() {
 	love_Canvases[0] = vec4(resultingColor.xyz, 1.0);//vec4(resultingColor.xyz, 1.0) * 0.01 + 0.01 * vec4(1.0, 0.0, 0.0, 1.0) + 0.98 * col;// * 0.0001 + 0.9999 * vec4(fragWorldNormal * 0.5 + 0.5, 1.0);
 	//love_Canvases[1] = vec4(fragNormal.x / 2 + 0.5, fragNormal.y / 2 + 0.5, fragNormal.z / 2 + 0.5, 1.0);
 
+	love_Canvases[1] = vec4(fragNormal.x / 2 + 0.5, fragNormal.y / 2 + 0.5, fragNormal.z / 2 + 0.5, 1.0); // Pack normals into an RGBA format
+
 	// apply bloom to canvas
 	// this is canvas 2 because 1 is the canvas with view-space normals, but we don't use it (but it's still here because un-setting it takes time)
 	love_Canvases[2] = vec4(texColor.x * meshBloom, texColor.y * meshBloom, texColor.z * meshBloom, 1.0);
