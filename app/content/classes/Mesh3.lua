@@ -131,6 +131,14 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Property";
+	["ValueType"] = "Scene3";
+	["Name"] = "Scene";
+	["Description"] = "The scene that the mesh is attached to.";
+	["ReadOnly"] = true;
+})
+
+table.insert(content, {
+	["Type"] = "Property";
 	["ValueType"] = "texture";
 	["Name"] = "Texture";
 	["Description"] = "The mesh's texture. If no texture is supplied a default 1x1 white pixel will be used as a substitute in the shader. Textures with non-opaque pixels are allowed and will not be clipped unless they are almost fully transparent, but transparency may be prone to artefacts.\n\nWhen using semi-transparent pixels consider setting the mesh's Transparency to 0.999 or lower to enable proper sorting at the cost of some performance.";

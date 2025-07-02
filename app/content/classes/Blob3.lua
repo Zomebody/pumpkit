@@ -48,7 +48,7 @@ table.insert(content, {
 	["ValueType"] = "Scene3";
 	["Name"] = "Scene";
 	["Description"] = "The scene that the blob is attached to.";
-	["ReadOnly"] = false;
+	["ReadOnly"] = true;
 })
 
 

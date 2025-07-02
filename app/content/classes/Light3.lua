@@ -56,7 +56,7 @@ table.insert(content, {
 	["ValueType"] = "Scene3";
 	["Name"] = "Scene";
 	["Description"] = "The scene that the light is attached to.";
-	["ReadOnly"] = false;
+	["ReadOnly"] = true;
 })
 
 table.insert(content, {

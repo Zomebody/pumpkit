@@ -8,7 +8,7 @@ local content = {}
 table.insert(content, {
 	["Type"] = "IntroHeader";
 	["Name"] = "The Ripplemesh3 instance";
-	["Description"] = "A Camera3 is an object which contains properties and methods related to transforming 3D spaces. They are used in scene3s to properly draw the scene from the right position and angle. So far only perspective cameras are supported.";
+	["Description"] = "Similar to mesh3, but this object can be used to mimic liquids like water, magma and poison using additional texture features..";
 })
 
 table.insert(content, {
@@ -43,6 +43,54 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Property";
+	["ValueType"] = "texture";
+	["Name"] = "DataMap";
+	["Description"] = "Contains information about foam and distortion.\n- r = angle of the distortion at that pixel.\n- g = how far the distortion reaches as a fraction of the image size.\n- b = noise values (that should be evenly & gradually distributed between 0 and 1) that determine the shape of the foam.\n- a = foaminess, determines how often foam should appear at that spot where 0 is no foam, 1 is always foam, 0.5 is foam half the time.";
+	["ReadOnly"] = false;
+})
+
+table.insert(content, {
+	["Type"] = "Property";
+	["ValueType"] = "color";
+	["Name"] = "FoamColor";
+	["Description"] = "The color of the foam.";
+	["ReadOnly"] = false;
+})
+
+table.insert(content, {
+	["Type"] = "Property";
+	["ValueType"] = "vector4";
+	["Name"] = "FoamVelocity";
+	["Description"] = "The speed at which the foam moves. The x&y determine the first velocity and the z&w determine the second velocity.";
+	["ReadOnly"] = false;
+})
+
+table.insert(content, {
+	["Type"] = "Property";
+	["ValueType"] = "color";
+	["Name"] = "FresnelColor";
+	["Description"] = "The mesh's fresnel color if fresnel is enabled. Fresnel applies a glow around the edges of the mesh in this color.";
+	["ReadOnly"] = false;
+})
+
+table.insert(content, {
+	["Type"] = "Property";
+	["ValueType"] = "number";
+	["Name"] = "FresnelPower";
+	["Description"] = "The positive 'power' in the fresnel formula. Higher values give more gradual fresnel. Lower values - especially below 1 - give sporadic fresnel.";
+	["ReadOnly"] = false;
+})
+
+table.insert(content, {
+	["Type"] = "Property";
+	["ValueType"] = "number";
+	["Name"] = "FresnelStrength";
+	["Description"] = "A value between 0 and 1. This defaults to 0 which disables the fresnel. As it increases to 1 the fresnel becomes more apparent until it's fully enabled at a value of 1.";
+	["ReadOnly"] = false;
+})
+
+table.insert(content, {
+	["Type"] = "Property";
 	["ValueType"] = "number";
 	["Name"] = "Id";
 	["Description"] = "The identifier of the mesh. Used when mesh:detach() is called to quickly look up the mesh in the scene's list of basic meshes.";
@@ -51,25 +99,9 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Property";
-	["ValueType"] = "boolean";
-	["Name"] = "IsTriplanar";
-	["Description"] = "When set to false, the mesh's UV coordinates are used to project the image onto the mesh. When set to true, the texture is projected onto the mesh along the X/Y/Z-axis depending on the direction each face is pointing to.";
-	["ReadOnly"] = false;
-})
-
-table.insert(content, {
-	["Type"] = "Property";
 	["ValueType"] = "mesh";
 	["Name"] = "Mesh";
 	["Description"] = "The reference to the Love2d mesh object. It is okay to reuse the same Love2d mesh when creating multiple different mesh3 instances as the mesh is only referenced.";
-	["ReadOnly"] = false;
-})
-
-table.insert(content, {
-	["Type"] = "Property";
-	["ValueType"] = "image";
-	["Name"] = "NormalMap";
-	["Description"] = "Optionally a normal map for better diffuse lighting calculations. Green channel goes upwards, red channel goes to the right.\n\nIf no normal map is a set, a replacement flat normal map is used.";
 	["ReadOnly"] = false;
 })
 
@@ -99,26 +131,26 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Property";
-	["ValueType"] = "number";
-	["Name"] = "TextureScale";
-	["Description"] = "When 'IsTriplanar' is set to true, this property determines how large the image is when projected onto the mesh.";
-	["ReadOnly"] = false;
+	["ValueType"] = "Scene3";
+	["Name"] = "Scene";
+	["Description"] = "The scene that the ripplemesh3 is attached to.";
+	["ReadOnly"] = true;
 })
 
 table.insert(content, {
 	["Type"] = "Property";
-	["ValueType"] = "number";
-	["Name"] = "Transparency";
-	["Description"] = "A value between 0 and 1 which is defaulted to 0. Currently, draw calls aren't sorted to transparency does not apply properly.";
+	["ValueType"] = "texture";
+	["Name"] = "Texture";
+	["Description"] = "The mesh's color map texture. If no texture is supplied a default 1x1 white pixel will be used as a substitute in the shader. All pixels must be opaque.";
 	["ReadOnly"] = false;
 })
 
 
 table.insert(content, {
 	["Type"] = "Property";
-	["ValueType"] = "vector2";
-	["Name"] = "UVVelocity";
-	["Description"] = "The speed at which the mesh's texture 'scrolls'. When using this property, make sure the mesh's image has its wrapping mode set to 'repeat'. This property can be used to make textures move along the surface of the mesh such as when creating waterfalls, lava, and so on.\n\nEach unit of speed corresponds to looping around the width/height of the texture once per second.";
+	["ValueType"] = "vector4";
+	["Name"] = "WaterVelocity";
+	["Description"] = "The speed at which the water texture and the water distortion move. The x&y properties determine the UV speed of the water texture. Yhe z&w determine the speed of the texture distortion.";
 	["ReadOnly"] = false;
 })
 

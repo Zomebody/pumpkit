@@ -129,6 +129,14 @@ table.insert(content, {
 	["ReadOnly"] = false;
 })
 
+table.insert(content, {
+	["Type"] = "Property";
+	["ValueType"] = "Scene3";
+	["Name"] = "Scene";
+	["Description"] = "The scene that the mesh group is attached to.";
+	["ReadOnly"] = true;
+})
+
 
 table.insert(content, {
 	["Type"] = "Header";
