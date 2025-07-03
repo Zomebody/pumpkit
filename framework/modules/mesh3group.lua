@@ -38,30 +38,27 @@ end
 ----------------------------------------------------[[ == OBJECT CREATION == ]]----------------------------------------------------
 
 local function new(mesh, positions, rotations, scales, cols)
-	assert(type(bloom) == "number" or bloom == nil, "mesh3group.new(mesh, positions, rotations, scales, cols) requires 'bloom' to be a number or nil")
-	assert(type(brightness) == "number" or brightness == nil, "mesh3group.new(mesh, positions, rotations, scales, cols) requires 'brightness' to be a number or nil")
-	assert(type(texScale) == "number" or texScale == nil, "mesh3group.new(mesh, positions, rotations, scales, cols) requires 'texScale' to be a number or nil")
 	assert(type(positions) == "table", "mesh3group.new(mesh, positions, rotations, scales, cols) requires argument 'positions' to be a table of vector3s, given is nil")
 	if rotations == nil then
 		rotations = {}
 		for i = 1, #positions do rotations[i] = vector3(0, 0, 0) end
 	else
 		assert(type(rotations) == "table" and #rotations == #positions,
-			"mesh3group.new(mesh, positions, rotations, scales, cols, bloom, brightness, texScale) requires argument 'rotations' to be nil or a table with vector3s of the same length as 'positions'")
+			"mesh3group.new(mesh, positions, rotations, scales, cols) requires argument 'rotations' to be nil or a table with vector3s of the same length as 'positions'")
 	end
 	if scales == nil then
 		scales = {}
 		for i = 1, #positions do scales[i] = vector3(1, 1, 1) end
 	else
 		assert(type(scales) == "table" and #scales == #positions,
-			"mesh3group.new(mesh, positions, rotations, scales, cols, bloom, brightness, texScale) requires argument 'scales' to be nil or a table with vector3s of the same length as 'positions'")
+			"mesh3group.new(mesh, positions, rotations, scales, cols) requires argument 'scales' to be nil or a table with vector3s of the same length as 'positions'")
 	end
 	if cols == nil then
 		cols = {}
 		for i = 1, #positions do cols[i] = color(1, 1, 1) end
 	else
 		assert(type(cols) == "table" and #cols == #positions,
-			"mesh3group.new(mesh, positions, rotations, scales, cols, bloom, brightness, texScale) requires argument 'cols' to be nil or a table with colors of the same length as 'positions'")
+			"mesh3group.new(mesh, positions, rotations, scales, cols) requires argument 'cols' to be nil or a table with colors of the same length as 'positions'")
 	end
 
 	local instancesData = {}
