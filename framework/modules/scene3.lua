@@ -34,6 +34,7 @@ local MAX_LIGHTS_PER_SCENE = 16
 local SHADER_VERTEX_PATH = "framework/shaders/vertex3d.c"
 local SHADER_FRAGMENT_PATH = "framework/shaders/fragment3d.c"
 local SHADER_RIPPLE_PATH = "framework/shaders/ripplefrag.c"
+local SHADER_FOLIAGE_PATH = "framework/shaders/foliagefrag.c"
 local SHADER_PARTICLES_PATH = "framework/shaders/particles3d.c"
 local SHADER_SSAO_PATH = "framework/shaders/ssao3d.c"
 local SHADER_SSAOBLEND_PATH = "framework/shaders/ssaoblend.c"
@@ -242,10 +243,17 @@ function Scene3:updateShadowMap()
 	-- render all meshes and instanced meshes that have shadows enabled to the shadow canvas
 	local Mesh
 	self.ShadowMapShader:send("isInstanced", true)
+	self.ShadowMapShader:send("meshTexture", blankImage) -- for instanced meshes, assume texture is opaque (otherwise you'd use foliage3)
 	for i = 1, #self.InstancedMeshes do
 		Mesh = self.InstancedMeshes[i]
 		if Mesh.CastShadow then
-			self.ShadowMapShader:send("meshTexture", Mesh.Texture or blankImage)
+			love.graphics.drawInstanced(Mesh.Mesh, Mesh.Count)
+		end
+	end
+	for i = 1, #self.Foliage do -- foliage is always instanced
+		Mesh = self.Foliage[i]
+		if Mesh.CastShadow then
+			self.ShadowMapShader:send("meshTexture", Mesh.Texture or blankImage) -- foliage will have alpha clipping, so sending over image is important
 			love.graphics.drawInstanced(Mesh.Mesh, Mesh.Count)
 		end
 	end
@@ -269,6 +277,7 @@ function Scene3:updateShadowMap()
 	-- send over the shadow canvas to the main shader for sampling
 	self.Shader:send("shadowCanvas", self.ShadowDepthCanvas)
 	self.RippleShader:send("shadowCanvas", self.ShadowDepthCanvas)
+	self.FoliageShader:send("shadowCanvas", self.ShadowDepthCanvas)
 end
 
 
@@ -394,6 +403,7 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 	
 	if #lightsInfo > 0 then
 		self.Shader:send("lightsInfo", unpack(lightsInfo))
+		self.FoliageShader:send("lightsInfo", unpack(lightsInfo))
 		self.ParticlesShader:send("lightsInfo", unpack(lightsInfo))
 	end
 
@@ -407,6 +417,7 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 	end
 	if #blobsInfo > 0 then
 		self.Shader:send("blobShadows", unpack(blobsInfo))
+		self.FoliageShader:send("blobShadows", unpack(blobsInfo))
 	end
 
 	profiler:popLabel()
@@ -514,14 +525,13 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 			self.RippleShader:send("foamColor", {RMesh.FoamColor.r, RMesh.FoamColor.g, RMesh.FoamColor.b})
 			self.RippleShader:send("waterVelocity", RMesh.WaterVelocity:array())
 			self.RippleShader:send("foamVelocity", RMesh.FoamVelocity:array())
-			--self.RippleShader:send("distortionVelocity", RMesh.DistortionVelocity:array())
 			love.graphics.draw(RMesh.Mesh)
 		end
 		love.graphics.setShader(self.Shader)
 	end
 	profiler:popLabel()
 
-	-- apply ambient occlusion to geometry so far (which excludes semi-transparent meshes & sprite meshes)
+	-- apply ambient occlusion to geometry so far (which excludes semi-transparent meshes, sprite meshes & foliage)
 	if self.AOEnabled then
 		profiler:pushLabel("ao")
 		love.graphics.setDepthMode("always", false)
@@ -554,6 +564,23 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 		end
 	end
 	self.Shader:send("isSpriteSheet", false)
+	profiler:popLabel()
+
+
+	profiler:pushLabel("foliage")
+	if #self.Foliage > 0 then
+		love.graphics.setShader(self.FoliageShader)
+		local Mesh = nil
+		for i = 1, #self.Foliage do
+			Mesh = self.Foliage[i]
+			self.FoliageShader:send("meshTexture", Mesh.Texture or blankImage)
+			self.FoliageShader:send("normalMap", Mesh.NormalMap or normalImage)
+			self.FoliageShader:send("meshBrightness", Mesh.Brightness)
+			--self.FoliageShader:send("meshBloom", Mesh.Bloom) -- removed bloom because when tf would you ever use it? And if you want it, just use mesh3
+			love.graphics.drawInstanced(Mesh.Mesh, Mesh.Count)
+		end
+		love.graphics.setShader(self.Shader)
+	end
 	profiler:popLabel()
 
 
@@ -763,6 +790,7 @@ function Scene3:rescaleCanvas(width, height, msaa)
 	local aspectRatio = width / height
 	self.Shader:send("aspectRatio", aspectRatio)
 	self.RippleShader:send("aspectRatio", aspectRatio)
+	self.FoliageShader:send("aspectRatio", aspectRatio)
 	self.ParticlesShader:send("aspectRatio", aspectRatio)
 
 	-- calculate perspective matrix for the SSAO shader
@@ -791,6 +819,7 @@ function Scene3:setAmbient(col, occlusionColor)
 	self.Shader:send("ambientColor", arr)
 	self.ParticlesShader:send("ambientColor", arr)
 	self.RippleShader:send("ambientColor", arr)
+	self.FoliageShader:send("ambientColor", arr)
 	if occlusionColor ~= nil then
 		self.SSAOBlendShader:send("occlusionColor", {occlusionColor.r, occlusionColor.g, occlusionColor.b})
 	end
@@ -819,6 +848,7 @@ end
 
 function Scene3:setDiffuse(strength)
 	self.Shader:send("diffuseStrength", strength)
+	self.FoliageShader:send("diffuseStrength", strength)
 end
 
 
@@ -851,6 +881,7 @@ function Scene3:setShadowMap(position, direction, size, canvasSize, sunColor, sh
 		self.ShadowDepthCanvas = nil
 		self.Shader:send("shadowsEnabled", false)
 		self.RippleShader:send("shadowsEnabled", false)
+		self.FoliageShader:send("shadowsEnabled", false)
 	else
 		assert(vector3.isVector3(position), "Scene3:setShadowMap(position, direction, size, canvasSize, sunColor, shadowStrength) requires argument 'position' to be a vector3.")
 		assert(vector3.isVector3(direction), "Scene3:setShadowMap(position, direction, size, canvasSize, sunColor, shadowStrength) requires argument 'direction' to be a vector3.")
@@ -862,18 +893,27 @@ function Scene3:setShadowMap(position, direction, size, canvasSize, sunColor, sh
 
 		self.Shader:send("shadowsEnabled", true)
 		self.RippleShader:send("shadowsEnabled", true)
+		self.FoliageShader:send("shadowsEnabled", true)
 		if sunColor == nil then
-			self.Shader:send("sunColor", {1, 1, 1})
-			self.RippleShader:send("sunColor", {1, 1, 1})
+			local sunCol = {1, 1, 1}
+			self.Shader:send("sunColor", sunCol)
+			self.RippleShader:send("sunColor", sunCol)
+			self.FoliageShader:send("sunColor", sunCol)
 		else
-			self.Shader:send("sunColor", {sunColor.r, sunColor.g, sunColor.b})
-			self.RippleShader:send("sunColor", {sunColor.r, sunColor.g, sunColor.b})
+			local sunCol = {sunColor.r, sunColor.g, sunColor.b}
+			self.Shader:send("sunColor", sunCol)
+			self.RippleShader:send("sunColor", sunCol)
+			self.FoliageShader:send("sunColor", sunCol)
 		end
-		self.Shader:send("shadowStrength", shadowStrength ~= nil and shadowStrength or 0.5)
-		self.RippleShader:send("shadowStrength", shadowStrength ~= nil and shadowStrength or 0.5)
+		local shStrength = shadowStrength ~= nil and shadowStrength or 0.5
+		self.Shader:send("shadowStrength", shStrength)
+		self.RippleShader:send("shadowStrength", shStrength)
+		self.FoliageShader:send("shadowStrength", shStrength)
 		direction = direction:clone():norm()
-		self.Shader:send("sunDirection", {direction.x, direction.y, direction.z})
-		self.RippleShader:send("sunDirection", {direction.x, direction.y, direction.z})
+		local dirTable = {direction.x, direction.y, direction.z}
+		self.Shader:send("sunDirection", dirTable)
+		self.RippleShader:send("sunDirection", dirTable)
+		self.FoliageShader:send("sunDirection", dirTable)
 
 		-- create new canvases (but only if their sizes are different from the current ones)
 		-- this will make it possible to potentially move the shadowmap around every frame
@@ -892,22 +932,27 @@ function Scene3:setShadowMap(position, direction, size, canvasSize, sunColor, sh
 
 			self.Shader:send("shadowCanvasSize", {canvasSize.x, canvasSize.y})
 			self.RippleShader:send("shadowCanvasSize", {canvasSize.x, canvasSize.y})
+			self.FoliageShader:send("shadowCanvasSize", {canvasSize.x, canvasSize.y})
 		end
 
 		-- send over orthographic camera matrix
 		local orthoMatrix = matrix4.orthographic(-size.x / 2, size.x / 2, size.y / 2, -size.y / 2, 100, 0.1) -- perspective correction matrix
 		--local orthoMatrix = matrix4.perspective(size.x/size.y, self.Camera3.FieldOfView, 1000, 0.1)
 		local c1, c2, c3, c4 = orthoMatrix:columns()
-		self.ShadowMapShader:send("orthoMatrix", {c1, c2, c3, c4})
-		self.Shader:send("orthoMatrix", {c1, c2, c3, c4}) -- also send to main shader so we know how to sample shadow map
-		self.RippleShader:send("orthoMatrix", {c1, c2, c3, c4})
+		local oMat = {c1, c2, c3, c4}
+		self.ShadowMapShader:send("orthoMatrix", oMat)
+		self.Shader:send("orthoMatrix", oMat) -- also send to main shader so we know how to sample shadow map
+		self.RippleShader:send("orthoMatrix", oMat)
+		self.FoliageShader:send("orthoMatrix", oMat)
 		
 		-- send over sun matrix
 		local sunWorldMatrix = matrix4.lookAtWorld(position, direction) -- matrix of where the sun is
 		local c1, c2, c3, c4 = sunWorldMatrix:columns()
-		self.ShadowMapShader:send("sunWorldMatrix", {c1, c2, c3, c4})
-		self.Shader:send("sunWorldMatrix", {c1, c2, c3, c4}) -- also send to main shader so we know how to sample shadow map
-		self.RippleShader:send("sunWorldMatrix", {c1, c2, c3, c4})
+		local sMat = {c1, c2, c3, c4}
+		self.ShadowMapShader:send("sunWorldMatrix", sMat)
+		self.Shader:send("sunWorldMatrix", sMat) -- also send to main shader so we know how to sample shadow map
+		self.RippleShader:send("sunWorldMatrix", sMat)
+		self.FoliageShader:send("sunWorldMatrix", sMat)
 
 	end
 end
@@ -925,6 +970,8 @@ function Scene3:attachMesh(mesh)
 		mesh:detach()
 	end
 
+	print("attaching: " .. tostring(mesh))
+
 	if mesh3.isMesh3(mesh) then
 		local index = findOrderedInsertLocation(self.BasicMeshes, mesh)
 		table.insert(self.BasicMeshes, index, mesh)
@@ -937,8 +984,11 @@ function Scene3:attachMesh(mesh)
 	elseif ripplemesh3.isRipplemesh3(mesh) then
 		local index = findOrderedInsertLocation(self.RippleMeshes, mesh)
 		table.insert(self.RippleMeshes, index, mesh)
+	elseif foliage3.isFoliage3(mesh) then
+		local index = findOrderedInsertLocation(self.Foliage, mesh)
+		table.insert(self.Foliage, index, mesh)
 	else
-		error("Scene3:attachMesh(mesh) requires argument 'mesh' to be either a mesh3, spritemesh3, ripplemesh3 or mesh3group")
+		error("Scene3:attachMesh(mesh) requires argument 'mesh' to be either a mesh3, spritemesh3, ripplemesh3, foliage3 or mesh3group")
 	end
 	mesh.Scene = self
 
@@ -966,6 +1016,9 @@ function Scene3:detachMesh(mesh) -- basic mesh or sprite mesh
 	elseif ripplemesh3.isRipplemesh3(mesh) then
 		slot = findObjectInOrderedArray(mesh, self.RippleMeshes)
 		Item = table.remove(self.RippleMeshes, slot)
+	elseif ripplemesh3.isRipplemesh3(mesh) then
+		slot = findObjectInOrderedArray(mesh, self.Foliage)
+		Item = table.remove(self.Foliage, slot)
 	else
 		error("Scene3:detachMesh(mesh) requires argument 'mesh' to be either a mesh3, spritemesh3, ripplemesh3 or mesh3group")
 	end
@@ -1209,6 +1262,7 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 
 		["Shader"] = love.graphics.newShader(SHADER_VERTEX_PATH, SHADER_FRAGMENT_PATH); -- SHADER_PATH
 		["RippleShader"] = love.graphics.newShader(SHADER_VERTEX_PATH, SHADER_RIPPLE_PATH); -- same vertex shader, but special fragment shader
+		["FoliageShader"] = love.graphics.newShader(SHADER_VERTEX_PATH, SHADER_FOLIAGE_PATH); -- same vertex shader, but special fragment shader
 		["ParticlesShader"] = love.graphics.newShader(SHADER_PARTICLES_PATH);
 		["ParticleMixShader"] = particleMixShader;
 		["SSAOShader"] = love.graphics.newShader(SHADER_SSAO_PATH); -- screen-space ambient occlusion shader
@@ -1254,10 +1308,11 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 
 		-- scene elements
 		["Camera3"] = sceneCamera or camera3.new();
-		["InstancedMeshes"] = {}; -- simply an array of Love2D mesh objects
-		["BasicMeshes"] = {}; -- array with Mesh instances
-		["SpriteMeshes"] = {}; -- spritemeshes array
-		["RippleMeshes"] = {}; -- ripplemesh array
+		["InstancedMeshes"] = {}; -- mesh3group array
+		["BasicMeshes"] = {}; -- mesh3 array
+		["SpriteMeshes"] = {}; -- spritemesh3 array
+		["RippleMeshes"] = {}; -- ripplemesh3 array
+		["Foliage"] = {}; -- foliage3 array
 		["Particles"] = {}; -- array of particle emitter instances. Particle emitters are always instanced for performance reasons
 		["Lights"] = {}; -- array with lights that have a Position, Color, Range and Strength
 		["Blobs"] = {}; -- array with blob instances that have a Position and Range (they are blob shadows you should place below spritemeshes)
@@ -1275,9 +1330,13 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 	local aspectRatio = gWidth / gHeight
 	Object.Shader:send("aspectRatio", aspectRatio)
 	Object.RippleShader:send("aspectRatio", aspectRatio)
+	Object.FoliageShader:send("aspectRatio", aspectRatio)
+	Object.FoliageShader:send("isInstanced", true) -- send true since it uses a shared vertex shader!
 	Object.Shader:send("fieldOfView", Object.Camera3.FieldOfView)
 	Object.RippleShader:send("fieldOfView", Object.Camera3.FieldOfView)
+	Object.FoliageShader:send("fieldOfView", Object.Camera3.FieldOfView)
 	Object.Shader:send("diffuseStrength", 1)
+	Object.FoliageShader:send("diffuseStrength", 1)
 	Object.Shader:send("lightCount", 0)
 	Object.Shader:send("blobShadowCount", 0)
 	Object.Shader:send("blobShadowColor", {0, 0, 0})

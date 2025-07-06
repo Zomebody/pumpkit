@@ -161,7 +161,7 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 uniform Image meshTexture;
 
 vec4 effect(vec4 color, Image tex, vec2 texCoord, vec2 screenCoords) {
-	if (Texel(meshTexture, texCoord).a < 0.25) {
+	if (Texel(meshTexture, texCoord).a < 0.95) {
 		discard;
 	}
 	return color;

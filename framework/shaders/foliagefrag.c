@@ -5,14 +5,8 @@ varying vec3 fragWorldPosition; // output automatically interpolated fragment wo
 varying vec3 fragNormal; // used for normal map
 varying vec3 fragWorldNormal;
 varying vec4 fragPosLightSpace;
-//varying float fragDistanceToCamera; // used for fog
-//varying vec3 cameraViewDirection;
 
-uniform float currentTime;
 uniform float diffuseStrength;
-
-// uvs
-uniform vec2 uvVelocity; // how quckly the UV scrolls on the X and Y axis, usually this equals 0,0
 
 // lights
 struct Light {
@@ -39,30 +33,18 @@ uniform bool shadowsEnabled = false;
 uniform vec2 shadowCanvasSize;
 
 // colors
-uniform vec3 meshColor;
+//uniform vec3 meshColor;
 uniform float meshBrightness; // if 1, mesh is not affected by diffuse shading at all
-uniform float meshTransparency; // how transparent the mesh is
-uniform float meshBloom;
-uniform vec2 meshFresnel; // x = strength, y = power
-uniform vec3 meshFresnelColor; // vec3 since fresnel won't be supporting transparency (but still works on transparent meshes)
+//uniform float meshTransparency; // how transparent the mesh is
+//uniform float meshBloom;
 varying vec3 instColor;
 
-
-uniform bool isInstanced;
-
-// triplanar texture projection variables
-uniform float triplanarScale;
 
 // textures
 uniform Image MainTex; // used to be the 'tex' argument, but is now passed separately in this specific variable name because we switched to multi-canvas shading which has no arguments
 uniform Image meshTexture; // replaces MainTex. Instead of using mesh:setTexture(), they are now passed separately so that a mesh can be reused with different textures on them
 uniform Image normalMap;
 uniform sampler2DShadow shadowCanvas; // use Image when doing 'basic' sampling. Use sampler2DShadow when you want automatic bilinear filtering (but more prone to shadow acne :<)
-
-// sprites
-uniform vec2 spritePosition;
-uniform vec2 spriteSheetSize;
-uniform bool isSpriteSheet;
 
 
 // fragment shader
@@ -118,11 +100,7 @@ float calculateShadow(vec4 fragPosLightSpace, vec3 surfaceNormal) {
 void effect() {
 
 	vec4 color = VaryingColor; // argument 'color' doesn't exist when using multiple canvases, so use built-in VaryingColor
-	if (isInstanced) {
-		color = vec4(color.x * instColor.x, color.y * instColor.y, color.z * instColor.z, color.w);
-	} else {
-		color = vec4(color.x * meshColor.x, color.y * meshColor.y, color.z * meshColor.z, color.w);
-	}
+	color = vec4(color.x * instColor.x, color.y * instColor.y, color.z * instColor.z, color.w);
 	
 	
 	if (love_PixelCoord.x < 0 || love_PixelCoord.x > love_ScreenSize.x || love_PixelCoord.y < 0 || love_PixelCoord.y > love_ScreenSize.y) {
@@ -130,7 +108,6 @@ void effect() {
 	}
 	
 
-	// calculate surface normal, used in triplanar projection AND in the shadow map, so it gets calculated here
 	// calculate surface normal using interpolated vertex normal and derivative wizardry
 	vec3 dp1 = dFdx(fragWorldPosition); // also re-used for the normal map below
 	vec3 dp2 = dFdy(fragWorldPosition);
@@ -141,38 +118,13 @@ void effect() {
 	
 
 	// sample the pixel to display from the supplied texture. For triplanar projection: use world coordinates and surface normal to sample. For regular meshes, use uv coordinates and uvvelocity
-	vec4 texColor;
-	vec2 texture_coords;
-	if (triplanarScale > 0.0) { // project texture onto mesh using triplanar projection
-
-		float absNormX = abs(surfaceNormal.x); // fragWorldNormal
-		float absNormY = abs(surfaceNormal.y); // fragWorldNormal
-		float absNormZ = abs(surfaceNormal.z); // fragWorldNormal
-		if (absNormX > absNormY && absNormX > absNormZ) {
-			// pointing into x-direction
-			texture_coords = vec2(fragWorldPosition.y * triplanarScale, fragWorldPosition.z * triplanarScale);
-			texColor = vec4(1.0, 0.0, 0.0, 1.0);
-		} else if (absNormY > absNormZ) {
-			// pointing into y-direction
-			texture_coords = vec2(fragWorldPosition.x * triplanarScale, fragWorldPosition.z * triplanarScale);
-			texColor = vec4(0.0, 1.0, 0.0, 1.0);
-		} else {
-			// pointing into z-direction
-			texture_coords = vec2(fragWorldPosition.x * triplanarScale, fragWorldPosition.y * triplanarScale);
-			texColor = vec4(0.0, 0.0, 1.0, 1.0);
-		}
-	} else if (!isSpriteSheet) { // simply grab the uv coordinates for applying the texture
-		texture_coords = VaryingTexCoord.xy; // argument 'texture_coords' doesn't exist when doing multi-canvas operations, so extract it from VaryingTexCoord instead
-	} else { // it's a spritesheet, so sample from the right sub-section in the spritesheet
-		texture_coords = VaryingTexCoord.xy / spriteSheetSize + spritePosition / spriteSheetSize;
-	}
-	//texColor = Texel(MainTex, texture_coords - uvVelocity * currentTime) * vec4(1.0, 1.0, 1.0, 1.0 - meshTransparency);
-	texColor = Texel(meshTexture, texture_coords - uvVelocity * currentTime) * vec4(1.0, 1.0, 1.0, 1.0 - meshTransparency);
+	vec2 texture_coords = VaryingTexCoord.xy;
+	vec4 texColor = Texel(meshTexture, texture_coords);
 	
 	// check if the alpha of the texture color is below a threshold
-	if (texColor.a < 0.01 && meshFresnel.x <= 0.0) {
-		discard;  // discard fully transparent pixels
-	}
+	//if (texColor.a < 0.95 && meshFresnel.x <= 0.0) {
+	//	discard;  // discard fully transparent pixels
+	//}
 
 	// sample normal map & apply normal map strength
 	vec3 sampledNormal = Texel(normalMap, texture_coords).rgb * 2.0 - 1.0;
@@ -211,6 +163,7 @@ void effect() {
 		lighting += lightingToAdd * ((diffuseFactor * diffuseStrength) + (1.0 - diffuseStrength)); // if a mesh is fully bright, diffuse strength becomes 0 so that it has no efect
 	}
 
+
 	// apply sun-light if not in shadow (from shadow map)
 	if (shadowsEnabled) {
 		float shadow = calculateShadow(fragPosLightSpace, surfaceNormal);
@@ -220,39 +173,36 @@ void effect() {
 	}
 
 
-	// apply blob-shadow onto anything that isn't a spritemesh
-	if (!isSpriteSheet) {
-		float maxShadowFactor = 0.0;
-		for (int i = 0; i < blobShadowCount; ++i) {
-			vec3 blobPosition = blobShadows[i].xyz;
-			float blobRange = blobShadows[i].w;
-			float distance = length(blobPosition - fragWorldPosition);
-			float x = distance / blobRange;
-			float shadowFactor = 1.0 - clamp(x * x * x, 0.0, 1.0);
-			shadowFactor *= blobShadowStrength;
-			maxShadowFactor = max(maxShadowFactor, shadowFactor);
-		}
-		lighting = mix(lighting, blobShadowColor, maxShadowFactor);
+	// apply blob-shadow
+	float maxShadowFactor = 0.0;
+	for (int i = 0; i < blobShadowCount; ++i) {
+		vec3 blobPosition = blobShadows[i].xyz;
+		float blobRange = blobShadows[i].w;
+		float distance = length(blobPosition - fragWorldPosition);
+		float x = distance / blobRange;
+		float shadowFactor = 1.0 - clamp(x * x * x, 0.0, 1.0);
+		shadowFactor *= blobShadowStrength;
+		maxShadowFactor = max(maxShadowFactor, shadowFactor);
 	}
+	lighting = mix(lighting, blobShadowColor, maxShadowFactor);
 
-	// calculate fresnel
-	float fresnel = pow(1.0 - max(dot(fragNormal, vec3(0.0, 0.0, 1.0)), 0.0), meshFresnel.y) * meshFresnel.x; // fragNormal is in view-space, meshFresnel: x = strength, y = power
-	// dumb fix for pow(0,0) stuff. There are probably better solutions
-	if (isinf(fresnel) || isnan(fresnel)) {
-		fresnel = 0.0;
-	}
 	
 	//set the color on the main canvas. Apply mesh brightness here as well. Higher brightness means less affected by ambient color
-	vec4 resultingColor = mix(texColor * color, vec4(meshFresnelColor, 1.0), fresnel) // mix fresnel with texture color
-		* (vec4(lighting.x, lighting.y, lighting.z, 1.0) * (1.0 - meshBrightness) + vec4(1.0, 1.0, 1.0, 1.0) * meshBrightness); // multiply by lighting (& mix with brightness)
+	vec4 resultingColor = texColor * color * mix(vec4(lighting.x, lighting.y, lighting.z, 1.0), vec4(1.0, 1.0, 1.0, 1.0), meshBrightness);
 
+	// moved discarding all the way down here
+	// why? because for some reason black outlines appear otherwise. I don't know why, but this fixes it
+	// but is it bad to discard later rather than early? Probably! But at least this fixes it
+	if (resultingColor.a < 0.95) {
+		discard;  // discard pixels with at least some transparency
+	}
 
 	love_Canvases[0] = resultingColor;// * 0.0001 + 0.9999 * vec4(fragWorldNormal * 0.5 + 0.5, 1.0);
 
 	love_Canvases[1] = vec4(fragNormal.x / 2 + 0.5, fragNormal.y / 2 + 0.5, fragNormal.z / 2 + 0.5, 1.0); // Pack normals into an RGBA format
 
 	// apply bloom to canvas. Semi-transparent meshes will emit weaker bloom
-	love_Canvases[2] = vec4(color.x * meshBloom, color.y * meshBloom, color.z * meshBloom, 1.0 - meshTransparency);
+	//love_Canvases[2] = vec4(color.x * meshBloom, color.y * meshBloom, color.z * meshBloom, 1.0 - meshTransparency);
 	
 
 }
