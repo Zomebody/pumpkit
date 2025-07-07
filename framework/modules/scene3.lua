@@ -970,8 +970,6 @@ function Scene3:attachMesh(mesh)
 		mesh:detach()
 	end
 
-	print("attaching: " .. tostring(mesh))
-
 	if mesh3.isMesh3(mesh) then
 		local index = findOrderedInsertLocation(self.BasicMeshes, mesh)
 		table.insert(self.BasicMeshes, index, mesh)
