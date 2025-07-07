@@ -167,6 +167,7 @@ function Scene3:applyAmbientOcclusion()
 	love.graphics.setCanvas(self.PrepareCanvas)
 	love.graphics.clear()
 	love.graphics.setShader(self.SSAOBlendShader) -- set the blend shader so we can apply ambient occlusion to the render canvas
+	-- TODO: no need to send over pingCanvas each frame since it's a reference. You can do this elsewhere
 	self.SSAOBlendShader:send("aoTexture", pingCanvas) -- send over the rendered result from the ambient occlusion shader so we can sample it in the blend shader
 	love.graphics.draw(self.RenderCanvas)
 
@@ -230,54 +231,65 @@ end
 
 
 
-function Scene3:updateShadowMap()
-	love.graphics.setMeshCullMode("none") -- "front" can be used to fix peter-panning, but prevents the backfaces from having any shadows!! that's why we set to "none"
-
+function Scene3:updateShadowMap(firstPass)
 	-- prepare for drawing
-	love.graphics.setShader(self.ShadowMapShader)
+	love.graphics.setMeshCullMode("none") -- "front" can be used to fix peter-panning, but prevents the backfaces from having any shadows!! that's why we set to "none"
 	love.graphics.setDepthMode("lequal", true)
+	love.graphics.setShader(self.ShadowMapShader)
 	love.graphics.setCanvas({self.ShadowCanvas, ["depthstencil"] = self.ShadowDepthCanvas})
-	love.graphics.clear() -- we should clear since if you remove an object, the shadow in that area won't get overwritten
+
+	
+	
+	if firstPass then -- first pass, which excludes foliage
+
+		love.graphics.clear() -- we should clear since if you remove an object, the shadow in that area won't get overwritten
+		-- render all meshes and instanced meshes that have shadows enabled to the shadow canvas
+		local Mesh
+		-- isInstanced should still be true from the second pass
+		--self.ShadowMapShader:send("isInstanced", true)
+		self.ShadowMapShader:send("meshTexture", blankImage) -- for instanced meshes, assume texture is opaque (otherwise you'd use foliage3)
+		for i = 1, #self.InstancedMeshes do
+			Mesh = self.InstancedMeshes[i]
+			if Mesh.CastShadow then
+				love.graphics.drawInstanced(Mesh.Mesh, Mesh.Count)
+			end
+		end
+		
+		self.ShadowMapShader:send("isInstanced", false)
+		for i = 1, #self.BasicMeshes do
+			Mesh = self.BasicMeshes[i]
+			if Mesh.CastShadow then
+				-- TODO meshes need their own matrix instead of sending over and computing them every time in the shaders
+				self.ShadowMapShader:send("meshTexture", Mesh.Texture or blankImage)
+				self.ShadowMapShader:send("meshPosition", Mesh.Position:array())
+				self.ShadowMapShader:send("meshRotation", Mesh.Rotation:array())
+				self.ShadowMapShader:send("meshScale", Mesh.Scale:array())
+				love.graphics.draw(Mesh.Mesh)
+			end
+		end
+
+	else -- second pass, which includes foliage
+
+		self.ShadowMapShader:send("isInstanced", true)
+		for i = 1, #self.Foliage do -- foliage is always instanced
+			Mesh = self.Foliage[i]
+			if Mesh.CastShadow then
+				self.ShadowMapShader:send("meshTexture", Mesh.Texture or blankImage) -- foliage will have alpha clipping, so sending over image is important
+				love.graphics.drawInstanced(Mesh.Mesh, Mesh.Count)
+			end
+		end
+
+	end
 	
 
-	-- render all meshes and instanced meshes that have shadows enabled to the shadow canvas
-	local Mesh
-	self.ShadowMapShader:send("isInstanced", true)
-	self.ShadowMapShader:send("meshTexture", blankImage) -- for instanced meshes, assume texture is opaque (otherwise you'd use foliage3)
-	for i = 1, #self.InstancedMeshes do
-		Mesh = self.InstancedMeshes[i]
-		if Mesh.CastShadow then
-			love.graphics.drawInstanced(Mesh.Mesh, Mesh.Count)
-		end
-	end
-	for i = 1, #self.Foliage do -- foliage is always instanced
-		Mesh = self.Foliage[i]
-		if Mesh.CastShadow then
-			self.ShadowMapShader:send("meshTexture", Mesh.Texture or blankImage) -- foliage will have alpha clipping, so sending over image is important
-			love.graphics.drawInstanced(Mesh.Mesh, Mesh.Count)
-		end
-	end
-	self.ShadowMapShader:send("isInstanced", false)
-	for i = 1, #self.BasicMeshes do
-		Mesh = self.BasicMeshes[i]
-		if Mesh.CastShadow then
-			-- TODO meshes need their own matrix instead of sending over and computing them every time in the shaders
-			self.ShadowMapShader:send("meshTexture", Mesh.Texture or blankImage)
-			self.ShadowMapShader:send("meshPosition", Mesh.Position:array())
-			self.ShadowMapShader:send("meshRotation", Mesh.Rotation:array())
-			self.ShadowMapShader:send("meshScale", Mesh.Scale:array())
-			love.graphics.draw(Mesh.Mesh)
-		end
-	end
-	-- spritemeshes can't cast shadows so they are not included in here
 
 	-- revert peter-panning
 	love.graphics.setMeshCullMode("back")
 
 	-- send over the shadow canvas to the main shader for sampling
-	self.Shader:send("shadowCanvas", self.ShadowDepthCanvas)
-	self.RippleShader:send("shadowCanvas", self.ShadowDepthCanvas)
-	self.FoliageShader:send("shadowCanvas", self.ShadowDepthCanvas)
+	--self.Shader:send("shadowCanvas", self.ShadowDepthCanvas)
+	--self.RippleShader:send("shadowCanvas", self.ShadowDepthCanvas)
+	--self.FoliageShader:send("shadowCanvas", self.ShadowDepthCanvas)
 end
 
 
@@ -426,8 +438,8 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 	-- if a shadow canvas is set, it means shadow mapping is turned on
 	if self.ShadowCanvas ~= nil then
 		profiler:pushLabel("shadow")
-		self:updateShadowMap()
-		profiler:popLabel("mesh")
+		self:updateShadowMap(true)
+		profiler:popLabel()
 	end
 
 
@@ -454,8 +466,38 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 	love.graphics.setCanvas({self.RenderCanvas, self.NormalCanvas, self.BloomCanvas, ["depthstencil"] = self.DepthCanvas}) -- set the main canvas with proper maps for geometry being drawn
 	love.graphics.setDepthMode("less", true)
 	love.graphics.setMeshCullMode("back")
+	--love.graphics.setShader(self.Shader)
+
+
+	-- foliage is drawn first thing after the first shadowmap pass to prevent foliage from having self-shadows
+	profiler:pushLabel("foliage")
+	if #self.Foliage > 0 then
+		love.graphics.setShader(self.FoliageShader)
+		local Mesh = nil
+		for i = 1, #self.Foliage do
+			Mesh = self.Foliage[i]
+			self.FoliageShader:send("meshTexture", Mesh.Texture or blankImage)
+			self.FoliageShader:send("normalMap", Mesh.NormalMap or normalImage)
+			self.FoliageShader:send("meshBrightness", Mesh.Brightness)
+			love.graphics.drawInstanced(Mesh.Mesh, Mesh.Count)
+		end
+		--love.graphics.setShader(self.Shader)
+	end
+	profiler:popLabel()
+
+
+	-- second shadowmap pass, this time it draws the foliage to the shadow canvas
+	if self.ShadowCanvas ~= nil then
+		profiler:pushLabel("shadow")
+		self:updateShadowMap(false)
+		love.graphics.setCanvas({self.RenderCanvas, self.NormalCanvas, self.BloomCanvas, ["depthstencil"] = self.DepthCanvas})
+		profiler:popLabel()
+	end
+
 	love.graphics.setShader(self.Shader)
 
+	local blendMode = love.graphics.getBlendMode()
+	love.graphics.setBlendMode("replace", "premultiplied")
 
 	-- draw instanced meshes
 	profiler:pushLabel("inst")
@@ -476,7 +518,6 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 		love.graphics.drawInstanced(Mesh.Mesh, Mesh.Count)
 	end
 	profiler:popLabel()
-
 
 	-- then draw all *opaque* basic meshes
 	profiler:pushLabel("mesh")
@@ -531,6 +572,8 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 	end
 	profiler:popLabel()
 
+	love.graphics.setBlendMode(blendMode)
+
 	-- apply ambient occlusion to geometry so far (which excludes semi-transparent meshes, sprite meshes & foliage)
 	if self.AOEnabled then
 		profiler:pushLabel("ao")
@@ -566,22 +609,6 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 	self.Shader:send("isSpriteSheet", false)
 	profiler:popLabel()
 
-
-	profiler:pushLabel("foliage")
-	if #self.Foliage > 0 then
-		love.graphics.setShader(self.FoliageShader)
-		local Mesh = nil
-		for i = 1, #self.Foliage do
-			Mesh = self.Foliage[i]
-			self.FoliageShader:send("meshTexture", Mesh.Texture or blankImage)
-			self.FoliageShader:send("normalMap", Mesh.NormalMap or normalImage)
-			self.FoliageShader:send("meshBrightness", Mesh.Brightness)
-			--self.FoliageShader:send("meshBloom", Mesh.Bloom) -- removed bloom because when tf would you ever use it? And if you want it, just use mesh3
-			love.graphics.drawInstanced(Mesh.Mesh, Mesh.Count)
-		end
-		love.graphics.setShader(self.Shader)
-	end
-	profiler:popLabel()
 
 
 	-- now sort, then draw all basic/sprite meshes that were postponed
@@ -806,6 +833,8 @@ function Scene3:rescaleCanvas(width, height, msaa)
 	-- init particle mix shader
 	--self.ParticleMixShader:send("colorCanvas", particleCanvas1)
 	self.ParticleMixShader:send("countCanvas", particleCanvas2)
+
+	self.SSAOBlendShader:send("normalsTexture", normalCanvas) -- needed to sample alpha channel to check if ambient occlusion should be applied
 end
 
 
@@ -930,10 +959,16 @@ function Scene3:setShadowMap(position, direction, size, canvasSize, sunColor, sh
 			self.ShadowDepthCanvas = shadowDepthCanvas
 			shadowDepthCanvas:setDepthSampleMode("less")
 
+			self.Shader:send("shadowCanvas", self.ShadowDepthCanvas)
+			self.RippleShader:send("shadowCanvas", self.ShadowDepthCanvas)
+			self.FoliageShader:send("shadowCanvas", self.ShadowDepthCanvas)
+
 			self.Shader:send("shadowCanvasSize", {canvasSize.x, canvasSize.y})
 			self.RippleShader:send("shadowCanvasSize", {canvasSize.x, canvasSize.y})
 			self.FoliageShader:send("shadowCanvasSize", {canvasSize.x, canvasSize.y})
 		end
+
+		self.ShadowMapShader:send("isInstanced", true)
 
 		-- send over orthographic camera matrix
 		local orthoMatrix = matrix4.orthographic(-size.x / 2, size.x / 2, size.y / 2, -size.y / 2, 100, 0.1) -- perspective correction matrix
@@ -1361,6 +1396,7 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 	-- send noise image to SSAO shader
 	Object.SSAOShader:send("noiseTexture", noiseImage)
 
+	Object.SSAOBlendShader:send("normalsTexture", normalCanvas) -- needed to sample alpha channel to check if ambient occlusion should be applied
 
 	-- set a default ambience
 	Object.Shader:send("ambientColor", {1, 1, 1, 1})
