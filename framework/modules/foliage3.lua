@@ -98,11 +98,6 @@ local function new(mesh, positions, rotations, scales, cols)
 		["Texture"] = nil;
 		["Instances"] = instanceMesh;
 		["Brightness"] = 0;
-		--["Bloom"] = 0; -- the odds of using bloom on foliage is giga-small, but it does take up a bunch of resources, so let's just not have it!
-		-- I guess foliage doesn't need fresnel since foliage - in real life - has a wrinkly / rough surface so having it look shiny won't make sense
-		--["FresnelColor"] = color(1, 1, 1);
-		--["FresnelStrength"] = 0;
-		--["FresnelPower"] = 1;
 		["CastShadow"] = false;
 		["NormalMap"] = nil;
 		["Count"] = #positions;
