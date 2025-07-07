@@ -1016,7 +1016,7 @@ function Scene3:detachMesh(mesh) -- basic mesh or sprite mesh
 	elseif ripplemesh3.isRipplemesh3(mesh) then
 		slot = findObjectInOrderedArray(mesh, self.RippleMeshes)
 		Item = table.remove(self.RippleMeshes, slot)
-	elseif ripplemesh3.isRipplemesh3(mesh) then
+	elseif foliage3.isFoliage3(mesh) then
 		slot = findObjectInOrderedArray(mesh, self.Foliage)
 		Item = table.remove(self.Foliage, slot)
 	else
