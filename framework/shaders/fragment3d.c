@@ -249,7 +249,7 @@ void effect() {
 
 	love_Canvases[0] = resultingColor;// * 0.0001 + 0.9999 * vec4(fragWorldNormal * 0.5 + 0.5, 1.0);
 
-	love_Canvases[1] = vec4(fragNormal.x / 2 + 0.5, fragNormal.y / 2 + 0.5, fragNormal.z / 2 + 0.5, 0.0); // Pack normals into an RGBA format, alpha = apply ambient occlusion
+	love_Canvases[1] = vec4(fragNormal.x / 2 + 0.5, fragNormal.y / 2 + 0.5, fragNormal.z / 2 + 0.5, 1.0); // Pack normals into an RGBA format, alpha = apply ambient occlusion
 
 	// apply bloom to canvas. Semi-transparent meshes will emit weaker bloom
 	love_Canvases[2] = vec4(color.x * meshBloom, color.y * meshBloom, color.z * meshBloom, 1.0 - meshTransparency);

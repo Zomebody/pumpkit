@@ -468,6 +468,10 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 	love.graphics.setMeshCullMode("back")
 	--love.graphics.setShader(self.Shader)
 
+	-- using 'replace' w/ premultiplied so we can set the normals to some rgb even though we also write alpha=0. Otherwise, rgb would get multiplied by alpha!
+	-- and coincidentally this just kind of works because foliage has an all-or-nothing either draw opaque pixels, or discard them!!
+	local blendMode = love.graphics.getBlendMode()
+	love.graphics.setBlendMode("replace", "premultiplied")
 
 	-- foliage is drawn first thing after the first shadowmap pass to prevent foliage from having self-shadows
 	profiler:pushLabel("foliage")
@@ -485,6 +489,8 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 	end
 	profiler:popLabel()
 
+	love.graphics.setBlendMode(blendMode)
+
 
 	-- second shadowmap pass, this time it draws the foliage to the shadow canvas
 	if self.ShadowCanvas ~= nil then
@@ -496,8 +502,7 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 
 	love.graphics.setShader(self.Shader)
 
-	local blendMode = love.graphics.getBlendMode()
-	love.graphics.setBlendMode("replace", "premultiplied")
+	
 
 	-- draw instanced meshes
 	profiler:pushLabel("inst")
@@ -571,8 +576,6 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 		love.graphics.setShader(self.Shader)
 	end
 	profiler:popLabel()
-
-	love.graphics.setBlendMode(blendMode)
 
 	-- apply ambient occlusion to geometry so far (which excludes semi-transparent meshes, sprite meshes & foliage)
 	if self.AOEnabled then
