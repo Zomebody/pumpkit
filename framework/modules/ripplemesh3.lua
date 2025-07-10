@@ -58,9 +58,9 @@ function Ripplemesh3:clone()
 	RMesh.Texture = self.Texture
 	RMesh.Brightness = self.Brightness
 	RMesh.Bloom = self.Bloom
+	RMesh.FoamInShadow = self.FoamInShadow
 	RMesh.WaterVelocity = vector4(self.WaterVelocity)
 	RMesh.FoamVelocity = vector4(self.FoamVelocity)
-	--RMesh.DistortionVelocity = vector4(self.DistortionVelocity)
 	RMesh.FresnelColor = color(self.FresnelColor)
 	RMesh.FresnelStrength = self.FresnelStrength
 	RMesh.FresnelPower = self.FresnelPower
@@ -108,6 +108,7 @@ new = function(meshRef, position, rotation, scale, col, foamCol)
 		["Color"] = col ~= nil and color(col) or color(1, 1, 1);
 		["Brightness"] = 0;
 		["Bloom"] = 0;
+		["FoamInShadow"] = 1; -- how visible foam is when in a shadowmap shadow
 		["FresnelColor"] = color(1, 1, 1);
 		["FresnelStrength"] = 0;
 		["FresnelPower"] = 1;

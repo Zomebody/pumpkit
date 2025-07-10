@@ -35,6 +35,7 @@ uniform Image normalMap; // unused, might be implemented later down the line idk
 // actually hold on that won't work because alpha values can't go > 1. Uhhh... I guess multiply by 10 and call it a day and just don't use foaminess values < 0.1?
 uniform Image dataMap; // rg = distortion (angle & scalar), b = noise value for foam, a = foaminess (0 = no foam)
 uniform vec3 foamColor; // xyz = color
+uniform float foamInShadow;
 uniform sampler2DShadow shadowCanvas; // use Image when doing 'basic' sampling. Use sampler2DShadow when you want automatic bilinear filtering (but more prone to shadow acne :<)
 uniform vec4 waterVelocity; // x&y = water velocity, z&w = distortion velocity
 uniform vec4 foamVelocity; // two directions & speeds at which the foams move
@@ -119,25 +120,26 @@ void effect() {
 	float foam1Value = Texel(dataMap, sampleCoordsFoam1).z;
 	float foam2Value = Texel(dataMap, sampleCoordsFoam2 + vec2(0.5, 0.5)).z;
 	float foaminess = Texel(dataMap, uv).a;
-	// weird formula to ensure that the chances of f(x,y) > g(x,z) is equal to 'x' where x, y and z are in [0-1] and y&z are uniformally random numbers
-	// in other words, if foaminess = 0.3, roughly 30% of pixels become foam, despite doing a greater than comparison a>b.
-	if (foaminess == 1 || pow(foam1Value, 1/foaminess) > pow(foam2Value, 1 / (1 - foaminess))) {
-	//if (foam1Value < foam2Value + (foaminess - 1.5)) {
-		texColor = vec4(foamColor.xyz, 1.0);
-	}
-
-
 
 	// ended up implementing a very basic naive additive lighting system because it doesn't have any weird edge-cases
 	vec3 lighting = ambientColor; // start with just ambient lighting on the surface
 
 
 	// apply sun-light if not in shadow (from shadow map)
-	
+	// 1 when in shadow, 0 when in sun?
+	float shadow = 1.0;
 	if (shadowsEnabled) {
-		float shadow = calculateShadow(fragPosLightSpace, surfaceNormal);
+		shadow = calculateShadow(fragPosLightSpace, surfaceNormal);
 		float sunFactor = max(dot(-fragWorldNormal, sunDirection), 0.0);
 		lighting += sunColor * (1.0 - shadow * shadowStrength) * (pow(sunFactor, 0.5)); // this was 1.0-sunFactor before but that didn't work well for normal maps idk why
+	}
+
+
+	// weird formula to ensure that the chances of f(x,y) > g(x,z) is equal to 'x' where x, y and z are in [0-1] and y&z are uniformally random numbers
+	// in other words, if foaminess = 0.3, roughly 30% of pixels become foam, despite doing a greater than comparison a>b.
+	if (foaminess == 1 || pow(foam1Value, 1/foaminess) > pow(foam2Value, 1 / (1 - foaminess))) {
+		float blend = mix(1.0, foamInShadow, shadow);
+		texColor = mix(texColor, vec4(foamColor.xyz, 1.0), blend);
 	}
 	
 

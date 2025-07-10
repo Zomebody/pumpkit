@@ -568,6 +568,7 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 			self.RippleShader:send("meshFresnel", {RMesh.FresnelStrength, RMesh.FresnelPower})
 			self.RippleShader:send("meshFresnelColor", {RMesh.FresnelColor.r, RMesh.FresnelColor.g, RMesh.FresnelColor.b})
 			self.RippleShader:send("dataMap", RMesh.DataMap or dataImage)
+			self.RippleShader:send("foamInShadow", RMesh.FoamInShadow)
 			self.RippleShader:send("foamColor", {RMesh.FoamColor.r, RMesh.FoamColor.g, RMesh.FoamColor.b})
 			self.RippleShader:send("waterVelocity", RMesh.WaterVelocity:array())
 			self.RippleShader:send("foamVelocity", RMesh.FoamVelocity:array())
