@@ -56,6 +56,7 @@ end
 
 function profiler:print(x, y, width, barHeight)
 	local randState = love.math.getRandomState()
+	love.math.setRandomSeed(1) -- ensures all labels keep their random colors across different frames
 
 	if (not self.History) or #self.History == 0 then
 		return
