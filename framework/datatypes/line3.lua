@@ -154,21 +154,21 @@ end
 
 -- meta function to check if line3s have the same values
 function line3.__eq(a,b)
-	assert(isLine(a) and isLine(b), "__eq: wrong argument types (expected <line3> and <line3>)")
+	assert(isLine3(a) and isLine3(b), "__eq: wrong argument types (expected <line3> and <line3>)")
 	return a.from == b.from and a.to == b.to
 end
 
 
 -- meta function to add a vector3 to a line3
 function line3.__add(a, b)
-	assert(isLine(a) and vector.isVector(b), "add: wrong argument types: (expected <line3> and <vector3>)")
+	assert(isLine3(a) and vector3.isVector3(b), "add: wrong argument types: (expected <line3> and <vector3>)")
 	return new(a.from + b, a.to + b)
 end
 
 
 -- meta function to subtract a vector3 from a line3
 function line3.__sub(a, b)
-	assert(isLine(a) and vector.isVector(b), "add: wrong argument types: (expected <line3> and <vector3>)")
+	assert(isLine3(a) and vector3.isVector3(b), "add: wrong argument types: (expected <line3> and <vector3>)")
 	return new(a.from - b, a.to - b)
 end
 
