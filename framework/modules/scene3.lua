@@ -39,7 +39,7 @@ local SHADER_PARTICLES_VERT = "framework/shaders/particlesvert.c"
 local SHADER_PARTICLES_FRAG = "framework/shaders/particlesfrag.c"
 local SHADER_SSAO_PATH = "framework/shaders/ssao3d.c"
 local SHADER_SSAOBLEND_PATH = "framework/shaders/ssaoblend.c"
-local SHADER_BLUR_PATH = "framework/shaders/blur.c"
+local SHADER_AOBLUR_PATH = "framework/shaders/aoblur.c"
 local SHADER_BLOOMBLUR_PATH = "framework/shaders/bloomblur.c"
 local SHADER_SHADOWMAP_PATH = "framework/shaders/shadowmap.c"
 
@@ -147,19 +147,19 @@ function Scene3:applyAmbientOcclusion()
 	-- set ambient occlusion canvas as render target, and draw ambient occlusion data to the AO canvas
 	love.graphics.setCanvas(pingCanvas)
 	love.graphics.setShader(self.SSAOShader)
-	self.SSAOShader:send("normalTexture", self.NormalCanvas)
+	--self.SSAOShader:send("normalTexture", self.NormalCanvas)
 	love.graphics.draw(self.DepthCanvas, 0, 0, 0, 1 / self.MSAA, 1 / self.MSAA) -- set the ambient occlusion shader in motion
 
 
 	
 	-- apply horizontal and vertical gaussian blur in two passes, using the reuse canvas to draw to that, and then back to the ambient occlusion canvas
 	love.graphics.setCanvas(pongCanvas)
-	love.graphics.setShader(self.BlurShader)
-	self.BlurShader:send("depthTexture", self.DepthCanvas)
-	self.BlurShader:send("blurDirection", {1, 0})
+	love.graphics.setShader(self.AOBlurShader)
+	--self.AOBlurShader:send("depthTexture", self.DepthCanvas)
+	self.AOBlurShader:send("blurDirection", {1, 0})
 	love.graphics.draw(pingCanvas)
 	love.graphics.setCanvas(pingCanvas)
-	self.BlurShader:send("blurDirection", {0, 1})
+	self.AOBlurShader:send("blurDirection", {0, 1})
 	love.graphics.draw(pongCanvas)
 	
 
@@ -169,7 +169,7 @@ function Scene3:applyAmbientOcclusion()
 	love.graphics.clear()
 	love.graphics.setShader(self.SSAOBlendShader) -- set the blend shader so we can apply ambient occlusion to the render canvas
 	-- TODO: no need to send over pingCanvas each frame since it's a reference. You can do this elsewhere
-	self.SSAOBlendShader:send("aoTexture", pingCanvas) -- send over the rendered result from the ambient occlusion shader so we can sample it in the blend shader
+	--self.SSAOBlendShader:send("aoTexture", pingCanvas) -- send over the rendered result from the ambient occlusion shader so we can sample it in the blend shader
 	love.graphics.draw(self.RenderCanvas)
 
 
@@ -397,7 +397,7 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 	end
 	if self.LastDrawSize.x ~= width or self.LastDrawSize.y ~= height then
 		self.LastDrawSize = vector2(width, height)
-		self.BlurShader:send("screenSize", {width, height})
+		self.AOBlurShader:send("screenSize", {width, height})
 		self.BloomBlurShader:send("screenSize", {width, height})
 	end
 
@@ -803,6 +803,11 @@ function Scene3:rescaleCanvas(width, height, msaa)
 	local reuseCanvas6 = love.graphics.newCanvas(width * 0.25, height * 0.25)
 	--reuseCanvas6:setFilter("nearest")
 
+	-- update ambient occlusion canvas references
+	self.AOBlurShader:send("depthTexture", depthCanvas)
+	self.SSAOShader:send("normalTexture", normalCanvas)
+	self.SSAOBlendShader:send("aoTexture", reuseCanvas1) -- pingCanvas
+
 	self.RenderCanvas = renderCanvas
 	self.DepthCanvas = depthCanvas
 	self.NormalCanvas = normalCanvas
@@ -868,6 +873,10 @@ function Scene3:setAO(strength, kernelScalar)
 	self.SSAOShader:send("aoStrength", strength)
 	if enabled then
 		self.SSAOShader:send("kernelScalar", kernelScalar)
+		-- send over textures for sampling
+		self.AOBlurShader:send("depthTexture", self.DepthCanvas)
+		self.SSAOShader:send("normalTexture", self.NormalCanvas)
+		self.SSAOBlendShader:send("aoTexture", self.ReuseCanvas1) -- pingCanvas
 	end
 end
 
@@ -1307,7 +1316,7 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 		["ParticleMixShader"] = particleMixShader;
 		["SSAOShader"] = love.graphics.newShader(SHADER_SSAO_PATH); -- screen-space ambient occlusion shader
 		["SSAOBlendShader"] = love.graphics.newShader(SHADER_SSAOBLEND_PATH); -- blend shader to blend ambient occlusion with the rendered scene
-		["BlurShader"] = love.graphics.newShader(SHADER_BLUR_PATH);
+		["AOBlurShader"] = love.graphics.newShader(SHADER_AOBLUR_PATH);
 		["BloomBlurShader"] = love.graphics.newShader(SHADER_BLOOMBLUR_PATH);
 		["ShadowMapShader"] = love.graphics.newShader(SHADER_SHADOWMAP_PATH);
 
@@ -1393,7 +1402,7 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 	Object.SSAOShader:send("perspectiveMatrix", {c1, c2, c3, c4})
 
 	-- bloom and AO quality shader vars
-	Object.BlurShader:send("screenSize", {gWidth, gHeight})
+	Object.AOBlurShader:send("screenSize", {gWidth, gHeight})
 	Object.BloomBlurShader:send("screenSize", {gWidth, gHeight})
 
 	-- init particle mix shader
