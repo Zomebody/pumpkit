@@ -35,7 +35,8 @@ local SHADER_VERTEX_PATH = "framework/shaders/vertex3d.c"
 local SHADER_FRAGMENT_PATH = "framework/shaders/fragment3d.c"
 local SHADER_RIPPLE_PATH = "framework/shaders/ripplefrag.c"
 local SHADER_FOLIAGE_PATH = "framework/shaders/foliagefrag.c"
-local SHADER_PARTICLES_PATH = "framework/shaders/particles3d.c"
+local SHADER_PARTICLES_VERT = "framework/shaders/particlesvert.c"
+local SHADER_PARTICLES_FRAG = "framework/shaders/particlesfrag.c"
 local SHADER_SSAO_PATH = "framework/shaders/ssao3d.c"
 local SHADER_SSAOBLEND_PATH = "framework/shaders/ssaoblend.c"
 local SHADER_BLUR_PATH = "framework/shaders/blur.c"
@@ -915,6 +916,7 @@ function Scene3:setShadowMap(position, direction, size, canvasSize, sunColor, sh
 		self.Shader:send("shadowsEnabled", false)
 		self.RippleShader:send("shadowsEnabled", false)
 		self.FoliageShader:send("shadowsEnabled", false)
+		self.ParticlesShader:send("shadowsEnabled", false)
 	else
 		assert(vector3.isVector3(position), "Scene3:setShadowMap(position, direction, size, canvasSize, sunColor, shadowStrength) requires argument 'position' to be a vector3.")
 		assert(vector3.isVector3(direction), "Scene3:setShadowMap(position, direction, size, canvasSize, sunColor, shadowStrength) requires argument 'direction' to be a vector3.")
@@ -927,26 +929,23 @@ function Scene3:setShadowMap(position, direction, size, canvasSize, sunColor, sh
 		self.Shader:send("shadowsEnabled", true)
 		self.RippleShader:send("shadowsEnabled", true)
 		self.FoliageShader:send("shadowsEnabled", true)
-		if sunColor == nil then
-			local sunCol = {1, 1, 1}
-			self.Shader:send("sunColor", sunCol)
-			self.RippleShader:send("sunColor", sunCol)
-			self.FoliageShader:send("sunColor", sunCol)
-		else
-			local sunCol = {sunColor.r, sunColor.g, sunColor.b}
-			self.Shader:send("sunColor", sunCol)
-			self.RippleShader:send("sunColor", sunCol)
-			self.FoliageShader:send("sunColor", sunCol)
-		end
+		self.ParticlesShader:send("shadowsEnabled", true)
+		local sunCol = (sunColor == nil) and {1, 1, 1} or {sunColor.r, sunColor.g, sunColor.b}
+		self.Shader:send("sunColor", sunCol)
+		self.RippleShader:send("sunColor", sunCol)
+		self.FoliageShader:send("sunColor", sunCol)
+		self.ParticlesShader:send("sunColor", sunCol)
 		local shStrength = shadowStrength ~= nil and shadowStrength or 0.5
 		self.Shader:send("shadowStrength", shStrength)
 		self.RippleShader:send("shadowStrength", shStrength)
 		self.FoliageShader:send("shadowStrength", shStrength)
+		self.ParticlesShader:send("shadowStrength", shStrength)
 		direction = direction:clone():norm()
 		local dirTable = {direction.x, direction.y, direction.z}
 		self.Shader:send("sunDirection", dirTable)
 		self.RippleShader:send("sunDirection", dirTable)
 		self.FoliageShader:send("sunDirection", dirTable)
+		self.ParticlesShader:send("sunDirection", dirTable)
 
 		-- create new canvases (but only if their sizes are different from the current ones)
 		-- this will make it possible to potentially move the shadowmap around every frame
@@ -966,10 +965,12 @@ function Scene3:setShadowMap(position, direction, size, canvasSize, sunColor, sh
 			self.Shader:send("shadowCanvas", self.ShadowDepthCanvas)
 			self.RippleShader:send("shadowCanvas", self.ShadowDepthCanvas)
 			self.FoliageShader:send("shadowCanvas", self.ShadowDepthCanvas)
+			self.ParticlesShader:send("shadowCanvas", self.ShadowDepthCanvas) -- particleshader only needs depth canvas, not size, since we only need 1 sample
 
-			self.Shader:send("shadowCanvasSize", {canvasSize.x, canvasSize.y})
-			self.RippleShader:send("shadowCanvasSize", {canvasSize.x, canvasSize.y})
-			self.FoliageShader:send("shadowCanvasSize", {canvasSize.x, canvasSize.y})
+			local cSize = {canvasSize.x, canvasSize.y}
+			self.Shader:send("shadowCanvasSize", cSize)
+			self.RippleShader:send("shadowCanvasSize", cSize)
+			self.FoliageShader:send("shadowCanvasSize", cSize)
 		end
 
 		self.ShadowMapShader:send("isInstanced", true)
@@ -983,6 +984,7 @@ function Scene3:setShadowMap(position, direction, size, canvasSize, sunColor, sh
 		self.Shader:send("orthoMatrix", oMat) -- also send to main shader so we know how to sample shadow map
 		self.RippleShader:send("orthoMatrix", oMat)
 		self.FoliageShader:send("orthoMatrix", oMat)
+		self.ParticlesShader:send("orthoMatrix", oMat)
 		
 		-- send over sun matrix
 		local sunWorldMatrix = matrix4.lookAtWorld(position, direction) -- matrix of where the sun is
@@ -992,6 +994,7 @@ function Scene3:setShadowMap(position, direction, size, canvasSize, sunColor, sh
 		self.Shader:send("sunWorldMatrix", sMat) -- also send to main shader so we know how to sample shadow map
 		self.RippleShader:send("sunWorldMatrix", sMat)
 		self.FoliageShader:send("sunWorldMatrix", sMat)
+		self.ParticlesShader:send("sunWorldMatrix", sMat)
 
 	end
 end
@@ -1300,7 +1303,7 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 		["Shader"] = love.graphics.newShader(SHADER_VERTEX_PATH, SHADER_FRAGMENT_PATH); -- SHADER_PATH
 		["RippleShader"] = love.graphics.newShader(SHADER_VERTEX_PATH, SHADER_RIPPLE_PATH); -- same vertex shader, but special fragment shader
 		["FoliageShader"] = love.graphics.newShader(SHADER_VERTEX_PATH, SHADER_FOLIAGE_PATH); -- same vertex shader, but special fragment shader
-		["ParticlesShader"] = love.graphics.newShader(SHADER_PARTICLES_PATH);
+		["ParticlesShader"] = love.graphics.newShader(SHADER_PARTICLES_VERT, SHADER_PARTICLES_FRAG);
 		["ParticleMixShader"] = particleMixShader;
 		["SSAOShader"] = love.graphics.newShader(SHADER_SSAO_PATH); -- screen-space ambient occlusion shader
 		["SSAOBlendShader"] = love.graphics.newShader(SHADER_SSAOBLEND_PATH); -- blend shader to blend ambient occlusion with the rendered scene

@@ -98,7 +98,7 @@ float calculateShadow(vec4 fragPosLightSpace, vec3 surfaceNormal) {
 	
 
 	// sample depth at own position, but also sample 4 neighbors
-	// THIS ACTUALLY YIELDS INCREDIBLE RESULTS, I AM A GENIUS!!
+	// this seems surprisingly effective and clever but maybe a bit slow?
 	
 	vec2 texelSize = 1.0 / shadowCanvasSize;
 	float s0 = texture(shadowCanvas, vec3(projCoords.xy, currentDepth - bias));
@@ -151,15 +151,15 @@ void effect() {
 		if (absNormX > absNormY && absNormX > absNormZ) {
 			// pointing into x-direction
 			texture_coords = vec2(fragWorldPosition.y * triplanarScale, fragWorldPosition.z * triplanarScale);
-			texColor = vec4(1.0, 0.0, 0.0, 1.0);
+			//texColor = vec4(1.0, 0.0, 0.0, 1.0);
 		} else if (absNormY > absNormZ) {
 			// pointing into y-direction
 			texture_coords = vec2(fragWorldPosition.x * triplanarScale, fragWorldPosition.z * triplanarScale);
-			texColor = vec4(0.0, 1.0, 0.0, 1.0);
+			//texColor = vec4(0.0, 1.0, 0.0, 1.0);
 		} else {
 			// pointing into z-direction
 			texture_coords = vec2(fragWorldPosition.x * triplanarScale, fragWorldPosition.y * triplanarScale);
-			texColor = vec4(0.0, 0.0, 1.0, 1.0);
+			//texColor = vec4(0.0, 0.0, 1.0, 1.0);
 		}
 	} else if (!isSpriteSheet) { // simply grab the uv coordinates for applying the texture
 		texture_coords = VaryingTexCoord.xy; // argument 'texture_coords' doesn't exist when doing multi-canvas operations, so extract it from VaryingTexCoord instead

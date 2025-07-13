@@ -1,19 +1,5 @@
 
-
-
-/*
-
-	TODO:
-	1. different facing directions options (A: facing world-up and B: facing the emitter's source position)
-	2. option for particle emitter to be affected by light
-	
-
-*/
-
-
-
-
-#ifdef VERTEX
+#pragma language glsl3
 
 const float zNear = 0.1;
 const float zFar = 1000.0;
@@ -22,6 +8,11 @@ const float zFar = 1000.0;
 uniform mat4 camMatrix;
 uniform float aspectRatio;
 uniform float fieldOfView;
+uniform mat4 sunWorldMatrix;
+uniform mat4 orthoMatrix;
+
+// attributes
+attribute vec3 VertexNormal;
 
 // update variables
 uniform Image dataTexture; // data texture containing (currently) the color gradient and size curve
@@ -43,14 +34,12 @@ attribute float instFacingMode; // if 0: facing world up, if 0.25: regular billb
 
 varying float emittedAt;
 varying float lifetime;
+
 varying vec3 fragWorldPosition; // output automatically interpolated fragment world position
-
-//varying vec3 instColor;
-//varying bool tooOld; // whether the instance is too old to be drawn
-
+varying vec3 fragWorldNormal; // normal vector, but in world space this time
+varying vec4 fragPosLightSpace;
 
 
-// I DON'T KNOW WHY, BUT THE FUNCTIONS GETROTATIONMATRIX AND GETSCALEMATRIX AND GETTRANSLATIONMATRIX ARE ALL TRANSPOSED AND IT JUST KIND OF WORKS (probably because of row/column major order shenanigans?)
 
 // Function to create a rotation matrix around the X axis
 mat4 getRotationMatrixX(float angle) {
@@ -352,13 +341,16 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 	emittedAt = instEmittedAt;
 	lifetime = instLifetime;
 
-	fragWorldPosition = worldPosition;//(modelWorldMatrix * vertex_position).xyz;
+	fragWorldPosition = (modelWorldMatrix * vertex_position).xyz; // worldPosition;
+	fragWorldNormal = normalize((rotationMatrix * scaleMatrix * vec4(VertexNormal, 0.0)).xyz);
+
+	mat4 sunViewMatrix = inverse(sunWorldMatrix);
+	fragPosLightSpace = orthoMatrix * sunViewMatrix * vec4(fragWorldPosition, 1.0);
 
 
 	return result;
 }
 
-#endif
 
 
 
@@ -367,112 +359,3 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 
 
 
-// Fragment Shader
-#ifdef PIXEL
-
-
-// colors
-//varying vec3 instColor;
-//varying bool tooOld;
-
-uniform Image MainTex;
-
-uniform Image dataTexture; // data texture containing (currently) the color gradient and size curve
-uniform float currentTime;
-uniform float brightness;
-uniform vec2 flipbookData; // x = size, y = frame count (in reading order)
-
-
-varying float emittedAt;
-varying float lifetime;
-varying vec3 fragWorldPosition;
-uniform bool blends;
-
-// lights
-struct Light {
-	vec3 position;
-	vec3 color;
-	float range;
-	float strength;
-};
-uniform vec4 lightsInfo[16 * 2]; // array where each even index is {posX, posY, posZ, range} and each uneven index is {colR, colG, colB, strength}
-uniform int lightCount;
-uniform vec3 ambientColor;
-
-
-
-Light getLight(int index) {
-	Light light;
-	light.position = lightsInfo[index * 2].xyz;
-	light.range = lightsInfo[index * 2].w;
-	light.color = lightsInfo[index * 2 + 1].xyz;
-	light.strength = lightsInfo[index * 2 + 1].w;
-	return light;
-}
-
-
-
-// fragment shader
-//(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
-void effect() {
-	float ageFraction = (currentTime - emittedAt) / lifetime;
-	if (ageFraction > 1) {
-		discard;
-	}
-
-	// sample the gradient color from the top row of the data texture
-	float gradientU = clamp(ageFraction, 0.0, 1.0); // Ensure it stays within the range [0, 1]
-	vec2 gradientUV = vec2(gradientU, 0.25); // Top row (assume 2-pixel tall texture, so Y = 0.25 for the top row)
-	vec4 gradientColor = Texel(dataTexture, gradientUV);
-
-	// sample from texture using flipbook data. If default flipbook properties are used, this is equal to just sampling from a static image
-	float flipbookSize = flipbookData.x;
-	float flipbookFrames = flipbookData.y;
-	float curFrame = floor(ageFraction * flipbookFrames);
-	float frameX = mod(curFrame, flipbookSize);
-	float frameY = mod(floor(curFrame / flipbookSize), flipbookSize);
-	vec2 cellSize = vec2(1.0 / flipbookSize);
-	vec2 sampleUV = VaryingTexCoord.xy * cellSize + vec2(frameX, frameY) * cellSize;
-	vec4 texColor = Texel(MainTex, sampleUV);
-
-	// check if the alpha of the texture color is below a threshold
-	if (texColor.a < 0.01) {
-		discard;  // Discard fully transparent pixels
-	}
-
-
-	vec3 lighting = ambientColor; // start with just ambient lighting on the surface
-	//float totalInfluence = 0;
-
-	// add the lighting contribution of all lights to the surface
-	for (int i = 0; i < lightCount; ++i) {
-		Light light = getLight(i);
-		//if (light.strength > 0) { // only consider lights with a strength above 0
-		// distance to the light
-		float distance = length(light.position - fragWorldPosition);
-		// attenuation factor
-		float attenuation = clamp(1.0 - pow(distance / light.range, 1), 0.0, 1.0);
-		// sum up the light contributions
-		lighting += light.color * light.strength * attenuation;
-		//}
-	}
-
-	vec4 litColor = (texColor * gradientColor) * brightness + (texColor * gradientColor * vec4(lighting.x, lighting.y, lighting.z, 1.0)) * (1.0 - brightness);
-
-	// if the particle has 'blends' set to true, start accumulating colors onto the canvas with some maths
-	// however, if the particle has 'blends' set to false, simply just draw the particle color
-	if (blends) {
-		// in this case, blend mode is set to additive and two canvases are used (ParticleCanvas1, ParticleCanvas2)
-		love_Canvases[0] = vec4(litColor.r * litColor.a, litColor.g * litColor.a, litColor.b * litColor.a, 1.0); // Q: why not store alpha here? A: docs says thet blend mode 'add': The alpha of the screen is not modified, hence moved to other canvas
-		// for red, simply add '1' to red to count the number of fragments being written
-		// for green, square the alpha to give a higher priority 
-		//love_Canvases[1] = vec4(1.0, pow(litColor.a, 2.0), 0.0, 1.0);
-		love_Canvases[1] = vec4(1.0, litColor.a, 1.0, 1.0);
-	} else {
-		// in this case, blend mode is set to the default (alpha) one and the output canvase is the RenderCanvas
-		love_Canvases[0] = litColor;
-	}
-
-}
-
-#endif

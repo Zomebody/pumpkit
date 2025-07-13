@@ -171,15 +171,16 @@ local function new(img, maxParticles, properties)
 	local mesh = love.graphics.newMesh(
 		{
 			{"VertexPosition", "float", 3},
-			{"VertexTexCoord", "float", 2}
+			{"VertexTexCoord", "float", 2},
+			{"VertexNormal", "float", 3}
 		},
 		{
-			{0.5, 0.5, 0, 0, 0},
-			{-0.5, 0.5, 0, 1, 0},
-			{0.5, -0.5, 0, 0, 1},
-			{0.5, -0.5, 0, 0, 1},
-			{-0.5, 0.5, 0, 1, 0},
-			{-0.5, -0.5, 0, 1, 1}
+			{0.5, 0.5, 0, 0, 0, 0, 0, 1},
+			{-0.5, 0.5, 0, 1, 0, 0, 0, 1},
+			{0.5, -0.5, 0, 0, 1, 0, 0, 1},
+			{0.5, -0.5, 0, 0, 1, 0, 0, 1},
+			{-0.5, 0.5, 0, 1, 0, 0, 0, 1},
+			{-0.5, -0.5, 0, 1, 1, 0, 0, 1}
 		},
 		"triangles",
 		"static"
