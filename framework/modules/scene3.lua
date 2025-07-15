@@ -237,7 +237,7 @@ function Scene3:updateShadowMap(firstPass)
 	love.graphics.setMeshCullMode("none") -- "front" can be used to fix peter-panning, but prevents the backfaces from having any shadows!! that's why we set to "none"
 	love.graphics.setDepthMode("lequal", true)
 	love.graphics.setShader(self.ShadowMapShader)
-	love.graphics.setCanvas({["depthstencil"] = self.ShadowCanvasStatic})
+	love.graphics.setCanvas({["depthstencil"] = self.ShadowDepthCanvas})
 
 	
 	
