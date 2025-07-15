@@ -109,11 +109,11 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 
 uniform Image meshTexture;
 
-vec4 effect(vec4 color, Image tex, vec2 texCoord, vec2 screenCoords) {
-	if (Texel(meshTexture, texCoord).a < 0.95) {
+// this shader only outputs to the depthstencil
+void effect() {
+	if (Texel(meshTexture, VaryingTexCoord.xy).a < 0.95) {
 		discard;
 	}
-	return color;
 }
 
 #endif

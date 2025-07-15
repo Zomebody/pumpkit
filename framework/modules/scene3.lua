@@ -237,7 +237,7 @@ function Scene3:updateShadowMap(firstPass)
 	love.graphics.setMeshCullMode("none") -- "front" can be used to fix peter-panning, but prevents the backfaces from having any shadows!! that's why we set to "none"
 	love.graphics.setDepthMode("lequal", true)
 	love.graphics.setShader(self.ShadowMapShader)
-	love.graphics.setCanvas({self.ShadowCanvas, ["depthstencil"] = self.ShadowDepthCanvas})
+	love.graphics.setCanvas({["depthstencil"] = self.ShadowCanvasStatic})
 
 	
 	
@@ -1318,6 +1318,7 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 		["ParticleCanvas2"] = nil;--particleCanvas2; -- stores 
 		["ShadowCanvas"] = nil; -- either nil, or a canvas when shadow map is enabled
 		["ShadowDepthCanvas"] = nil;  -- either nil, or a canvas when shadow map is enabled
+		--["ShadowCanvas"] = nil; -- either nil, or a canvas when shadow map is enabled. Static geometry is rendered to this
 
 		-- when applying SSAO, bloom, etc. you need multiple render passes. For that purpose 'reuse' canvases are created to play ping-pong with each pass
 		-- Considering that SSAO, bloom etc. might want to be downscaled for better FPS, there are canvases for full, half and quarter size
