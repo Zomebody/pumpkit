@@ -95,18 +95,27 @@ float calculateShadow(vec4 fragPosLightSpace, vec3 surfaceNormal) {
 	float cosTheta = clamp(dot(surfaceNormal, sunDirection), 0.0, 1.0);
 	float bias = 0.00025 * tan(acos(cosTheta)); // cosTheta is dot( n,l ), clamped between 0 and 1
 	bias = clamp(bias, 0, 0.00025); // used to be 0.005, but lowered because neighbor sampling works perfectly with reducing acne
-	
+
+
+	// TODO: when you split the shadowmap into a static and dynamic texture, for sampling the dynamic texture
+	// you'll get away with simply taking the above bias and multiplying by a factor 10
+	// you'll get worse peter panning but less acne at steep angles
+	// and for dynamic geometry / semi-transparent geometry that extra peter panning will be hard to notice anyway!
+
 
 	// sample depth at own position, but also sample 4 neighbors
 	// this seems surprisingly effective and clever but maybe a bit slow?
 	
 	vec2 texelSize = 1.0 / shadowCanvasSize;
-	float s0 = texture(shadowCanvas, vec3(projCoords.xy, currentDepth - bias));
-	float sl = texture(shadowCanvas, vec3(projCoords.xy + vec2(-texelSize.x, 0.0), currentDepth - bias));
-	float sr = texture(shadowCanvas, vec3(projCoords.xy + vec2(texelSize.x, 0.0), currentDepth - bias));
-	float su = texture(shadowCanvas, vec3(projCoords.xy + vec2(0.0, -texelSize.y), currentDepth - bias));
-	float sd = texture(shadowCanvas, vec3(projCoords.xy + vec2(0.0, texelSize.y), currentDepth - bias));
+	
+	float s0 = texture(shadowCanvas, projCoords + vec3(0.0, 0.0, -bias));
+	float sl = texture(shadowCanvas, projCoords + vec3(-texelSize.x, 0.0, -bias));
+	float sr = texture(shadowCanvas, projCoords + vec3(texelSize.x, 0.0, -bias));
+	float su = texture(shadowCanvas, projCoords + vec3(0.0, -texelSize.y, -bias));
+	float sd = texture(shadowCanvas, projCoords + vec3(0.0, texelSize.y, -bias));
+	
 	float shadow = min(s0, min(sl, min(sr, min(su, sd))));
+	//float shadow = min(s0, sl);
 	
 	return shadow;
 }
