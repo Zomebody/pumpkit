@@ -281,16 +281,9 @@ function Scene3:updateShadowMap(firstPass)
 		end
 
 	end
-	
-
 
 	-- revert peter-panning
 	love.graphics.setMeshCullMode("back")
-
-	-- send over the shadow canvas to the main shader for sampling
-	--self.Shader:send("shadowCanvas", self.ShadowDepthCanvas)
-	--self.RippleShader:send("shadowCanvas", self.ShadowDepthCanvas)
-	--self.FoliageShader:send("shadowCanvas", self.ShadowDepthCanvas)
 end
 
 
@@ -745,6 +738,7 @@ function Scene3:rescaleCanvas(width, height, msaa)
 	if msaa == nil then
 		msaa = self.MSAA
 	end
+	self.MSAA = msaa
 
 	if width == nil or height == nil then
 		width, height = love.graphics.getDimensions()
@@ -791,17 +785,11 @@ function Scene3:rescaleCanvas(width, height, msaa)
 	)
 
 	local reuseCanvas1 = love.graphics.newCanvas(width, height)
-	--reuseCanvas1:setFilter("nearest")
 	local reuseCanvas2 = love.graphics.newCanvas(width, height)
-	--reuseCanvas2:setFilter("nearest")
 	local reuseCanvas3 = love.graphics.newCanvas(width * 0.5, height * 0.5)
-	--reuseCanvas3:setFilter("nearest")
 	local reuseCanvas4 = love.graphics.newCanvas(width * 0.5, height * 0.5)
-	--reuseCanvas4:setFilter("nearest")
 	local reuseCanvas5 = love.graphics.newCanvas(width * 0.25, height * 0.25)
-	--reuseCanvas5:setFilter("nearest")
 	local reuseCanvas6 = love.graphics.newCanvas(width * 0.25, height * 0.25)
-	--reuseCanvas6:setFilter("nearest")
 
 	-- update ambient occlusion canvas references
 	self.AOBlurShader:send("depthTexture", depthCanvas)
@@ -821,7 +809,6 @@ function Scene3:rescaleCanvas(width, height, msaa)
 	self.ReuseCanvas4 = reuseCanvas4
 	self.ReuseCanvas5 = reuseCanvas5
 	self.ReuseCanvas6 = reuseCanvas6
-	self.MSAA = msaa
 
 	-- update aspect ratio of the scene
 	local aspectRatio = width / height
@@ -835,15 +822,10 @@ function Scene3:rescaleCanvas(width, height, msaa)
 		local persp = matrix4.perspective(aspectRatio, self.Camera3.FieldOfView, 1000, 0.1)
 		local c1, c2, c3, c4 = persp:columns()
 		self.SSAOShader:send("perspectiveMatrix", {c1, c2, c3, c4})
-		--local invPersp = persp:invert()
-		--local i1, i2, i3, i4 = invPersp:columns()
-		--self.SSAOShader:send("invPerspectiveMatrix", {i1, i2, i3, i4})
 	end
 
-	-- init particle mix shader
-	--self.ParticleMixShader:send("colorCanvas", particleCanvas1)
+	-- misc
 	self.ParticleMixShader:send("countCanvas", particleCanvas2)
-
 	self.SSAOBlendShader:send("normalsTexture", normalCanvas) -- needed to sample alpha channel to check if ambient occlusion should be applied
 end
 
@@ -874,9 +856,9 @@ function Scene3:setAO(strength, kernelScalar)
 	if enabled then
 		self.SSAOShader:send("kernelScalar", kernelScalar)
 		-- send over textures for sampling
-		self.AOBlurShader:send("depthTexture", self.DepthCanvas)
-		self.SSAOShader:send("normalTexture", self.NormalCanvas)
-		self.SSAOBlendShader:send("aoTexture", self.ReuseCanvas1) -- pingCanvas
+		--self.AOBlurShader:send("depthTexture", self.DepthCanvas)
+		--self.SSAOShader:send("normalTexture", self.NormalCanvas)
+		--self.SSAOBlendShader:send("aoTexture", self.ReuseCanvas1) -- pingCanvas
 	end
 end
 
@@ -916,6 +898,8 @@ function Scene3:setBloomQuality(quality)
 	self.BloomQuality = quality
 	--self.BloomBlurShader:send("bloomQuality", quality)
 end
+
+
 
 
 function Scene3:setShadowMap(position, direction, size, canvasSize, sunColor, shadowStrength)
@@ -986,7 +970,6 @@ function Scene3:setShadowMap(position, direction, size, canvasSize, sunColor, sh
 
 		-- send over orthographic camera matrix
 		local orthoMatrix = matrix4.orthographic(-size.x / 2, size.x / 2, size.y / 2, -size.y / 2, 100, 0.1) -- perspective correction matrix
-		--local orthoMatrix = matrix4.perspective(size.x/size.y, self.Camera3.FieldOfView, 1000, 0.1)
 		local c1, c2, c3, c4 = orthoMatrix:columns()
 		local oMat = {c1, c2, c3, c4}
 		self.ShadowMapShader:send("orthoMatrix", oMat)
@@ -1259,7 +1242,7 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 
 	--assert(camera.isCamera(sceneCamera) or sceneCamera == nil, "scene3.newScene3(image, sceneCamera) only accepts a camera instance or nil for 'sceneCamera'")
 	module.TotalCreated = module.TotalCreated + 1
-
+	--[[
 	-- round screen size to multiple of 4 so that downscaling SSAO and bloom can be supported
 	local gWidth, gHeight = love.graphics.getWidth(), love.graphics.getHeight()
 	gWidth = math.ceil(gWidth / 4) * 4
@@ -1304,6 +1287,7 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 	local reuseCanvas4 = love.graphics.newCanvas(gWidth * 0.5, gHeight * 0.5)
 	local reuseCanvas5 = love.graphics.newCanvas(gWidth * 0.25, gHeight * 0.25)
 	local reuseCanvas6 = love.graphics.newCanvas(gWidth * 0.25, gHeight * 0.25)
+	]]
 
 
 	local Object = {
@@ -1325,24 +1309,24 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 		["BlobsDirty"] = true; -- same as above, but for blobs
 
 		-- canvas properties, update whenever you change the render target
-		["RenderCanvas"] = renderCanvas;
-		["DepthCanvas"] = depthCanvas;
-		["NormalCanvas"] = normalCanvas;
-		["PrepareCanvas"] = prepareCanvas; -- higher resolution canvas for ambient occlusion & bloom, used to draw things to which are then combined with the render canvas
-		["BloomCanvas"] = bloomCanvas;
-		["ParticleCanvas1"] = particleCanvas1; -- stores sum of colors and sum of alpha
-		["ParticleCanvas2"] = particleCanvas2; -- stores 
+		["RenderCanvas"] = nil;--renderCanvas;
+		["DepthCanvas"] = nil;--depthCanvas;
+		["NormalCanvas"] = nil;--normalCanvas;
+		["PrepareCanvas"] = nil;--prepareCanvas; -- higher resolution canvas for ambient occlusion & bloom, used to draw things to which are then combined with the render canvas
+		["BloomCanvas"] = nil;--bloomCanvas;
+		["ParticleCanvas1"] = nil;--particleCanvas1; -- stores sum of colors and sum of alpha
+		["ParticleCanvas2"] = nil;--particleCanvas2; -- stores 
 		["ShadowCanvas"] = nil; -- either nil, or a canvas when shadow map is enabled
 		["ShadowDepthCanvas"] = nil;  -- either nil, or a canvas when shadow map is enabled
 
 		-- when applying SSAO, bloom, etc. you need multiple render passes. For that purpose 'reuse' canvases are created to play ping-pong with each pass
 		-- Considering that SSAO, bloom etc. might want to be downscaled for better FPS, there are canvases for full, half and quarter size
-		["ReuseCanvas1"] = reuseCanvas1; -- full quality 1
-		["ReuseCanvas2"] = reuseCanvas2; -- full quality 2
-		["ReuseCanvas3"] = reuseCanvas3; -- half quality 1
-		["ReuseCanvas4"] = reuseCanvas4; -- half quality 2
-		["ReuseCanvas5"] = reuseCanvas5; -- quarter quality 1
-		["ReuseCanvas6"] = reuseCanvas6; -- quarter quality 2
+		["ReuseCanvas1"] = nil;--reuseCanvas1; -- full quality 1
+		["ReuseCanvas2"] = nil;--reuseCanvas2; -- full quality 2
+		["ReuseCanvas3"] = nil;--reuseCanvas3; -- half quality 1
+		["ReuseCanvas4"] = nil;--reuseCanvas4; -- half quality 2
+		["ReuseCanvas5"] = nil;--reuseCanvas5; -- quarter quality 1
+		["ReuseCanvas6"] = nil;--reuseCanvas6; -- quarter quality 2
 
 		["MSAA"] = msaa;
 		["AOEnabled"] = false;
@@ -1373,51 +1357,62 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 	setmetatable(Object, Scene3)
 
 	Object.Camera3:attach(Object)
+	Object.Camera3:updateCameraMatrices()
+
+	Object:rescaleCanvas(nil, nil, msaa) -- call to initialize canvas variables
+
+
+	--[[
+	Object.AOBlurShader:send("depthTexture", Object.DepthCanvas)
+	Object.SSAOShader:send("normalTexture", Object.NormalCanvas)
+	Object.SSAOBlendShader:send("aoTexture", Object.ReuseCanvas1) -- pingCanvas
 
 	-- init shader variables
-	Object.Camera3:updateCameraMatrices()
 	local aspectRatio = gWidth / gHeight
 	Object.Shader:send("aspectRatio", aspectRatio)
 	Object.RippleShader:send("aspectRatio", aspectRatio)
 	Object.FoliageShader:send("aspectRatio", aspectRatio)
-	Object.FoliageShader:send("isInstanced", true) -- send true since it uses a shared vertex shader!
-	Object.Shader:send("fieldOfView", Object.Camera3.FieldOfView)
-	Object.RippleShader:send("fieldOfView", Object.Camera3.FieldOfView)
-	Object.FoliageShader:send("fieldOfView", Object.Camera3.FieldOfView)
-	Object.Shader:send("diffuseStrength", 1)
-	Object.FoliageShader:send("diffuseStrength", 1)
-	Object.Shader:send("lightCount", 0)
-	Object.Shader:send("blobShadowCount", 0)
-	Object.Shader:send("blobShadowColor", {0, 0, 0})
-	Object.Shader:send("blobShadowStrength", 0.5)
 	Object.ParticlesShader:send("aspectRatio", aspectRatio)
-	Object.ParticlesShader:send("fieldOfView", Object.Camera3.FieldOfView)
-	Object.ParticlesShader:send("lightCount", 0)
-	Object.SSAOShader:send("aoStrength", 0.5)
-	Object.SSAOShader:send("kernelScalar", 0.85) -- how 'large' ambient occlusion is
-	Object.SSAOShader:send("samples", 24)
-	--Object.SSAOShader:send("viewDistanceFactor", 0.2) -- when you zoom out ambient occlusion fades away, bigger number = need to zoom out more
+
 	local persp = matrix4.perspective(aspectRatio, Object.Camera3.FieldOfView, 1000, 0.1)
 	local c1, c2, c3, c4 = persp:columns()
 	Object.SSAOShader:send("perspectiveMatrix", {c1, c2, c3, c4})
 
+	-- misc
+	particleMixShader:send("countCanvas", particleCanvas2)
+	Object.SSAOBlendShader:send("normalsTexture", normalCanvas) -- needed to sample alpha channel to check if ambient occlusion should be applied
+	]]
+
+	-- non-canvas shader vars initialization
+	Object.Shader:send("fieldOfView", Object.Camera3.FieldOfView)
+	Object.Shader:send("diffuseStrength", 1)
+	Object.Shader:send("lightCount", 0)
+	Object.Shader:send("blobShadowCount", 0)
+	Object.Shader:send("blobShadowColor", {0, 0, 0})
+	Object.Shader:send("blobShadowStrength", 0.5)
+	Object.Shader:send("ambientColor", {1, 1, 1, 1})
+
+	Object.RippleShader:send("fieldOfView", Object.Camera3.FieldOfView)
+
+	Object.FoliageShader:send("fieldOfView", Object.Camera3.FieldOfView)
+	Object.FoliageShader:send("diffuseStrength", 1)
+	Object.FoliageShader:send("isInstanced", true) -- send true since it uses a shared vertex shader!
+	
+	Object.ParticlesShader:send("fieldOfView", Object.Camera3.FieldOfView)
+	Object.ParticlesShader:send("lightCount", 0)
+	Object.ParticlesShader:send("ambientColor", {1, 1, 1, 1})
+
+	Object.SSAOShader:send("aoStrength", 0.5)
+	Object.SSAOShader:send("kernelScalar", 0.85) -- how 'large' ambient occlusion is
+	Object.SSAOShader:send("samples", 24)
+	Object.SSAOShader:send("noiseTexture", noiseImage)
+	Object.SSAOBlendShader:send("occlusionColor", {0, 0, 0})
+
 	-- bloom and AO quality shader vars
+	local gWidth, gHeight = love.graphics.getDimensions()
 	Object.AOBlurShader:send("screenSize", {gWidth, gHeight})
 	Object.BloomBlurShader:send("screenSize", {gWidth, gHeight})
-
-	-- init particle mix shader
-	--particleMixShader:send("colorCanvas", particleCanvas1)
-	particleMixShader:send("countCanvas", particleCanvas2)
-
-	-- send noise image to SSAO shader
-	Object.SSAOShader:send("noiseTexture", noiseImage)
-
-	Object.SSAOBlendShader:send("normalsTexture", normalCanvas) -- needed to sample alpha channel to check if ambient occlusion should be applied
-
-	-- set a default ambience
-	Object.Shader:send("ambientColor", {1, 1, 1, 1})
-	Object.ParticlesShader:send("ambientColor", {1, 1, 1, 1})
-	Object.SSAOBlendShader:send("occlusionColor", {0, 0, 0})
+	
 
 	return Object
 end
