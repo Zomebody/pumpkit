@@ -438,7 +438,8 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 
 
 	-- set render canvas as target and clear it so a normal image can be drawn to it
-	love.graphics.setCanvas({self.RenderCanvas, self.NormalCanvas, ["depthstencil"] = self.DepthCanvas}) -- set the main canvas so it can be cleared
+	--love.graphics.setCanvas({self.RenderCanvas, self.NormalCanvas, ["depthstencil"] = self.DepthCanvas}) -- set the main canvas so it can be cleared
+	love.graphics.setCanvas({self.RenderCanvas, ["depthstencil"] = self.DepthCanvas})
 	love.graphics.clear()
 	love.graphics.setCanvas(self.BloomCanvas)
 	love.graphics.clear(0, 0, 0)
