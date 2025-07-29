@@ -194,7 +194,7 @@ void effect() {
 	vec3 bitangent = normalize(cross(surfaceNormal, tangent));
 
 	mat3 TBN = mat3(-tangent, -bitangent, fragWorldNormal);
-	vec3 normalMapNormal = normalize(TBN * sampledNormal); // in world-space
+	vec3 normalMapNormalWorld = normalize(TBN * sampledNormal); // in world-space
 
 
 	// the second canvas is the normals canvas. Output the surface normal to this canvas
@@ -213,7 +213,7 @@ void effect() {
 		float attenuation = clamp(1.0 - pow(distance / light.range, 1.0), 0.0, 1.0);
 
 		// diffuse shading
-		float diffuseFactor = max(dot(normalMapNormal, lightDir), 0.0);
+		float diffuseFactor = max(dot(normalMapNormalWorld, lightDir), 0.0);
 		//diffuseFactor = pow(diffuseFactor, 0.5);
 		vec3 lightingToAdd = light.color * light.strength * attenuation;
 		// if diffStrength == 0, just add the color, otherwise, add based on angle between surface and light direction
@@ -223,7 +223,7 @@ void effect() {
 	// apply sun-light if not in shadow (from shadow map)
 	if (shadowsEnabled) {
 		float shadow = calculateShadow(fragPosLightSpace, surfaceNormal);
-		float sunFactor = max(dot(-normalMapNormal, sunDirection), 0.0); // please don't ask me why * vec3(1.0, 1.0, -1.0) works... I'm super confused
+		float sunFactor = max(dot(-normalMapNormalWorld, sunDirection), 0.0); // please don't ask me why * vec3(1.0, 1.0, -1.0) works... I'm super confused
 		//lighting += sunColor * (1.0 - shadow * shadowStrength) * (1.0 - sunFactor);
 		lighting += sunColor * (1.0 - shadow * shadowStrength) * (pow(sunFactor, 0.5)); // this was 1.0-sunFactor before but that didn't work well for normal maps idk why
 	}
