@@ -439,11 +439,13 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 
 	-- set render canvas as target and clear it so a normal image can be drawn to it
 	--love.graphics.setCanvas({self.RenderCanvas, self.NormalCanvas, ["depthstencil"] = self.DepthCanvas}) -- set the main canvas so it can be cleared
+	profiler:pushLabel("clear")
 	love.graphics.setCanvas({self.RenderCanvas, ["depthstencil"] = self.DepthCanvas})
 	love.graphics.clear()
 	love.graphics.setCanvas(self.BloomCanvas)
 	love.graphics.clear(0, 0, 0)
 	love.graphics.setCanvas(self.RenderCanvas) -- set the canvas to only be the render canvas so the background doesn't accidentally initialize anything in the normal canvas
+	profiler:popLabel()
 
 	local renderWidth, renderHeight = self.RenderCanvas:getDimensions()
 
@@ -461,7 +463,6 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 	love.graphics.setCanvas({self.RenderCanvas, self.NormalCanvas, self.BloomCanvas, ["depthstencil"] = self.DepthCanvas}) -- set the main canvas with proper maps for geometry being drawn
 	love.graphics.setDepthMode("less", true)
 	love.graphics.setMeshCullMode("back")
-	--love.graphics.setShader(self.Shader)
 
 	-- using 'replace' w/ premultiplied so we can set the normals to some rgb even though we also write alpha=0. Otherwise, rgb would get multiplied by alpha!
 	-- and coincidentally this just kind of works because foliage has an all-or-nothing either draw opaque pixels, or discard them!!
@@ -697,7 +698,7 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 		-- a pretty important caveat here: if you are drawing to a render target it's VERY RECOMMENDED that the render target has the same dimensions as the screen
 		-- if your render target is smaller however, e.g. when using split-screen, you should 100% call Scene3:rescaleCanvas() with your target width and height.
 		-- because if you are drawing to a smaller render canvas but the scene has a fullscreen render canvas, you're tanking your FPS for no reason (better anti-aliasing though I guess)
-		love.graphics.draw(self.RenderCanvas, x, renderTarget:getHeight() * scaleY + y, 0, scaleX, -scaleY) -- TODO: fix the math here since render offset was introduced
+		love.graphics.draw(self.RenderCanvas, x, renderTarget:getHeight() * scaleY + y, 0, scaleX, -scaleY)
 	else
 		-- if no render target is set, the scene is drawn to the screen, so use the screen's dimensions
 		--local scaleX = love.graphics.getWidth() / self.RenderCanvas:getWidth()
