@@ -70,6 +70,13 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Method";
+	["Name"] = "cross";
+	["Arguments"] = {"vector3"};
+	["Description"] = "Returns the cross product between the current vector and the passed vector.";
+})
+
+table.insert(content, {
+	["Type"] = "Method";
 	["Name"] = "dist";
 	["Arguments"] = {"vector3"};
 	["Description"] = "Returns the Pythagorian distance between the current vector3 and the supplied vector3.";
