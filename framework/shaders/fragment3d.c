@@ -4,7 +4,7 @@
 varying vec3 fragWorldPosition; // output automatically interpolated fragment world position
 varying vec3 fragNormal; // used for ambient occlusion and fresnel (IS IN SCREEN SPACE)
 varying vec3 fragWorldNormal;
-//varying vec3 fragSurfaceNormalWorld; // used to solve shadow acne
+varying vec3 fragSurfaceNormalWorld; // used to solve shadow acne
 varying vec4 fragPosLightSpace;
 varying mat3 TBN; // tangent bitangent normal matrix, calculated in the vertex shder because it's more efficient
 
@@ -215,9 +215,9 @@ void effect() {
 
 	if (triplanarScale > 0.0) { // project texture onto mesh using triplanar projection
 
-		float absNormX = abs(fragWorldNormal.x); // fragWorldNormal // fragSurfaceNormalWorld
-		float absNormY = abs(fragWorldNormal.y); // fragWorldNormal // fragSurfaceNormalWorld
-		float absNormZ = abs(fragWorldNormal.z); // fragWorldNormal // fragSurfaceNormalWorld
+		float absNormX = abs(fragSurfaceNormalWorld.x); // fragWorldNormal // fragSurfaceNormalWorld
+		float absNormY = abs(fragSurfaceNormalWorld.y); // fragWorldNormal // fragSurfaceNormalWorld
+		float absNormZ = abs(fragSurfaceNormalWorld.z); // fragWorldNormal // fragSurfaceNormalWorld
 		if (absNormX > absNormY && absNormX > absNormZ) {
 			// pointing into x-direction
 			texture_coords = vec2(fragWorldPosition.y * triplanarScale, fragWorldPosition.z * triplanarScale);
@@ -277,7 +277,7 @@ void effect() {
 
 	// apply sun-light if not in shadow (from shadow map)
 	if (shadowsEnabled) {
-		float shadow = calculateShadow(fragPosLightSpace, fragWorldNormal); // fragWorldNormal // fragSurfaceNormalWorld
+		float shadow = calculateShadow(fragPosLightSpace, fragSurfaceNormalWorld); // fragWorldNormal // fragSurfaceNormalWorld
 		float sunFactor = max(dot(-normalMapNormalWorld, sunDirection), 0.0); // please don't ask me why * vec3(1.0, 1.0, -1.0) works... I'm super confused
 		//lighting += sunColor * (1.0 - shadow * shadowStrength) * (1.0 - sunFactor);
 		lighting += sunColor * (1.0 - shadow * shadowStrength) * (pow(sunFactor, 0.5)); // this was 1.0-sunFactor before but that didn't work well for normal maps idk why

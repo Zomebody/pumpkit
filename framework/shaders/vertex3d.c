@@ -32,7 +32,7 @@ uniform bool isInstanced;
 varying vec3 fragWorldPosition; // output automatically interpolated fragment world position
 varying vec3 fragNormal; // used for normal map for SSAO (in screen space)
 varying vec3 fragWorldNormal; // normal vector, but in world space this time
-//varying vec3 fragSurfaceNormalWorld; // specifically required to solve shadow acne
+varying vec3 fragSurfaceNormalWorld; // specifically required to solve shadow acne
 varying vec4 fragPosLightSpace; // position of the fragment in light space so it can sample from the shadow map
 varying mat3 TBN; // tangent bitangent normal matrix to be used for normal maps
 
@@ -180,7 +180,7 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 
 	// multiplying by the scale matrix is required in cases where scaling isn't consistent across axes. E.g. you don't want circular normals when a sphere is stretched to an ellipse
 	fragWorldNormal = normalize((rotXscale * vec4(VertexNormal, 0.0)).xyz);
-	//fragSurfaceNormalWorld = normalize((rotXscale * vec4(VertexNormal, 0.0)).xyz);
+	fragSurfaceNormalWorld = normalize((rotXscale * vec4(VertexNormal, 0.0)).xyz);
 
 	//fragPosLightSpace = lightSpaceMatrix * vec4(fragWorldPosition, 1.0);
 	mat4 sunViewMatrix = inverse(sunWorldMatrix);

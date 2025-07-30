@@ -79,7 +79,7 @@ function createMeshFromFile(filename)
 		table.insert(vertices, {x, y, z, u, 1 - v, r, g, b, a, nx, ny, nz, tx, ty, tz, bx, by, bz}) -- ALSO surface normals added in the if-statement below!
 
 		-- all of this just to compute a surface normal
-		--[[
+		
 		if i % 3 == 0 then -- every 3rd vertex calculate and insert the triangle's surface normal
 			local last = #vertices
 			local t1 = vertices[last - 2]
@@ -102,7 +102,7 @@ function createMeshFromFile(filename)
 			table.insert(t3, normal.y)
 			table.insert(t3, normal.z)
 		end
-		]]
+		
 		
 	end
 	
@@ -114,8 +114,8 @@ function createMeshFromFile(filename)
 			{"VertexColor", "byte", 4},
 			{"VertexNormal", "float", 3},
 			{"VertexTangent", "float", 3},
-			{"VertexBitangent", "float", 3}--,
-			--{"SurfaceNormal", "float", 3} -- it pains me but this is *specifically* needed for solving shadow acne, that's why we're adding 3 extra floats
+			{"VertexBitangent", "float", 3},
+			{"SurfaceNormal", "float", 3} -- it pains me but this is *specifically* needed for solving shadow acne, that's why we're adding 3 extra floats
 		},
 		vertices,
 		"triangles",
