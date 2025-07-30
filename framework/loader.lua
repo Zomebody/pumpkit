@@ -36,7 +36,8 @@ function load()
 	ui = require(filepath("../framework/modules/ui", "."))
 
 	-- importers
-	importMesh = require(filepath("../framework/meshimporter", "."))
+	--importMesh = require(filepath("../framework/meshimporter", "."))
+	importMesh = require(filepath("../framework/meshimporter2", "."))
 	importNavmesh = require(filepath("../framework/navimporter", "."))
 	importCollision = require(filepath("../framework/colimporter", "."))
 

@@ -28,7 +28,7 @@ uniform vec3 meshFresnelColor; // vec3 since fresnel won't be supporting transpa
 // textures
 //uniform Image MainTex; // used to be the 'tex' argument, but is now passed separately in this specific variable name because we switched to multi-canvas shading which has no arguments
 uniform Image meshTexture; // replaces MainTex. Instead of using mesh:setTexture(), they are now passed separately so that a mesh can be reused with different textures on them
-uniform Image normalMap; // unused, might be implemented later down the line idk
+//uniform Image normalMap; // unused, might be implemented later down the line idk
 // TODO: re-implement foaminess
 // if noise1 < noise2 * foaminess, render foam
 // thus if alpha values range from 0.1 to 0.9, you'll need a foaminess of at least 9 to have 100% foam coverage

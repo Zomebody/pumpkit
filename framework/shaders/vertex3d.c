@@ -10,6 +10,9 @@ uniform mat4 orthoMatrix;
 
 // attributes
 attribute vec3 VertexNormal;
+attribute vec3 VertexTangent;
+attribute vec3 VertexBitangent;
+//attribute vec3 SurfaceNormal;
 
 
 const float zNear = 0.1;
@@ -29,7 +32,9 @@ uniform bool isInstanced;
 varying vec3 fragWorldPosition; // output automatically interpolated fragment world position
 varying vec3 fragNormal; // used for normal map for SSAO (in screen space)
 varying vec3 fragWorldNormal; // normal vector, but in world space this time
+//varying vec3 fragSurfaceNormalWorld; // specifically required to solve shadow acne
 varying vec4 fragPosLightSpace; // position of the fragment in light space so it can sample from the shadow map
+varying mat3 TBN; // tangent bitangent normal matrix to be used for normal maps
 
 
 
@@ -134,9 +139,11 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 		rotationMatrix = getRotationMatrixZ(meshRotation.z) * getRotationMatrixY(meshRotation.y) * getRotationMatrixX(meshRotation.x);
 		translationMatrix = getTranslationMatrix(meshPosition);
 	}
-	
+
+
 	// construct the model's world matrix, i.e. where in the world is each vertex of this mesh located
-	mat4 modelWorldMatrix = translationMatrix * rotationMatrix * scaleMatrix;
+	mat4 rotXscale = rotationMatrix * scaleMatrix;
+	mat4 modelWorldMatrix = translationMatrix * rotXscale;
 
 	//vec4 vertexWorldPosition = translationMatrix * rotationMatrix * scaleMatrix * vertex_position;
 
@@ -162,9 +169,18 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 
 
 	fragNormal = (viewMatrix * rotationMatrix * vec4(VertexNormal, 0.0)).xyz; // fragNormal is stored in view-space because it's cheaper and easier that way to program ambient-occlusion!
+	vec3 fragTangent = (viewMatrix * rotationMatrix * vec4(VertexTangent, 0.0)).xyz;
+	vec3 fragBitangent = (viewMatrix * rotationMatrix * vec4(VertexBitangent, 0.0)).xyz;
 
-	//mat3 normalMatrix = mat3(transpose(inverse(modelWorldMatrix)));
-	fragWorldNormal = normalize((rotationMatrix * scaleMatrix * vec4(VertexNormal, 0.0)).xyz);
+	TBN = mat3(
+		fragTangent,
+		fragBitangent,
+		fragNormal
+	);
+
+	// multiplying by the scale matrix is required in cases where scaling isn't consistent across axes. E.g. you don't want circular normals when a sphere is stretched to an ellipse
+	fragWorldNormal = normalize((rotXscale * vec4(VertexNormal, 0.0)).xyz);
+	//fragSurfaceNormalWorld = normalize((rotXscale * vec4(VertexNormal, 0.0)).xyz);
 
 	//fragPosLightSpace = lightSpaceMatrix * vec4(fragWorldPosition, 1.0);
 	mat4 sunViewMatrix = inverse(sunWorldMatrix);
