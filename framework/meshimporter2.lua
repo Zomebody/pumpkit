@@ -55,6 +55,10 @@ function createMeshFromFile(filename)
 	end
 	local x, y, z, u, v, r, g, b, a, nx, ny, nz, tx, ty, tz, bx, by, bz
 
+	if filename == "maps/backyard/terrain/terrain_sand.lmsh" then
+		print(filename)
+	end
+
 	for i = 1, triCount * 3 do -- n.o. vertices = triangle count times 3
 		x, y, z, u, v, r, g, b, a, nx, ny, nz, tx, ty, tz, bx, by, bz, index = love.data.unpack(vertexFormat, data, index)
 		-- decode some of the values
@@ -77,6 +81,12 @@ function createMeshFromFile(filename)
 		by = by / 127
 		bz = bz / 127
 		table.insert(vertices, {x, y, z, u, 1 - v, r, g, b, a, nx, ny, nz, tx, ty, tz, bx, by, bz}) -- ALSO surface normals added in the if-statement below!
+
+		if filename == "maps/backyard/terrain/terrain_sand.lmsh" then
+			print(tx, tx, tz)
+			print(bx, by, bz)
+			print(nx, ny, nz)
+		end
 
 		-- all of this just to compute a surface normal
 		

@@ -2,7 +2,7 @@
 #pragma language glsl3 // I don't remember why I put this here
 
 varying vec3 fragWorldPosition; // output automatically interpolated fragment world position
-varying vec3 fragNormal; // used for normal map
+varying vec3 fragViewNormal; // used for ambient occlusion
 varying vec3 fragWorldNormal;
 varying vec4 fragPosLightSpace;
 varying mat3 TBN; // tangent bitangent normal matrix, calculated in the vertex shder because it's more efficient
@@ -143,7 +143,7 @@ void effect() {
 
 
 	// the second canvas is the normals canvas. Output the surface normal to this canvas
-	//love_Canvases[1] = vec4(fragNormal.x / 2 + 0.5, fragNormal.y / 2 + 0.5, fragNormal.z / 2 + 0.5, 1.0); // Pack normals into an RGBA format
+	//love_Canvases[1] = vec4(fragViewNormal.x / 2 + 0.5, fragViewNormal.y / 2 + 0.5, fragViewNormal.z / 2 + 0.5, 1.0); // Pack normals into an RGBA format
 
 
 	// ended up implementing a very basic naive additive lighting system because it doesn't have any weird edge-cases
@@ -200,7 +200,7 @@ void effect() {
 
 	love_Canvases[0] = resultingColor;// * 0.0001 + 0.9999 * vec4(fragWorldNormal * 0.5 + 0.5, 1.0);
 
-	love_Canvases[1] = vec4(fragNormal.x / 2 + 0.5, fragNormal.y / 2 + 0.5, fragNormal.z / 2 + 0.5, 0.0); // Pack normals into an RGBA format. Alpha = draw no ambient occlusion
+	love_Canvases[1] = vec4(fragViewNormal.x / 2 + 0.5, fragViewNormal.y / 2 + 0.5, fragViewNormal.z / 2 + 0.5, 0.0); // Pack normals into an RGBA format. Alpha = draw no ambient occlusion
 
 	// apply bloom to canvas. Semi-transparent meshes will emit weaker bloom
 	//love_Canvases[2] = vec4(color.x * meshBloom, color.y * meshBloom, color.z * meshBloom, 1.0 - meshTransparency);

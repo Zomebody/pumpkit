@@ -30,9 +30,9 @@ varying vec3 instColor;
 uniform bool isInstanced;
 
 varying vec3 fragWorldPosition; // output automatically interpolated fragment world position
-varying vec3 fragNormal; // used for normal map for SSAO (in screen space)
+varying vec3 fragViewNormal; // used for normal map for SSAO (in screen space)
 varying vec3 fragWorldNormal; // normal vector, but in world space this time
-varying vec3 fragSurfaceNormalWorld; // specifically required to solve shadow acne
+varying vec3 fragWorldSurfaceNormal; // specifically required to solve shadow acne
 varying vec4 fragPosLightSpace; // position of the fragment in light space so it can sample from the shadow map
 varying mat3 TBN; // tangent bitangent normal matrix to be used for normal maps
 
@@ -142,45 +142,38 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 
 
 	// construct the model's world matrix, i.e. where in the world is each vertex of this mesh located
-	mat4 rotXscale = rotationMatrix * scaleMatrix;
-	mat4 modelWorldMatrix = translationMatrix * rotXscale;
-
-	//vec4 vertexWorldPosition = translationMatrix * rotationMatrix * scaleMatrix * vertex_position;
+	//mat4 rotXscale = rotationMatrix * scaleMatrix;
+	mat4 modelWorldMatrix = translationMatrix * rotationMatrix * scaleMatrix;
 
 	mat4 cameraWorldMatrix = camMatrix;
-
-
 	mat4 viewMatrix = inverse(cameraWorldMatrix);
 
 	// now go from world space to camera space, by applying the inverse of the world matrix. Essentially this moves the camera back to the world origin and the vertex is moved along
 	mat4 cameraSpaceMatrix = viewMatrix *  modelWorldMatrix;
 
 	fragWorldPosition = (modelWorldMatrix * vertex_position).xyz; // sets the world position of this vertex. In the fragment shader this gets interpolated correctly automatically
-	
-	// TODO: calculate distance to camera for any fog applied in the fragment shader
-	//fragDistanceToCamera = length(fragWorldPosition - cameraMatrix[3].xyz); // convert camera matrix to vec3 containing only the position
-
 
 	// finally calculate the perspective projection matrix to move from camera space to screen space
 	mat4 projectionMatrix = getPerspectiveMatrix(fieldOfView, aspectRatio);
 
-	// Apply the view-projection transformation
+	// apply the view-projection transformation
 	vec4 result = projectionMatrix * cameraSpaceMatrix * vertex_position;
 
+	fragViewNormal = (viewMatrix * rotationMatrix * vec4(VertexNormal, 0.0)).xyz; // fragViewNormal is stored in view-space because it's cheaper and easier that way to program ambient-occlusion!
 
-	fragNormal = (viewMatrix * rotationMatrix * vec4(VertexNormal, 0.0)).xyz; // fragNormal is stored in view-space because it's cheaper and easier that way to program ambient-occlusion!
-	vec3 fragTangent = (viewMatrix * rotationMatrix * vec4(VertexTangent, 0.0)).xyz;
-	vec3 fragBitangent = (viewMatrix * rotationMatrix * vec4(VertexBitangent, 0.0)).xyz;
+	fragWorldNormal = normalize((rotationMatrix * scaleMatrix * vec4(VertexNormal, 0.0)).xyz);
+	vec3 fragWorldTangent = normalize((rotationMatrix * scaleMatrix * vec4(VertexTangent, 0.0)).xyz);
+	vec3 fragWorldBitangent = normalize((rotationMatrix * scaleMatrix * vec4(VertexBitangent, 0.0)).xyz);
 
+	// TBN needs to be in world-space
 	TBN = mat3(
-		fragTangent,
-		fragBitangent,
-		fragNormal
+		fragWorldTangent,
+		fragWorldBitangent,
+		fragWorldNormal
 	);
 
 	// multiplying by the scale matrix is required in cases where scaling isn't consistent across axes. E.g. you don't want circular normals when a sphere is stretched to an ellipse
-	fragWorldNormal = normalize((rotXscale * vec4(VertexNormal, 0.0)).xyz);
-	fragSurfaceNormalWorld = normalize((rotXscale * vec4(VertexNormal, 0.0)).xyz);
+	fragWorldSurfaceNormal = normalize((rotationMatrix * scaleMatrix * vec4(VertexNormal, 0.0)).xyz);
 
 	//fragPosLightSpace = lightSpaceMatrix * vec4(fragWorldPosition, 1.0);
 	mat4 sunViewMatrix = inverse(sunWorldMatrix);

@@ -2,9 +2,9 @@
 #pragma language glsl3 // I don't remember why I put this here
 
 varying vec3 fragWorldPosition; // output automatically interpolated fragment world position
-varying vec3 fragNormal; // used for ambient occlusion and fresnel (IS IN SCREEN SPACE)
+varying vec3 fragViewNormal; // used for ambient occlusion and fresnel (IS IN SCREEN SPACE)
 varying vec3 fragWorldNormal;
-varying vec3 fragSurfaceNormalWorld; // used to solve shadow acne
+varying vec3 fragWorldSurfaceNormal; // used to solve shadow acne
 varying vec4 fragPosLightSpace;
 varying mat3 TBN; // tangent bitangent normal matrix, calculated in the vertex shder because it's more efficient
 
@@ -139,54 +139,52 @@ void effect() {
 	}
 	
 
-	// calculate surface normal, used in triplanar projection AND in the shadow map, so it gets calculated here
-	// calculate surface normal using interpolated vertex normal and derivative wizardry
-	/*
-	vec3 dp1 = dFdx(fragWorldPosition); // also re-used for the normal map below
-	vec3 dp2 = dFdy(fragWorldPosition);
-	vec3 surfaceNormalWorld = normalize(cross(dp1, dp2));
-	if (dot(surfaceNormalWorld, fragWorldNormal) < 0.0) {
-		surfaceNormalWorld = -surfaceNormalWorld;
-	}
-	*/
 	
-	/*
+	
+	
 	vec4 texColor;
 	vec3 normalMapNormalWorld;
 	float normalStrength = 1.0;
 
-	
 	if (triplanarScale > 0.0) { // project texture onto mesh using triplanar projection
-		// TODO: new triplanar logic here!!!
 		
-		vec3 blendWeights = pow(abs(fragSurfaceNormalWorld), vec3(4.0));
-		blendWeights /= (blendWeights.x + blendWeights.y + blendWeights.z);
+		vec2 texture_coords;
 
-		vec2 uvX = fragWorldPosition.yz * triplanarScale;
-		vec2 uvY = fragWorldPosition.xz * triplanarScale;
-		vec2 uvZ = fragWorldPosition.xy * triplanarScale;
+		float absNormX = abs(fragWorldNormal.x); // fragWorldNormal // fragWorldSurfaceNormal
+		float absNormY = abs(fragWorldNormal.y); // fragWorldNormal // fragWorldSurfaceNormal
+		float absNormZ = abs(fragWorldNormal.z); // fragWorldNormal // fragWorldSurfaceNormal
+		if (absNormX > absNormY && absNormX > absNormZ) {
+			// pointing into x-direction
+			texture_coords = vec2(fragWorldPosition.y * triplanarScale, fragWorldPosition.z * triplanarScale);
+		} else if (absNormY > absNormZ) {
+			// pointing into y-direction
+			texture_coords = vec2(fragWorldPosition.x * triplanarScale, fragWorldPosition.z * triplanarScale);
+		} else {
+			// pointing into z-direction
+			texture_coords = vec2(fragWorldPosition.x * triplanarScale, fragWorldPosition.y * triplanarScale);
+		}
 
-		vec4 xTex = Texel(meshTexture, uvX);
-		vec4 yTex = Texel(meshTexture, uvY);
-		vec4 zTex = Texel(meshTexture, uvZ);
+		texColor = Texel(meshTexture, texture_coords);
 
-		// blend texture at seams
-		texColor = xTex * blendWeights.x + yTex * blendWeights.y + zTex * blendWeights.z;
+		vec3 sampledNormal = Texel(normalMap, texture_coords).rgb * 2.0 - 1.0;
+		sampledNormal = normalize(mix(vec3(0.0, 0.0, 1.0), sampledNormal, normalStrength));
 
-		vec3 xNorm = Texel(normalMap, uvX).rgb * 2.0 - 1.0;
-		vec3 yNorm = Texel(normalMap, uvY).rgb * 2.0 - 1.0;
-		vec3 zNorm = Texel(normalMap, uvZ).rgb * 2.0 - 1.0;
 
-		// apply normal map strength
-		xNorm = normalize(mix(vec3(0.0, 0.0, 1.0), xNorm, normalStrength));
-		yNorm = normalize(mix(vec3(0.0, 0.0, 1.0), yNorm, normalStrength));
-		zNorm = normalize(mix(vec3(0.0, 0.0, 1.0), zNorm, normalStrength));
+		vec3 dp1 = dFdx(fragWorldPosition); // also re-used for the normal map below
+		vec3 dp2 = dFdy(fragWorldPosition);
+		normalMapNormalWorld = normalize(cross(dp1, dp2));
+		if (dot(normalMapNormalWorld, fragWorldNormal) < 0.0) {
+			normalMapNormalWorld = -normalMapNormalWorld;
+		}
 
-		normalMapNormalWorld = normalize(
-			xNorm * blendWeights.x +
-			yNorm * blendWeights.y +
-			zNorm * blendWeights.z
-		);
+		vec2 duv1 = dFdx(texture_coords);
+		vec2 duv2 = dFdy(texture_coords);
+		vec3 tangent = normalize(dp1 * duv2.y - dp2 * duv1.y);
+		vec3 bitangent = normalize(cross(fragWorldSurfaceNormal, tangent));
+		mat3 TBN2 = mat3(-tangent, -bitangent, fragWorldNormal);
+
+		normalMapNormalWorld = normalize(TBN * sampledNormal);
+
 
 	} else { // either regular UV fetching or spritesheet UV fetching
 		vec2 texture_coords;
@@ -205,56 +203,15 @@ void effect() {
 
 
 	}
-	*/
 	
-
-	// sample the pixel to display from the supplied texture. For triplanar projection: use world coordinates and surface normal to sample. For regular meshes, use uv coordinates and uvvelocity
 	
-	vec2 texture_coords;
-	vec4 texColor;
-
-	if (triplanarScale > 0.0) { // project texture onto mesh using triplanar projection
-
-		float absNormX = abs(fragSurfaceNormalWorld.x); // fragWorldNormal // fragSurfaceNormalWorld
-		float absNormY = abs(fragSurfaceNormalWorld.y); // fragWorldNormal // fragSurfaceNormalWorld
-		float absNormZ = abs(fragSurfaceNormalWorld.z); // fragWorldNormal // fragSurfaceNormalWorld
-		if (absNormX > absNormY && absNormX > absNormZ) {
-			// pointing into x-direction
-			texture_coords = vec2(fragWorldPosition.y * triplanarScale, fragWorldPosition.z * triplanarScale);
-		} else if (absNormY > absNormZ) {
-			// pointing into y-direction
-			texture_coords = vec2(fragWorldPosition.x * triplanarScale, fragWorldPosition.z * triplanarScale);
-		} else {
-			// pointing into z-direction
-			texture_coords = vec2(fragWorldPosition.x * triplanarScale, fragWorldPosition.y * triplanarScale);
-		}
-	} else if (!isSpriteSheet) { // simply grab the uv coordinates for applying the texture
-		texture_coords = VaryingTexCoord.xy; // argument 'texture_coords' doesn't exist when doing multi-canvas operations, so extract it from VaryingTexCoord instead
-	} else { // it's a spritesheet, so sample from the right sub-section in the spritesheet
-		texture_coords = VaryingTexCoord.xy / spriteSheetSize + spritePosition / spriteSheetSize;
-	}
-
-
-	texColor = Texel(meshTexture, texture_coords - uvVelocity * currentTime) * vec4(1.0, 1.0, 1.0, 1.0 - meshTransparency);
+	
 	// check if the alpha of the texture color is below a threshold
 	if (texColor.a < 0.01 && meshFresnel.x <= 0.0) {
 		discard;  // discard fully transparent pixels
 	}
 
-	// sample normal map & apply normal map strength
-	vec3 sampledNormal = Texel(normalMap, texture_coords).rgb * 2.0 - 1.0;
-	float normalStrength = 1.0;
-	sampledNormal = normalize(mix(vec3(0.0, 0.0, 1.0), sampledNormal, normalStrength));
-
-	// TBN is calculate in vertex shader since we changed meshes to now store tangents and bitangents, and calculating it there is cheaper
-	// however if we use triplanar projection, we need to recompute the TBN based on world axes I suppose?
-	vec3 normalMapNormalWorld = normalize(TBN * sampledNormal);
 	
-
-
-	// the second canvas is the normals canvas. Output the surface normal to this canvas
-	//love_Canvases[1] = vec4(fragNormal.x / 2 + 0.5, fragNormal.y / 2 + 0.5, fragNormal.z / 2 + 0.5, 1.0); // Pack normals into an RGBA format
-
 
 	// ended up implementing a very basic naive additive lighting system because it doesn't have any weird edge-cases
 	vec3 lighting = ambientColor; // start with just ambient lighting on the surface
@@ -277,7 +234,7 @@ void effect() {
 
 	// apply sun-light if not in shadow (from shadow map)
 	if (shadowsEnabled) {
-		float shadow = calculateShadow(fragPosLightSpace, fragSurfaceNormalWorld); // fragWorldNormal // fragSurfaceNormalWorld
+		float shadow = calculateShadow(fragPosLightSpace, fragWorldSurfaceNormal); // fragWorldNormal // fragWorldSurfaceNormal
 		float sunFactor = max(dot(-normalMapNormalWorld, sunDirection), 0.0); // please don't ask me why * vec3(1.0, 1.0, -1.0) works... I'm super confused
 		//lighting += sunColor * (1.0 - shadow * shadowStrength) * (1.0 - sunFactor);
 		lighting += sunColor * (1.0 - shadow * shadowStrength) * (pow(sunFactor, 0.5)); // this was 1.0-sunFactor before but that didn't work well for normal maps idk why
@@ -300,7 +257,7 @@ void effect() {
 	}
 
 	// calculate fresnel
-	float fresnel = pow(1.0 - max(dot(fragNormal, vec3(0.0, 0.0, 1.0)), 0.0), meshFresnel.y) * meshFresnel.x; // fragNormal is in view-space, meshFresnel: x = strength, y = power
+	float fresnel = pow(1.0 - max(dot(fragViewNormal, vec3(0.0, 0.0, 1.0)), 0.0), meshFresnel.y) * meshFresnel.x; // fragViewNormal is in view-space, meshFresnel: x = strength, y = power
 	// dumb fix for pow(0,0) stuff. There are probably better solutions
 	if (isinf(fresnel) || isnan(fresnel)) {
 		fresnel = 0.0;
@@ -312,11 +269,10 @@ void effect() {
 
 
 	// debug normal maps. This shows fragment normals in world-space
-	resultingColor = resultingColor * 0.00001 + vec4(normalMapNormalWorld.xyz, 1.0);
+	//resultingColor = resultingColor * 0.00001 + vec4((normalMapNormalWorld.xyz + vec3(1.0)) / 2.0, 1.0);
+	love_Canvases[0] = resultingColor;
 
-	love_Canvases[0] = resultingColor;// * 0.0001 + 0.9999 * vec4(fragWorldNormal * 0.5 + 0.5, 1.0);
-
-	love_Canvases[1] = vec4(fragNormal.x / 2 + 0.5, fragNormal.y / 2 + 0.5, fragNormal.z / 2 + 0.5, 1.0); // Pack normals into an RGBA format, alpha = apply ambient occlusion
+	love_Canvases[1] = vec4(fragViewNormal.x / 2 + 0.5, fragViewNormal.y / 2 + 0.5, fragViewNormal.z / 2 + 0.5, 1.0); // Pack normals into an RGBA format, alpha = apply ambient occlusion
 
 	// apply bloom to canvas. Semi-transparent meshes will emit weaker bloom
 	love_Canvases[2] = vec4(color.x * meshBloom, color.y * meshBloom, color.z * meshBloom, 1.0 - meshTransparency);
