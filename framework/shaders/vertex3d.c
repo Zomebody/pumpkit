@@ -161,9 +161,9 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 
 	fragViewNormal = (viewMatrix * rotationMatrix * vec4(VertexNormal, 0.0)).xyz; // fragViewNormal is stored in view-space because it's cheaper and easier that way to program ambient-occlusion!
 
-	fragWorldNormal = normalize((rotationMatrix * scaleMatrix * vec4(VertexNormal, 0.0)).xyz);
-	vec3 fragWorldTangent = normalize((rotationMatrix * scaleMatrix * vec4(VertexTangent, 0.0)).xyz);
-	vec3 fragWorldBitangent = normalize((rotationMatrix * scaleMatrix * vec4(VertexBitangent, 0.0)).xyz);
+	fragWorldNormal = normalize((rotationMatrix * vec4(VertexNormal, 0.0)).xyz);
+	vec3 fragWorldTangent = normalize((rotationMatrix * vec4(VertexTangent, 0.0)).xyz);
+	vec3 fragWorldBitangent = normalize((rotationMatrix * vec4(VertexBitangent, 0.0)).xyz);
 
 	// TBN needs to be in world-space
 	TBN = mat3(
@@ -173,7 +173,7 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 	);
 
 	// multiplying by the scale matrix is required in cases where scaling isn't consistent across axes. E.g. you don't want circular normals when a sphere is stretched to an ellipse
-	fragWorldSurfaceNormal = normalize((rotationMatrix * scaleMatrix * vec4(VertexNormal, 0.0)).xyz);
+	fragWorldSurfaceNormal = normalize((rotationMatrix * vec4(VertexNormal, 0.0)).xyz);
 
 	//fragPosLightSpace = lightSpaceMatrix * vec4(fragWorldPosition, 1.0);
 	mat4 sunViewMatrix = inverse(sunWorldMatrix);
