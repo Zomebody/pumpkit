@@ -142,7 +142,6 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 
 
 	// construct the model's world matrix, i.e. where in the world is each vertex of this mesh located
-	//mat4 rotXscale = rotationMatrix * scaleMatrix;
 	mat4 modelWorldMatrix = translationMatrix * rotationMatrix * scaleMatrix;
 
 	mat4 cameraWorldMatrix = camMatrix;
