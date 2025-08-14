@@ -1,10 +1,10 @@
 
 #pragma language glsl3 // I don't remember why I put this here
 
-
 varying vec3 fragWorldPosition; // output automatically interpolated fragment world position
-varying vec3 fragNormal; // used for normal map
+varying vec3 fragViewNormal; // used for ambient occlusion and fresnel (IS IN SCREEN SPACE)
 varying vec3 fragWorldNormal;
+varying vec3 fragWorldSurfaceNormal; // used to solve shadow acne
 varying vec4 fragPosLightSpace;
 
 uniform float currentTime;
@@ -47,7 +47,7 @@ uniform vec4 foamVelocity; // two directions & speeds at which the foams move
 // https://learnopengl.com/Advanced-Lighting/Shadows/Shadow-Mapping
 // calculate shadow using sampler2DShadow, which uses bilinear filtering automatically for better shadows, but has bigger problems with shadow acne :<
 
-float calculateShadow(vec4 fragPosLightSpace, vec3 surfaceNormal) {
+float calculateShadow(vec4 fragPosLightSpace, vec3 surfaceNormalWorld) {
 	vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
 	projCoords = projCoords * 0.5 + 0.5;
 
@@ -59,20 +59,21 @@ float calculateShadow(vec4 fragPosLightSpace, vec3 surfaceNormal) {
 	float currentDepth = projCoords.z;
 
 	// bias calc taken from: http://www.opengl-tutorial.org/intermediate-tutorials/tutorial-16-shadow-mapping/#aliasing
-	float cosTheta = clamp(dot(surfaceNormal, sunDirection), 0.0, 1.0);
+	float cosTheta = clamp(dot(surfaceNormalWorld, sunDirection), 0.0, 1.0);
 	float bias = 0.00025 * tan(acos(cosTheta)); // cosTheta is dot( n,l ), clamped between 0 and 1
 	bias = clamp(bias, 0, 0.00025); // used to be 0.005, but lowered because neighbor sampling works perfectly with reducing acne
 	
 
 	// sample depth at own position, but also sample 4 neighbors
-	// THIS ACTUALLY YIELDS INCREDIBLE RESULTS, I AM A GENIUS!!
+	// is a pretty alright solution to shadow acne, but might be a bit slow
 	
 	vec2 texelSize = 1.0 / shadowCanvasSize;
-	float s0 = texture(shadowCanvas, vec3(projCoords.xy, currentDepth - bias));
-	float sl = texture(shadowCanvas, vec3(projCoords.xy + vec2(-texelSize.x, 0.0), currentDepth - bias));
-	float sr = texture(shadowCanvas, vec3(projCoords.xy + vec2(texelSize.x, 0.0), currentDepth - bias));
-	float su = texture(shadowCanvas, vec3(projCoords.xy + vec2(0.0, -texelSize.y), currentDepth - bias));
-	float sd = texture(shadowCanvas, vec3(projCoords.xy + vec2(0.0, texelSize.y), currentDepth - bias));
+	float s0 = texture(shadowCanvas, projCoords + vec3(0.0, 0.0, -bias));
+	float sl = texture(shadowCanvas, projCoords + vec3(-texelSize.x, 0.0, -bias));
+	float sr = texture(shadowCanvas, projCoords + vec3(texelSize.x, 0.0, -bias));
+	float su = texture(shadowCanvas, projCoords + vec3(0.0, -texelSize.y, -bias));
+	float sd = texture(shadowCanvas, projCoords + vec3(0.0, texelSize.y, -bias));
+	
 	float shadow = min(s0, min(sl, min(sr, min(su, sd))));
 	
 	return shadow;
@@ -93,12 +94,14 @@ void effect() {
 
 	// calculate surface normal, used in the shadow map
 	// calculate surface normal using interpolated vertex normal and derivative wizardry
+	/*
 	vec3 dp1 = dFdx(fragWorldPosition); // also re-used for the normal map below
 	vec3 dp2 = dFdy(fragWorldPosition);
 	vec3 surfaceNormal = normalize(cross(dp1, dp2));
 	if (dot(surfaceNormal, fragWorldNormal) < 0.0) {
 		surfaceNormal = -surfaceNormal;
 	}
+	*/
 
 	// unpack textures for sampling
 	vec2 uv = VaryingTexCoord.xy;
@@ -129,7 +132,7 @@ void effect() {
 	// 1 when in shadow, 0 when in sun?
 	float shadow = 1.0;
 	if (shadowsEnabled) {
-		shadow = calculateShadow(fragPosLightSpace, surfaceNormal);
+		shadow = calculateShadow(fragPosLightSpace, fragWorldSurfaceNormal);
 		float sunFactor = max(dot(-fragWorldNormal, sunDirection), 0.0);
 		lighting += sunColor * (1.0 - shadow * shadowStrength) * (pow(sunFactor, 0.5)); // this was 1.0-sunFactor before but that didn't work well for normal maps idk why
 	}
@@ -144,16 +147,16 @@ void effect() {
 	
 
 	// calculate fresnel
-	float fresnel = pow(1.0 - max(dot(fragNormal, vec3(0.0, 0.0, 1.0)), 0.0), meshFresnel.y) * meshFresnel.x; // fragNormal is in view-space, meshFresnel: x = strength, y = power
+	float fresnel = pow(1.0 - max(dot(fragViewNormal, vec3(0.0, 0.0, 1.0)), 0.0), meshFresnel.y) * meshFresnel.x; // fragViewNormal is in view-space, meshFresnel: x = strength, y = power
 
 	
 	//set the color on the main canvas. Apply mesh brightness here as well. Higher brightness means less affected by ambient color
 	vec4 resultingColor = mix(texColor * color, vec4(meshFresnelColor, 1.0), fresnel)
 		* (vec4(lighting.x, lighting.y, lighting.z, 1.0) * (1.0 - meshBrightness) + vec4(1.0, 1.0, 1.0, 1.0) * meshBrightness);
 	love_Canvases[0] = vec4(resultingColor.xyz, 1.0);//vec4(resultingColor.xyz, 1.0) * 0.01 + 0.01 * vec4(1.0, 0.0, 0.0, 1.0) + 0.98 * col;// * 0.0001 + 0.9999 * vec4(fragWorldNormal * 0.5 + 0.5, 1.0);
-	//love_Canvases[1] = vec4(fragNormal.x / 2 + 0.5, fragNormal.y / 2 + 0.5, fragNormal.z / 2 + 0.5, 1.0);
+	//love_Canvases[1] = vec4(fragViewNormal.x / 2 + 0.5, fragViewNormal.y / 2 + 0.5, fragViewNormal.z / 2 + 0.5, 1.0);
 
-	love_Canvases[1] = vec4(fragNormal.x / 2 + 0.5, fragNormal.y / 2 + 0.5, fragNormal.z / 2 + 0.5, 1.0); // Pack normals into an RGBA format
+	love_Canvases[1] = vec4(fragViewNormal.x / 2 + 0.5, fragViewNormal.y / 2 + 0.5, fragViewNormal.z / 2 + 0.5, 1.0); // Pack normals into an RGBA format
 
 	// apply bloom to canvas
 	// this is canvas 2 because 1 is the canvas with view-space normals, but we don't use it (but it's still here because un-setting it takes time)

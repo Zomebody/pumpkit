@@ -163,12 +163,16 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 	// apply the view-projection transformation
 	vec4 result = projectionMatrix * cameraSpaceMatrix * vertex_position;
 
-	fragViewNormal = (viewMatrix * rotationMatrix * vec4(VertexNormal, 0.0)).xyz; // fragViewNormal is stored in view-space because it's cheaper and easier that way to program ambient-occlusion!
 
-	fragWorldNormal = normalize((rotationMatrix * vec4(VertexNormal, 0.0)).xyz);
-	fragWorldSurfaceNormal = normalize((rotationMatrix * vec4(SurfaceNormal, 0.0)).xyz);
-	//vec3 fragWorldTangent = normalize((rotationMatrix * vec4(VertexTangent, 0.0)).xyz);
-	//vec3 fragWorldBitangent = normalize((rotationMatrix * vec4(VertexBitangent, 0.0)).xyz);
+
+	// TODO: DOUBLE CHECK IF THIS NORMAL FIX IS CORRECT
+	mat3 normalMatrixModel = transpose(inverse(mat3(modelWorldMatrix))); // needed to calculate normals properly for non-uniform scaling
+	fragWorldNormal = normalize(normalMatrixModel * VertexNormal);
+	fragWorldSurfaceNormal = normalize(normalMatrixModel * SurfaceNormal);
+	fragViewNormal = normalize(mat3(viewMatrix) * fragWorldNormal);
+
+
+
 
 	// I was going to do some weird triplanar implementation found here: https://irrlicht.sourceforge.io/forum/viewtopic.php?t=48043
 	// however after visualizing the math it just didn't seem sound?

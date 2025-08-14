@@ -12,7 +12,7 @@ uniform mat4 orthoMatrix;
 attribute vec3 VertexNormal;
 attribute vec3 VertexTangent;
 attribute vec3 VertexBitangent;
-//attribute vec3 SurfaceNormal;
+attribute vec3 SurfaceNormal;
 
 
 const float zNear = 0.1;
@@ -158,9 +158,12 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 	// apply the view-projection transformation
 	vec4 result = projectionMatrix * cameraSpaceMatrix * vertex_position;
 
-	fragViewNormal = (viewMatrix * rotationMatrix * vec4(VertexNormal, 0.0)).xyz; // fragViewNormal is stored in view-space because it's cheaper and easier that way to program ambient-occlusion!
+	// TODO: DOUBLE CHECK IF THIS NORMAL FIX IS CORRECT
+	mat3 normalMatrixModel = transpose(inverse(mat3(modelWorldMatrix))); // needed to calculate normals properly for non-uniform scaling
+	fragWorldNormal = normalize(normalMatrixModel * VertexNormal);
+	fragWorldSurfaceNormal = normalize(normalMatrixModel * SurfaceNormal);
+	fragViewNormal = normalize(mat3(viewMatrix) * fragWorldNormal);
 
-	fragWorldNormal = normalize((rotationMatrix * vec4(VertexNormal, 0.0)).xyz);
 	vec3 fragWorldTangent = normalize((rotationMatrix * vec4(VertexTangent, 0.0)).xyz);
 	vec3 fragWorldBitangent = normalize((rotationMatrix * vec4(VertexBitangent, 0.0)).xyz);
 
@@ -171,8 +174,7 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 		fragWorldNormal
 	);
 
-	// multiplying by the scale matrix is required in cases where scaling isn't consistent across axes. E.g. you don't want circular normals when a sphere is stretched to an ellipse
-	fragWorldSurfaceNormal = normalize((rotationMatrix * vec4(VertexNormal, 0.0)).xyz);
+	
 
 	mat4 sunViewMatrix = inverse(sunWorldMatrix);
 	fragPosLightSpace = orthoMatrix * sunViewMatrix * vec4(fragWorldPosition, 1.0);
