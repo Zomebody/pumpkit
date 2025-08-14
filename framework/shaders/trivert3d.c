@@ -190,19 +190,19 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 		// YZ plane
 		ta = vec3(0.0, 1.0, 0.0);
 		bi = vec3(0.0, 0.0, 1.0);
-		texture_coords = fragWorldPosition.yz / triplanarScale;
+		texture_coords = fragWorldPosition.yz * triplanarScale;
 		multB = -sign(fragWorldNormal.x);
 	} else if (absSurfNormal.y > absSurfNormal.z) {
 		// XZ plane
 		ta = vec3(1.0, 0.0, 0.0);
 		bi = vec3(0.0, 0.0, 1.0);
-		texture_coords = fragWorldPosition.xz / triplanarScale;
+		texture_coords = fragWorldPosition.xz * triplanarScale;
 		multB = sign(fragWorldNormal.y);
 	} else {
 		// XY plane
 		ta = vec3(1.0, 0.0, 0.0);
 		bi = vec3(0.0, 1.0, 0.0);
-		texture_coords = fragWorldPosition.xy / triplanarScale;
+		texture_coords = fragWorldPosition.xy * triplanarScale;
 		multB = -sign(fragWorldNormal.z);
 	}
 
