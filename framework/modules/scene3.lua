@@ -42,6 +42,8 @@ local SHADER_SSAOBLEND_PATH = "framework/shaders/ssaoblend.c"
 local SHADER_AOBLUR_PATH = "framework/shaders/aoblur.c"
 local SHADER_BLOOMBLUR_PATH = "framework/shaders/bloomblur.c"
 local SHADER_SHADOWMAP_PATH = "framework/shaders/shadowmap.c"
+local SHADER_TRIVERT_PATH = "framework/shaders/trivert3d.c"
+local SHADER_TRIFRAG_PATH = "framework/shaders/trifrag.c"
 
 
 
@@ -409,8 +411,10 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 	
 	if #lightsInfo > 0 then
 		self.Shader:send("lightsInfo", unpack(lightsInfo))
+		self.TriplanarShader:send("lightsInfo", unpack(lightsInfo))
 		self.FoliageShader:send("lightsInfo", unpack(lightsInfo))
 		self.ParticlesShader:send("lightsInfo", unpack(lightsInfo))
+		self.TriplanarShader:send("lightsInfo", unpack(lightsInfo))
 	end
 
 	-- update blob shadows
@@ -423,7 +427,9 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 	end
 	if #blobsInfo > 0 then
 		self.Shader:send("blobShadows", unpack(blobsInfo))
+		self.TriplanarShader:send("blobShadows", unpack(blobsInfo))
 		self.FoliageShader:send("blobShadows", unpack(blobsInfo))
+		self.TriplanarShader:send("blobShadows", unpack(blobsInfo))
 	end
 
 	profiler:popLabel()
@@ -496,60 +502,124 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 		profiler:popLabel()
 	end
 
+
 	love.graphics.setShader(self.Shader)
 
 	
 
-	-- draw instanced meshes
-	profiler:pushLabel("inst")
-	local Mesh = nil
-	self.Shader:send("currentTime", love.timer.getTime())
-	self.Shader:send("uvVelocity", {0, 0})
-	self.Shader:send("meshTransparency", 0)
-	self.Shader:send("isInstanced", true) -- tell the shader to use the attributes to calculate the model matrices
-	for i = 1, #self.InstancedMeshes do
-		Mesh = self.InstancedMeshes[i]
-		self.Shader:send("meshTexture", Mesh.Texture or blankImage)
-		self.Shader:send("normalMap", Mesh.NormalMap or normalImage)
-		self.Shader:send("meshBrightness", Mesh.Brightness)
-		self.Shader:send("meshBloom", Mesh.Bloom)
-		self.Shader:send("meshFresnel", {Mesh.FresnelStrength, Mesh.FresnelPower})
-		self.Shader:send("meshFresnelColor", {Mesh.FresnelColor.r, Mesh.FresnelColor.g, Mesh.FresnelColor.b})
-		self.Shader:send("triplanarScale", Mesh.IsTriplanar and Mesh.TextureScale or 0)
-		love.graphics.drawInstanced(Mesh.Mesh, Mesh.Count)
-	end
-	profiler:popLabel()
-
-	-- then draw all *opaque* basic meshes
-	profiler:pushLabel("mesh")
+	
 	local TransMeshes = {} -- create new array to put all basic meshes in that have a Transparency > 0. Their rendering is postponed. They will be sorted later
-	self.Shader:send("isInstanced", false) -- tell the shader to use the meshPosition, meshRotation, meshScale and meshColor uniforms to calculate the model matrices
-	self.Shader:send("meshTransparency", 0) -- >0 transparency meshes are postponed until later
-	for i = 1, #self.BasicMeshes do
-		Mesh = self.BasicMeshes[i]
-		if Mesh.Transparency == 0 then
-			self.Shader:send("normalMap", Mesh.NormalMap or normalImage)
-			self.Shader:send("uvVelocity", Mesh.UVVelocity:array())
+
+	self.Shader:send("currentTime", love.timer.getTime())
+
+	-- draw instanced (basic) meshes
+	if #self.InstancedMeshes > 0 then
+		profiler:pushLabel("inst")
+		local Mesh = nil
+		self.Shader:send("uvVelocity", {0, 0})
+		self.Shader:send("meshTransparency", 0)
+		self.Shader:send("isInstanced", true) -- tell the shader to use the attributes to calculate the model matrices
+		for i = 1, #self.InstancedMeshes do
+			Mesh = self.InstancedMeshes[i]
 			self.Shader:send("meshTexture", Mesh.Texture or blankImage)
-			self.Shader:send("meshPosition", Mesh.Position:array())
-			self.Shader:send("meshRotation", Mesh.Rotation:array())
-			self.Shader:send("meshScale", Mesh.Scale:array())
-			self.Shader:send("meshColor", Mesh.Color:array())
+			self.Shader:send("normalMap", Mesh.NormalMap or normalImage)
 			self.Shader:send("meshBrightness", Mesh.Brightness)
 			self.Shader:send("meshBloom", Mesh.Bloom)
 			self.Shader:send("meshFresnel", {Mesh.FresnelStrength, Mesh.FresnelPower})
 			self.Shader:send("meshFresnelColor", {Mesh.FresnelColor.r, Mesh.FresnelColor.g, Mesh.FresnelColor.b})
-			self.Shader:send("triplanarScale", Mesh.IsTriplanar and Mesh.TextureScale or 0)
-			love.graphics.draw(Mesh.Mesh)
-		elseif Mesh.Transparency < 1 or Mesh.FresnelStrength > 0 then -- ignore meshes with transparency == 1 (unless they have fresnel)
-			table.insert(TransMeshes, Mesh)
+			--self.Shader:send("triplanarScale", Mesh.IsTriplanar and Mesh.TextureScale or 0)
+			love.graphics.drawInstanced(Mesh.Mesh, Mesh.Count)
 		end
+		profiler:popLabel()
 	end
-	profiler:popLabel()
+
+	-- then draw all *opaque* basic meshes
+	if #self.BasicMeshes > 0 then
+		profiler:pushLabel("mesh")
+		local Mesh = nil
+		self.Shader:send("meshTransparency", 0) -- >0 transparency meshes are postponed until later
+		self.Shader:send("isInstanced", false) -- tell the shader to use the meshPosition, meshRotation, meshScale and meshColor uniforms to calculate the model matrices
+		for i = 1, #self.BasicMeshes do
+			Mesh = self.BasicMeshes[i]
+			if Mesh.Transparency == 0 then
+				self.Shader:send("normalMap", Mesh.NormalMap or normalImage)
+				self.Shader:send("uvVelocity", Mesh.UVVelocity:array())
+				self.Shader:send("meshTexture", Mesh.Texture or blankImage)
+				self.Shader:send("meshPosition", Mesh.Position:array())
+				self.Shader:send("meshRotation", Mesh.Rotation:array())
+				self.Shader:send("meshScale", Mesh.Scale:array())
+				self.Shader:send("meshColor", Mesh.Color:array())
+				self.Shader:send("meshBrightness", Mesh.Brightness)
+				self.Shader:send("meshBloom", Mesh.Bloom)
+				self.Shader:send("meshFresnel", {Mesh.FresnelStrength, Mesh.FresnelPower})
+				self.Shader:send("meshFresnelColor", {Mesh.FresnelColor.r, Mesh.FresnelColor.g, Mesh.FresnelColor.b})
+				--self.Shader:send("triplanarScale", Mesh.IsTriplanar and Mesh.TextureScale or 0)
+				love.graphics.draw(Mesh.Mesh)
+			elseif Mesh.Transparency < 1 or Mesh.FresnelStrength > 0 then -- ignore meshes with transparency == 1 (unless they have fresnel)
+				table.insert(TransMeshes, Mesh)
+			end
+		end
+		profiler:popLabel()
+	end
+
+
+	-- TODO: draw triplanar meshes here (and postpone trip3 meshes that are semi-transparent, or fully transparent with fresnel)
+	if #self.InstancedTrip3 > 0 then
+		profiler:pushLabel("inst-trip")
+		love.graphics.setShader(self.TriplanarShader)
+		local Mesh = nil
+		--self.TriplanarShader:send("currentTime", love.timer.getTime())
+		--self.TriplanarShader:send("uvVelocity", {0, 0})
+		self.TriplanarShader:send("meshTransparency", 0)
+		self.TriplanarShader:send("isInstanced", true) -- tell the shader to use the attributes to calculate the model matrices
+		for i = 1, #self.InstancedTrip3 do
+			Mesh = self.InstancedTrip3[i]
+			self.TriplanarShader:send("meshTexture", Mesh.Texture or blankImage)
+			self.TriplanarShader:send("normalMap", Mesh.NormalMap or normalImage)
+			self.TriplanarShader:send("meshBrightness", Mesh.Brightness)
+			self.TriplanarShader:send("meshBloom", Mesh.Bloom)
+			self.TriplanarShader:send("meshFresnel", {Mesh.FresnelStrength, Mesh.FresnelPower})
+			self.TriplanarShader:send("meshFresnelColor", {Mesh.FresnelColor.r, Mesh.FresnelColor.g, Mesh.FresnelColor.b})
+			self.TriplanarShader:send("triplanarScale", Mesh.TextureScale)
+			love.graphics.drawInstanced(Mesh.Mesh, Mesh.Count)
+		end
+		profiler:popLabel()
+	end
+
+
+	-- then draw all *opaque* triplanar meshes
+	if #self.BasicTrip3 > 0 then
+		profiler:pushLabel("mesh-trip")
+		local Mesh = nil
+		self.Shader:send("meshTransparency", 0) -- >0 transparency meshes are postponed until later
+		self.Shader:send("isInstanced", false) -- tell the shader to use the meshPosition, meshRotation, meshScale and meshColor uniforms to calculate the model matrices
+		for i = 1, #self.BasicTrip3 do
+			Mesh = self.BasicTrip3[i]
+			if Mesh.Transparency == 0 then
+				self.Shader:send("normalMap", Mesh.NormalMap or normalImage)
+				self.Shader:send("uvVelocity", Mesh.UVVelocity:array())
+				self.Shader:send("meshTexture", Mesh.Texture or blankImage)
+				self.Shader:send("meshPosition", Mesh.Position:array())
+				self.Shader:send("meshRotation", Mesh.Rotation:array())
+				self.Shader:send("meshScale", Mesh.Scale:array())
+				self.Shader:send("meshColor", Mesh.Color:array())
+				self.Shader:send("meshBrightness", Mesh.Brightness)
+				self.Shader:send("meshBloom", Mesh.Bloom)
+				self.Shader:send("meshFresnel", {Mesh.FresnelStrength, Mesh.FresnelPower})
+				self.Shader:send("meshFresnelColor", {Mesh.FresnelColor.r, Mesh.FresnelColor.g, Mesh.FresnelColor.b})
+				self.Shader:send("triplanarScale", Mesh.TextureScale)
+				love.graphics.draw(Mesh.Mesh)
+			elseif Mesh.Transparency < 1 or Mesh.FresnelStrength > 0 then -- ignore meshes with transparency == 1 (unless they have fresnel)
+				table.insert(TransMeshes, Mesh)
+			end
+		end
+		profiler:popLabel()
+	end
 
 	
-	profiler:pushLabel("ripple")
+	
 	if #self.RippleMeshes > 0 then
+		profiler:pushLabel("ripple")
 		love.graphics.setShader(self.RippleShader)
 		self.RippleShader:send("currentTime", love.timer.getTime())
 		for i = 1, #self.RippleMeshes do
@@ -570,9 +640,10 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 			self.RippleShader:send("foamVelocity", RMesh.FoamVelocity:array())
 			love.graphics.draw(RMesh.Mesh)
 		end
-		love.graphics.setShader(self.Shader)
+		profiler:popLabel()
 	end
-	profiler:popLabel()
+
+
 
 	-- apply ambient occlusion to geometry so far (which excludes semi-transparent meshes, sprite meshes & foliage)
 	if self.AOEnabled then
@@ -583,31 +654,36 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 		profiler:popLabel()
 	end
 
+	love.graphics.setShader(self.Shader)
+
 	-- repeat the mesh drawing process, but for *opaque* spritemeshes
-	profiler:pushLabel("spr-mesh")
-	self.Shader:send("uvVelocity", {0, 0}) -- sprite meshes have no uv scrolling
-	self.Shader:send("triplanarScale", 0) -- sprite meshes also have no triplanar texture projection
-	self.Shader:send("meshFresnel", {0, 1}) -- no need to update fresnelColor since fresnel strength == 0 disables it already
-	self.Shader:send("isSpriteSheet", true) -- but they do need isSpriteSheet set to true for correct texture mapping
-	for i = 1, #self.SpriteMeshes do
-		Mesh = self.SpriteMeshes[i]
-		if Mesh.Transparency == 0 then
-			self.Shader:send("meshTexture", Mesh.Texture or blankImage)
-			self.Shader:send("meshPosition", Mesh.Position:array())
-			self.Shader:send("meshRotation", Mesh.Rotation:array())
-			self.Shader:send("meshScale", Mesh.Scale:array())
-			self.Shader:send("meshColor", Mesh.Color:array())
-			self.Shader:send("meshBrightness", Mesh.Brightness)
-			self.Shader:send("meshBloom", Mesh.Bloom)
-			self.Shader:send("spritePosition", {Mesh.SpritePosition.x - 1, Mesh.SpritePosition.y - 1})
-			self.Shader:send("spriteSheetSize", Mesh.SheetSize:array())
-			love.graphics.draw(Mesh.Mesh)
-		elseif Mesh.Transparency < 1 then -- ignore meshes with transparency == 1
-			table.insert(TransMeshes, Mesh)
+	if #self.SpriteMeshes > 0 then
+		profiler:pushLabel("spr-mesh")
+		local Mesh = nil
+		self.Shader:send("uvVelocity", {0, 0}) -- sprite meshes have no uv scrolling
+		--self.Shader:send("triplanarScale", 0)
+		self.Shader:send("meshFresnel", {0, 1}) -- no need to update fresnelColor since fresnel strength == 0 disables it already
+		self.Shader:send("isSpriteSheet", true) -- but they do need isSpriteSheet set to true for correct texture mapping
+		for i = 1, #self.SpriteMeshes do
+			Mesh = self.SpriteMeshes[i]
+			if Mesh.Transparency == 0 then
+				self.Shader:send("meshTexture", Mesh.Texture or blankImage)
+				self.Shader:send("meshPosition", Mesh.Position:array())
+				self.Shader:send("meshRotation", Mesh.Rotation:array())
+				self.Shader:send("meshScale", Mesh.Scale:array())
+				self.Shader:send("meshColor", Mesh.Color:array())
+				self.Shader:send("meshBrightness", Mesh.Brightness)
+				self.Shader:send("meshBloom", Mesh.Bloom)
+				self.Shader:send("spritePosition", {Mesh.SpritePosition.x - 1, Mesh.SpritePosition.y - 1})
+				self.Shader:send("spriteSheetSize", Mesh.SheetSize:array())
+				love.graphics.draw(Mesh.Mesh)
+			elseif Mesh.Transparency < 1 then -- ignore meshes with transparency == 1
+				table.insert(TransMeshes, Mesh)
+			end
 		end
+		self.Shader:send("isSpriteSheet", false)
+		profiler:popLabel()
 	end
-	self.Shader:send("isSpriteSheet", false)
-	profiler:popLabel()
 
 
 
@@ -622,35 +698,54 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 	)
 
 	-- since both basic meshes and sprite meshes need to be drawn in the right order, this loop gets a bit complicated
-	profiler:pushLabel("trans")
-	for i = 1, #TransMeshes do
-		-- need to add a small check here to distinguish between basic meshes and sprite meshes since they have somewhat different properties
-		Mesh = TransMeshes[i]
-		if mesh3.isMesh3(Mesh) then -- basic mesh
-			self.Shader:send("normalMap", Mesh.NormalMap or normalImage)
-			self.Shader:send("isSpriteSheet", false)
-			self.Shader:send("uvVelocity", Mesh.UVVelocity:array())
-			self.Shader:send("triplanarScale", Mesh.IsTriplanar and Mesh.TextureScale or 0)
-		else -- sprite mesh
-			self.Shader:send("isSpriteSheet", true)
-			self.Shader:send("uvVelocity", {0, 0})
-			self.Shader:send("triplanarScale", 0)
-			self.Shader:send("spritePosition", Mesh.SpritePosition)
-			self.Shader:send("spriteSheetSize", Mesh.SheetSize)
+	if #TransMeshes > 0 then
+		profiler:pushLabel("trans")
+		local Mesh = nil
+		local Shader = nil
+		for i = 1, #TransMeshes do
+
+			Mesh = TransMeshes[i]
+
+			-- smartly switch shader based on mesh type, trying to avoid unnecessary switches whenever possible
+			if (mesh3.isMesh3(Mesh) or spritemesh3.isSpritemesh3(Mesh)) and Shader ~= self.Shader then
+				Shader = self.Shader
+				love.graphics.setShader(Shader)
+
+				-- need to add a small check here to distinguish between basic meshes and sprite meshes since they have somewhat different properties
+				if mesh3.isMesh3(Mesh) then
+					Shader:send("normalMap", Mesh.NormalMap or normalImage)
+					Shader:send("isSpriteSheet", false)
+					Shader:send("uvVelocity", Mesh.UVVelocity:array())
+				else
+					Shader:send("isSpriteSheet", true)
+					Shader:send("uvVelocity", {0, 0})
+					Shader:send("spritePosition", Mesh.SpritePosition)
+					Shader:send("spriteSheetSize", Mesh.SheetSize)
+				end
+
+			elseif (trip3.isTrip3(Mesh)) and Shader ~= self.TriplanarShader then
+				Shader = self.TriplanarShader
+				love.graphics.setShader(Shader)
+
+				Shader:send("normalMap", Mesh.NormalMap or normalImage)
+				Shader:send("triplanarScale", Mesh.TextureScale)
+			end
+
+			Shader:send("meshTexture", Mesh.Texture or blankImage)
+			Shader:send("meshPosition", Mesh.Position:array())
+			Shader:send("meshRotation", Mesh.Rotation:array())
+			Shader:send("meshScale", Mesh.Scale:array())
+			Shader:send("meshColor", Mesh.Color:array())
+			Shader:send("meshBrightness", Mesh.Brightness)
+			Shader:send("meshBloom", Mesh.Bloom)
+			Shader:send("meshFresnel", {Mesh.FresnelStrength, Mesh.FresnelPower})
+			Shader:send("meshFresnelColor", {Mesh.FresnelColor.r, Mesh.FresnelColor.g, Mesh.FresnelColor.b})
+			Shader:send("meshTransparency", Mesh.Transparency) -- now we can finally include transparency since these meshes are drawn in painter's algorithm order
+
+			love.graphics.draw(Mesh.Mesh)
 		end
-		self.Shader:send("meshTexture", Mesh.Texture or blankImage)
-		self.Shader:send("meshPosition", Mesh.Position:array())
-		self.Shader:send("meshRotation", Mesh.Rotation:array())
-		self.Shader:send("meshScale", Mesh.Scale:array())
-		self.Shader:send("meshColor", Mesh.Color:array())
-		self.Shader:send("meshBrightness", Mesh.Brightness)
-		self.Shader:send("meshBloom", Mesh.Bloom)
-		self.Shader:send("meshFresnel", {Mesh.FresnelStrength, Mesh.FresnelPower})
-		self.Shader:send("meshFresnelColor", {Mesh.FresnelColor.r, Mesh.FresnelColor.g, Mesh.FresnelColor.b})
-		self.Shader:send("meshTransparency", Mesh.Transparency) -- now we can finally include transparency since these meshes are drawn in painter's algorithm order
-		love.graphics.draw(Mesh.Mesh)
+		profiler:popLabel()
 	end
-	profiler:popLabel()
 	
 
 	
@@ -815,6 +910,7 @@ function Scene3:rescaleCanvas(width, height, msaa)
 	-- update aspect ratio of the scene
 	local aspectRatio = width / height
 	self.Shader:send("aspectRatio", aspectRatio)
+	self.TriplanarShader:send("aspectRatio", aspectRatio)
 	self.RippleShader:send("aspectRatio", aspectRatio)
 	self.FoliageShader:send("aspectRatio", aspectRatio)
 	self.ParticlesShader:send("aspectRatio", aspectRatio)
@@ -840,6 +936,7 @@ end
 function Scene3:setAmbient(col, occlusionColor)
 	local arr = {col.r, col.g, col.b}
 	self.Shader:send("ambientColor", arr)
+	self.TriplanarShader:send("ambientColor", arr)
 	self.ParticlesShader:send("ambientColor", arr)
 	self.RippleShader:send("ambientColor", arr)
 	self.FoliageShader:send("ambientColor", arr)
@@ -875,16 +972,19 @@ end
 
 function Scene3:setDiffuse(strength)
 	self.Shader:send("diffuseStrength", strength)
+	self.TriplanarShader:send("diffuseStrength", strength)
 	self.FoliageShader:send("diffuseStrength", strength)
 end
 
 
 function Scene3:setBlobColor(col)
 	self.Shader:send("blobShadowColor", {col.r, col.g, col.b})
+	self.TriplanarShader:send("blobShadowColor", {col.r, col.g, col.b})
 end
 
 function Scene3:setBlobStrength(strength)
 	self.Shader:send("blobShadowStrength", strength)
+	self.TriplanarShader:send("blobShadowStrength", strength)
 end
 
 
@@ -909,6 +1009,7 @@ function Scene3:setShadowMap(position, direction, size, canvasSize, sunColor, sh
 		self.ShadowCanvas = nil
 		self.ShadowDepthCanvas = nil
 		self.Shader:send("shadowsEnabled", false)
+		self.TriplanarShader:send("shadowsEnabled", false)
 		self.RippleShader:send("shadowsEnabled", false)
 		self.FoliageShader:send("shadowsEnabled", false)
 		self.ParticlesShader:send("shadowsEnabled", false)
@@ -922,22 +1023,29 @@ function Scene3:setShadowMap(position, direction, size, canvasSize, sunColor, sh
 			"Scene3:setShadowMap(position, direction, size, canvasSize, sunColor, shadowStrength) requires argument 'shadowStrength' to be a number or nil.")
 
 		self.Shader:send("shadowsEnabled", true)
+		self.TriplanarShader:send("shadowsEnabled", true)
 		self.RippleShader:send("shadowsEnabled", true)
 		self.FoliageShader:send("shadowsEnabled", true)
 		self.ParticlesShader:send("shadowsEnabled", true)
+
 		local sunCol = (sunColor == nil) and {1, 1, 1} or {sunColor.r, sunColor.g, sunColor.b}
 		self.Shader:send("sunColor", sunCol)
+		self.TriplanarShader:send("sunColor", sunCol)
 		self.RippleShader:send("sunColor", sunCol)
 		self.FoliageShader:send("sunColor", sunCol)
 		self.ParticlesShader:send("sunColor", sunCol)
+
 		local shStrength = shadowStrength ~= nil and shadowStrength or 0.5
 		self.Shader:send("shadowStrength", shStrength)
+		self.TriplanarShader:send("shadowStrength", shStrength)
 		self.RippleShader:send("shadowStrength", shStrength)
 		self.FoliageShader:send("shadowStrength", shStrength)
 		self.ParticlesShader:send("shadowStrength", shStrength)
+
 		direction = direction:clone():norm()
 		local dirTable = {direction.x, direction.y, direction.z}
 		self.Shader:send("sunDirection", dirTable)
+		self.TriplanarShader:send("sunDirection", dirTable)
 		self.RippleShader:send("sunDirection", dirTable)
 		self.FoliageShader:send("sunDirection", dirTable)
 		self.ParticlesShader:send("sunDirection", dirTable)
@@ -958,12 +1066,14 @@ function Scene3:setShadowMap(position, direction, size, canvasSize, sunColor, sh
 			shadowDepthCanvas:setDepthSampleMode("less")
 
 			self.Shader:send("shadowCanvas", self.ShadowDepthCanvas)
+			self.TriplanarShader:send("shadowCanvas", self.ShadowDepthCanvas)
 			self.RippleShader:send("shadowCanvas", self.ShadowDepthCanvas)
 			self.FoliageShader:send("shadowCanvas", self.ShadowDepthCanvas)
 			self.ParticlesShader:send("shadowCanvas", self.ShadowDepthCanvas) -- particleshader only needs depth canvas, not size, since we only need 1 sample
 
 			local cSize = {canvasSize.x, canvasSize.y}
 			self.Shader:send("shadowCanvasSize", cSize)
+			self.TriplanarShader:send("shadowCanvasSize", cSize)
 			self.RippleShader:send("shadowCanvasSize", cSize)
 			self.FoliageShader:send("shadowCanvasSize", cSize)
 		end
@@ -976,6 +1086,7 @@ function Scene3:setShadowMap(position, direction, size, canvasSize, sunColor, sh
 		local oMat = {c1, c2, c3, c4}
 		self.ShadowMapShader:send("orthoMatrix", oMat)
 		self.Shader:send("orthoMatrix", oMat) -- also send to main shader so we know how to sample shadow map
+		self.TriplanarShader:send("orthoMatrix", oMat)
 		self.RippleShader:send("orthoMatrix", oMat)
 		self.FoliageShader:send("orthoMatrix", oMat)
 		self.ParticlesShader:send("orthoMatrix", oMat)
@@ -986,6 +1097,7 @@ function Scene3:setShadowMap(position, direction, size, canvasSize, sunColor, sh
 		local sMat = {c1, c2, c3, c4}
 		self.ShadowMapShader:send("sunWorldMatrix", sMat)
 		self.Shader:send("sunWorldMatrix", sMat) -- also send to main shader so we know how to sample shadow map
+		self.TriplanarShader:send("sunWorldMatrix", sMat)
 		self.RippleShader:send("sunWorldMatrix", sMat)
 		self.FoliageShader:send("sunWorldMatrix", sMat)
 		self.ParticlesShader:send("sunWorldMatrix", sMat)
@@ -1021,6 +1133,12 @@ function Scene3:attachMesh(mesh)
 	elseif foliage3.isFoliage3(mesh) then
 		local index = findOrderedInsertLocation(self.Foliage, mesh)
 		table.insert(self.Foliage, index, mesh)
+	elseif trip3.isTrip3(mesh) then
+		local index = findOrderedInsertLocation(self.BasicTrip3, mesh)
+		table.insert(self.BasicTrip3, index, mesh)
+	elseif trip3group.isTrip3Group(mesh) then
+		local index = findOrderedInsertLocation(self.InstancedTrip3, mesh)
+		table.insert(self.InstancedTrip3, index, mesh)
 	else
 		error("Scene3:attachMesh(mesh) requires argument 'mesh' to be either a mesh3, spritemesh3, ripplemesh3, foliage3 or mesh3group")
 	end
@@ -1053,8 +1171,14 @@ function Scene3:detachMesh(mesh) -- basic mesh or sprite mesh
 	elseif foliage3.isFoliage3(mesh) then
 		slot = findObjectInOrderedArray(mesh, self.Foliage)
 		Item = table.remove(self.Foliage, slot)
+	elseif trip3.isTrip3(mesh) then
+		slot = findObjectInOrderedArray(mesh, self.BasicTrip3)
+		Item = table.remove(self.BasicTrip3, slot)
+	elseif trip3group.isTrip3Group(mesh) then
+		slot = findObjectInOrderedArray(mesh, self.InstancedTrip3)
+		Item = table.remove(self.InstancedTrip3, slot)
 	else
-		error("Scene3:detachMesh(mesh) requires argument 'mesh' to be either a mesh3, spritemesh3, ripplemesh3 or mesh3group")
+		error("Scene3:detachMesh(mesh) requires argument 'mesh' to be either a mesh3, mesh3group, spritemesh3, ripplemesh3, trip3 or trip3group.")
 	end
 	
 	if Item ~= nil then
@@ -1083,6 +1207,8 @@ function Scene3:attachLight(light)
 
 	local lightCount = math.min(#self.Lights, 16)
 	self.Shader:send("lightCount", lightCount)
+	self.TriplanarShader:send("lightCount", lightCount)
+	self.FoliageShader:send("lightCount", lightCount)
 	self.ParticlesShader:send("lightCount", lightCount)
 
 	if #self.Lights > lightCount then
@@ -1111,6 +1237,8 @@ function Scene3:detachLight(lightOrSlot)
 
 		local lightCount = math.min(#self.Lights, 16)
 		self.Shader:send("lightCount", lightCount)
+		self.TriplanarShader:send("lightCount", lightCount)
+		self.FoliageShader:send("lightCount", lightCount)
 		self.ParticlesShader:send("lightCount", lightCount)
 
 		if self.Events.LightDetached then
@@ -1139,6 +1267,7 @@ function Scene3:attachBlob(blob)
 
 	local blobCount = math.min(#self.Blobs, 16)
 	self.Shader:send("blobShadowCount", blobCount)
+	self.TriplanarShader:send("blobShadowCount", blobCount)
 
 	if #self.Lights > blobCount then
 		print("Scene3:attachBlob(blob) added a blob3 that will not display as there are already 16 or more blobs in the scene.")
@@ -1166,6 +1295,7 @@ function Scene3:detachBlob(blobOrSlot)
 
 		local blobCount = math.min(#self.Blobs, 16)
 		self.Shader:send("blobShadowCount", blobCount)
+		self.TriplanarShader:send("blobShadowCount", blobCount)
 
 		if self.Events.BlobDetached then
 			connection.doEvents(self.Events.BlobDetached, Item)
@@ -1298,6 +1428,7 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 		["Shader"] = love.graphics.newShader(SHADER_VERTEX_PATH, SHADER_FRAGMENT_PATH); -- SHADER_PATH
 		["RippleShader"] = love.graphics.newShader(SHADER_VERTEX_PATH, SHADER_RIPPLE_PATH); -- same vertex shader, but special fragment shader
 		["FoliageShader"] = love.graphics.newShader(SHADER_VERTEX_PATH, SHADER_FOLIAGE_PATH); -- same vertex shader, but special fragment shader
+		["TriplanarShader"] = love.graphics.newShader(SHADER_TRIVERT_PATH, SHADER_TRIFRAG_PATH);
 		["ParticlesShader"] = love.graphics.newShader(SHADER_PARTICLES_VERT, SHADER_PARTICLES_FRAG);
 		["ParticleMixShader"] = particleMixShader;
 		["SSAOShader"] = love.graphics.newShader(SHADER_SSAO_PATH); -- screen-space ambient occlusion shader
@@ -1346,6 +1477,8 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 		["Camera3"] = sceneCamera or camera3.new();
 		["InstancedMeshes"] = {}; -- mesh3group array
 		["BasicMeshes"] = {}; -- mesh3 array
+		["InstancedTrip3"] = {}; -- trip3group array
+		["BasicTrip3"] = {}; -- trip3 array
 		["SpriteMeshes"] = {}; -- spritemesh3 array
 		["RippleMeshes"] = {}; -- ripplemesh3 array
 		["Foliage"] = {}; -- foliage3 array
@@ -1394,6 +1527,14 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 	Object.Shader:send("blobShadowColor", {0, 0, 0})
 	Object.Shader:send("blobShadowStrength", 0.5)
 	Object.Shader:send("ambientColor", {1, 1, 1, 1})
+
+	Object.TriplanarShader:send("fieldOfView", Object.Camera3.FieldOfView)
+	Object.TriplanarShader:send("diffuseStrength", 1)
+	Object.TriplanarShader:send("lightCount", 0)
+	Object.TriplanarShader:send("blobShadowCount", 0)
+	Object.TriplanarShader:send("blobShadowColor", {0, 0, 0})
+	Object.TriplanarShader:send("blobShadowStrength", 0.5)
+	Object.TriplanarShader:send("ambientColor", {1, 1, 1, 1})
 
 	Object.RippleShader:send("fieldOfView", Object.Camera3.FieldOfView)
 

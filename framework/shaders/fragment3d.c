@@ -51,7 +51,7 @@ varying vec3 instColor;
 uniform bool isInstanced;
 
 // triplanar texture projection variables
-uniform float triplanarScale;
+//uniform float triplanarScale;
 
 // textures
 uniform Image MainTex; // used to be the 'tex' argument, but is now passed separately in this specific variable name because we switched to multi-canvas shading which has no arguments
@@ -138,71 +138,19 @@ void effect() {
 		discard;
 	}
 	
-
 	
-	
-	
-	vec4 texColor;
-	vec3 normalMapNormalWorld;
-	float normalStrength = 1.0;
-
-	if (triplanarScale > 0.0) { // project texture onto mesh using triplanar projection
-		
-		vec2 texture_coords;
-
-		float absNormX = abs(fragWorldNormal.x); // fragWorldNormal // fragWorldSurfaceNormal
-		float absNormY = abs(fragWorldNormal.y); // fragWorldNormal // fragWorldSurfaceNormal
-		float absNormZ = abs(fragWorldNormal.z); // fragWorldNormal // fragWorldSurfaceNormal
-		if (absNormX > absNormY && absNormX > absNormZ) {
-			// pointing into x-direction
-			texture_coords = vec2(fragWorldPosition.y * triplanarScale, fragWorldPosition.z * triplanarScale);
-		} else if (absNormY > absNormZ) {
-			// pointing into y-direction
-			texture_coords = vec2(fragWorldPosition.x * triplanarScale, fragWorldPosition.z * triplanarScale);
-		} else {
-			// pointing into z-direction
-			texture_coords = vec2(fragWorldPosition.x * triplanarScale, fragWorldPosition.y * triplanarScale);
-		}
-
-		texColor = Texel(meshTexture, texture_coords);
-
-		vec3 sampledNormal = Texel(normalMap, texture_coords).rgb * 2.0 - 1.0;
-		sampledNormal = normalize(mix(vec3(0.0, 0.0, 1.0), sampledNormal, normalStrength));
-
-
-		vec3 dp1 = dFdx(fragWorldPosition); // also re-used for the normal map below
-		vec3 dp2 = dFdy(fragWorldPosition);
-		normalMapNormalWorld = normalize(cross(dp1, dp2));
-		if (dot(normalMapNormalWorld, fragWorldNormal) < 0.0) {
-			normalMapNormalWorld = -normalMapNormalWorld;
-		}
-
-		vec2 duv1 = dFdx(texture_coords);
-		vec2 duv2 = dFdy(texture_coords);
-		vec3 tangent = normalize(dp1 * duv2.y - dp2 * duv1.y);
-		vec3 bitangent = normalize(cross(fragWorldSurfaceNormal, tangent));
-		mat3 TBN2 = mat3(-tangent, -bitangent, fragWorldNormal);
-
-		normalMapNormalWorld = normalize(TBN * sampledNormal);
-
-
-	} else { // either regular UV fetching or spritesheet UV fetching
-		vec2 texture_coords;
-
-		if (isSpriteSheet) {
-			texture_coords = VaryingTexCoord.xy / spriteSheetSize + spritePosition / spriteSheetSize;
-		} else {
-			texture_coords = VaryingTexCoord.xy - uvVelocity * currentTime; // VaryingTexCoord used because effect() is a void so arguments don't exist, using built-ins instead
-		}
-
-		texColor = Texel(meshTexture, texture_coords) * vec4(1.0, 1.0, 1.0, 1.0 - meshTransparency);
-
-		vec3 sampledNormal = Texel(normalMap, texture_coords).rgb * 2.0 - 1.0;
-		sampledNormal = normalize(mix(vec3(0.0, 0.0, 1.0), sampledNormal, normalStrength));
-		normalMapNormalWorld = normalize(TBN * sampledNormal);
-
-
+	vec2 texture_coords;
+	if (isSpriteSheet) {
+		texture_coords = VaryingTexCoord.xy / spriteSheetSize + spritePosition / spriteSheetSize;
+	} else {
+		texture_coords = VaryingTexCoord.xy - uvVelocity * currentTime; // VaryingTexCoord used because effect() is a void so arguments don't exist, using built-ins instead
 	}
+
+	float normalStrength = 1.0;
+	vec4 texColor = Texel(meshTexture, texture_coords) * vec4(1.0, 1.0, 1.0, 1.0 - meshTransparency);
+	vec3 sampledNormal = Texel(normalMap, texture_coords).rgb * 2.0 - 1.0;
+	sampledNormal = normalize(mix(vec3(0.0, 0.0, 1.0), sampledNormal, normalStrength));
+	vec3 normalMapNormalWorld = normalize(TBN * sampledNormal);
 	
 	
 	

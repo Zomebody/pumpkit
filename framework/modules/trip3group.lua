@@ -1,30 +1,30 @@
-
+-- SAME INTERNAL STRUCTURE AS MESH3GROUP, IT'S JUST THE SHADERS THAT ACT DIFFERENTLY
 ----------------------------------------------------[[ == BASE OBJECTS == ]]----------------------------------------------------
 
 local module = {
 	["TotalCreated"] = 0;
 }
 
-local Mesh3Group = {}
-Mesh3Group.__index = Mesh3Group
-Mesh3Group.__tostring = function(tab) return "{Mesh3Group: " .. tostring(tab.Id) .. "}" end
+local Trip3Group = {}
+Trip3Group.__index = Trip3Group
+Trip3Group.__tostring = function(tab) return "{Trip3Group: " .. tostring(tab.Id) .. "}" end
 
 
 
 ----------------------------------------------------[[ == METHODS == ]]----------------------------------------------------
 
-local function isMesh3Group(t)
-	return getmetatable(t) == Mesh3Group
+local function isTrip3Group(t)
+	return getmetatable(t) == Trip3Group
 end
 
 
-function Mesh3Group:attach(scene3d)
-	assert(scene3.isScene3(scene3d), "mesh3group:attach(scene3) requires argument 'scene3' to be a scene3.")
+function Trip3Group:attach(scene3d)
+	assert(scene3.isScene3(scene3d), "trip3group:attach(scene3) requires argument 'scene3' to be a scene3.")
 	scene3d:attachMesh(self)
 end
 
 
-function Mesh3Group:detach()
+function Trip3Group:detach()
 	-- remove it from the scene
 	-- unlink the scene property
 	self.Scene:detachMesh(self)
@@ -37,27 +37,27 @@ end
 ----------------------------------------------------[[ == OBJECT CREATION == ]]----------------------------------------------------
 
 local function new(mesh, positions, rotations, scales, cols)
-	assert(type(positions) == "table", "mesh3group.new(mesh, positions, rotations, scales, cols) requires argument 'positions' to be a table of vector3s, given is nil")
+	assert(type(positions) == "table", "trip3group.new(mesh, positions, rotations, scales, cols) requires argument 'positions' to be a table of vector3s, given is nil")
 	if rotations == nil then
 		rotations = {}
 		for i = 1, #positions do rotations[i] = vector3(0, 0, 0) end
 	else
 		assert(type(rotations) == "table" and #rotations == #positions,
-			"mesh3group.new(mesh, positions, rotations, scales, cols) requires argument 'rotations' to be nil or a table with vector3s of the same length as 'positions'")
+			"trip3group.new(mesh, positions, rotations, scales, cols) requires argument 'rotations' to be nil or a table with vector3s of the same length as 'positions'")
 	end
 	if scales == nil then
 		scales = {}
 		for i = 1, #positions do scales[i] = vector3(1, 1, 1) end
 	else
 		assert(type(scales) == "table" and #scales == #positions,
-			"mesh3group.new(mesh, positions, rotations, scales, cols) requires argument 'scales' to be nil or a table with vector3s of the same length as 'positions'")
+			"trip3group.new(mesh, positions, rotations, scales, cols) requires argument 'scales' to be nil or a table with vector3s of the same length as 'positions'")
 	end
 	if cols == nil then
 		cols = {}
 		for i = 1, #positions do cols[i] = color(1, 1, 1) end
 	else
 		assert(type(cols) == "table" and #cols == #positions,
-			"mesh3group.new(mesh, positions, rotations, scales, cols) requires argument 'cols' to be nil or a table with colors of the same length as 'positions'")
+			"trip3group.new(mesh, positions, rotations, scales, cols) requires argument 'cols' to be nil or a table with colors of the same length as 'positions'")
 	end
 
 	local instancesData = {}
@@ -99,15 +99,14 @@ local function new(mesh, positions, rotations, scales, cols)
 		["FresnelStrength"] = 0;
 		["FresnelPower"] = 1;
 		["CastShadow"] = false;
-		--["IsTriplanar"] = false;
-		--["TextureScale"] = 1;
+		["TextureScale"] = 1;
 		["NormalMap"] = nil;
 		["Count"] = #positions;
 
 		["Scene"] = nil;
 	}
 
-	setmetatable(Obj, Mesh3Group)
+	setmetatable(Obj, Trip3Group)
 	
 	return Obj
 end
@@ -118,7 +117,7 @@ end
 
 -- pack up and return module
 module.new = new
-module.isMesh3Group = isMesh3Group
+module.isTrip3Group = isTrip3Group
 return setmetatable(module, {__call = function(_, ...) return new(...) end})
 
 

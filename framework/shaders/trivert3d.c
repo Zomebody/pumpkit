@@ -10,9 +10,9 @@ uniform mat4 orthoMatrix;
 
 // attributes
 attribute vec3 VertexNormal;
-attribute vec3 VertexTangent;
-attribute vec3 VertexBitangent;
-//attribute vec3 SurfaceNormal;
+//attribute vec3 VertexTangent;
+//attribute vec3 VertexBitangent;
+attribute vec3 SurfaceNormal;
 
 
 const float zNear = 0.1;
@@ -34,6 +34,11 @@ varying vec3 fragViewNormal; // used for normal map for SSAO (in screen space)
 varying vec3 fragWorldNormal; // normal vector, but in world space this time
 varying vec3 fragWorldSurfaceNormal; // specifically required to solve shadow acne
 varying vec4 fragPosLightSpace; // position of the fragment in light space so it can sample from the shadow map
+
+// triplanar specific variables
+// inspired by this forum topic: https://irrlicht.sourceforge.io/forum/viewtopic.php?t=48043
+uniform float triplanarScale;
+varying vec2 texture_coords;
 varying mat3 TBN; // tangent bitangent normal matrix to be used for normal maps
 
 
@@ -161,21 +166,59 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 	fragViewNormal = (viewMatrix * rotationMatrix * vec4(VertexNormal, 0.0)).xyz; // fragViewNormal is stored in view-space because it's cheaper and easier that way to program ambient-occlusion!
 
 	fragWorldNormal = normalize((rotationMatrix * vec4(VertexNormal, 0.0)).xyz);
-	vec3 fragWorldTangent = normalize((rotationMatrix * vec4(VertexTangent, 0.0)).xyz);
-	vec3 fragWorldBitangent = normalize((rotationMatrix * vec4(VertexBitangent, 0.0)).xyz);
+	fragWorldSurfaceNormal = normalize((rotationMatrix * vec4(SurfaceNormal, 0.0)).xyz);
+	//vec3 fragWorldTangent = normalize((rotationMatrix * vec4(VertexTangent, 0.0)).xyz);
+	//vec3 fragWorldBitangent = normalize((rotationMatrix * vec4(VertexBitangent, 0.0)).xyz);
+
+	// I was going to do some weird triplanar implementation found here: https://irrlicht.sourceforge.io/forum/viewtopic.php?t=48043
+	// however after visualizing the math it just didn't seem sound?
+	// so I'm going to instead do dumb, slow, if-statement based TBN matrix construction wooo!!!
+
+	// so something to keep in mind is that when usig triplanar projection, any normal maps will be 'flipped' when you look at it from one side or another
+	// maybe the math "just works" to take this into account, but maybe the tangent or bitangent vectors will need to be inverted to account for this
+	
+	vec3 absSurfNormal = abs(fragWorldSurfaceNormal);
+	vec3 ta, bi;
+	// multB exist to fix flipped/mirrored uvs. They should be either 1.0 or -1.0
+	// I don't quite understand why they should be positive or negative in certain scenarios, but this turned out to Just Work somehow based on observations.
+	float multB = 1.0;
+	if (absSurfNormal.x > absSurfNormal.y && absSurfNormal.x > absSurfNormal.z) {
+		// YZ plane
+		ta = vec3(0.0, 1.0, 0.0);
+		bi = vec3(0.0, 0.0, 1.0);
+		texture_coords = fragWorldPosition.yz / triplanarScale;
+		multB = -sign(fragWorldNormal.x);
+	} else if (absSurfNormal.y > absSurfNormal.z) {
+		// XZ plane
+		ta = vec3(1.0, 0.0, 0.0);
+		bi = vec3(0.0, 0.0, 1.0);
+		texture_coords = fragWorldPosition.xz / triplanarScale;
+		multB = sign(fragWorldNormal.y);
+	} else {
+		// XY plane
+		ta = vec3(1.0, 0.0, 0.0);
+		bi = vec3(0.0, 1.0, 0.0);
+		texture_coords = fragWorldPosition.xy / triplanarScale;
+		multB = -sign(fragWorldNormal.z);
+	}
+
+	ta = normalize(ta - dot(ta, fragWorldNormal) * fragWorldNormal);
+	bi = normalize(cross(fragWorldNormal, ta));
+	bi = bi * multB;
+
 
 	// TBN needs to be in world-space
 	TBN = mat3(
-		fragWorldTangent,
-		fragWorldBitangent,
+		ta,
+		bi,
 		fragWorldNormal
 	);
 
-	// multiplying by the scale matrix is required in cases where scaling isn't consistent across axes. E.g. you don't want circular normals when a sphere is stretched to an ellipse
-	fragWorldSurfaceNormal = normalize((rotationMatrix * vec4(VertexNormal, 0.0)).xyz);
+	
 
 	mat4 sunViewMatrix = inverse(sunWorldMatrix);
 	fragPosLightSpace = orthoMatrix * sunViewMatrix * vec4(fragWorldPosition, 1.0);
+
 
 
 	return result;

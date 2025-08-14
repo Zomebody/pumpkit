@@ -125,7 +125,7 @@ function createMeshFromFile(filename)
 			{"VertexNormal", "float", 3},
 			{"VertexTangent", "float", 3},
 			{"VertexBitangent", "float", 3},
-			{"SurfaceNormal", "float", 3} -- it pains me but this is *specifically* needed for solving shadow acne, that's why we're adding 3 extra floats
+			{"SurfaceNormal", "float", 3} -- it pains me but this is *specifically* needed for solving shadow acne & triplanar sampling, that's why we're adding 3 extra floats
 		},
 		vertices,
 		"triangles",
