@@ -251,8 +251,16 @@ function Scene3:updateShadowMap(firstPass)
 		-- isInstanced should still be true from the second pass
 		--self.ShadowMapShader:send("isInstanced", true)
 		self.ShadowMapShader:send("meshTexture", blankImage) -- for instanced meshes, assume texture is opaque (otherwise you'd use foliage3)
+
 		for i = 1, #self.InstancedMeshes do
 			Mesh = self.InstancedMeshes[i]
+			if Mesh.CastShadow then
+				love.graphics.drawInstanced(Mesh.Mesh, Mesh.Count)
+			end
+		end
+
+		for i = 1, #self.InstancedTrip3 do
+			Mesh = self.InstancedTrip3[i]
 			if Mesh.CastShadow then
 				love.graphics.drawInstanced(Mesh.Mesh, Mesh.Count)
 			end
@@ -261,6 +269,18 @@ function Scene3:updateShadowMap(firstPass)
 		self.ShadowMapShader:send("isInstanced", false)
 		for i = 1, #self.BasicMeshes do
 			Mesh = self.BasicMeshes[i]
+			if Mesh.CastShadow then
+				-- TODO meshes need their own matrix instead of sending over and computing them every time in the shaders
+				self.ShadowMapShader:send("meshTexture", Mesh.Texture or blankImage)
+				self.ShadowMapShader:send("meshPosition", Mesh.Position:array())
+				self.ShadowMapShader:send("meshRotation", Mesh.Rotation:array())
+				self.ShadowMapShader:send("meshScale", Mesh.Scale:array())
+				love.graphics.draw(Mesh.Mesh)
+			end
+		end
+
+		for i = 1, #self.BasicTrip3 do
+			Mesh = self.BasicTrip3[i]
 			if Mesh.CastShadow then
 				-- TODO meshes need their own matrix instead of sending over and computing them every time in the shaders
 				self.ShadowMapShader:send("meshTexture", Mesh.Texture or blankImage)
