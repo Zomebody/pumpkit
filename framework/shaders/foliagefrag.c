@@ -185,8 +185,8 @@ void effect() {
 	lighting = mix(lighting, blobShadowColor, maxShadowFactor);
 
 	
-	//set the color on the main canvas. Apply mesh brightness here as well. Higher brightness means less affected by ambient color
-	vec4 resultingColor = texColor * color * mix(vec4(lighting.x, lighting.y, lighting.z, 1.0), vec4(1.0, 1.0, 1.0, 1.0), meshBrightness);
+	// set the color on the main canvas. Apply mesh brightness here as well. Higher brightness means less affected by ambient color
+	vec4 resultingColor = texColor * color * mix(vec4(lighting.xyz, 1.0), vec4(1.0, 1.0, 1.0, 1.0), meshBrightness);
 
 	// moved discarding all the way down here
 	// why? because for some reason black outlines appear otherwise. I don't know why, but this fixes it
@@ -199,8 +199,7 @@ void effect() {
 
 	love_Canvases[1] = vec4(fragViewNormal.x / 2 + 0.5, fragViewNormal.y / 2 + 0.5, fragViewNormal.z / 2 + 0.5, 0.0); // Pack normals into an RGBA format. Alpha = draw no ambient occlusion
 
-	// apply bloom to canvas. Semi-transparent meshes will emit weaker bloom
-	//love_Canvases[2] = vec4(color.x * meshBloom, color.y * meshBloom, color.z * meshBloom, 1.0 - meshTransparency);
+	// ignore canvases[2] as foliage doesn't support bloom
 	
 
 }

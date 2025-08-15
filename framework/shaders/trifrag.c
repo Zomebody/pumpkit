@@ -197,8 +197,9 @@ void effect() {
 	}
 	
 	//set the color on the main canvas. Apply mesh brightness here as well. Higher brightness means less affected by ambient color
-	vec4 resultingColor = mix(texColor * color, vec4(meshFresnelColor, 1.0), fresnel) // mix fresnel with texture color
-		* (vec4(lighting.x, lighting.y, lighting.z, 1.0) * (1.0 - meshBrightness) + vec4(1.0, 1.0, 1.0, 1.0) * meshBrightness); // multiply by lighting (& mix with brightness)
+	vec4 resultingColor = mix(texColor * color, vec4(meshFresnelColor, 1.0), fresnel); // mix color towards fresnel color
+	vec4 resultingLighting = mix(vec4(lighting.xyz, 1.0), vec4(1.0, 1.0, 1.0, 1.0), meshBrightness); // mix lighting based on mesh brightness
+	resultingColor = resultingColor * resultingLighting;
 
 
 	// debug normal maps. This shows fragment normals in world-space

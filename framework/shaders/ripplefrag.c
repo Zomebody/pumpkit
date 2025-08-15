@@ -151,8 +151,10 @@ void effect() {
 
 	
 	//set the color on the main canvas. Apply mesh brightness here as well. Higher brightness means less affected by ambient color
-	vec4 resultingColor = mix(texColor * color, vec4(meshFresnelColor, 1.0), fresnel)
-		* (vec4(lighting.x, lighting.y, lighting.z, 1.0) * (1.0 - meshBrightness) + vec4(1.0, 1.0, 1.0, 1.0) * meshBrightness);
+	vec4 resultingColor = mix(texColor * color, vec4(meshFresnelColor, 1.0), fresnel); // mix color towards fresnel color
+	vec4 resultingLighting = mix(vec4(lighting.xyz, 1.0), vec4(1.0, 1.0, 1.0, 1.0), meshBrightness); // mix lighting based on mesh brightness
+	resultingColor = resultingColor * resultingLighting;
+
 	love_Canvases[0] = vec4(resultingColor.xyz, 1.0);//vec4(resultingColor.xyz, 1.0) * 0.01 + 0.01 * vec4(1.0, 0.0, 0.0, 1.0) + 0.98 * col;// * 0.0001 + 0.9999 * vec4(fragWorldNormal * 0.5 + 0.5, 1.0);
 	//love_Canvases[1] = vec4(fragViewNormal.x / 2 + 0.5, fragViewNormal.y / 2 + 0.5, fragViewNormal.z / 2 + 0.5, 1.0);
 
