@@ -333,10 +333,6 @@ local particleMixShader = love.graphics.newShader(
 
 function Scene3:drawParticles()
 	local blendMode, alphaMode = love.graphics.getBlendMode()
-
-	--particleMixShader:send("colorCanvas", self.ParticleCanvas1)
-	--particleMixShader:send("countCanvas", self.ParticleCanvas2)
-
 	
 	local comp, write = love.graphics.getDepthMode()
 

@@ -111,8 +111,6 @@ local function new(meshRef, position, rotation, scale, col)
 		["Transparency"] = 0;
 		["UVVelocity"] = vector2(0, 0);
 		["CastShadow"] = false;
-		--["IsTriplanar"] = false;
-		--["TextureScale"] = 1;
 		["NormalMap"] = nil;
 		["Scene"] = nil;
 	}

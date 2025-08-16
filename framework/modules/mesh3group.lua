@@ -99,11 +99,8 @@ local function new(mesh, positions, rotations, scales, cols)
 		["FresnelStrength"] = 0;
 		["FresnelPower"] = 1;
 		["CastShadow"] = false;
-		--["IsTriplanar"] = false;
-		--["TextureScale"] = 1;
 		["NormalMap"] = nil;
 		["Count"] = #positions;
-
 		["Scene"] = nil;
 	}
 
