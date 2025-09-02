@@ -82,12 +82,13 @@ end
 
 ----------------------------------------------------[[ == OBJECT CREATION == ]]----------------------------------------------------
 
-local function new(meshRef, sheetSize, position, rotation, scale, col)
-	assert(sheetSize == nil or vector2.isVector2(sheetSize), "Spritemesh3.new(meshRef, sheetSize, position, rotation, scale, col) requires argument 'sheetSize' to be nil or a vector2.")
-	assert(position == nil or vector3.isVector3(position), "Spritemesh3.new(meshRef, sheetSize, position, rotation, scale, col) requires argument 'position' to be nil or a vector3.")
-	assert(rotation == nil or vector3.isVector3(rotation), "Spritemesh3.new(meshRef, sheetSize, position, rotation, scale, col) requires argument 'rotation' to be nil or a vector3.")
-	assert(scale == nil or vector3.isVector3(scale), "Spritemesh3.new(meshRef, sheetSize, position, rotation, scale, col) requires argument 'scale' to be nil or a vector3.")
-	assert(col == nil or color.isColor(col), "Spritemesh3.new(meshRef, position, sheetSize, rotation, scale, col) requires argument 'col' to be nil or a color.")
+local function new(meshRef, sheetSize, position, rotation, scale, col, scol)
+	assert(sheetSize == nil or vector2.isVector2(sheetSize), "Spritemesh3.new(meshRef, sheetSize, position, rotation, scale, col, scol) requires argument 'sheetSize' to be nil or a vector2.")
+	assert(position == nil or vector3.isVector3(position), "Spritemesh3.new(meshRef, sheetSize, position, rotation, scale, col, scol) requires argument 'position' to be nil or a vector3.")
+	assert(rotation == nil or vector3.isVector3(rotation), "Spritemesh3.new(meshRef, sheetSize, position, rotation, scale, col, scol) requires argument 'rotation' to be nil or a vector3.")
+	assert(scale == nil or vector3.isVector3(scale), "Spritemesh3.new(meshRef, sheetSize, position, rotation, scale, col, scol) requires argument 'scale' to be nil or a vector3.")
+	assert(col == nil or color.isColor(col), "Spritemesh3.new(meshRef, position, sheetSize, rotation, scale, col, scol) requires argument 'col' to be nil or a color.")
+	assert(scol == nil or color.isColor(scol), "Spritemesh3.new(meshRef, position, sheetSize, rotation, scale, col, scol) requires argument 'scol' to be nil or a color.")
 
 	module.TotalCreated = module.TotalCreated + 1
 
@@ -99,10 +100,10 @@ local function new(meshRef, sheetSize, position, rotation, scale, col)
 		["Rotation"] = rotation ~= nil and vector3(rotation) or vector3(0, 0, 0);
 		["Scale"] = scale ~= nil and vector3(scale) or vector3(1, 1, 1);
 		["Color"] = col ~= nil and color(col) or color(1, 1, 1);
+		["ColorShadow"] = col ~= nil and color(col) or color(1, 1, 1);
 		["Brightness"] = 0;
 		["Bloom"] = 0;
 		["Transparency"] = 0;
-		-- no CastShadow since it complicates the shadowmap shader too much
 		["SheetSize"] = vector2(sheetSize) or vector2(1, 1);
 		["SpritePosition"] = vector2(1, 1);
 		["Scene"] = nil;

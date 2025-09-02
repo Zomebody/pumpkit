@@ -565,6 +565,7 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 				self.Shader:send("meshRotation", Mesh.Rotation:array())
 				self.Shader:send("meshScale", Mesh.Scale:array())
 				self.Shader:send("meshColor", Mesh.Color:array())
+				self.Shader:send("meshColorShadow", Mesh.ColorShadow:array())
 				self.Shader:send("meshBrightness", Mesh.Brightness)
 				self.Shader:send("meshBloom", Mesh.Bloom)
 				self.Shader:send("meshFresnel", {Mesh.FresnelStrength, Mesh.FresnelPower})
@@ -618,6 +619,7 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 				self.TriplanarShader:send("meshRotation", Mesh.Rotation:array())
 				self.TriplanarShader:send("meshScale", Mesh.Scale:array())
 				self.TriplanarShader:send("meshColor", Mesh.Color:array())
+				self.TriplanarShader:send("meshColorShadow", Mesh.ColorShadow:array())
 				self.TriplanarShader:send("meshBrightness", Mesh.Brightness)
 				self.TriplanarShader:send("meshBloom", Mesh.Bloom)
 				self.TriplanarShader:send("meshFresnel", {Mesh.FresnelStrength, Mesh.FresnelPower})
@@ -644,6 +646,7 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 			self.RippleShader:send("meshRotation", RMesh.Rotation:array())
 			self.RippleShader:send("meshScale", RMesh.Scale:array())
 			self.RippleShader:send("meshColor", {RMesh.Color.r, RMesh.Color.g, RMesh.Color.b})
+			self.RippleShader:send("meshColorShadow", {RMesh.ColorShadow.r, RMesh.ColorShadow.g, RMesh.ColorShadow.b})
 			self.RippleShader:send("meshBrightness", RMesh.Brightness)
 			self.RippleShader:send("meshBloom", RMesh.Bloom)
 			self.RippleShader:send("meshFresnel", {RMesh.FresnelStrength, RMesh.FresnelPower})
@@ -651,6 +654,7 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 			self.RippleShader:send("dataMap", RMesh.DataMap or dataImage)
 			self.RippleShader:send("foamInShadow", RMesh.FoamInShadow)
 			self.RippleShader:send("foamColor", {RMesh.FoamColor.r, RMesh.FoamColor.g, RMesh.FoamColor.b})
+			self.RippleShader:send("foamColorShadow", {RMesh.FoamColorShadow.r, RMesh.FoamColorShadow.g, RMesh.FoamColorShadow.b})
 			self.RippleShader:send("waterVelocity", RMesh.WaterVelocity:array())
 			self.RippleShader:send("foamVelocity", RMesh.FoamVelocity:array())
 			love.graphics.draw(RMesh.Mesh)
@@ -687,6 +691,7 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 				self.Shader:send("meshRotation", Mesh.Rotation:array())
 				self.Shader:send("meshScale", Mesh.Scale:array())
 				self.Shader:send("meshColor", Mesh.Color:array())
+				self.Shader:send("meshColorShadow", Mesh.ColorShadow:array())
 				self.Shader:send("meshBrightness", Mesh.Brightness)
 				self.Shader:send("meshBloom", Mesh.Bloom)
 				self.Shader:send("spritePosition", {Mesh.SpritePosition.x - 1, Mesh.SpritePosition.y - 1})
@@ -751,6 +756,7 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 			Shader:send("meshRotation", Mesh.Rotation:array())
 			Shader:send("meshScale", Mesh.Scale:array())
 			Shader:send("meshColor", Mesh.Color:array())
+			Shader:send("meshColorShadow", Mesh.ColorShadow:array())
 			Shader:send("meshBrightness", Mesh.Brightness)
 			Shader:send("meshBloom", Mesh.Bloom)
 			Shader:send("meshFresnel", {Mesh.FresnelStrength, Mesh.FresnelPower})
@@ -863,7 +869,7 @@ function Scene3:rescaleCanvas(width, height, msaa)
 	width = math.ceil(width / 4) * 4
 	height = math.ceil(height / 4) * 4
 
-	local renderCanvas = love.graphics.newCanvas(width * msaa, height * msaa)
+	local renderCanvas = love.graphics.newCanvas(width * msaa, height * msaa, {["format"] = "srgba8"})
 	local depthCanvas = love.graphics.newCanvas(
 		width * msaa,
 		height * msaa,
@@ -875,7 +881,7 @@ function Scene3:rescaleCanvas(width, height, msaa)
 	)
 	depthCanvas:setFilter("nearest")
 	local normalCanvas = love.graphics.newCanvas(width * msaa, height * msaa)
-	local prepareCanvas = love.graphics.newCanvas(width * msaa, height * msaa)
+	local prepareCanvas = love.graphics.newCanvas(width * msaa, height * msaa, {["format"] = "srgba8"})
 	prepareCanvas:setFilter("nearest")
 	local bloomCanvas = love.graphics.newCanvas(width * msaa, height * msaa)
 	bloomCanvas:setFilter("nearest")
@@ -1019,7 +1025,7 @@ end
 
 
 
-function Scene3:setShadowMap(position, direction, size, canvasSize, sunColor, shadowStrength)
+function Scene3:setShadowMap(position, direction, size, canvasSize, shadowStrength)
 	if position == nil then
 		self.ShadowCanvas = nil
 		self.ShadowDepthCanvas = nil
@@ -1029,26 +1035,18 @@ function Scene3:setShadowMap(position, direction, size, canvasSize, sunColor, sh
 		self.FoliageShader:send("shadowsEnabled", false)
 		self.ParticlesShader:send("shadowsEnabled", false)
 	else
-		assert(vector3.isVector3(position), "Scene3:setShadowMap(position, direction, size, canvasSize, sunColor, shadowStrength) requires argument 'position' to be a vector3.")
-		assert(vector3.isVector3(direction), "Scene3:setShadowMap(position, direction, size, canvasSize, sunColor, shadowStrength) requires argument 'direction' to be a vector3.")
-		assert(vector2.isVector2(size), "Scene3:setShadowMap(position, direction, size, canvasSize, sunColor, shadowStrength) requires argument 'size' to be a vector2.")
-		assert(vector2.isVector2(canvasSize), "Scene3:setShadowMap(position, direction, size, canvasSize, sunColor, shadowStrength) requires argument 'canvasSize' to be a vector2.")
-		assert(sunColor == nil or color.isColor(sunColor), "Scene3:setShadowMap(position, direction, size, canvasSize, sunColor, shadowStrength) requires argument 'sunColor' to be a color or nil.")
+		assert(vector3.isVector3(position), "Scene3:setShadowMap(position, direction, size, canvasSize, shadowStrength) requires argument 'position' to be a vector3.")
+		assert(vector3.isVector3(direction), "Scene3:setShadowMap(position, direction, size, canvasSize, shadowStrength) requires argument 'direction' to be a vector3.")
+		assert(vector2.isVector2(size), "Scene3:setShadowMap(position, direction, size, canvasSize, shadowStrength) requires argument 'size' to be a vector2.")
+		assert(vector2.isVector2(canvasSize), "Scene3:setShadowMap(position, direction, size, canvasSize, shadowStrength) requires argument 'canvasSize' to be a vector2.")
 		assert(shadowStrength == nil or type(shadowStrength) == "number",
-			"Scene3:setShadowMap(position, direction, size, canvasSize, sunColor, shadowStrength) requires argument 'shadowStrength' to be a number or nil.")
+			"Scene3:setShadowMap(position, direction, size, canvasSize, shadowStrength) requires argument 'shadowStrength' to be a number or nil.")
 
 		self.Shader:send("shadowsEnabled", true)
 		self.TriplanarShader:send("shadowsEnabled", true)
 		self.RippleShader:send("shadowsEnabled", true)
 		self.FoliageShader:send("shadowsEnabled", true)
 		self.ParticlesShader:send("shadowsEnabled", true)
-
-		local sunCol = (sunColor == nil) and {1, 1, 1} or {sunColor.r, sunColor.g, sunColor.b}
-		self.Shader:send("sunColor", sunCol)
-		self.TriplanarShader:send("sunColor", sunCol)
-		self.RippleShader:send("sunColor", sunCol)
-		self.FoliageShader:send("sunColor", sunCol)
-		self.ParticlesShader:send("sunColor", sunCol)
 
 		local shStrength = shadowStrength ~= nil and shadowStrength or 0.5
 		self.Shader:send("shadowStrength", shStrength)
@@ -1466,7 +1464,6 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 		["ParticleCanvas2"] = nil;--particleCanvas2; -- stores 
 		["ShadowCanvas"] = nil; -- either nil, or a canvas when shadow map is enabled
 		["ShadowDepthCanvas"] = nil;  -- either nil, or a canvas when shadow map is enabled
-		--["ShadowCanvas"] = nil; -- either nil, or a canvas when shadow map is enabled. Static geometry is rendered to this
 
 		-- when applying SSAO, bloom, etc. you need multiple render passes. For that purpose 'reuse' canvases are created to play ping-pong with each pass
 		-- Considering that SSAO, bloom etc. might want to be downscaled for better FPS, there are canvases for full, half and quarter size

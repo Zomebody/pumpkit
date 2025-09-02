@@ -32,7 +32,6 @@ uniform vec3 blobShadowColor;
 uniform float blobShadowStrength;
 
 // shadow map properties
-uniform vec3 sunColor = vec3(0.0); // used to brighten fragments that are lit by the sun
 uniform float shadowStrength; // used to make shadows more/less intense
 uniform vec3 sunDirection;
 uniform bool shadowsEnabled = false;
@@ -40,12 +39,14 @@ uniform vec2 shadowCanvasSize;
 
 // colors
 uniform vec3 meshColor;
+uniform vec3 meshColorShadow;
 uniform float meshBrightness; // if 1, mesh is not affected by diffuse shading at all
 uniform float meshTransparency; // how transparent the mesh is
 uniform float meshBloom;
 uniform vec2 meshFresnel; // x = strength, y = power
 uniform vec3 meshFresnelColor; // vec3 since fresnel won't be supporting transparency (but still works on transparent meshes)
 varying vec3 instColor;
+varying vec3 instColorShadow;
 
 
 uniform bool isInstanced;
@@ -118,11 +119,15 @@ float calculateShadow(vec4 fragPosLightSpace, vec3 surfaceNormalWorld) {
 
 void effect() {
 
-	vec4 color = VaryingColor; // argument 'color' doesn't exist when using multiple canvases, so use built-in VaryingColor
+	// argument 'color' doesn't exist when using multiple canvases, so use built-in VaryingColor
+	vec4 color;
+	vec4 shadowColor;
 	if (isInstanced) {
-		color = vec4(color.x * instColor.x, color.y * instColor.y, color.z * instColor.z, color.w);
+		color = vec4(VaryingColor.x * instColor.x, VaryingColor.y * instColor.y, VaryingColor.z * instColor.z, VaryingColor.w);
+		shadowColor = vec4(VaryingColor.x * instColorShadow.x, VaryingColor.y * instColorShadow.y, VaryingColor.z * instColorShadow.z, VaryingColor.w);
 	} else {
-		color = vec4(color.x * meshColor.x, color.y * meshColor.y, color.z * meshColor.z, color.w);
+		color = vec4(VaryingColor.x * meshColor.x, VaryingColor.y * meshColor.y, VaryingColor.z * meshColor.z, VaryingColor.w);
+		shadowColor = vec4(VaryingColor.x * meshColorShadow.x, VaryingColor.y * meshColorShadow.y, VaryingColor.z * meshColorShadow.z, VaryingColor.w);
 	}
 	
 	
@@ -146,6 +151,18 @@ void effect() {
 	}
 
 	
+	// choose object color depending on if you're in the shadow or in sunlight
+	vec4 objectColor = color;
+
+	// if no shadows, keep the mesh color, otherwise tween towards shadow color depending on how much the object is in a shadow
+	if (shadowsEnabled) {
+		float shadow = calculateShadow(fragPosLightSpace, fragWorldSurfaceNormal); // fragWorldNormal // fragWorldSurfaceNormal
+		float sunFactor = max(dot(-normalMapNormalWorld, sunDirection), 0.0); // please don't ask me why * vec3(1.0, 1.0, -1.0) works... I'm super confused
+		float mixFactor = (1.0 - shadow * shadowStrength) * (pow(sunFactor, 0.5));
+		objectColor = mix(shadowColor, color, mixFactor);
+	}
+
+
 
 	// ended up implementing a very basic naive additive lighting system because it doesn't have any weird edge-cases
 	vec3 lighting = ambientColor; // start with just ambient lighting on the surface
@@ -166,13 +183,7 @@ void effect() {
 		lighting += lightingToAdd * ((diffuseFactor * diffuseStrength) + (1.0 - diffuseStrength)); // if a mesh is fully bright, diffuse strength becomes 0 so that it has no efect
 	}
 
-	// apply sun-light if not in shadow (from shadow map)
-	if (shadowsEnabled) {
-		float shadow = calculateShadow(fragPosLightSpace, fragWorldSurfaceNormal); // fragWorldNormal // fragWorldSurfaceNormal
-		float sunFactor = max(dot(-normalMapNormalWorld, sunDirection), 0.0); // please don't ask me why * vec3(1.0, 1.0, -1.0) works... I'm super confused
-		//lighting += sunColor * (1.0 - shadow * shadowStrength) * (1.0 - sunFactor);
-		lighting += sunColor * (1.0 - shadow * shadowStrength) * (pow(sunFactor, 0.5)); // this was 1.0-sunFactor before but that didn't work well for normal maps idk why
-	}
+	
 
 
 	// apply blob-shadow
@@ -197,7 +208,7 @@ void effect() {
 	}
 	
 	//set the color on the main canvas. Apply mesh brightness here as well. Higher brightness means less affected by ambient color
-	vec4 resultingColor = mix(texColor * color, vec4(meshFresnelColor, 1.0), fresnel); // mix color towards fresnel color
+	vec4 resultingColor = mix(texColor * objectColor, vec4(meshFresnelColor, 1.0), fresnel); // mix color towards fresnel color
 	vec4 resultingLighting = mix(vec4(lighting.xyz, 1.0), vec4(1.0, 1.0, 1.0, 1.0), meshBrightness); // mix lighting based on mesh brightness
 	resultingColor = resultingColor * resultingLighting;
 

@@ -26,7 +26,9 @@ attribute vec3 instancePosition; // TODO: replace with a meshMatrix
 attribute vec3 instanceRotation; // TODO: replace with a meshMatrix
 attribute vec3 instanceScale; // TODO: replace with a meshMatrix
 attribute vec3 instanceColor;
+attribute vec3 instanceColorShadow;
 varying vec3 instColor;
+varying vec3 instColorShadow;
 uniform bool isInstanced;
 
 varying vec3 fragWorldPosition; // output automatically interpolated fragment world position
@@ -138,6 +140,7 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 		rotationMatrix = getRotationMatrixZ(instanceRotation.z) * getRotationMatrixY(instanceRotation.y) * getRotationMatrixX(instanceRotation.x);
 		translationMatrix = getTranslationMatrix(instancePosition);
 		instColor = instanceColor; // pass color attribute from vertex shader to the fragment shader since the fragment shader doesn't support attributes for some reason?
+		instColorShadow = instanceColorShadow;
 	} else {
 		// for regular meshes, use the mesh position/rotation/scale variables
 		scaleMatrix = getScaleMatrix(meshScale);

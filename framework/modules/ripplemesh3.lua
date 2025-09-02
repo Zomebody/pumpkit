@@ -89,12 +89,14 @@ end
 
 ----------------------------------------------------[[ == OBJECT CREATION == ]]----------------------------------------------------
 
-new = function(meshRef, position, rotation, scale, col, foamCol)
-	assert(position == nil or vector3.isVector3(position), "Ripplemesh3.new(meshRef, position, rotation, scale, col, foamCol) requires argument 'position' to be nil or a vector3.")
-	assert(rotation == nil or vector3.isVector3(rotation), "Ripplemesh3.new(meshRef, position, rotation, scale, col, foamCol) requires argument 'rotation' to be nil or a vector3.")
-	assert(scale == nil or vector3.isVector3(scale), "Ripplemesh3.new(meshRef, position, rotation, scale, col, foamCol) requires argument 'scale' to be nil or a vector3.")
-	assert(col == nil or color.isColor(col), "Ripplemesh3.new(meshRef, position, rotation, scale, col, foamCol) requires argument 'col' to be nil or a color.")
-	assert(foamCol == nil or color.isColor(col), "Ripplemesh3.new(meshRef, position, rotation, scale, col, foamCol) requires argument 'foamCol' to be nil or a color.")
+new = function(meshRef, position, rotation, scale, col, scol, foamCol, sfoamCol)
+	assert(position == nil or vector3.isVector3(position), "Ripplemesh3.new(meshRef, position, rotation, scale, col, scol, foamCol, sfoamCol) requires argument 'position' to be nil or a vector3.")
+	assert(rotation == nil or vector3.isVector3(rotation), "Ripplemesh3.new(meshRef, position, rotation, scale, col, scol, foamCol, sfoamCol) requires argument 'rotation' to be nil or a vector3.")
+	assert(scale == nil or vector3.isVector3(scale), "Ripplemesh3.new(meshRef, position, rotation, scale, col, scol, foamCol, sfoamCol) requires argument 'scale' to be nil or a vector3.")
+	assert(col == nil or color.isColor(col), "Ripplemesh3.new(meshRef, position, rotation, scale, col, scol, foamCol, sfoamCol) requires argument 'col' to be nil or a color.")
+	assert(foamCol == nil or color.isColor(col), "Ripplemesh3.new(meshRef, position, rotation, scale, col, scol, foamCol, sfoamCol) requires argument 'foamCol' to be nil or a color.")
+	assert(scol == nil or color.isColor(col), "Ripplemesh3.new(meshRef, position, rotation, scale, col, scol, foamCol, sfoamCol) requires argument 'scol' to be nil or a color.")
+	assert(sfoamCol == nil or color.isColor(col), "Ripplemesh3.new(meshRef, position, rotation, scale, col, scol, foamCol, sfoamCol) requires argument 'sfoamCol' to be nil or a color.")
 
 	module.TotalCreated = module.TotalCreated + 1
 
@@ -106,6 +108,7 @@ new = function(meshRef, position, rotation, scale, col, foamCol)
 		["Rotation"] = rotation ~= nil and vector3(rotation) or vector3(0, 0, 0);
 		["Scale"] = scale ~= nil and vector3(scale) or vector3(1, 1, 1);
 		["Color"] = col ~= nil and color(col) or color(1, 1, 1);
+		["ColorShadow"] = scol ~= nil and color(scol) or color(0.5, 0.5, 0.5);
 		["Brightness"] = 0;
 		["Bloom"] = 0;
 		["FoamInShadow"] = 1; -- how visible foam is when in a shadowmap shadow
@@ -113,6 +116,7 @@ new = function(meshRef, position, rotation, scale, col, foamCol)
 		["FresnelStrength"] = 0;
 		["FresnelPower"] = 1;
 		["FoamColor"] = foamCol ~= nil and color(foamCol) or color(1, 1, 1);
+		["FoamColorShadow"] = sfoamCol ~= nil and color(sfoamCol) or color(0.5, 0.5, 0.5);
 		["WaterVelocity"] = vector4(0, 0, 0, 0); -- xy = color map velocity, zw = distortion velocity
 		["FoamVelocity"] = vector4(0, 0, 0, 0); -- xy = foam 1 velocity, zw = foam 2 velocity
 		["DataMap"] = nil; -- r&g = distortion as fraction of image size, b = noise value (foams 1 and 2 share the texture), a = foaminess (0=no foam, 0.3=30%) (if nil, a substitute is used)

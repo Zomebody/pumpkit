@@ -87,11 +87,12 @@ end
 
 ----------------------------------------------------[[ == OBJECT CREATION == ]]----------------------------------------------------
 
-local function new(meshRef, position, rotation, scale, col)
-	assert(position == nil or vector3.isVector3(position), "mesh3.new(meshRef, position, rotation, scale, col) requires argument 'position' to be nil or a vector3.")
-	assert(rotation == nil or vector3.isVector3(rotation), "mesh3.new(meshRef, position, rotation, scale, col) requires argument 'rotation' to be nil or a vector3.")
-	assert(scale == nil or vector3.isVector3(scale), "mesh3.new(meshRef, position, rotation, scale, col) requires argument 'scale' to be nil or a vector3.")
-	assert(col == nil or color.isColor(col), "mesh3.new(meshRef, position, rotation, scale, col) requires argument 'col' to be nil or a color.")
+local function new(meshRef, position, rotation, scale, col, scol)
+	assert(position == nil or vector3.isVector3(position), "mesh3.new(meshRef, position, rotation, scale, col, scol) requires argument 'position' to be nil or a vector3.")
+	assert(rotation == nil or vector3.isVector3(rotation), "mesh3.new(meshRef, position, rotation, scale, col, scol) requires argument 'rotation' to be nil or a vector3.")
+	assert(scale == nil or vector3.isVector3(scale), "mesh3.new(meshRef, position, rotation, scale, col, scol) requires argument 'scale' to be nil or a vector3.")
+	assert(col == nil or color.isColor(col), "mesh3.new(meshRef, position, rotation, scale, col, scol) requires argument 'col' to be nil or a color.")
+	assert(scol == nil or color.isColor(scol), "mesh3.new(meshRef, position, rotation, scale, col, scol) requires argument 'scol' to be nil or a color.")
 
 	module.TotalCreated = module.TotalCreated + 1
 
@@ -103,6 +104,7 @@ local function new(meshRef, position, rotation, scale, col)
 		["Rotation"] = rotation ~= nil and vector3(rotation) or vector3(0, 0, 0);
 		["Scale"] = scale ~= nil and vector3(scale) or vector3(1, 1, 1);
 		["Color"] = col ~= nil and color(col) or color(1, 1, 1);
+		["ColorShadow"] = scol ~= nil and color(scol) or color(0.5, 0.5, 0.5);
 		["Brightness"] = 0;
 		["Bloom"] = 0;
 		["FresnelColor"] = color(1, 1, 1);

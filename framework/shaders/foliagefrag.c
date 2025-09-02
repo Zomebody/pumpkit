@@ -4,6 +4,7 @@
 varying vec3 fragWorldPosition; // output automatically interpolated fragment world position
 varying vec3 fragViewNormal; // used for ambient occlusion
 varying vec3 fragWorldNormal;
+varying vec3 fragWorldSurfaceNormal;
 varying vec4 fragPosLightSpace;
 varying mat3 TBN; // tangent bitangent normal matrix, calculated in the vertex shder because it's more efficient
 
@@ -16,6 +17,7 @@ struct Light {
 	float range;
 	float strength;
 };
+
 uniform vec4 lightsInfo[16 * 2]; // array where each even index is {posX, posY, posZ, range} and each uneven index is {colR, colG, colB, strength}
 uniform int lightCount;
 uniform vec3 ambientColor;
@@ -27,7 +29,6 @@ uniform vec3 blobShadowColor;
 uniform float blobShadowStrength;
 
 // shadow map properties
-uniform vec3 sunColor = vec3(0.0); // used to brighten fragments that are lit by the sun
 uniform float shadowStrength; // used to make shadows more/less intense
 uniform vec3 sunDirection;
 uniform bool shadowsEnabled = false;
@@ -36,6 +37,7 @@ uniform vec2 shadowCanvasSize;
 // colors
 uniform float meshBrightness; // if 1, mesh is not affected by diffuse shading at all
 varying vec3 instColor;
+varying vec3 instColorShadow;
 
 
 // textures
@@ -98,21 +100,15 @@ float calculateShadow(vec4 fragPosLightSpace, vec3 surfaceNormal) {
 void effect() {
 
 	vec4 color = VaryingColor; // argument 'color' doesn't exist when using multiple canvases, so use built-in VaryingColor
+	vec4 shadowColor = VaryingColor;
 	color = vec4(color.x * instColor.x, color.y * instColor.y, color.z * instColor.z, color.w);
+	shadowColor = vec4(shadowColor.x * instColorShadow.x, shadowColor.y * instColorShadow.y, shadowColor.z * instColorShadow.z, shadowColor.w);
 	
 	
 	if (love_PixelCoord.x < 0 || love_PixelCoord.x > love_ScreenSize.x || love_PixelCoord.y < 0 || love_PixelCoord.y > love_ScreenSize.y) {
 		discard;
 	}
 	
-
-	// calculate surface normal using interpolated vertex normal and derivative wizardry
-	vec3 dp1 = dFdx(fragWorldPosition); // also re-used for the normal map below
-	vec3 dp2 = dFdy(fragWorldPosition);
-	vec3 surfaceNormal = normalize(cross(dp1, dp2));
-	if (dot(surfaceNormal, fragWorldNormal) < 0.0) {
-		surfaceNormal = -surfaceNormal;
-	}
 	
 
 	// sample the pixel to display from the supplied texture. For triplanar projection: use world coordinates and surface normal to sample. For regular meshes, use uv coordinates and uvvelocity
@@ -128,19 +124,21 @@ void effect() {
 	vec3 sampledNormal = Texel(normalMap, texture_coords).rgb * 2.0 - 1.0;
 	float normalStrength = 1.0;
 	sampledNormal = normalize(mix(vec3(0.0, 0.0, 1.0), sampledNormal, normalStrength));
-	// calculate TBN for normal map lighting stuff
-	//vec2 duv1 = dFdx(texture_coords);
-	//vec2 duv2 = dFdy(texture_coords);
-	//vec3 tangent = normalize(dp1 * duv2.y - dp2 * duv1.y);
-	//vec3 bitangent = normalize(cross(surfaceNormal, tangent));
-
-	//mat3 TBN = mat3(-tangent, -bitangent, fragWorldNormal);
-	//vec3 normalMapNormal = normalize(TBN * sampledNormal); // in world-space
 	vec3 normalMapNormalWorld = normalize(TBN * sampledNormal);
 
 
-	// the second canvas is the normals canvas. Output the surface normal to this canvas
-	//love_Canvases[1] = vec4(fragViewNormal.x / 2 + 0.5, fragViewNormal.y / 2 + 0.5, fragViewNormal.z / 2 + 0.5, 1.0); // Pack normals into an RGBA format
+	// choose object color depending on if you're in the shadow or in sunlight
+	vec4 objectColor = color;
+
+	// if no shadows, keep the mesh color, otherwise tween towards shadow color depending on how much the object is in a shadow
+	if (shadowsEnabled) {
+		float shadow = calculateShadow(fragPosLightSpace, fragWorldSurfaceNormal); // fragWorldNormal // fragWorldSurfaceNormal
+		float sunFactor = max(dot(-normalMapNormalWorld, sunDirection), 0.0); // please don't ask me why * vec3(1.0, 1.0, -1.0) works... I'm super confused
+		//float mixFactor = 1.0 - shadow * shadowStrength * pow(sunFactor, 0.5);
+		float mixFactor = (1.0 - shadow * shadowStrength) * (pow(sunFactor, 0.5));
+		objectColor = mix(shadowColor, color, mixFactor);
+	}
+
 
 
 	// ended up implementing a very basic naive additive lighting system because it doesn't have any weird edge-cases
@@ -163,12 +161,6 @@ void effect() {
 	}
 
 
-	// apply sun-light if not in shadow (from shadow map)
-	if (shadowsEnabled) {
-		float shadow = calculateShadow(fragPosLightSpace, surfaceNormal);
-		float sunFactor = max(dot(-normalMapNormalWorld, sunDirection), 0.0); // please don't ask me why * vec3(1.0, 1.0, -1.0) works... I'm super confused
-		lighting += sunColor * (1.0 - shadow * shadowStrength) * (pow(sunFactor, 0.5)); // this was 1.0-sunFactor before but that didn't work well for normal maps idk why
-	}
 
 
 	// apply blob-shadow
@@ -186,7 +178,7 @@ void effect() {
 
 	
 	// set the color on the main canvas. Apply mesh brightness here as well. Higher brightness means less affected by ambient color
-	vec4 resultingColor = texColor * color * mix(vec4(lighting.xyz, 1.0), vec4(1.0, 1.0, 1.0, 1.0), meshBrightness);
+	vec4 resultingColor = texColor * objectColor * mix(vec4(lighting.xyz, 1.0), vec4(1.0, 1.0, 1.0, 1.0), meshBrightness);
 
 	// moved discarding all the way down here
 	// why? because for some reason black outlines appear otherwise. I don't know why, but this fixes it

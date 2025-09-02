@@ -8,11 +8,9 @@ varying vec3 fragWorldSurfaceNormal; // used to solve shadow acne
 varying vec4 fragPosLightSpace;
 
 uniform float currentTime;
-//uniform float diffuseStrength;
 uniform vec3 ambientColor;
 
 // shadow map properties
-uniform vec3 sunColor = vec3(0.0); // used to brighten fragments that are lit by the sun
 uniform float shadowStrength; // used to make shadows more/less intense
 uniform vec3 sunDirection;
 uniform bool shadowsEnabled = false;
@@ -20,6 +18,7 @@ uniform vec2 shadowCanvasSize;
 
 // colors
 uniform vec3 meshColor;
+uniform vec3 meshColorShadow;
 uniform float meshBrightness; // if 1, mesh is not affected by diffuse shading at all
 uniform float meshBloom;
 uniform vec2 meshFresnel; // x = strength, y = power
@@ -29,12 +28,9 @@ uniform vec3 meshFresnelColor; // vec3 since fresnel won't be supporting transpa
 //uniform Image MainTex; // used to be the 'tex' argument, but is now passed separately in this specific variable name because we switched to multi-canvas shading which has no arguments
 uniform Image meshTexture; // replaces MainTex. Instead of using mesh:setTexture(), they are now passed separately so that a mesh can be reused with different textures on them
 //uniform Image normalMap; // unused, might be implemented later down the line idk
-// TODO: re-implement foaminess
-// if noise1 < noise2 * foaminess, render foam
-// thus if alpha values range from 0.1 to 0.9, you'll need a foaminess of at least 9 to have 100% foam coverage
-// actually hold on that won't work because alpha values can't go > 1. Uhhh... I guess multiply by 10 and call it a day and just don't use foaminess values < 0.1?
 uniform Image dataMap; // rg = distortion (angle & scalar), b = noise value for foam, a = foaminess (0 = no foam)
 uniform vec3 foamColor; // xyz = color
+uniform vec3 foamColorShadow;
 uniform float foamInShadow;
 uniform sampler2DShadow shadowCanvas; // use Image when doing 'basic' sampling. Use sampler2DShadow when you want automatic bilinear filtering (but more prone to shadow acne :<)
 uniform vec4 waterVelocity; // x&y = water velocity, z&w = distortion velocity
@@ -85,23 +81,10 @@ float calculateShadow(vec4 fragPosLightSpace, vec3 surfaceNormalWorld) {
 
 void effect() {
 
-	vec4 color = VaryingColor; // argument 'color' doesn't exist when using multiple canvases, so use built-in VaryingColor
-
 	// these kinds of meshes aren't instanced as they'll all have a unique shape anyway. And it also simplifies the scene management code a lot
-	color = vec4(color.x * meshColor.x, color.y * meshColor.y, color.z * meshColor.z, 1.0);
+	vec4 color = vec4(VaryingColor.x * meshColor.x, VaryingColor.y * meshColor.y, VaryingColor.z * meshColor.z, 1.0);
+	vec4 shadowColor = vec4(VaryingColor.x * meshColorShadow.x, VaryingColor.y * meshColorShadow.y, VaryingColor.z * meshColorShadow.z, color.w);
 	
-	
-
-	// calculate surface normal, used in the shadow map
-	// calculate surface normal using interpolated vertex normal and derivative wizardry
-	/*
-	vec3 dp1 = dFdx(fragWorldPosition); // also re-used for the normal map below
-	vec3 dp2 = dFdy(fragWorldPosition);
-	vec3 surfaceNormal = normalize(cross(dp1, dp2));
-	if (dot(surfaceNormal, fragWorldNormal) < 0.0) {
-		surfaceNormal = -surfaceNormal;
-	}
-	*/
 
 	// unpack textures for sampling
 	vec2 uv = VaryingTexCoord.xy;
@@ -124,17 +107,22 @@ void effect() {
 	float foam2Value = Texel(dataMap, sampleCoordsFoam2 + vec2(0.5, 0.5)).z;
 	float foaminess = Texel(dataMap, uv).a;
 
-	// ended up implementing a very basic naive additive lighting system because it doesn't have any weird edge-cases
-	vec3 lighting = ambientColor; // start with just ambient lighting on the surface
 
+	// start with just ambient lighting on the surface
+	vec3 lighting = ambientColor;
+
+	// choose object color depending on if you're in the shadow or in sunlight
+	vec4 objectColor = color;
 
 	// apply sun-light if not in shadow (from shadow map)
-	// 1 when in shadow, 0 when in sun?
+	// 1 when in shadow, 0 when in sun
 	float shadow = 1.0;
 	if (shadowsEnabled) {
-		shadow = calculateShadow(fragPosLightSpace, fragWorldSurfaceNormal);
-		float sunFactor = max(dot(-fragWorldNormal, sunDirection), 0.0);
-		lighting += sunColor * (1.0 - shadow * shadowStrength) * (pow(sunFactor, 0.5)); // this was 1.0-sunFactor before but that didn't work well for normal maps idk why
+		shadow = calculateShadow(fragPosLightSpace, fragWorldSurfaceNormal); // fragWorldNormal // fragWorldSurfaceNormal
+		float sunFactor = max(dot(-fragWorldNormal, sunDirection), 0.0); // please don't ask me why * vec3(1.0, 1.0, -1.0) works... I'm super confused
+		//float mixFactor = 1.0 - shadow * shadowStrength * pow(sunFactor, 0.5);
+		float mixFactor = (1.0 - shadow * shadowStrength) * (pow(sunFactor, 0.5));
+		objectColor = mix(shadowColor, color, mixFactor);
 	}
 
 
@@ -142,7 +130,8 @@ void effect() {
 	// in other words, if foaminess = 0.3, roughly 30% of pixels become foam, despite doing a greater than comparison a>b.
 	if (foaminess == 1 || pow(foam1Value, 1/foaminess) > pow(foam2Value, 1 / (1 - foaminess))) {
 		float blend = mix(1.0, foamInShadow, shadow);
-		texColor = mix(texColor, vec4(foamColor.xyz, 1.0), blend);
+		vec3 mixedFoamColor = mix(foamColor, foamColorShadow, shadow);
+		texColor = mix(texColor, vec4(mixedFoamColor, 1.0), blend);
 	}
 	
 
@@ -151,7 +140,7 @@ void effect() {
 
 	
 	//set the color on the main canvas. Apply mesh brightness here as well. Higher brightness means less affected by ambient color
-	vec4 resultingColor = mix(texColor * color, vec4(meshFresnelColor, 1.0), fresnel); // mix color towards fresnel color
+	vec4 resultingColor = mix(texColor * objectColor, vec4(meshFresnelColor, 1.0), fresnel); // mix color towards fresnel color
 	vec4 resultingLighting = mix(vec4(lighting.xyz, 1.0), vec4(1.0, 1.0, 1.0, 1.0), meshBrightness); // mix lighting based on mesh brightness
 	resultingColor = resultingColor * resultingLighting;
 
