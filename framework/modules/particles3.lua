@@ -106,6 +106,9 @@ end
 
 
 function Particles3:emit(count)
+	if count <= 0 then return end
+	count = math.min(count, self.MaxParticles) -- limiting is required to ensure you only wrap around the pool at most once, otherwise the for-loop below breaks
+
 	local emittedAt = love.timer.getTime()
 
 	local lifetime
@@ -127,6 +130,8 @@ function Particles3:emit(count)
 
 	
 
+	local cache = {}
+
 	for i = 1, count do
 
 		-- calculate new instance properties
@@ -142,9 +147,24 @@ function Particles3:emit(count)
 		rotationSpeed = self.RotationSpeed:randomDecimal()
 		scaleOffset = (love.math.random() - 0.5) * 2
 
-		self.Instances:setVertex(self.SpawnIndex, position.x, position.y, position.z, emittedAt, lifetime, velocity.x, velocity.y, velocity.z, rotation, rotationSpeed, scaleOffset, facingMode)
 
+		-- compile particle data
+		local dataArray = {position.x, position.y, position.z, emittedAt, lifetime, velocity.x, velocity.y, velocity.z, rotation, rotationSpeed, scaleOffset, facingMode}
+		self.InstancesData[self.SpawnIndex] = dataArray
+		table.insert(cache, dataArray)
+
+
+		-- batch-update data (so far) if you're wrapping around the pool
 		self.SpawnIndex = (self.SpawnIndex % self.MaxParticles) + 1
+		if self.SpawnIndex == 1 then
+			self.Instances:setVertices(cache, self.MaxParticles - #cache + 1, #cache)
+			cache = {}
+		end
+	end
+
+	-- batch-update particles using (remaining) data in the cache
+	if #cache > 0 then
+		self.Instances:setVertices(cache, self.SpawnIndex - #cache, #cache)
 	end
 end
 
@@ -288,11 +308,11 @@ local function new(img, maxParticles, properties)
 
 		["DataTexture"] = dataTexture; -- contains curves encoded into an image for faster look-ups on the GPU
 
-		--["Spawned"] = {}; -- array of particles that are currently alive. Contains info to computer the particle's position & size. Each index has the form {spawnTime, lifetime, startRot, rotSpeed, direction, speed, sizeDeviation}
 		["SpawnIndex"] = 1; -- counter that keeps track of how many particles have spawned so it knows which particles are next up in the pool to emit
 
 		["Mesh"] = mesh;
 		["Instances"] = instanceMesh;
+		["InstancesData"] = instancesData; -- local copy of all data stored in each particle (for faster updating purposes)
 
 		["MaxParticles"] = maxParticles; -- maximum number of particles that can be emitted. Cannot be changed as it's tied to the mesh instancing logic
 	}
