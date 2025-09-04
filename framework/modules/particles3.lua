@@ -78,7 +78,7 @@ end
 
 
 
-function getRandomPerpendicularVector(vec)
+local function getRandomPerpendicularVector(vec)
 	if vec:getMag() == 0 then
 		return vector3.random()
 	end
@@ -95,12 +95,85 @@ end
 
 
 
+
+local function redirectVectors(vecs, dirA, dirB)
+	local rotMatrix = matrix3.fromRodrigues(dirA, dirB)
+
+	for i = 1, #vecs do
+		vecs[i] = rotMatrix * vecs[i]
+	end
+
+	return vecs
+end
+
+
+
+
+
 ----------------------------------------------------[[ == FUNCTIONS == ]]----------------------------------------------------
 
 -- check if an object is a particles3
 local function isParticles3(t)
 	return getmetatable(t) == Particles3
 end
+
+
+
+
+function Particles3:move(x, y, z)
+	-- for each vertex in the instance mesh, offset the instPosition by the given amount, essentially shifting all active & inactive particles at once
+	local offset = vector3.isVector3(x) and x or vector3(x, y, z)
+	local newSource = self.Source + offset
+	for i = 1, self.MaxParticles do
+		self.MatricesData[i][1] = self.MatricesData[i][1] + offset.x -- gotta work with offsets relative to particle and not relative to source!
+		self.MatricesData[i][2] = self.MatricesData[i][2] + offset.y
+		self.MatricesData[i][3] = self.MatricesData[i][3] + offset.z
+		self.Instances:setVertexAttribute(
+			i, 1,
+			self.MatricesData[i][1],
+			self.MatricesData[i][2],
+			self.MatricesData[i][3]
+		)
+	end
+
+	-- update all vertices at once using the local data copy
+	self.Source = newSource
+end
+
+
+
+function Particles3:moveTo(x, y, z)
+	local offset = vector3(x, y, z) - self.Source -- works both if x,y,z are ints and if x=vec3
+	self:move(offset)
+end
+
+
+
+-- updates all already-emitted particles to be facing some other direction
+function Particles3:redirect(x, y, z)
+	local newDirection = vector3(x, y, z):norm() -- if x = vector3, then y and z are ignored
+	
+	-- get array of all velocities to redirect
+	local arr = {}
+	for i = 1, #self.MatricesData do
+		arr[i] = vector3(self.MatricesData[i][4], self.MatricesData[i][5], self.MatricesData[i][6])
+	end
+
+	arr = redirectVectors(arr, vector3(self.Direction):norm(), newDirection)
+
+	-- for some reason calling setVertexAttribute() on each particle is faster than calling setVertices() once with all updated data
+	for i = 1, #self.MatricesData do
+		self.MatricesData[i][4] = arr[i].x
+		self.MatricesData[i][5] = arr[i].y
+		self.MatricesData[i][6] = arr[i].z
+		self.Instances:setVertexAttribute(i, 4, arr[i].x, arr[i].y, arr[i].z)
+	end
+
+	-- update all vertices at once using the local data copy
+	--self.Instances:setVertices(self.InstancesData)
+	self.Direction = newDirection
+end
+
 
 
 
@@ -149,9 +222,11 @@ function Particles3:emit(count)
 
 
 		-- compile particle data
-		local dataArray = {position.x, position.y, position.z, emittedAt, lifetime, velocity.x, velocity.y, velocity.z, rotation, rotationSpeed, scaleOffset, facingMode}
-		self.InstancesData[self.SpawnIndex] = dataArray
-		table.insert(cache, dataArray)
+		self.MatricesData[self.SpawnIndex] = {position.x, position.y, position.z, velocity.x, velocity.y, velocity.z}
+		table.insert(
+			cache,
+			{position.x, position.y, position.z, emittedAt, lifetime, velocity.x, velocity.y, velocity.z, rotation, rotationSpeed, scaleOffset, facingMode}
+		)
 
 
 		-- batch-update data (so far) if you're wrapping around the pool
@@ -210,8 +285,10 @@ local function new(img, maxParticles, properties)
 
 	-- dummy data, will be updated automatically when :emit() is called
 	local instancesData = {}
+	local matricesData = {}
 	for i = 1, maxParticles do
 		instancesData[i] = {0, 0, 0, -9999, 0, 0, 0, 0, 0, 0, 0}
+		matricesData[i] = {0, 0, 0, 0, 0, 0}
 	end
 
 	-- create instance mesh
@@ -312,7 +389,7 @@ local function new(img, maxParticles, properties)
 
 		["Mesh"] = mesh;
 		["Instances"] = instanceMesh;
-		["InstancesData"] = instancesData; -- local copy of all data stored in each particle (for faster updating purposes)
+		["MatricesData"] = matricesData; -- local copy of particle positions (index 1,2,3) and velocity (index 4,5,6) to-be-used in :move() and :redirect()
 
 		["MaxParticles"] = maxParticles; -- maximum number of particles that can be emitted. Cannot be changed as it's tied to the mesh instancing logic
 	}
