@@ -66,6 +66,55 @@ local function new(m1, m2, m3, m4, m5, m6, m7, m8, m9)
 end
 
 
+
+-- construct a matrix that rotates a 3d vector pointing in any direction as if it rotated from dirA to dirB
+local function fromRodrigues(dirA, dirB)
+	-- normalize inputs
+	local a = vector3(dirA):norm()
+	local b = vector3(dirB):norm()
+
+	local dotAB = a:dot(b)
+
+	-- means it's already aligned
+	if dotAB > 0.99999 then
+		return new()
+
+	-- special case: 180 degree rotation
+	elseif dotAB < -0.99999 then
+		-- choose any arbirary vector that is perpendicular
+		local perpendicular
+		if math.abs(a.x) < 0.9 then
+			perpendicular = vector3(1, 0, 0)
+		else
+			perpendicular = vector3(0, 1, 0)
+		end
+		local axis = a:cross(perpendicular):norm()
+		local x, y, z = axis.x, axis.y, axis.z
+
+		-- rotation by π around axis
+		return new(
+			-1 + 2 * x^2,  2 * x * y,     2 * x * z,
+			2 * y * x,     -1 + 2 * y^2,  2 * y * z,
+			2 * z * x,     2 * z * y,     -1 + 2 * z^2
+		)
+	end
+
+	-- general, non-edge cases
+	local v = a:cross(b)
+	local k = 1 / (1 + dotAB) -- factor for Rodrigues
+
+	local vx, vy, vz = v.x, v.y, v.z
+
+	-- Rodrigues matrix
+	return new(
+		dotAB + k * v.x^2,    k * v.x * v.y - v.z,  k * v.x * v.z + v.y,
+		k * v.y * v.x + v.z,  dotAB + k * v.y^2,    k * v.y * v.z - v.x,
+		k * v.z * v.x - v.y,  k * v.z * v.y + v.x,  dotAB + k * v.z^2
+	)
+
+end
+
+
 -- returns the rows of the matrix3 as a tuple
 function matrix3:rows()
 	return {self[1], self[2], self[3]}, {self[4], self[5], self[6]}, {self[7], self[8], self[9]}
@@ -224,4 +273,5 @@ end
 -- pack up and return module
 module.new = new
 module.isMatrix3 = isMatrix3
+module.fromRodrigues = fromRodrigues
 return setmetatable(module, {__call = function(_,...) return new(...) end})
