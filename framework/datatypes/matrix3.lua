@@ -76,11 +76,11 @@ local function fromRodrigues(dirA, dirB)
 	local dotAB = a:dot(b)
 
 	-- means it's already aligned
-	if dotAB > 0.99999 then
+	if dotAB > 0.9999999 then
 		return new()
 
 	-- special case: 180 degree rotation
-	elseif dotAB < -0.99999 then
+	elseif dotAB < -0.9999999 then
 		-- choose any arbirary vector that is perpendicular
 		local perpendicular
 		if math.abs(a.x) < 0.9 then
