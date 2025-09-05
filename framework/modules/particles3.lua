@@ -256,7 +256,7 @@ end
 
 function Particles3:detach()
 	-- remove it from the scene
-	self.Scene:detachMesh(self)
+	self.Scene:detachParticles(self)
 end
 
 
