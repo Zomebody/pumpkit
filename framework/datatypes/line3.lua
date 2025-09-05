@@ -172,6 +172,11 @@ function line3.__sub(a, b)
 	return new(a.from - b, a.to - b)
 end
 
+-- meta function to make the line3 negative
+function line3.__unm(a)
+	return new(-a.from, -a.to)
+end
+
 
 -- meta function to change how line3s appear as string
 function line3:__tostring()
