@@ -248,6 +248,19 @@ end
 
 
 
+function Particles3:attach(scene3d)
+	assert(scene3.isScene3(scene3d), "particles3:attach(scene3) requires argument 'scene3' to be a scene3.")
+	scene3d:attachParticles(self)
+end
+
+
+function Particles3:detach()
+	-- remove it from the scene
+	self.Scene:detachMesh(self)
+end
+
+
+
 -- create a new particle emitter which uses the given image and can emit at most maxParticles at once
 local function new(img, maxParticles, properties)
 
@@ -373,14 +386,13 @@ local function new(img, maxParticles, properties)
 		["FlipbookFrames"] = fbFrames; -- the number of frames to play during the particle's lifetime
 
 		["DataTexture"] = dataTexture; -- contains curves encoded into an image for faster look-ups on the GPU
-
 		["SpawnIndex"] = 1; -- counter that keeps track of how many particles have spawned so it knows which particles are next up in the pool to emit
+		["MaxParticles"] = maxParticles; -- maximum number of particles that can be emitted. Cannot be changed as it's tied to the mesh instancing logic
 
 		["Mesh"] = mesh;
 		["Instances"] = instanceMesh;
 		["MatricesData"] = matricesData; -- local copy of particle positions (index 1,2,3) and velocity (index 4,5,6) to-be-used in :move() and :redirect()
-
-		["MaxParticles"] = maxParticles; -- maximum number of particles that can be emitted. Cannot be changed as it's tied to the mesh instancing logic
+		["Scene"] = nil;
 	}
 
 	return setmetatable(Obj, Particles3)

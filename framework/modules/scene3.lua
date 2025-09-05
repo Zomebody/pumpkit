@@ -1343,12 +1343,12 @@ end
 
 
 
-function Scene3:detachParticles(meshOrSlot)
-	if type(meshOrSlot) ~= "number" then -- object was passed
-		assert(particles3.isParticles3(meshOrSlot), "Scene3:detachParticles(meshOrSlot) requires argument 'meshOrSlot' to be either a particles3 or an integer")
-		meshOrSlot = findObjectInOrderedArray(meshOrSlot, self.Particles)
+function Scene3:detachParticles(partOrSlot)
+	if type(partOrSlot) ~= "number" then -- object was passed
+		assert(particles3.isParticles3(partOrSlot), "Scene3:detachParticles(partOrSlot) requires argument 'partOrSlot' to be either a particles3 or an integer")
+		partOrSlot = findObjectInOrderedArray(partOrSlot, self.Particles)
 	end
-	local Item = table.remove(self.Particles, meshOrSlot)
+	local Item = table.remove(self.Particles, partOrSlot)
 	if Item ~= nil then
 		Item.Scene = nil
 
@@ -1440,7 +1440,7 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 
 		["Shader"] = love.graphics.newShader(SHADER_VERTEX_PATH, SHADER_FRAGMENT_PATH); -- SHADER_PATH
 		["RippleShader"] = love.graphics.newShader(SHADER_VERTEX_PATH, SHADER_RIPPLE_PATH); -- same vertex shader, but special fragment shader
-		["FoliageShader"] = love.graphics.newShader(SHADER_VERTEX_PATH, SHADER_FOLIAGE_PATH); -- same vertex shader, but special fragment shader
+		["FoliageShader"] = love.graphics.newShader(SHADER_VERTEX_PATH, SHADER_FOLIAGE_PATH);
 		["TriplanarShader"] = love.graphics.newShader(SHADER_TRIVERT_PATH, SHADER_TRIFRAG_PATH);
 		["ParticlesShader"] = love.graphics.newShader(SHADER_PARTICLES_VERT, SHADER_PARTICLES_FRAG);
 		["ParticleMixShader"] = particleMixShader;
