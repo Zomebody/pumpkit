@@ -13,18 +13,6 @@ Particles3.__tostring = function(tab) return "{Particles3 (" .. tostring(tab.Max
 
 
 
---[[
-
-
-TODO:
-
-- SpawnRadius (range, default: 0,0)
-- if the Direction vector is larger than 1, particles will randomly spawn in a circle around its source, with the circle being aligned to the Direction vector
-
-
-]]
-
-
 
 ----------------------------------------------------[[ == HELPER FUNCTIONS == ]]----------------------------------------------------
 
@@ -143,6 +131,7 @@ end
 
 
 function Particles3:moveTo(x, y, z)
+	assert(vector3.isVector3(self.Source), "Particles3:moveTo(x, y, z) only works on sources that are a vector3.")
 	local offset = vector3(x, y, z) - self.Source -- works both if x,y,z are ints and if x=vec3
 	self:move(offset)
 end
@@ -395,6 +384,15 @@ local function new(img, maxParticles, properties)
 	}
 
 	return setmetatable(Obj, Particles3)
+end
+
+
+
+
+
+
+function Particles3:__tostring()
+	return "{Particles3 #" .. tostring(self.Id) .. ": " .. tostring(self.Source) .. "}"
 end
 
 
