@@ -296,20 +296,6 @@ table.insert(content, {
 	["Description"] = "";
 })
 
-table.insert(content, {
-	["Type"] = "Event";
-	["Name"] = "Attached";
-	["Arguments"] = {"scene3"};
-	["Description"] = "Called whenever the camera3 has been attached to a scene3.";
-})
-
-table.insert(content, {
-	["Type"] = "Event";
-	["Name"] = "Detached";
-	["Arguments"] = {"scene3"};
-	["Description"] = "Called whenever the camera3 has been detached from a scene3.";
-})
-
 
 return {
 	["Meta"] = meta;
