@@ -60,7 +60,7 @@ function Trip3:clone()
 	Mesh.FresnelStrength = self.FresnelStrength
 	Mesh.FresnelPower = self.FresnelPower
 	Mesh.Transparency = self.Transparency
-	Mesh.UVVelocity = vector2(self.UVVelocity)
+	Mesh.TextureScale = self.TextureScale
 	Mesh.CastShadow = self.CastShadow
 	Mesh.NormalMap = self.NormalMap
 	-- keep the scene nil
