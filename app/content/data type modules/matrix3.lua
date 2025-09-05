@@ -47,6 +47,13 @@ table.insert(content, {
 	["Description"] = "Constructs a matrix3 by copying over the data from the given matrix3.";
 })
 
+table.insert(content, {
+	["Type"] = "Constructor";
+	["Name"] = "fromRodrigues";
+	["Arguments"] = {"vec3A", "vec3B"};
+	["Description"] = "Constructs a 3x3 rotation matrix that rotates any 3d vector as if it follows the angular path from direction vector A to vector B.";
+})
+
 
 
 table.insert(content, {
