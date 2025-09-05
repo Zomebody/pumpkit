@@ -91,14 +91,6 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Property";
-	["ValueType"] = "boolean";
-	["Name"] = "IsTriplanar";
-	["Description"] = "When set to false, the meshes' UV coordinates are used to project the image onto the mesh. When set to true, the texture is projected onto the mesh along the X/Y/Z-axis depending on the direction each face is pointing to.";
-	["ReadOnly"] = false;
-})
-
-table.insert(content, {
-	["Type"] = "Property";
 	["ValueType"] = "mesh";
 	["Name"] = "Mesh";
 	["Description"] = "The reference to the Love2d mesh object. It is okay to reuse the same Love2d mesh when creating multiple different objects as the mesh is only referenced.";
@@ -118,14 +110,6 @@ table.insert(content, {
 	["ValueType"] = "texture";
 	["Name"] = "Texture";
 	["Description"] = "The texture applied to all meshes in the group. If no texture is supplied a default 1x1 white pixel will be used as a substitute in the shader. Textures with non-opaque pixels are allowed but this is heavily discouraged as semi-transparent pixels will not blend properly. Fully transparent pixels will be discarded however, though may still leave behind artefacts.";
-	["ReadOnly"] = false;
-})
-
-table.insert(content, {
-	["Type"] = "Property";
-	["ValueType"] = "number";
-	["Name"] = "TextureScale";
-	["Description"] = "When 'IsTriplanar' is set to true, this property determines how large the image is when projected onto the mesh.";
 	["ReadOnly"] = false;
 })
 

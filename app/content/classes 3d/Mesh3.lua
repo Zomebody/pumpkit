@@ -45,7 +45,15 @@ table.insert(content, {
 	["Type"] = "Property";
 	["ValueType"] = "color";
 	["Name"] = "Color";
-	["Description"] = "The mesh's color. Any textures or lighting applied to the mesh's surface is multiplied by the color So a red mesh with a blue texture will appear black.";
+	["Description"] = "The mesh's base color when exposed to the sun. Any textures or lighting applied to the mesh's surface is multiplied by the color So a red mesh with a blue texture will appear black.";
+	["ReadOnly"] = false;
+})
+
+table.insert(content, {
+	["Type"] = "Property";
+	["ValueType"] = "color";
+	["Name"] = "ColorShadow";
+	["Description"] = "The mesh's base color when in a shadow. The instanced mesh types generally have this property baked into the instance mesh thus they aren't shown in their documentations.";
 	["ReadOnly"] = false;
 })
 
@@ -79,14 +87,6 @@ table.insert(content, {
 	["Name"] = "Id";
 	["Description"] = "The identifier of the mesh. Used when mesh:detach() is called to quickly look up the mesh in the scene's list of basic meshes.";
 	["ReadOnly"] = true;
-})
-
-table.insert(content, {
-	["Type"] = "Property";
-	["ValueType"] = "boolean";
-	["Name"] = "IsTriplanar";
-	["Description"] = "When set to false, the mesh's UV coordinates are used to project the image onto the mesh. When set to true, the texture is projected onto the mesh along the X/Y/Z-axis depending on the direction each face is pointing to.";
-	["ReadOnly"] = false;
 })
 
 table.insert(content, {
@@ -142,14 +142,6 @@ table.insert(content, {
 	["ValueType"] = "texture";
 	["Name"] = "Texture";
 	["Description"] = "The mesh's texture. If no texture is supplied a default 1x1 white pixel will be used as a substitute in the shader. Textures with non-opaque pixels are allowed and will not be clipped unless they are almost fully transparent, but transparency may be prone to artefacts.\n\nWhen using semi-transparent pixels consider setting the mesh's Transparency to 0.999 or lower to enable proper sorting at the cost of some performance.";
-	["ReadOnly"] = false;
-})
-
-table.insert(content, {
-	["Type"] = "Property";
-	["ValueType"] = "number";
-	["Name"] = "TextureScale";
-	["Description"] = "When 'IsTriplanar' is set to true, this property determines how large the image is when projected onto the mesh.";
 	["ReadOnly"] = false;
 })
 

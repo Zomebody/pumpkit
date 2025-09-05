@@ -43,6 +43,14 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Property";
+	["ValueType"] = "color";
+	["Name"] = "ColorShadow";
+	["Description"] = "The mesh's base color when in a shadow. The instanced mesh types generally have this property baked into the instance mesh thus they aren't shown in their documentations.";
+	["ReadOnly"] = false;
+})
+
+table.insert(content, {
+	["Type"] = "Property";
 	["ValueType"] = "texture";
 	["Name"] = "DataMap";
 	["Description"] = "Contains information about foam and distortion.\n- r = angle of the distortion at that pixel.\n- g = how far the distortion reaches as a fraction of the image size.\n- b = noise values (that should be evenly & gradually distributed between 0 and 1) that determine the shape of the foam.\n- a = foaminess, determines how often foam should appear at that spot where 0 is no foam, 1 is always foam, 0.5 is foam half the time.";
@@ -54,6 +62,22 @@ table.insert(content, {
 	["ValueType"] = "color";
 	["Name"] = "FoamColor";
 	["Description"] = "The color of the foam.";
+	["ReadOnly"] = false;
+})
+
+table.insert(content, {
+	["Type"] = "Property";
+	["ValueType"] = "color";
+	["Name"] = "FoamColorShadow";
+	["Description"] = "The mesh's foam's base color when in a shadow.";
+	["ReadOnly"] = false;
+})
+
+table.insert(content, {
+	["Type"] = "Property";
+	["ValueType"] = "number";
+	["Name"] = "FoamInShadow";
+	["Description"] = "If 0, no foam is shown while in the shadow. If 1, the foam is fully shown while in a shadow.";
 	["ReadOnly"] = false;
 })
 

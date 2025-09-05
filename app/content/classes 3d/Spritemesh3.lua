@@ -37,7 +37,15 @@ table.insert(content, {
 	["Type"] = "Property";
 	["ValueType"] = "color";
 	["Name"] = "Color";
-	["Description"] = "The mesh's color. Any textures or lighting applied to the mesh's surface is multiplied by the color So a red mesh with a blue texture will appear black.";
+	["Description"] = "The mesh's base color while exposed to the sun. Any textures or lighting applied to the mesh's surface is multiplied by the color so a red mesh with a blue texture will appear black.";
+	["ReadOnly"] = false;
+})
+
+table.insert(content, {
+	["Type"] = "Property";
+	["ValueType"] = "color";
+	["Name"] = "ColorShadow";
+	["Description"] = "The mesh's base color when in a shadow.";
 	["ReadOnly"] = false;
 })
 
@@ -83,6 +91,14 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Property";
+	["ValueType"] = "Scene3";
+	["Name"] = "Scene";
+	["Description"] = "The scene that the sprite mesh is attached to.";
+	["ReadOnly"] = true;
+})
+
+table.insert(content, {
+	["Type"] = "Property";
 	["ValueType"] = "vector2";
 	["Name"] = "SheetSize";
 	["Description"] = "The size of the sprite sheet in *images* along the x-axis and y-axis.";
@@ -94,6 +110,14 @@ table.insert(content, {
 	["ValueType"] = "vector2";
 	["Name"] = "SpritePosition";
 	["Description"] = "The index of the current sprite to-be-drawn in reading order. Note that the top-left sprite starts at position (1,1)!";
+	["ReadOnly"] = false;
+})
+
+table.insert(content, {
+	["Type"] = "Property";
+	["ValueType"] = "texture";
+	["Name"] = "Texture";
+	["Description"] = "The mesh's texture. If no texture is supplied a default 1x1 white pixel will be used as a substitute in the shader. Textures with non-opaque pixels are allowed and will not be clipped unless they are almost fully transparent, but transparency may be prone to artefacts.\n\nWhen using semi-transparent pixels consider setting the mesh's Transparency to 0.999 or lower to enable proper sorting at the cost of some performance.";
 	["ReadOnly"] = false;
 })
 

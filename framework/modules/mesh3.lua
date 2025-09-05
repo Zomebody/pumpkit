@@ -62,8 +62,6 @@ function Mesh3:clone()
 	Mesh.Transparency = self.Transparency
 	Mesh.UVVelocity = vector2(self.UVVelocity)
 	Mesh.CastShadow = self.CastShadow
-	--Mesh.IsTriplanar = self.IsTriplanar
-	--Mesh.TextureScale = self.TextureScale
 	Mesh.NormalMap = self.NormalMap
 	-- keep the scene nil
 	return Mesh
