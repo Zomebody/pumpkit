@@ -34,7 +34,8 @@ local MAX_LIGHTS_PER_SCENE = 16
 local SHADER_VERTEX_PATH = "framework/shaders/vertex3d.c"
 local SHADER_FRAGMENT_PATH = "framework/shaders/fragment3d.c"
 local SHADER_RIPPLE_PATH = "framework/shaders/ripplefrag.c"
-local SHADER_FOLIAGE_PATH = "framework/shaders/foliagefrag.c"
+local SHADER_FOLIVERT_PATH = "framework/shaders/foliagevert.c"
+local SHADER_FOLIFRAG_PATH = "framework/shaders/foliagefrag.c"
 local SHADER_PARTICLES_VERT = "framework/shaders/particlesvert.c"
 local SHADER_PARTICLES_FRAG = "framework/shaders/particlesfrag.c"
 local SHADER_SSAO_PATH = "framework/shaders/ssao3d.c"
@@ -501,6 +502,7 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 			self.FoliageShader:send("meshTexture", Mesh.Texture or blankImage)
 			self.FoliageShader:send("normalMap", Mesh.NormalMap or normalImage)
 			self.FoliageShader:send("meshBrightness", Mesh.Brightness)
+			self.FoliageShader:send("currentTime", love.timer.getTime())
 			love.graphics.drawInstanced(Mesh.Mesh, Mesh.Count)
 		end
 		--love.graphics.setShader(self.Shader)
@@ -1440,7 +1442,7 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 
 		["Shader"] = love.graphics.newShader(SHADER_VERTEX_PATH, SHADER_FRAGMENT_PATH); -- SHADER_PATH
 		["RippleShader"] = love.graphics.newShader(SHADER_VERTEX_PATH, SHADER_RIPPLE_PATH); -- same vertex shader, but special fragment shader
-		["FoliageShader"] = love.graphics.newShader(SHADER_VERTEX_PATH, SHADER_FOLIAGE_PATH);
+		["FoliageShader"] = love.graphics.newShader(SHADER_FOLIVERT_PATH, SHADER_FOLIFRAG_PATH);
 		["TriplanarShader"] = love.graphics.newShader(SHADER_TRIVERT_PATH, SHADER_TRIFRAG_PATH);
 		["ParticlesShader"] = love.graphics.newShader(SHADER_PARTICLES_VERT, SHADER_PARTICLES_FRAG);
 		["ParticleMixShader"] = particleMixShader;
@@ -1552,7 +1554,9 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 
 	Object.FoliageShader:send("fieldOfView", Object.Camera3.FieldOfView)
 	Object.FoliageShader:send("diffuseStrength", 1)
-	Object.FoliageShader:send("isInstanced", true) -- send true since it uses a shared vertex shader!
+	Object.FoliageShader:send("windVelocity", {1.75, 0, 0})
+	Object.FoliageShader:send("windStrength", math.rad(4))
+	--Object.FoliageShader:send("isInstanced", true) -- send true since it uses a shared vertex shader!
 	
 	Object.ParticlesShader:send("fieldOfView", Object.Camera3.FieldOfView)
 	Object.ParticlesShader:send("lightCount", 0)
