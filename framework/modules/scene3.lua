@@ -954,6 +954,22 @@ end
 
 
 
+-- takes in velocity and sway. You may supply these in any order but pretend 'a' is velocity and 'b' is sway
+-- sway is the maximum swaying angle in radians. Velocity is the wind direction and how fast it travels (how the oscillation travels)
+function Scene3:setWind(a, b)
+	if vector3.isVector3(a) then
+		self.FoliageShader:send("windVelocity", a:array())
+		if type(b) == "number" then
+			self.FoliageShader:send("windStrength", b)
+		end
+	elseif type(a) == "number" then
+		self.FoliageShader:send("windStrength", a)
+		if vector3.isVector3(b) then
+			self.FoliageShader:send("windVelocity", b:array())
+		end
+	end
+end
+
 
 
 function Scene3:setAmbient(col, occlusionColor)
@@ -1554,8 +1570,8 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 
 	Object.FoliageShader:send("fieldOfView", Object.Camera3.FieldOfView)
 	Object.FoliageShader:send("diffuseStrength", 1)
-	Object.FoliageShader:send("windVelocity", {1.75, 0, 0})
-	Object.FoliageShader:send("windStrength", math.rad(4))
+	Object.FoliageShader:send("windVelocity", {0, 0, 0})
+	Object.FoliageShader:send("windStrength", 0)
 	--Object.FoliageShader:send("isInstanced", true) -- send true since it uses a shared vertex shader!
 	
 	Object.ParticlesShader:send("fieldOfView", Object.Camera3.FieldOfView)
