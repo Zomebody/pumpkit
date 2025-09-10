@@ -7,6 +7,7 @@ varying vec3 fragWorldNormal;
 varying vec3 fragWorldSurfaceNormal; // used to solve shadow acne
 varying vec4 fragPosLightSpace;
 varying mat3 TBN; // tangent bitangent normal matrix, calculated in the vertex shder because it's more efficient
+varying vec3 cameraWorldRay; // unit vector from camera to fragment in world space
 
 uniform float currentTime;
 uniform float diffuseStrength;
@@ -201,7 +202,7 @@ void effect() {
 
 
 	// calculate fresnel
-	float fresnel = pow(1.0 - max(dot(fragViewNormal, vec3(0.0, 0.0, 1.0)), 0.0), meshFresnel.y) * meshFresnel.x; // fragViewNormal is in view-space, meshFresnel: x = strength, y = power
+	float fresnel = pow(1.0 - max(dot(normalMapNormalWorld, -cameraWorldRay), 0.0), meshFresnel.y) * meshFresnel.x; // meshFresnel: x = strength, y = power
 	// dumb fix for pow(0,0) stuff. There are probably better solutions
 	if (isinf(fresnel) || isnan(fresnel)) {
 		fresnel = 0.0;

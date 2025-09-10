@@ -36,6 +36,7 @@ varying vec3 fragViewNormal; // used for normal map for SSAO (in screen space)
 varying vec3 fragWorldNormal; // normal vector, but in world space this time
 varying vec3 fragWorldSurfaceNormal; // specifically required to solve shadow acne
 varying vec4 fragPosLightSpace; // position of the fragment in light space so it can sample from the shadow map
+varying vec3 cameraWorldRay;
 varying mat3 TBN; // tangent bitangent normal matrix to be used for normal maps
 
 
@@ -166,6 +167,7 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 	fragWorldNormal = normalize(normalMatrixModel * VertexNormal);
 	fragWorldSurfaceNormal = normalize(normalMatrixModel * SurfaceNormal);
 	fragViewNormal = normalize(mat3(viewMatrix) * fragWorldNormal);
+	cameraWorldRay = normalize(fragWorldPosition - camMatrix[3].xyz);
 
 	vec3 fragWorldTangent = normalize((rotationMatrix * vec4(VertexTangent, 0.0)).xyz);
 	vec3 fragWorldBitangent = normalize((rotationMatrix * vec4(VertexBitangent, 0.0)).xyz);
