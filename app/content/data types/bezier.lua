@@ -19,6 +19,14 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Property";
+	["Name"] = "Dimensions";
+	["ValueType"] = "number";
+	["ReadOnly"] = true;
+	["Description"] = "In what space the bezier exists, will either be 2, 3 or 4 depending on if the bezier is 2d, 3d or 4d respectively.";
+})
+
+table.insert(content, {
+	["Type"] = "Property";
 	["Name"] = "Points";
 	["ValueType"] = "array";
 	["ReadOnly"] = true;
