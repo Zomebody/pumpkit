@@ -234,7 +234,7 @@ end
 
 
 
-
+-- this assumes the correct shader is already set - which is done in scene3
 function Particles3:draw(shaderRef)
 	shaderRef:send("dataTexture", self.DataTexture)
 	shaderRef:send("gravity", {self.Gravity.x, self.Gravity.y, self.Gravity.z})
