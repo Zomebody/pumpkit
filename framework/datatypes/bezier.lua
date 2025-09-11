@@ -47,7 +47,7 @@ end
 
 function bezier:getVelocityAt(a, t)
 	assert(type(a) == "number" and a >= 0 and a <= 1, "bezier:getVelocityAt(a, t) expects 'a' to be a number between 0 and 1.")
-	assert(type(t) == "number" and t > 0, "bezier:getVelocityAt(a, t) expects 't' to be a positive number.")
+	assert((type(t) == "number" and t > 0) or t == nil, "bezier:getVelocityAt(a, t) expects 't' to be a positive number or nil.")
 
 	local n = #self.Points - 1
 	if n == 0 then
@@ -68,8 +68,15 @@ function bezier:getVelocityAt(a, t)
 
 	-- evaluate at given point
 	local tangent = self:deCasteljau(derivatives, a)
-	local velocity = tangent / t
-	return velocity
+	if t == nil then
+		if tangent:getMag() > 0 then
+			return tangent:norm()
+		else
+			return vector3(0, 0, 1) -- just return anything that isn't NaN. In an ideal world we throw an error but error handling is annoying
+		end
+	else
+		return tangent / t
+	end
 
 end
 
