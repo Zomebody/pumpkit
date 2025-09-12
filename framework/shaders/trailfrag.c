@@ -11,6 +11,8 @@ uniform vec3 meshColor;
 // textures
 uniform Image meshTexture;
 
+varying vec2 texCoords;
+
 
 
 
@@ -28,7 +30,7 @@ void effect() {
 	}
 	
 	
-	vec2 texture_coords = VaryingTexCoord.xy;
+	vec2 texture_coords = texCoords;
 
 	vec4 texColor = Texel(meshTexture, texture_coords);
 	

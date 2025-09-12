@@ -45,9 +45,9 @@ function bezier:deCasteljau(points, t)
 end
 
 
-function bezier:getVelocityAt(a, t)
-	assert(type(a) == "number" and a >= 0 and a <= 1, "bezier:getVelocityAt(a, t) expects 'a' to be a number between 0 and 1.")
-	assert((type(t) == "number" and t > 0) or t == nil, "bezier:getVelocityAt(a, t) expects 't' to be a positive number or nil.")
+function bezier:getVelocityAt(x, t)
+	assert(type(x) == "number" and x >= 0 and x <= 1, "bezier:getVelocityAt(x, t) expects 'x' to be a number between 0 and 1.")
+	assert((type(t) == "number" and t > 0) or t == nil, "bezier:getVelocityAt(x, t) expects 't' to be a positive number or nil.")
 
 	local n = #self.Points - 1
 	if n == 0 then
@@ -67,7 +67,7 @@ function bezier:getVelocityAt(a, t)
 	end
 
 	-- evaluate at given point
-	local tangent = self:deCasteljau(derivatives, a)
+	local tangent = self:deCasteljau(derivatives, x)
 	if t == nil then
 		if tangent:getMag() > 0 then
 			return tangent:norm()
@@ -82,9 +82,9 @@ end
 
 
 
-function bezier:getPoint(t)
-	assert(type(t) == "number" and t >= 0 and t <= 1, "bezier:getPoint(t) expects argument 't' to be a number between 0 and 1.")
-	return self:deCasteljau(self.Points, t)
+function bezier:getPoint(x)
+	assert(type(x) == "number" and x >= 0 and x <= 1, "bezier:getPoint(x) expects argument 'x' to be a number between 0 and 1.")
+	return self:deCasteljau(self.Points, x)
 end
 
 
