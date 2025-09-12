@@ -45,6 +45,8 @@ local SHADER_BLOOMBLUR_PATH = "framework/shaders/bloomblur.c"
 local SHADER_SHADOWMAP_PATH = "framework/shaders/shadowmap.c"
 local SHADER_TRIVERT_PATH = "framework/shaders/trivert3d.c"
 local SHADER_TRIFRAG_PATH = "framework/shaders/trifrag.c"
+local SHADER_TRAIL_VERT = "framework/shaders/trailvert.c"
+local SHADER_TRAIL_FRAG = "framework/shaders/trailfrag.c"
 
 
 
@@ -367,7 +369,7 @@ function Scene3:drawParticles()
 	-- we draw to the render canvas using default blend settings, but the shader itself will 'blend' the particle fragments with each other during the write operation
 	love.graphics.setCanvas({self.RenderCanvas})
 	love.graphics.setBlendMode(blendMode, alphaMode)
-	love.graphics.setDepthMode("always", false) -- don't set depth, but do compare against it so they don't appear in front of stuff
+	love.graphics.setDepthMode("always", false) -- don't set depth. Don't need to compare as it's already been done beforehand
 	--love.graphics.setDepthMode("always", false)
 	love.graphics.setShader(particleMixShader)
 	--love.graphics.setShader()
@@ -377,6 +379,23 @@ function Scene3:drawParticles()
 	love.graphics.setDepthMode(comp, write)
 
 	-- no need to reset the shader here as it's done literally the next line after returning from this function
+end
+
+
+
+-- backface culling is set to none outside of this function call
+function Scene3:drawTrails()
+	love.graphics.setShader(self.TrailShader)
+
+	local comp, write = love.graphics.getDepthMode()
+	love.graphics.setDepthMode("less", false)
+
+	for i = 1, #self.Trails do
+		self.Trails[i]:draw(self.TrailShader)
+	end
+
+	love.graphics.setDepthMode(comp, write)
+
 end
 
 
@@ -781,13 +800,20 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 		profiler:popLabel()
 	end
 
-	-- disable culling for particles so they can be seen from both sides
+	-- disable culling for particles & trails so they can be seen from both sides
 	love.graphics.setMeshCullMode("none")
 
 	if #self.Particles > 0 then
 		-- now draw all the particles in the scene
 		profiler:pushLabel("particles")
 		self:drawParticles()
+		profiler:popLabel()
+	end
+
+
+	if #self.Trails > 0 then
+		profiler:pushLabel("trails")
+		self:drawTrails()
 		profiler:popLabel()
 	end
 
@@ -937,6 +963,7 @@ function Scene3:rescaleCanvas(width, height, msaa)
 	self.RippleShader:send("aspectRatio", aspectRatio)
 	self.FoliageShader:send("aspectRatio", aspectRatio)
 	self.ParticlesShader:send("aspectRatio", aspectRatio)
+	self.TrailShader:send("aspectRatio", aspectRatio)
 
 	-- calculate perspective matrix for the SSAO shader
 	if self.Camera3 ~= nil then
@@ -979,6 +1006,7 @@ function Scene3:setAmbient(col, occlusionColor)
 	self.ParticlesShader:send("ambientColor", arr)
 	self.RippleShader:send("ambientColor", arr)
 	self.FoliageShader:send("ambientColor", arr)
+	self.TrailShader:send("ambientColor", arr)
 	if occlusionColor ~= nil then
 		self.SSAOBlendShader:send("occlusionColor", {occlusionColor.r, occlusionColor.g, occlusionColor.b})
 	end
@@ -1343,7 +1371,7 @@ end
 
 
 function Scene3:attachParticles(particles)
-	assert(particles3.isParticles3(particles), "Scene3:addParticles(particles) expects argument 'particles' to be of type particles3")
+	assert(particles3.isParticles3(particles), "Scene3:attachParticles(particles) expects argument 'particles' to be of type particles3")
 
 	if particles.Scene ~= nil then
 		particles:detach()
@@ -1372,6 +1400,44 @@ function Scene3:detachParticles(partOrSlot)
 
 		if self.Events.ParticlesDetached then
 			connection.doEvents(self.Events.ParticlesDetached, Item)
+		end
+
+		return true
+	end
+	return false
+end
+
+
+function Scene3:attachTrail(trail)
+	assert(trail3.isTrail3(trail), "Scene3:addParticles(trail) expects argument 'trail' to be of type trail3")
+
+	if trail.Scene ~= nil then
+		trail:detach()
+	end
+
+	local index = findOrderedInsertLocation(self.Trails, trail)
+	table.insert(self.Trails, index, trail)
+	trail.Scene = self
+
+	if self.Events.TrailAttached then
+		connection.doEvents(self.Events.TrailAttached, trail)
+	end
+	return trail
+end
+
+
+
+function Scene3:detachTrail(partOrSlot)
+	if type(partOrSlot) ~= "number" then -- object was passed
+		assert(trail3.isTrail3(partOrSlot), "Scene3:detachParticles(partOrSlot) requires argument 'partOrSlot' to be either a trail3 or an integer")
+		partOrSlot = findObjectInOrderedArray(partOrSlot, self.Trails)
+	end
+	local Item = table.remove(self.Trails, partOrSlot)
+	if Item ~= nil then
+		Item.Scene = nil
+
+		if self.Events.TrailDetached then
+			connection.doEvents(self.Events.TrailDetached, Item)
 		end
 
 		return true
@@ -1462,6 +1528,7 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 		["TriplanarShader"] = love.graphics.newShader(SHADER_TRIVERT_PATH, SHADER_TRIFRAG_PATH);
 		["ParticlesShader"] = love.graphics.newShader(SHADER_PARTICLES_VERT, SHADER_PARTICLES_FRAG);
 		["ParticleMixShader"] = particleMixShader;
+		["TrailShader"] = love.graphics.newShader(SHADER_TRAIL_VERT, SHADER_TRAIL_FRAG);
 		["SSAOShader"] = love.graphics.newShader(SHADER_SSAO_PATH); -- screen-space ambient occlusion shader
 		["SSAOBlendShader"] = love.graphics.newShader(SHADER_SSAOBLEND_PATH); -- blend shader to blend ambient occlusion with the rendered scene
 		["AOBlurShader"] = love.graphics.newShader(SHADER_AOBLUR_PATH);
@@ -1512,6 +1579,7 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 		["SpriteMeshes"] = {}; -- spritemesh3 array
 		["RippleMeshes"] = {}; -- ripplemesh3 array
 		["Foliage"] = {}; -- foliage3 array
+		["Trails"] = {}; -- trail3 array
 		["Particles"] = {}; -- array of particle emitter instances. Particle emitters are always instanced for performance reasons
 		["Lights"] = {}; -- array with lights that have a Position, Color, Range and Strength
 		["Blobs"] = {}; -- array with blob instances that have a Position and Range (they are blob shadows you should place below spritemeshes)
@@ -1528,26 +1596,6 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 	Object:rescaleCanvas(nil, nil, msaa) -- call to initialize canvas variables
 
 
-	--[[
-	Object.AOBlurShader:send("depthTexture", Object.DepthCanvas)
-	Object.SSAOShader:send("normalTexture", Object.NormalCanvas)
-	Object.SSAOBlendShader:send("aoTexture", Object.ReuseCanvas1) -- pingCanvas
-
-	-- init shader variables
-	local aspectRatio = gWidth / gHeight
-	Object.Shader:send("aspectRatio", aspectRatio)
-	Object.RippleShader:send("aspectRatio", aspectRatio)
-	Object.FoliageShader:send("aspectRatio", aspectRatio)
-	Object.ParticlesShader:send("aspectRatio", aspectRatio)
-
-	local persp = matrix4.perspective(aspectRatio, Object.Camera3.FieldOfView, 1000, 0.1)
-	local c1, c2, c3, c4 = persp:columns()
-	Object.SSAOShader:send("perspectiveMatrix", {c1, c2, c3, c4})
-
-	-- misc
-	particleMixShader:send("countCanvas", particleCanvas2)
-	Object.SSAOBlendShader:send("normalsTexture", normalCanvas) -- needed to sample alpha channel to check if ambient occlusion should be applied
-	]]
 
 	-- non-canvas shader vars initialization
 	Object.Shader:send("fieldOfView", Object.Camera3.FieldOfView)
@@ -1577,6 +1625,9 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 	Object.ParticlesShader:send("fieldOfView", Object.Camera3.FieldOfView)
 	Object.ParticlesShader:send("lightCount", 0)
 	Object.ParticlesShader:send("ambientColor", {1, 1, 1, 1})
+
+	Object.TrailShader:send("fieldOfView", Object.Camera3.FieldOfView)
+	Object.TrailShader:send("ambientColor", {1, 1, 1, 1})
 
 	Object.SSAOShader:send("aoStrength", 0.5)
 	Object.SSAOShader:send("kernelScalar", 0.85) -- how 'large' ambient occlusion is

@@ -58,6 +58,7 @@ function load()
 	light3 = require(filepath("../framework/modules/light3", "."))
 	entity = require(filepath("../framework/modules/entity", "."))
 	particles3 = require(filepath("../framework/modules/particles3", "."))
+	trail3 = require(filepath("../framework/modules/trail3", "."))
 	network = require(filepath("../framework/modules/network", "."))
 
 	-- profiling
