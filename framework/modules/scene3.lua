@@ -387,6 +387,8 @@ end
 function Scene3:drawTrails()
 	love.graphics.setShader(self.TrailShader)
 
+	love.graphics.setCanvas({self.RenderCanvas, ["depthstencil"] = self.DepthCanvas})
+
 	local comp, write = love.graphics.getDepthMode()
 	love.graphics.setDepthMode("less", false)
 

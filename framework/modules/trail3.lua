@@ -51,40 +51,21 @@ function Trail3:draw(shaderRef)
 		return
 	end
 
-	--profiler:pushLabel("draw range")
-
-	--local segsOnPath = self.Segments * self.Duration / self.Length -- how many segments the trail would need at minimum to be able to fill the whole path at once
-	--local segsPerSecond = segsOnPath / self.Duration -- how many segments travel across any point on the path per second
-	-- how many segments to cut off both ends of the trail at the given moment in time based on how far along the path the trail is
-	--local cutAtRight = math.max(0, -segsOnPath + segsPerSecond * age) -- if would have been negative/0, the front of the trail has yet to pass the end-point of the path
-	--local cutAtLeft = math.max(0, self.Segments - segsPerSecond * age) -- if would have been negative/0, the back of the trail has already passed the starting point of the path
-
-	-- calculate the range of segments to be drawn based on where along the path the segments are
-	-- these two are in the range [0, segments]
-	--local fromEdge = math.min(math.floor(cutAtLeft), self.Segments - 1)
-	--local toEdge = math.max(1, math.ceil(self.Segments - cutAtRight))
-
-	-- set draw range using the edges we just calculated
-	--self.Mesh:setDrawRange(1 + 2 * fromEdge, 2 + 2 * (toEdge - fromEdge))
-	--print("draw range:", 1 + 2 * fromEdge, 2 + 2 * (toEdge - fromEdge))
-
-	--profiler:popLabel()
-
-
 	
 	-- vertex stuff
 	shaderRef:send("age", age)
-	--shaderRef:send("width", self.Width)
 	shaderRef:send("dataTexture", self.DataTexture)
 	shaderRef:send("duration", self.Duration)
 	shaderRef:send("length", self.Length)
 	shaderRef:send("facesCamera", self.FacesCamera)
 	shaderRef:send("pointCount", #self.Path.Points)
+
 	-- replace a subset of the bezierPoints array with the points of the bezier datatype
 	for i = 1, #self.Path.Points do
 		bezierPoints[i] = self.Path.Points[i]:array()
 	end
 	shaderRef:send("bezierPoints", unpack(bezierPoints))
+
 	-- fragment stuff
 	shaderRef:send("meshTexture", self.Texture)
 	shaderRef:send("meshBrightness", self.Brightness)
