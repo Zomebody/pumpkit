@@ -173,7 +173,7 @@ local function new(path, segments, img, width)
 		["Path"] = path; -- setting bezier by reference, this should never go wrong since beziers cannot be changed after creation anyway
 		["Duration"] = 1; -- how long it takes to travel from start to finish across the path (in seconds)
 		["Length"] = 0.5; -- how long a section of the path has any piece of the mesh displayed over it (in seconds)
-		["Angle"] = 0; -- if 0, faces world-up, then rotates around its heading direction based on angle
+		--["Angle"] = 0; -- if 0, faces world-up, then rotates around its heading direction based on angle
 		--["RotationSpeed"] = 0; how quickly the curve rotates along its axis in radians per second
 		["FacesCamera"] = false; -- if true it will be rotated to face the scene's camera
 		["Brightness"] = 1; -- how much it's affected by the ambient lighting
