@@ -18,7 +18,7 @@ uniform vec3 bezierPoints[MAX_POINTS]; // buffer that stores points in the bezie
 uniform int pointCount; // how many points the supplied bezier contains, thus how many to sample from the above variable
 uniform float age; // how many seconds ago the trail got emitted
 uniform bool facesCamera;
-uniform float width;
+uniform Image dataTexture;
 uniform float duration;
 uniform float length;
 varying vec2 texCoords;
@@ -77,7 +77,7 @@ vec3 getPositionAt(float x) {
 
 
 // calculates offset to the left
-vec3 calculateOffset(vec3 direction) {
+vec3 calculateOffset(vec3 direction, float width) {
 	vec3 right;
 
 	if (!facesCamera) {
@@ -100,6 +100,14 @@ vec3 calculateOffset(vec3 direction) {
 
 
 
+// width curve decoding
+// number curves are stored across two channels (r & g or b & a) to ensure enough bit precision. This does mean we need more work to extract that information
+float decodeFromChannels(float high, float low) {
+	return high + (low / 256.0); // combine high and low channels
+}
+
+
+
 
 vec4 position(mat4 transform_projection, vec4 vertex_position) {
 
@@ -110,8 +118,6 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 
 	texCoords = vertex_position.xy;
 
-
-
 	// where on the curve the start and end of the mesh are positioned
 	float x1 = age / duration;
 	float x0 = (age - length) / duration;
@@ -120,11 +126,15 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 	float x = mix(x0, x1, vertex_position.x);
 	x = max(0.0, min(1.0, x));
 
+	// decode width
+	vec4 data = Texel(dataTexture, vec2(x, 0.5));
+	float width = decodeFromChannels(data.r, data.g) * 64.0; // remap from 0-1 to 0-64
+
 
 	vec3 direction = getDirectionAt(x);
 	vec3 curvePosition = getPositionAt(x);
 
-	vec3 offsetRight = calculateOffset(direction);
+	vec3 offsetRight = calculateOffset(direction, width);
 	vec3 left = curvePosition - offsetRight;
 	vec3 right = curvePosition + offsetRight;
 

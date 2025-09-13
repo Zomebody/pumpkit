@@ -74,7 +74,8 @@ function Trail3:draw(shaderRef)
 	
 	-- vertex stuff
 	shaderRef:send("age", age)
-	shaderRef:send("width", self.Width)
+	--shaderRef:send("width", self.Width)
+	shaderRef:send("dataTexture", self.DataTexture)
 	shaderRef:send("duration", self.Duration)
 	shaderRef:send("length", self.Length)
 	shaderRef:send("facesCamera", self.FacesCamera)
@@ -117,16 +118,31 @@ end
 
 
 -- create a new particle emitter which uses the given image and can emit at most maxParticles at once
-local function new(path, segments, img)
-	assert(bezier.isBezier(path) and path.Dimensions == 3, "Trail3.newTrail3(path, segments, img) failed because 'bezier' is not a 3d bezier.")
-	assert(#path.Points <= 15 and #path.Points >= 2, "Trail.newTrail3(path, segments, img) failed because 'bezier' has a number of points that falls outside the range [2,15].")
-	assert(type(segments) == "number" and segments >= 1 and segments <= 100, "Trail3.newTrail3(path, segments, img) failed because 'segments' is not a number or out of the range 1-100")
+local function new(path, segments, img, width)
+	assert(bezier.isBezier(path) and path.Dimensions == 3, "Trail3.newTrail3(path, segments, img, width) failed because 'bezier' is not a 3d bezier.")
+	assert(#path.Points <= 15 and #path.Points >= 2, "Trail.newTrail3(path, segments, img, width) failed because 'bezier' has a number of points that falls outside the range [2,15].")
+	assert(type(segments) == "number" and segments >= 1 and segments <= 100, "Trail3.newTrail3(path, segments, img, width) failed because 'segments' is not a number or out of the range 1-100")
+	assert(type(width) == "number" or numbercurve.isNumbercurve(width), "Trail3.newTrail3(path, segments, img, width) failed because 'width' is not a number nor a numbercurve")
 	-- if no image is supplied, just create a white pixel I suppose
 	if img == nil then
 		local imgData = love.image.newImageData(1, 1)
 		imgData:mapPixel(function() return 1, 1, 1, 1 end)
 		img = love.graphics.newImage(imgData)
 	end
+
+	-- create image data for width and angle to be sampled in the vertex shader
+	if type(width) == "number" then width = numbercurve(0, width, 1, width) end
+	local trailData = love.image.newImageData(64, 1)
+	local w, normalized, high, low
+	trailData:mapPixel(
+		function(x, ...) -- this feels illegal
+			w = width:getNumber(x / 63) / 64 -- trails can be at most 64 units wide
+			high = math.floor(w * 256) / 256
+			low = w * 256 % 1
+			return high, low, 1, 1 -- two channels unused for now, could store some other property in the future
+		end
+	)
+	local dataImage = love.graphics.newImage(trailData)
 
 	-- create mesh data
 	local meshData = {}
@@ -153,11 +169,12 @@ local function new(path, segments, img)
 		["Mesh"] = mesh;
 		["Segments"] = segments;
 		["Texture"] = img;
+		["DataTexture"] = dataImage;
 		["Path"] = path; -- setting bezier by reference, this should never go wrong since beziers cannot be changed after creation anyway
 		["Duration"] = 1; -- how long it takes to travel from start to finish across the path (in seconds)
 		["Length"] = 0.5; -- how long a section of the path has any piece of the mesh displayed over it (in seconds)
-		["Width"] = 1; -- how wide the trail is in world units
 		["Angle"] = 0; -- if 0, faces world-up, then rotates around its heading direction based on angle
+		--["RotationSpeed"] = 0; how quickly the curve rotates along its axis in radians per second
 		["FacesCamera"] = false; -- if true it will be rotated to face the scene's camera
 		["Brightness"] = 1; -- how much it's affected by the ambient lighting
 		["Color"] = color(1, 1, 1);
