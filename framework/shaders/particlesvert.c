@@ -200,7 +200,7 @@ mat4 getBillboardRotatedToHeadingMatrix(mat4 cMatrix, vec3 iPosition, vec3 veloc
 // size curve decoding
 // number curves are stored across two channels (r & g or b & a) to ensure enough bit precision. This does mean we need more work to extract that information
 float decodeFromChannels(float high, float low) {
-	return high + (low / 256.0); // Combine high and low channels
+	return high + (low / 256.0); // combine high and low channels
 }
 
 
@@ -210,8 +210,8 @@ float computeSize(float ageFraction, float offset) {
 	vec2 sizeUV = vec2(curveU, 0.75); // bottom row (assume 2-pixel tall texture, so Y = 0.75)
 	vec4 sizeData = Texel(dataTexture, sizeUV);
 
-	float baseScale = decodeFromChannels(sizeData.r, sizeData.g) * 10.0; // Decode base scale
-	float deviation = decodeFromChannels(sizeData.b, sizeData.a) * 10.0; // Decode deviation
+	float baseScale = decodeFromChannels(sizeData.r, sizeData.g) * 10.0; // decode base scale
+	float deviation = decodeFromChannels(sizeData.b, sizeData.a) * 10.0; // decode deviation
 	return baseScale + (deviation * offset);
 }
 
