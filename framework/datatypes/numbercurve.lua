@@ -80,5 +80,5 @@ end
 
 -- pack up and return module
 module.new = new
-module.isnumbercurve = isNumbercurve
+module.isNumbercurve = isNumbercurve
 return setmetatable(module, {__call = function(_, ...) return new(...) end})
