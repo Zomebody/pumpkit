@@ -11,6 +11,7 @@ uniform vec3 meshColor;
 // textures
 uniform Image meshTexture;
 
+uniform bool blends;
 varying vec2 texCoords;
 
 
@@ -49,12 +50,22 @@ void effect() {
 	//set the color on the main canvas. Apply mesh brightness here as well. Higher brightness means less affected by ambient color
 	vec4 resultingColor = texColor * color; // mix color towards fresnel color
 	vec4 resultingLighting = mix(vec4(lighting.xyz, 1.0), vec4(1.0, 1.0, 1.0, 1.0), meshBrightness); // mix lighting based on mesh brightness
-	resultingColor = resultingColor * resultingLighting;
+	vec4 litColor = resultingColor * resultingLighting;
 
 
-	// debug normal maps. This shows fragment normals in world-space
-	//resultingColor = resultingColor * 0.00001 + vec4((normalMapNormalWorld.xyz + vec3(1.0)) / 2.0, 1.0);
-	love_Canvases[0] = resultingColor;
+	
+	//love_Canvases[0] = resultingColor;
+
+	if (blends) {
+		// in this case, blend mode is set to additive and two canvases are used (vfxCanvas1, vfxCanvas2)
+		love_Canvases[0] = vec4(litColor.r * litColor.a, litColor.g * litColor.a, litColor.b * litColor.a, 1.0);
+		// for red, simply add '1' to red to count the number of fragments being written
+		// for green, square the alpha to give a higher priority
+		love_Canvases[1] = vec4(1.0, litColor.a, 1.0, 1.0);
+	} else {
+		// in this case, blend mode is set to the default (alpha) one and the output canvase is the RenderCanvas
+		love_Canvases[0] = litColor;
+	}
 
 }
 

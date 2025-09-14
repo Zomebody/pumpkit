@@ -159,6 +159,7 @@ local function new(path, segments, img, width)
 		["FacesCamera"] = false; -- if true it will be rotated to face the scene's camera
 		["Brightness"] = 1; -- how much it's affected by the ambient lighting
 		["Color"] = color(1, 1, 1);
+		["Blends"] = false; -- if false: writes depth but will show bad artefacts if trail is semi-transparent. If true: doesn't write depth and color gets mixed with other vfx
 
 		["SpawnedAt"] = -math.huge;
 

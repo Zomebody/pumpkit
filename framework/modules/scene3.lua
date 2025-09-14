@@ -313,7 +313,7 @@ end
 
 
 
-local particleMixShader = love.graphics.newShader(
+local vfxMixShader = love.graphics.newShader(
 	[[
 		uniform Image countCanvas;
 
@@ -333,7 +333,7 @@ local particleMixShader = love.graphics.newShader(
 )
 
 
-
+--[[
 function Scene3:drawParticles()
 	local blendMode, alphaMode = love.graphics.getBlendMode()
 	
@@ -349,13 +349,11 @@ function Scene3:drawParticles()
 			self.Particles[i]:draw(self.ParticlesShader)
 		end
 	end
-	
-
 
 	-- start accumulating color of any particles that 'blend'
-	love.graphics.setCanvas({self.ParticleCanvas1, self.ParticleCanvas2})
+	love.graphics.setCanvas({self.VFXCanvas1, self.VFXCanvas2})
 	love.graphics.clear(0, 0, 0, 1)
-	love.graphics.setCanvas({self.ParticleCanvas1, self.ParticleCanvas2, ["depthstencil"] = self.DepthCanvas})
+	love.graphics.setCanvas({self.VFXCanvas1, self.VFXCanvas2, ["depthstencil"] = self.DepthCanvas})
 	love.graphics.setDepthMode("less", false)
 	love.graphics.setBlendMode("add")
 	self.ParticlesShader:send("blends", true)
@@ -371,11 +369,11 @@ function Scene3:drawParticles()
 	love.graphics.setBlendMode(blendMode, alphaMode)
 	love.graphics.setDepthMode("always", false) -- don't set depth. Don't need to compare as it's already been done beforehand
 	--love.graphics.setDepthMode("always", false)
-	love.graphics.setShader(particleMixShader)
+	love.graphics.setShader(vfxMixShader)
 	--love.graphics.setShader()
 	love.graphics.setColor(1, 1, 1, 1)
 	--love.graphics.rectangle("fill", 0, 0, self.RenderCanvas:getWidth(), self.RenderCanvas:getHeight())
-	love.graphics.draw(self.ParticleCanvas1)
+	love.graphics.draw(self.VFXCanvas1)
 	love.graphics.setDepthMode(comp, write)
 
 	-- no need to reset the shader here as it's done literally the next line after returning from this function
@@ -398,6 +396,90 @@ function Scene3:drawTrails()
 
 	love.graphics.setDepthMode(comp, write)
 
+end
+]]
+
+
+
+function Scene3:drawVFX()
+
+	-- draw non-blending particles
+	local blendMode, alphaMode = love.graphics.getBlendMode()
+	local comp, write = love.graphics.getDepthMode()
+
+	-- for non-blending particles and trails we do write depth and we do need depth testing
+	love.graphics.setCanvas({self.RenderCanvas, ["depthstencil"] = self.DepthCanvas}) -- draw directly to the scene
+	love.graphics.setDepthMode("less", true) -- front-most non-blending particles appear on top
+
+
+	-- draw any particles that have no blending whatsoever directly to the render canvas. Typically these are particles without semi-transparency
+	if #self.Particles > 0 then
+		love.graphics.setShader(self.ParticlesShader)
+		self.ParticlesShader:send("blends", false)
+		for i = 1, #self.Particles do
+			if not self.Particles[i].Blends then
+				self.Particles[i]:draw(self.ParticlesShader)
+			end
+		end
+	end
+
+	-- draw non-blending trails
+	if #self.Trails > 0 then
+		love.graphics.setShader(self.TrailShader)
+		self.TrailShader:send("blends", false)
+		for i = 1, #self.Trails do
+			if not self.Trails[i].Blends then
+				self.Trails[i]:draw(self.TrailShader)
+			end
+		end
+	end
+
+
+	-- now do particles and trails that are set to blend
+	-- initialize canvases & operations
+	love.graphics.setCanvas({self.VFXCanvas1, self.VFXCanvas2})
+	love.graphics.clear(0, 0, 0, 1)
+	love.graphics.setCanvas({self.VFXCanvas1, self.VFXCanvas2, ["depthstencil"] = self.DepthCanvas})
+	love.graphics.setDepthMode("less", false)
+	love.graphics.setBlendMode("add")
+
+
+	-- draw any blending particles
+	if #self.Particles > 0 then
+		love.graphics.setShader(self.ParticlesShader)
+		self.ParticlesShader:send("blends", true)
+		for i = 1, #self.Particles do
+			if self.Particles[i].Blends then
+				self.Particles[i]:draw(self.ParticlesShader)
+			end
+		end
+	end
+
+	-- draw any blending trails
+	if #self.Trails > 0 then
+		love.graphics.setShader(self.TrailShader)
+		self.TrailShader:send("blends", true)
+		for i = 1, #self.Trails do
+			if self.Trails[i].Blends then
+				self.Trails[i]:draw(self.TrailShader)
+			end
+		end
+	end
+
+
+	-- start blending the particles that have blends=true onto the render canvas
+	-- we draw to the render canvas using default blend settings, but the shader itself will 'blend' the particle fragments with each other during the write operation
+	love.graphics.setCanvas({self.RenderCanvas})
+	love.graphics.setBlendMode(blendMode, alphaMode)
+	love.graphics.setDepthMode("always", false) -- don't set depth. Don't need to compare as it's already been done beforehand
+	love.graphics.setShader(vfxMixShader)
+	love.graphics.setColor(1, 1, 1, 1)
+	love.graphics.draw(self.VFXCanvas1)
+
+	-- reset
+	love.graphics.setDepthMode(comp, write)
+
+	-- no need to reset the shader here as it's done literally the next line after returning from this function
 end
 
 
@@ -805,6 +887,10 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 	-- disable culling for particles & trails so they can be seen from both sides
 	love.graphics.setMeshCullMode("none")
 
+
+	-- particles & trails together in one function call because they'll be sharing a canvas for blending them together
+	self:drawVFX()
+	--[[
 	if #self.Particles > 0 then
 		-- now draw all the particles in the scene
 		profiler:pushLabel("particles")
@@ -818,6 +904,7 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 		self:drawTrails()
 		profiler:popLabel()
 	end
+	]]
 
 	-- setShader() can be called here since if self.Foreground ~= nil then setting setShader() in there makes no sense since the shader will be set to nil anyway right after when drawing the canvas to the screen
 	love.graphics.setShader()
@@ -915,7 +1002,7 @@ function Scene3:rescaleCanvas(width, height, msaa)
 	prepareCanvas:setFilter("nearest")
 	local bloomCanvas = love.graphics.newCanvas(width * msaa, height * msaa)
 	bloomCanvas:setFilter("nearest")
-	local particleCanvas1 = love.graphics.newCanvas( -- sums up colors and alpha
+	local vfxCanvas1 = love.graphics.newCanvas( -- sums up colors and alpha
 		width * msaa,
 		height * msaa,
 		{
@@ -923,7 +1010,7 @@ function Scene3:rescaleCanvas(width, height, msaa)
 			["readable"] = true;
 		}
 	)
-	local particleCanvas2 = love.graphics.newCanvas( -- keeps track of particle count per pixel
+	local vfxCanvas2 = love.graphics.newCanvas( -- keeps track of particle count per pixel
 		width * msaa,
 		height * msaa,
 		{
@@ -949,8 +1036,8 @@ function Scene3:rescaleCanvas(width, height, msaa)
 	self.NormalCanvas = normalCanvas
 	self.PrepareCanvas = prepareCanvas
 	self.BloomCanvas = bloomCanvas
-	self.ParticleCanvas1 = particleCanvas1
-	self.ParticleCanvas2 = particleCanvas2
+	self.VFXCanvas1 = vfxCanvas1
+	self.VFXCanvas2 = vfxCanvas2
 	self.ReuseCanvas1 = reuseCanvas1
 	self.ReuseCanvas2 = reuseCanvas2
 	self.ReuseCanvas3 = reuseCanvas3
@@ -975,7 +1062,7 @@ function Scene3:rescaleCanvas(width, height, msaa)
 	end
 
 	-- misc
-	self.ParticleMixShader:send("countCanvas", particleCanvas2)
+	self.VFXMixShader:send("countCanvas", vfxCanvas2)
 	self.SSAOBlendShader:send("normalsTexture", normalCanvas) -- needed to sample alpha channel to check if ambient occlusion should be applied
 end
 
@@ -1473,52 +1560,9 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 
 	--assert(camera.isCamera(sceneCamera) or sceneCamera == nil, "scene3.newScene3(image, sceneCamera) only accepts a camera instance or nil for 'sceneCamera'")
 	module.TotalCreated = module.TotalCreated + 1
-	--[[
-	-- round screen size to multiple of 4 so that downscaling SSAO and bloom can be supported
-	local gWidth, gHeight = love.graphics.getWidth(), love.graphics.getHeight()
-	gWidth = math.ceil(gWidth / 4) * 4
-	gHeight = math.ceil(gHeight / 4) * 4
 	
-	local renderCanvas = love.graphics.newCanvas(gWidth * msaa, gHeight * msaa)
-	local depthCanvas = love.graphics.newCanvas(
-		gWidth * msaa,
-		gHeight * msaa,
-		{
-			["type"] = "2d";
-			["format"] = "depth24";
-			["readable"] = true;
-		}
-	)
-	depthCanvas:setFilter("nearest")
-	local normalCanvas = love.graphics.newCanvas(gWidth * msaa, gHeight * msaa)
-	local prepareCanvas = love.graphics.newCanvas(gWidth * msaa, gHeight * msaa)
-	prepareCanvas:setFilter("nearest")
-	local bloomCanvas = love.graphics.newCanvas(gWidth * msaa, gHeight * msaa)
-	bloomCanvas:setFilter("nearest")
-	local particleCanvas1 = love.graphics.newCanvas( -- sums up colors and alphas
-		gWidth * msaa,
-		gHeight * msaa,
-		{
-			["format"] = "rgba16f";
-			["readable"] = true;
-		}
-	)
-	local particleCanvas2 = love.graphics.newCanvas( -- keeps track of number of particles on a pixel
-		gWidth * msaa,
-		gHeight * msaa,
-		{
-			["format"] = "rgba16f"; -- red stores particle count, green stores sum alpha
-			["readable"] = true;
-		}
-	)
 
-	local reuseCanvas1 = love.graphics.newCanvas(gWidth, gHeight)
-	local reuseCanvas2 = love.graphics.newCanvas(gWidth, gHeight)
-	local reuseCanvas3 = love.graphics.newCanvas(gWidth * 0.5, gHeight * 0.5)
-	local reuseCanvas4 = love.graphics.newCanvas(gWidth * 0.5, gHeight * 0.5)
-	local reuseCanvas5 = love.graphics.newCanvas(gWidth * 0.25, gHeight * 0.25)
-	local reuseCanvas6 = love.graphics.newCanvas(gWidth * 0.25, gHeight * 0.25)
-	]]
+	-- there used to be code here for creating and initializing canvases, but it's now done by calling the rescaleCanvas method as it eliminates duplicate code!
 
 
 	local Object = {
@@ -1529,7 +1573,7 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 		["FoliageShader"] = love.graphics.newShader(SHADER_FOLIVERT_PATH, SHADER_FOLIFRAG_PATH);
 		["TriplanarShader"] = love.graphics.newShader(SHADER_TRIVERT_PATH, SHADER_TRIFRAG_PATH);
 		["ParticlesShader"] = love.graphics.newShader(SHADER_PARTICLES_VERT, SHADER_PARTICLES_FRAG);
-		["ParticleMixShader"] = particleMixShader;
+		["VFXMixShader"] = vfxMixShader;
 		["TrailShader"] = love.graphics.newShader(SHADER_TRAIL_VERT, SHADER_TRAIL_FRAG);
 		["SSAOShader"] = love.graphics.newShader(SHADER_SSAO_PATH); -- screen-space ambient occlusion shader
 		["SSAOBlendShader"] = love.graphics.newShader(SHADER_SSAOBLEND_PATH); -- blend shader to blend ambient occlusion with the rendered scene
@@ -1547,8 +1591,8 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 		["NormalCanvas"] = nil;--normalCanvas;
 		["PrepareCanvas"] = nil;--prepareCanvas; -- higher resolution canvas for ambient occlusion & bloom, used to draw things to which are then combined with the render canvas
 		["BloomCanvas"] = nil;--bloomCanvas;
-		["ParticleCanvas1"] = nil;--particleCanvas1; -- stores sum of colors and sum of alpha
-		["ParticleCanvas2"] = nil;--particleCanvas2; -- stores 
+		["VFXCanvas1"] = nil;--particleCanvas1; -- stores sum of colors in r, g and b. Alpha unused! (because it works uniquely with blend modes)
+		["VFXCanvas2"] = nil;--particleCanvas2; -- stores in the 'r' channel the sum of fragments on that pixel and the 'g' channel is the alpha summed
 		["ShadowCanvas"] = nil; -- either nil, or a canvas when shadow map is enabled
 		["ShadowDepthCanvas"] = nil;  -- either nil, or a canvas when shadow map is enabled
 

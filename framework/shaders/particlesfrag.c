@@ -147,11 +147,10 @@ void effect() {
 	// if the particle has 'blends' set to true, start accumulating colors onto the canvas with some maths
 	// however, if the particle has 'blends' set to false, simply just draw the particle color
 	if (blends) {
-		// in this case, blend mode is set to additive and two canvases are used (ParticleCanvas1, ParticleCanvas2)
+		// in this case, blend mode is set to additive and two canvases are used (vfxCanvas1, vfxCanvas2)
 		love_Canvases[0] = vec4(litColor.r * litColor.a, litColor.g * litColor.a, litColor.b * litColor.a, 1.0); // Q: why not store alpha here? A: docs says thet blend mode 'add': The alpha of the screen is not modified, hence moved to other canvas
 		// for red, simply add '1' to red to count the number of fragments being written
-		// for green, square the alpha to give a higher priority 
-		//love_Canvases[1] = vec4(1.0, pow(litColor.a, 2.0), 0.0, 1.0);
+		// for green, square the alpha to give a higher priority
 		love_Canvases[1] = vec4(1.0, litColor.a, 1.0, 1.0);
 	} else {
 		// in this case, blend mode is set to the default (alpha) one and the output canvase is the RenderCanvas
