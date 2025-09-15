@@ -15,7 +15,9 @@ varying float emittedAt;
 varying float lifetime;
 varying vec3 fragWorldPosition;
 varying vec3 fragWorldNormal;
+varying float fragWorldDepth;
 uniform bool blends;
+uniform float blendDistance = 1.0; // how many world units two vfx fragments need to be apart for the further one to have half the weight of the closer one
 
 // lights
 struct Light {
@@ -148,10 +150,14 @@ void effect() {
 	// however, if the particle has 'blends' set to false, simply just draw the particle color
 	if (blends) {
 		// in this case, blend mode is set to additive and two canvases are used (vfxCanvas1, vfxCanvas2)
-		love_Canvases[0] = vec4(litColor.r * litColor.a, litColor.g * litColor.a, litColor.b * litColor.a, 1.0); // Q: why not store alpha here? A: docs says thet blend mode 'add': The alpha of the screen is not modified, hence moved to other canvas
+		//love_Canvases[0] = vec4(litColor.r * litColor.a, litColor.g * litColor.a, litColor.b * litColor.a, 1.0); // Q: why not store alpha here? A: docs says thet blend mode 'add': The alpha of the screen is not modified, hence moved to other canvas
 		// for red, simply add '1' to red to count the number of fragments being written
 		// for green, square the alpha to give a higher priority
-		love_Canvases[1] = vec4(1.0, litColor.a, 1.0, 1.0);
+		//love_Canvases[1] = vec4(1.0, litColor.a, 1.0, 1.0);
+		float weight = exp2(-fragWorldDepth / blendDistance);
+		vec3 weightedColor = litColor.rgb * weight;
+		love_Canvases[0] = vec4(weightedColor, 1.0);
+		love_Canvases[1] = vec4(1.0, litColor.a, weight, 1.0);
 	} else {
 		// in this case, blend mode is set to the default (alpha) one and the output canvase is the RenderCanvas
 		love_Canvases[0] = litColor;

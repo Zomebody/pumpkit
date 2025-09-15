@@ -38,6 +38,7 @@ varying float lifetime;
 varying vec3 fragWorldPosition; // output automatically interpolated fragment world position
 varying vec3 fragWorldNormal; // normal vector, but in world space this time
 varying vec4 fragPosLightSpace;
+varying float fragWorldDepth;
 
 
 
@@ -286,8 +287,10 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 	mat4 cameraSpaceMatrix = viewMatrix *  modelWorldMatrix;
 
 
-	// Apply the view-projection transformation
-	vec4 result = projectionMatrix * cameraSpaceMatrix * vertex_position;
+	// apply the view-projection transformation
+	vec4 cameraRelative = cameraSpaceMatrix * vertex_position;
+	fragWorldDepth = abs(cameraRelative.z);
+	vec4 result = projectionMatrix * cameraRelative;
 
 	emittedAt = instEmittedAt;
 	lifetime = instLifetime;

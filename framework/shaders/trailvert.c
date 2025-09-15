@@ -22,6 +22,7 @@ uniform Image dataTexture;
 uniform float duration;
 uniform float length;
 varying vec2 texCoords;
+varying float fragWorldDepth;
 
 
 
@@ -139,9 +140,11 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 	vec3 right = curvePosition + offsetRight;
 
 	vec4 world_vertex = vec4(mix(left, right, vertex_position.y), 1.0);
+	vec4 cameraRelative = viewMatrix * world_vertex;
+	fragWorldDepth = abs(cameraRelative.z);
 
 	// apply the view-projection transformation
-	vec4 result = projectionMatrix * viewMatrix * world_vertex;
+	vec4 result = projectionMatrix * cameraRelative;
 
 
 	return result;

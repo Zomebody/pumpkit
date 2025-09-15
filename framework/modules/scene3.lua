@@ -319,15 +319,15 @@ local vfxMixShader = love.graphics.newShader(
 
 		vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
 			vec4 data = Texel(countCanvas, texture_coords);
-
-			vec4 canvColor = Texel(tex, texture_coords);
 			float pixelsOnFrag = data.r;
 			float sumAlpha = data.g; // alphas were squared, so we gotta compensate down below
-
 			float avgAlpha = sumAlpha / max(1.0, pixelsOnFrag);
 			float newAlpha = 1.0 - pow(1.0 - pow(avgAlpha, 0.5), pixelsOnFrag); // use sqrt to compensate for squaring when adding to the colorCanvas
 
-			return vec4(canvColor.rgb / sumAlpha, newAlpha);
+			vec4 canvColor = Texel(tex, texture_coords);
+			vec3 fragColor = canvColor.rgb / data.b; // prevent divide by zero
+
+			return vec4(fragColor.rgb, newAlpha);
 		}
 	]]
 )
@@ -402,6 +402,7 @@ end
 
 
 function Scene3:drawVFX()
+	profiler:pushLabel("vfx")
 
 	-- draw non-blending particles
 	local blendMode, alphaMode = love.graphics.getBlendMode()
@@ -413,7 +414,9 @@ function Scene3:drawVFX()
 
 
 	-- draw any particles that have no blending whatsoever directly to the render canvas. Typically these are particles without semi-transparency
+	
 	if #self.Particles > 0 then
+		profiler:pushLabel("parts")
 		love.graphics.setShader(self.ParticlesShader)
 		self.ParticlesShader:send("blends", false)
 		for i = 1, #self.Particles do
@@ -421,10 +424,13 @@ function Scene3:drawVFX()
 				self.Particles[i]:draw(self.ParticlesShader)
 			end
 		end
+		profiler:popLabel()
 	end
+	
 
 	-- draw non-blending trails
 	if #self.Trails > 0 then
+		profiler:pushLabel("trails")
 		love.graphics.setShader(self.TrailShader)
 		self.TrailShader:send("blends", false)
 		for i = 1, #self.Trails do
@@ -432,54 +438,62 @@ function Scene3:drawVFX()
 				self.Trails[i]:draw(self.TrailShader)
 			end
 		end
+		profiler:popLabel()
 	end
 
 
-	-- now do particles and trails that are set to blend
-	-- initialize canvases & operations
-	love.graphics.setCanvas({self.VFXCanvas1, self.VFXCanvas2})
-	love.graphics.clear(0, 0, 0, 1)
-	love.graphics.setCanvas({self.VFXCanvas1, self.VFXCanvas2, ["depthstencil"] = self.DepthCanvas})
-	love.graphics.setDepthMode("less", false)
-	love.graphics.setBlendMode("add")
+	-- optimization: if there are no blended vfx, this ensures you don't clear the vfx canvases for no reason!
+	if #self.Particles > 0 or #self.Trails > 0 then
+		profiler:pushLabel("vfx blend")
+		-- now do particles and trails that are set to blend
+		-- initialize canvases & operations
+		love.graphics.setCanvas({self.VFXCanvas1, self.VFXCanvas2})
+		love.graphics.clear(0, 0, 0, 1)
+		love.graphics.setCanvas({self.VFXCanvas1, self.VFXCanvas2, ["depthstencil"] = self.DepthCanvas})
+		love.graphics.setDepthMode("less", false)
+		love.graphics.setBlendMode("add")
 
 
-	-- draw any blending particles
-	if #self.Particles > 0 then
-		love.graphics.setShader(self.ParticlesShader)
-		self.ParticlesShader:send("blends", true)
-		for i = 1, #self.Particles do
-			if self.Particles[i].Blends then
-				self.Particles[i]:draw(self.ParticlesShader)
+		-- draw any blending particles
+		if #self.Particles > 0 then
+			love.graphics.setShader(self.ParticlesShader)
+			self.ParticlesShader:send("blends", true)
+			for i = 1, #self.Particles do
+				if self.Particles[i].Blends then
+					self.Particles[i]:draw(self.ParticlesShader)
+				end
 			end
 		end
-	end
 
-	-- draw any blending trails
-	if #self.Trails > 0 then
-		love.graphics.setShader(self.TrailShader)
-		self.TrailShader:send("blends", true)
-		for i = 1, #self.Trails do
-			if self.Trails[i].Blends then
-				self.Trails[i]:draw(self.TrailShader)
+		-- draw any blending trails
+		if #self.Trails > 0 then
+			love.graphics.setShader(self.TrailShader)
+			self.TrailShader:send("blends", true)
+			for i = 1, #self.Trails do
+				if self.Trails[i].Blends then
+					self.Trails[i]:draw(self.TrailShader)
+				end
 			end
 		end
+		
+
+
+		-- start blending the particles that have blends=true onto the render canvas
+		-- we draw to the render canvas using default blend settings, but the shader itself will 'blend' the particle fragments with each other during the write operation
+		love.graphics.setCanvas({self.RenderCanvas})
+		love.graphics.setBlendMode(blendMode, alphaMode)
+		love.graphics.setDepthMode("always", false) -- don't set depth. Don't need to compare as it's already been done beforehand
+		love.graphics.setShader(vfxMixShader)
+		love.graphics.setColor(1, 1, 1, 1)
+		love.graphics.draw(self.VFXCanvas1)
+		profiler:popLabel()
 	end
-
-
-	-- start blending the particles that have blends=true onto the render canvas
-	-- we draw to the render canvas using default blend settings, but the shader itself will 'blend' the particle fragments with each other during the write operation
-	love.graphics.setCanvas({self.RenderCanvas})
-	love.graphics.setBlendMode(blendMode, alphaMode)
-	love.graphics.setDepthMode("always", false) -- don't set depth. Don't need to compare as it's already been done beforehand
-	love.graphics.setShader(vfxMixShader)
-	love.graphics.setColor(1, 1, 1, 1)
-	love.graphics.draw(self.VFXCanvas1)
 
 	-- reset
 	love.graphics.setDepthMode(comp, write)
 
 	-- no need to reset the shader here as it's done literally the next line after returning from this function
+	profiler:popLabel()
 end
 
 
@@ -1006,7 +1020,7 @@ function Scene3:rescaleCanvas(width, height, msaa)
 		width * msaa,
 		height * msaa,
 		{
-			["format"] = "rgba16f";
+			["format"] = "rgba32f";
 			["readable"] = true;
 		}
 	)
@@ -1014,7 +1028,7 @@ function Scene3:rescaleCanvas(width, height, msaa)
 		width * msaa,
 		height * msaa,
 		{
-			["format"] = "rgba16f"; -- red stores particle count, green stores sum alpha
+			["format"] = "rgba32f"; -- red stores particle count, green stores sum alpha
 			["readable"] = true;
 		}
 	)
@@ -1155,6 +1169,14 @@ function Scene3:setBloomQuality(quality)
 	assert(quality == 1 or quality == 0.5 or quality == 0.25, "Scene3:setBloomQuality(quality) requires argument 'quality' to be 1, 0.5 or 0.25.")
 	self.BloomQuality = quality
 	--self.BloomBlurShader:send("bloomQuality", quality)
+end
+
+
+-- sets how many world units distance there have to be between two vfx fragments for the closer one to obtain double the blending weight
+function Scene3:setBlendDistance(d)
+	assert(type(d) == "number" and d > 0, "Scene3:setBlendDistance(d) requires argument 'd' to be a positive number larger than 0.")
+	self.ParticlesShader:send("blendDistance", d)
+	self.TrailShader:send("blendDistance", d)
 end
 
 
