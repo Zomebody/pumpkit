@@ -333,71 +333,6 @@ local vfxMixShader = love.graphics.newShader(
 )
 
 
---[[
-function Scene3:drawParticles()
-	local blendMode, alphaMode = love.graphics.getBlendMode()
-	
-	local comp, write = love.graphics.getDepthMode()
-
-	-- draw any particles that have no blending whatsoever directly to the render canvas. Typically these are fully opaque particles
-	love.graphics.setShader(self.ParticlesShader)
-	love.graphics.setCanvas({self.RenderCanvas, ["depthstencil"] = self.DepthCanvas}) -- draw directly to the scene
-	love.graphics.setDepthMode("less", true) -- front-most non-blending particles appear on top
-	self.ParticlesShader:send("blends", false)
-	for i = 1, #self.Particles do
-		if not self.Particles[i].Blends then
-			self.Particles[i]:draw(self.ParticlesShader)
-		end
-	end
-
-	-- start accumulating color of any particles that 'blend'
-	love.graphics.setCanvas({self.VFXCanvas1, self.VFXCanvas2})
-	love.graphics.clear(0, 0, 0, 1)
-	love.graphics.setCanvas({self.VFXCanvas1, self.VFXCanvas2, ["depthstencil"] = self.DepthCanvas})
-	love.graphics.setDepthMode("less", false)
-	love.graphics.setBlendMode("add")
-	self.ParticlesShader:send("blends", true)
-	for i = 1, #self.Particles do
-		if self.Particles[i].Blends then
-			self.Particles[i]:draw(self.ParticlesShader)
-		end
-	end
-
-	-- start blending the particles that have blends=true onto the render canvas
-	-- we draw to the render canvas using default blend settings, but the shader itself will 'blend' the particle fragments with each other during the write operation
-	love.graphics.setCanvas({self.RenderCanvas})
-	love.graphics.setBlendMode(blendMode, alphaMode)
-	love.graphics.setDepthMode("always", false) -- don't set depth. Don't need to compare as it's already been done beforehand
-	--love.graphics.setDepthMode("always", false)
-	love.graphics.setShader(vfxMixShader)
-	--love.graphics.setShader()
-	love.graphics.setColor(1, 1, 1, 1)
-	--love.graphics.rectangle("fill", 0, 0, self.RenderCanvas:getWidth(), self.RenderCanvas:getHeight())
-	love.graphics.draw(self.VFXCanvas1)
-	love.graphics.setDepthMode(comp, write)
-
-	-- no need to reset the shader here as it's done literally the next line after returning from this function
-end
-
-
-
--- backface culling is set to none outside of this function call
-function Scene3:drawTrails()
-	love.graphics.setShader(self.TrailShader)
-
-	love.graphics.setCanvas({self.RenderCanvas, ["depthstencil"] = self.DepthCanvas})
-
-	local comp, write = love.graphics.getDepthMode()
-	love.graphics.setDepthMode("less", false)
-
-	for i = 1, #self.Trails do
-		self.Trails[i]:draw(self.TrailShader)
-	end
-
-	love.graphics.setDepthMode(comp, write)
-
-end
-]]
 
 
 
@@ -1173,6 +1108,8 @@ end
 
 
 -- sets how many world units distance there have to be between two vfx fragments for the closer one to obtain double the blending weight
+-- due to floating point precision it is recommended to never set this value to anything lower than 0.5
+-- also, the lower the value, the less you can zoom out before noticing that particles turn black due to imprecision. For values lower than 0.5 you will also notice blackness when zooming in!
 function Scene3:setBlendDistance(d)
 	assert(type(d) == "number" and d > 0, "Scene3:setBlendDistance(d) requires argument 'd' to be a positive number larger than 0.")
 	self.ParticlesShader:send("blendDistance", d)

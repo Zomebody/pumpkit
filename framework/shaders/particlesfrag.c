@@ -154,7 +154,7 @@ void effect() {
 		// for red, simply add '1' to red to count the number of fragments being written
 		// for green, square the alpha to give a higher priority
 		//love_Canvases[1] = vec4(1.0, litColor.a, 1.0, 1.0);
-		float weight = exp2(-fragWorldDepth / blendDistance);
+		float weight = exp2(-(fragWorldDepth - 32.0) / blendDistance);
 		vec3 weightedColor = litColor.rgb * weight;
 		love_Canvases[0] = vec4(weightedColor, 1.0);
 		love_Canvases[1] = vec4(1.0, litColor.a, weight, 1.0);
