@@ -306,6 +306,13 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Constructor";
+	["Name"] = "__mul";
+	["Arguments"] = {"line2", "number"};
+	["Description"] = "Multiples the start and end point of the line by some scalar.";
+})
+
+table.insert(content, {
+	["Type"] = "Constructor";
 	["Name"] = "__tostring";
 	["Arguments"] = {};
 	["Description"] = "Returns a string which is the line2 in the form {vector2,vector2} where the first vector2 is the starting point and the second vector2 is the end point.";

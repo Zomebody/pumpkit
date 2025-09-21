@@ -245,6 +245,16 @@ function line2.__sub(a, b)
 end
 
 
+function line2.__mul(a, b)
+	assert(type(b) == "number" or type(a) == "number", "mul: wrong argument types: (excepted <line2> and number)")
+	if type(a) == "number" then
+		return new(b.from * a, b.to * a)
+	else
+		return new(a.from * b, a.to * b)
+	end
+end
+
+
 -- meta function to change how lines appear as string
 function line2:__tostring()
 	return "{" .. tostring(self.from) .. ", " .. tostring(self.to) .. "}"
