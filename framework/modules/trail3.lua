@@ -12,7 +12,7 @@ local FRONT_DIRECTION = vector3(0, 1, 0)
 
 local Trail3 = {}
 Trail3.__index = Trail3
-Trail3.__tostring = function(tab) return "{Trail3 (" .. tostring(tab.MaxParticles) .. ")}" end
+Trail3.__tostring = function(tab) return "{Trail3 (" .. tostring(tab.Segments) .. ")}" end
 
 -- pre-filled array with points to-be-sent to the shader
 -- fill them in right here so that they always have exactly 15 indices because the shader doesn't want me to send only like 4 or 6 points to an array of size 15
