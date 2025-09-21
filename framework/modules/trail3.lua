@@ -98,7 +98,7 @@ end
 
 
 
--- create a new particle emitter which uses the given image and can emit at most maxParticles at once
+-- create a new trail that follows a bezier curve, has a mesh existing out of a given number of quads, has a texture and a numbercurve describing the width along the path
 local function new(path, segments, img, width)
 	assert(bezier.isBezier(path) and path.Dimensions == 3, "Trail3.newTrail3(path, segments, img, width) failed because 'bezier' is not a 3d bezier.")
 	assert(#path.Points <= 15 and #path.Points >= 2, "Trail.newTrail3(path, segments, img, width) failed because 'bezier' has a number of points that falls outside the range [2,15].")
