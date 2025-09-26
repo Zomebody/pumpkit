@@ -149,9 +149,11 @@ void effect() {
 	
 	
 	// check if the alpha of the texture color is below a threshold
+	/*
 	if (texColor.a < 0.01 && meshFresnel.x <= 0.0) {
 		discard;  // discard fully transparent pixels
 	}
+	*/
 
 
 	// choose object color depending on if you're in the shadow or in sunlight
@@ -216,6 +218,10 @@ void effect() {
 	vec4 resultingLighting = mix(vec4(lighting.xyz, 1.0), vec4(1.0, 1.0, 1.0, 1.0), meshBrightness); // mix lighting based on mesh brightness
 	resultingColor = resultingColor * resultingLighting;
 
+
+	if (resultingColor.a < 0.95 * (1.0 - meshTransparency)) {
+		discard;  // discard pixels with less transparency than the transparency property
+	}
 
 	// debug normal maps. This shows fragment normals in world-space
 	//resultingColor = resultingColor * 0.00001 + vec4((normalMapNormalWorld.xyz + vec3(1.0)) / 2.0, 1.0);
