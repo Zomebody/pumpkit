@@ -206,7 +206,7 @@ uniform Image normalTexture;
 vec4 effect(vec4 color, Image tex, vec2 texCoord, vec2 screenCoords) {
 	float depth = Texel(tex, texCoord).r;
 	if (depth == 1.0) {
-		return vec4(1.0); // No occlusion in empty space
+		return vec4(1.0); // no occlusion in empty space
 	}
 
 

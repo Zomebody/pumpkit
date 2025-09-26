@@ -152,7 +152,6 @@ function Scene3:applyAmbientOcclusion()
 	-- set ambient occlusion canvas as render target, and draw ambient occlusion data to the AO canvas
 	love.graphics.setCanvas(pingCanvas)
 	love.graphics.setShader(self.SSAOShader)
-	--self.SSAOShader:send("normalTexture", self.NormalCanvas)
 	love.graphics.draw(self.DepthCanvas, 0, 0, 0, 1 / self.MSAA, 1 / self.MSAA) -- set the ambient occlusion shader in motion
 
 
@@ -173,8 +172,7 @@ function Scene3:applyAmbientOcclusion()
 	love.graphics.setCanvas(self.PrepareCanvas)
 	love.graphics.clear()
 	love.graphics.setShader(self.SSAOBlendShader) -- set the blend shader so we can apply ambient occlusion to the render canvas
-	-- TODO: no need to send over pingCanvas each frame since it's a reference. You can do this elsewhere
-	--self.SSAOBlendShader:send("aoTexture", pingCanvas) -- send over the rendered result from the ambient occlusion shader so we can sample it in the blend shader
+	
 	love.graphics.draw(self.RenderCanvas)
 
 
@@ -450,6 +448,8 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 		return
 	end
 
+	local TransMeshes = {} -- create new array to put all basic meshes in that have a Transparency > 0. Their rendering is postponed. They will be sorted later
+
 	-- blur shaders do sampling in 'pixel' coordinates while shaders work with normalized device coordinates
 	-- that means that if you resize your screen, blurs will need to be adjusted as well to compensate for the different canvas size
 	-- sending over shader variables every frame is unnecessary, so instead check if the canvas size has changed since last drawing operation
@@ -576,7 +576,7 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 	
 
 	
-	local TransMeshes = {} -- create new array to put all basic meshes in that have a Transparency > 0. Their rendering is postponed. They will be sorted later
+	
 
 	self.Shader:send("currentTime", love.timer.getTime())
 
