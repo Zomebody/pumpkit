@@ -483,7 +483,6 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 		self.TriplanarShader:send("lightsInfo", unpack(lightsInfo))
 		self.FoliageShader:send("lightsInfo", unpack(lightsInfo))
 		self.ParticlesShader:send("lightsInfo", unpack(lightsInfo))
-		self.TriplanarShader:send("lightsInfo", unpack(lightsInfo))
 	end
 
 	-- update blob shadows
@@ -498,7 +497,6 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 		self.Shader:send("blobShadows", unpack(blobsInfo))
 		self.TriplanarShader:send("blobShadows", unpack(blobsInfo))
 		self.FoliageShader:send("blobShadows", unpack(blobsInfo))
-		self.TriplanarShader:send("blobShadows", unpack(blobsInfo))
 	end
 
 	profiler:popLabel()
@@ -634,7 +632,7 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 	end
 
 
-	-- TODO: draw triplanar meshes here (and postpone trip3 meshes that are semi-transparent, or fully transparent with fresnel)
+	-- draw triplanar meshes here (and postpone trip3 meshes that are semi-transparent, or fully transparent with fresnel)
 	if #self.InstancedTrip3 > 0 then
 		profiler:pushLabel("inst-trip")
 		love.graphics.setShader(self.TriplanarShader)
@@ -727,6 +725,9 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 		profiler:popLabel()
 	end
 
+
+	-- TODO: implement & draw grass3 here!
+
 	love.graphics.setShader(self.Shader)
 
 	-- repeat the mesh drawing process, but for *opaque* spritemeshes
@@ -734,7 +735,6 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 		profiler:pushLabel("spr-mesh")
 		local Mesh = nil
 		self.Shader:send("uvVelocity", {0, 0}) -- sprite meshes have no uv scrolling
-		--self.Shader:send("triplanarScale", 0)
 		self.Shader:send("meshFresnel", {0, 1}) -- no need to update fresnelColor since fresnel strength == 0 disables it already
 		self.Shader:send("isSpriteSheet", true) -- but they do need isSpriteSheet set to true for correct texture mapping
 		for i = 1, #self.SpriteMeshes do
@@ -839,21 +839,7 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 
 	-- particles & trails together in one function call because they'll be sharing a canvas for blending them together
 	self:drawVFX()
-	--[[
-	if #self.Particles > 0 then
-		-- now draw all the particles in the scene
-		profiler:pushLabel("particles")
-		self:drawParticles()
-		profiler:popLabel()
-	end
-
-
-	if #self.Trails > 0 then
-		profiler:pushLabel("trails")
-		self:drawTrails()
-		profiler:popLabel()
-	end
-	]]
+	
 
 	-- setShader() can be called here since if self.Foreground ~= nil then setting setShader() in there makes no sense since the shader will be set to nil anyway right after when drawing the canvas to the screen
 	love.graphics.setShader()
@@ -1375,6 +1361,7 @@ function Scene3:attachBlob(blob)
 	local blobCount = math.min(#self.Blobs, 16)
 	self.Shader:send("blobShadowCount", blobCount)
 	self.TriplanarShader:send("blobShadowCount", blobCount)
+	self.FoliageShader:send("blobShadowCount", blobCount)
 
 	if #self.Lights > blobCount then
 		print("Scene3:attachBlob(blob) added a blob3 that will not display as there are already 16 or more blobs in the scene.")
@@ -1403,6 +1390,7 @@ function Scene3:detachBlob(blobOrSlot)
 		local blobCount = math.min(#self.Blobs, 16)
 		self.Shader:send("blobShadowCount", blobCount)
 		self.TriplanarShader:send("blobShadowCount", blobCount)
+		self.FoliageShader:send("blobShadowCount", blobCount)
 
 		if self.Events.BlobDetached then
 			connection.doEvents(self.Events.BlobDetached, Item)
