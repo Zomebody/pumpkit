@@ -38,10 +38,8 @@ end
 ----------------------------------------------------[[ == OBJECT CREATION == ]]----------------------------------------------------
 
 local function new(mesh, positions, rotations, scales, cols, shadowcols)
-	assert(type(bloom) == "number" or bloom == nil, "foliage3.new(mesh, positions, rotations, scales, cols) requires 'bloom' to be a number or nil")
-	assert(type(brightness) == "number" or brightness == nil, "foliage3.new(mesh, positions, rotations, scales, cols) requires 'brightness' to be a number or nil")
-	assert(type(texScale) == "number" or texScale == nil, "foliage3.new(mesh, positions, rotations, scales, cols) requires 'texScale' to be a number or nil")
-	assert(type(positions) == "table", "foliage3.new(mesh, positions, rotations, scales, cols) requires argument 'positions' to be a table of vector3s, given is nil")
+	assert(type(brightness) == "number" or brightness == nil, "foliage3.new(mesh, positions, rotations, scales, cols, shadowcols) requires 'brightness' to be a number or nil")
+	assert(type(positions) == "table", "foliage3.new(mesh, positions, rotations, scales, cols, shadowcols) requires argument 'positions' to be a table of vector3s, given is nil")
 	if rotations == nil then
 		rotations = {}
 		for i = 1, #positions do rotations[i] = vector3(0, 0, 0) end
