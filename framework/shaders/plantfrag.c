@@ -2,11 +2,11 @@
 #pragma language glsl3 // I don't remember why I put this here
 
 varying vec3 fragWorldPosition; // output automatically interpolated fragment world position
-varying vec3 fragViewNormal; // used for ambient occlusion
-//varying vec3 fragWorldNormal;
+//varying vec3 fragViewNormal; // would've been used for ambient occlusion, but plants are drawn after AO!
+varying vec3 fragWorldNormal;
 varying vec3 fragWorldSurfaceNormal;
 varying vec4 fragPosLightSpace;
-varying mat3 TBN; // tangent bitangent normal matrix, calculated in the vertex shder because it's more efficient
+//varying mat3 TBN; // tangent bitangent normal matrix, calculated in the vertex shder because it's more efficient
 
 uniform float diffuseStrength;
 
@@ -35,6 +35,7 @@ uniform bool shadowsEnabled = false;
 uniform vec2 shadowCanvasSize;
 
 // colors
+uniform float meshBloom;
 uniform float meshBrightness; // if 1, mesh is not affected by diffuse shading at all
 varying vec3 instColor;
 varying vec3 instColorShadow;
@@ -114,17 +115,13 @@ void effect() {
 	// sample the pixel to display from the supplied texture. For triplanar projection: use world coordinates and surface normal to sample. For regular meshes, use uv coordinates and uvvelocity
 	vec2 texture_coords = VaryingTexCoord.xy;
 	vec4 texColor = Texel(meshTexture, texture_coords);
-	
-	// check if the alpha of the texture color is below a threshold
-	//if (texColor.a < 0.95 && meshFresnel.x <= 0.0) {
-	//	discard;  // discard fully transparent pixels
-	//}
+
 
 	// sample normal map & apply normal map strength
-	vec3 sampledNormal = Texel(normalMap, texture_coords).rgb * 2.0 - 1.0;
-	float normalStrength = 1.0;
-	sampledNormal = normalize(mix(vec3(0.0, 0.0, 1.0), sampledNormal, normalStrength));
-	vec3 normalMapNormalWorld = normalize(TBN * sampledNormal);
+	//vec3 sampledNormal = Texel(normalMap, texture_coords).rgb * 2.0 - 1.0;
+	//float normalStrength = 1.0;
+	//sampledNormal = normalize(mix(vec3(0.0, 0.0, 1.0), sampledNormal, normalStrength));
+	//vec3 normalMapNormalWorld = normalize(TBN * sampledNormal);
 
 
 	// choose object color depending on if you're in the shadow or in sunlight
@@ -133,8 +130,7 @@ void effect() {
 	// if no shadows, keep the mesh color, otherwise tween towards shadow color depending on how much the object is in a shadow
 	if (shadowsEnabled) {
 		float shadow = calculateShadow(fragPosLightSpace, fragWorldSurfaceNormal); // fragWorldNormal // fragWorldSurfaceNormal
-		float sunFactor = max(dot(-normalMapNormalWorld, sunDirection), 0.0); // please don't ask me why * vec3(1.0, 1.0, -1.0) works... I'm super confused
-		//float mixFactor = 1.0 - shadow * shadowStrength * pow(sunFactor, 0.5);
+		float sunFactor = max(dot(-fragWorldNormal, sunDirection), 0.0); // please don't ask me why * vec3(1.0, 1.0, -1.0) works... I'm super confused
 		float mixFactor = (1.0 - shadow * shadowStrength) * (pow(sunFactor, 0.5));
 		objectColor = mix(shadowColor, color, mixFactor);
 	}
@@ -153,8 +149,7 @@ void effect() {
 		float attenuation = clamp(1.0 - pow(distance / light.range, 1.0), 0.0, 1.0);
 
 		// diffuse shading
-		float diffuseFactor = max(dot(normalMapNormalWorld, lightDir), 0.0);
-		//diffuseFactor = pow(diffuseFactor, 0.5);
+		float diffuseFactor = max(dot(fragWorldNormal, lightDir), 0.0);
 		vec3 lightingToAdd = light.color * light.strength * attenuation;
 		// if diffStrength == 0, just add the color, otherwise, add based on angle between surface and light direction
 		lighting += lightingToAdd * ((diffuseFactor * diffuseStrength) + (1.0 - diffuseStrength)); // if a mesh is fully bright, diffuse strength becomes 0 so that it has no efect
@@ -189,9 +184,11 @@ void effect() {
 
 	love_Canvases[0] = resultingColor;// * 0.0001 + 0.9999 * vec4(fragWorldNormal * 0.5 + 0.5, 1.0);
 
-	love_Canvases[1] = vec4(fragViewNormal.x / 2 + 0.5, fragViewNormal.y / 2 + 0.5, fragViewNormal.z / 2 + 0.5, 0.0); // pack normals into an RGBA format; alpha = draw no ambient occlusion
+	// probably don't need to write normals since those are only used in SSAO
+	//love_Canvases[1] = vec4(fragViewNormal.x / 2 + 0.5, fragViewNormal.y / 2 + 0.5, fragViewNormal.z / 2 + 0.5, 0.0); // Pack normals into an RGBA format. Alpha = draw no ambient occlusion
 
-	// ignore canvases[2] as foliage doesn't support bloom. Also: since foliage is drawn *before* any bloom emitting meshes, foliage never has to draw black to overwrite the bloom either!
+	// plant support bloom, but also since they're drawn after meshes that do have bloom, we'll always need to draw something to overwrite bloom from behind the mesh
+	love_Canvases[2] = vec4(color.x * meshBloom, color.y * meshBloom, color.z * meshBloom, 1.0);
 	
 
 }

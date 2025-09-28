@@ -36,6 +36,8 @@ local SHADER_FRAGMENT_PATH = "framework/shaders/fragment3d.c"
 local SHADER_RIPPLE_PATH = "framework/shaders/ripplefrag.c"
 local SHADER_FOLIVERT_PATH = "framework/shaders/foliagevert.c"
 local SHADER_FOLIFRAG_PATH = "framework/shaders/foliagefrag.c"
+local SHADER_PLANTVERT_PATH = "framework/shaders/plantvert.c"
+local SHADER_PLANTFRAG_PATH = "framework/shaders/plantfrag.c"
 local SHADER_PARTICLES_VERT = "framework/shaders/particlesvert.c"
 local SHADER_PARTICLES_FRAG = "framework/shaders/particlesfrag.c"
 local SHADER_SSAO_PATH = "framework/shaders/ssao3d.c"
@@ -482,6 +484,7 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 		self.Shader:send("lightsInfo", unpack(lightsInfo))
 		self.TriplanarShader:send("lightsInfo", unpack(lightsInfo))
 		self.FoliageShader:send("lightsInfo", unpack(lightsInfo))
+		self.PlantShader:send("lightsInfo", unpack(lightsInfo))
 		self.ParticlesShader:send("lightsInfo", unpack(lightsInfo))
 	end
 
@@ -497,6 +500,7 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 		self.Shader:send("blobShadows", unpack(blobsInfo))
 		self.TriplanarShader:send("blobShadows", unpack(blobsInfo))
 		self.FoliageShader:send("blobShadows", unpack(blobsInfo))
+		self.PlantShader:send("blobShadows", unpack(blobsInfo))
 	end
 
 	profiler:popLabel()
@@ -539,12 +543,14 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 
 	-- using 'replace' w/ premultiplied so we can set the normals to some rgb even though we also write alpha=0. Otherwise, rgb would get multiplied by alpha!
 	-- and coincidentally this just kind of works because foliage has an all-or-nothing either draw opaque pixels, or discard them!!
+	-- to give more context: we *have* to draw foliage3 early because it has to go before the whole shadowmap is initialized, meaning we cannot postpone it until after AO to prevent self-shadows
+	-- that's why we need this blend mode trick to mask it from AO being applied during the ambient occlusion step. This does not apply to other vegetation types
 	local blendMode = love.graphics.getBlendMode()
 	love.graphics.setBlendMode("replace", "premultiplied")
 
 	-- foliage is drawn first thing after the first shadowmap pass to prevent foliage from having self-shadows
-	profiler:pushLabel("foliage")
 	if #self.Foliage > 0 then
+		profiler:pushLabel("foliage")
 		love.graphics.setShader(self.FoliageShader)
 		local Mesh = nil
 		for i = 1, #self.Foliage do
@@ -555,9 +561,9 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 			self.FoliageShader:send("currentTime", love.timer.getTime())
 			love.graphics.drawInstanced(Mesh.Mesh, Mesh.Count)
 		end
-		--love.graphics.setShader(self.Shader)
+		profiler:popLabel()
 	end
-	profiler:popLabel()
+	
 
 	love.graphics.setBlendMode(blendMode)
 
@@ -566,7 +572,7 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 	if self.ShadowCanvas ~= nil then
 		profiler:pushLabel("shadow")
 		self:updateShadowMap(false)
-		love.graphics.setCanvas({self.RenderCanvas, self.NormalCanvas, self.BloomCanvas, ["depthstencil"] = self.DepthCanvas})
+		love.graphics.setCanvas({self.RenderCanvas, self.NormalCanvas, self.BloomCanvas, ["depthstencil"] = self.DepthCanvas}) -- call setcanvas as updateShadowMap changes it
 		profiler:popLabel()
 	end
 
@@ -726,7 +732,25 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 	end
 
 
-	-- TODO: implement & draw grass3 here!
+	-- TODO: implement & plant3 stuff here
+	-- yep, plants turn out to be extremely low on properties lol
+	if #self.Plants > 0 then
+		profiler:pushLabel("plants")
+		love.graphics.setShader(self.PlantShader)
+		local Mesh = nil
+		for i = 1, #self.Plants do
+			Mesh = self.Plants[i]
+			self.PlantShader:send("meshTexture", Mesh.Texture or blankImage)
+			self.PlantShader:send("meshBloom", Mesh.Bloom)
+			self.PlantShader:send("currentTime", love.timer.getTime())
+			love.graphics.drawInstanced(Mesh.Mesh, Mesh.Count)
+		end
+		profiler:popLabel()
+	end
+	
+
+
+
 
 	love.graphics.setShader(self.Shader)
 
@@ -986,6 +1010,7 @@ function Scene3:rescaleCanvas(width, height, msaa)
 	self.TriplanarShader:send("aspectRatio", aspectRatio)
 	self.RippleShader:send("aspectRatio", aspectRatio)
 	self.FoliageShader:send("aspectRatio", aspectRatio)
+	self.PlantShader:send("aspectRatio", aspectRatio)
 	self.ParticlesShader:send("aspectRatio", aspectRatio)
 	self.TrailShader:send("aspectRatio", aspectRatio)
 
@@ -1009,14 +1034,20 @@ end
 -- sway is the maximum swaying angle in radians. Velocity is the wind direction and how fast it travels (how the oscillation travels)
 function Scene3:setWind(a, b)
 	if vector3.isVector3(a) then
-		self.FoliageShader:send("windVelocity", a:array())
+		local arr = a:array()
+		self.FoliageShader:send("windVelocity", arr)
+		self.PlantShader:send("windVelocity", arr)
 		if type(b) == "number" then
 			self.FoliageShader:send("windStrength", b)
+			self.PlantShader:send("windStrength", b)
 		end
 	elseif type(a) == "number" then
 		self.FoliageShader:send("windStrength", a)
+		self.PlantShader:send("windStrength", a)
 		if vector3.isVector3(b) then
-			self.FoliageShader:send("windVelocity", b:array())
+			local arr = b:array()
+			self.FoliageShader:send("windVelocity", arr)
+			self.PlantShader:send("windVelocity", arr)
 		end
 	end
 end
@@ -1030,6 +1061,7 @@ function Scene3:setAmbient(col, occlusionColor)
 	self.ParticlesShader:send("ambientColor", arr)
 	self.RippleShader:send("ambientColor", arr)
 	self.FoliageShader:send("ambientColor", arr)
+	self.PlantShader:send("ambientColor", arr)
 	self.TrailShader:send("ambientColor", arr)
 	if occlusionColor ~= nil then
 		self.SSAOBlendShader:send("occlusionColor", {occlusionColor.r, occlusionColor.g, occlusionColor.b})
@@ -1065,17 +1097,23 @@ function Scene3:setDiffuse(strength)
 	self.Shader:send("diffuseStrength", strength)
 	self.TriplanarShader:send("diffuseStrength", strength)
 	self.FoliageShader:send("diffuseStrength", strength)
+	self.PlantShader:send("diffuseStrength", strength)
 end
 
 
 function Scene3:setBlobColor(col)
-	self.Shader:send("blobShadowColor", {col.r, col.g, col.b})
-	self.TriplanarShader:send("blobShadowColor", {col.r, col.g, col.b})
+	local arr = {col.r, col.g, col.b}
+	self.Shader:send("blobShadowColor", arr)
+	self.TriplanarShader:send("blobShadowColor", arr)
+	self.FoliageShader:send("blobShadowColor", arr)
+	self.PlantShader:send("blobShadowColor", arr)
 end
 
 function Scene3:setBlobStrength(strength)
 	self.Shader:send("blobShadowStrength", strength)
 	self.TriplanarShader:send("blobShadowStrength", strength)
+	self.FoliageShader:send("blobShadowStrength", strength)
+	self.PlantShader:send("blobShadowStrength", strength)
 end
 
 
@@ -1113,6 +1151,7 @@ function Scene3:setShadowMap(position, direction, size, canvasSize, shadowStreng
 		self.TriplanarShader:send("shadowsEnabled", false)
 		self.RippleShader:send("shadowsEnabled", false)
 		self.FoliageShader:send("shadowsEnabled", false)
+		self.PlantShader:send("shadowsEnabled", false)
 		self.ParticlesShader:send("shadowsEnabled", false)
 	else
 		assert(vector3.isVector3(position), "Scene3:setShadowMap(position, direction, size, canvasSize, shadowStrength) requires argument 'position' to be a vector3.")
@@ -1126,6 +1165,7 @@ function Scene3:setShadowMap(position, direction, size, canvasSize, shadowStreng
 		self.TriplanarShader:send("shadowsEnabled", true)
 		self.RippleShader:send("shadowsEnabled", true)
 		self.FoliageShader:send("shadowsEnabled", true)
+		self.PlantShader:send("shadowsEnabled", true)
 		self.ParticlesShader:send("shadowsEnabled", true)
 
 		local shStrength = shadowStrength ~= nil and shadowStrength or 0.5
@@ -1133,6 +1173,7 @@ function Scene3:setShadowMap(position, direction, size, canvasSize, shadowStreng
 		self.TriplanarShader:send("shadowStrength", shStrength)
 		self.RippleShader:send("shadowStrength", shStrength)
 		self.FoliageShader:send("shadowStrength", shStrength)
+		self.PlantShader:send("shadowStrength", shStrength)
 		self.ParticlesShader:send("shadowStrength", shStrength)
 
 		direction = direction:clone():norm()
@@ -1141,6 +1182,7 @@ function Scene3:setShadowMap(position, direction, size, canvasSize, shadowStreng
 		self.TriplanarShader:send("sunDirection", dirTable)
 		self.RippleShader:send("sunDirection", dirTable)
 		self.FoliageShader:send("sunDirection", dirTable)
+		self.PlantShader:send("sunDirection", dirTable)
 		self.ParticlesShader:send("sunDirection", dirTable)
 
 		-- create new canvases (but only if their sizes are different from the current ones)
@@ -1162,6 +1204,7 @@ function Scene3:setShadowMap(position, direction, size, canvasSize, shadowStreng
 			self.TriplanarShader:send("shadowCanvas", self.ShadowDepthCanvas)
 			self.RippleShader:send("shadowCanvas", self.ShadowDepthCanvas)
 			self.FoliageShader:send("shadowCanvas", self.ShadowDepthCanvas)
+			self.PlantShader:send("shadowCanvas", self.ShadowDepthCanvas)
 			self.ParticlesShader:send("shadowCanvas", self.ShadowDepthCanvas) -- particleshader only needs depth canvas, not size, since we only need 1 sample
 
 			local cSize = {canvasSize.x, canvasSize.y}
@@ -1169,6 +1212,7 @@ function Scene3:setShadowMap(position, direction, size, canvasSize, shadowStreng
 			self.TriplanarShader:send("shadowCanvasSize", cSize)
 			self.RippleShader:send("shadowCanvasSize", cSize)
 			self.FoliageShader:send("shadowCanvasSize", cSize)
+			self.PlantShader:send("shadowCanvasSize", cSize)
 		end
 
 		self.ShadowMapShader:send("isInstanced", true)
@@ -1182,6 +1226,7 @@ function Scene3:setShadowMap(position, direction, size, canvasSize, shadowStreng
 		self.TriplanarShader:send("orthoMatrix", oMat)
 		self.RippleShader:send("orthoMatrix", oMat)
 		self.FoliageShader:send("orthoMatrix", oMat)
+		self.PlantShader:send("orthoMatrix", oMat)
 		self.ParticlesShader:send("orthoMatrix", oMat)
 		
 		-- send over sun matrix
@@ -1193,6 +1238,7 @@ function Scene3:setShadowMap(position, direction, size, canvasSize, shadowStreng
 		self.TriplanarShader:send("sunWorldMatrix", sMat)
 		self.RippleShader:send("sunWorldMatrix", sMat)
 		self.FoliageShader:send("sunWorldMatrix", sMat)
+		self.PlantShader:send("sunWorldMatrix", sMat)
 		self.ParticlesShader:send("sunWorldMatrix", sMat)
 
 	end
@@ -1226,6 +1272,9 @@ function Scene3:attachMesh(mesh)
 	elseif foliage3.isFoliage3(mesh) then
 		local index = findOrderedInsertLocation(self.Foliage, mesh)
 		table.insert(self.Foliage, index, mesh)
+	elseif plant3.isPlant3(mesh) then
+		local index = findOrderedInsertLocation(self.Plants, mesh)
+		table.insert(self.Plants, index, mesh)
 	elseif trip3.isTrip3(mesh) then
 		local index = findOrderedInsertLocation(self.BasicTrip3, mesh)
 		table.insert(self.BasicTrip3, index, mesh)
@@ -1233,7 +1282,7 @@ function Scene3:attachMesh(mesh)
 		local index = findOrderedInsertLocation(self.InstancedTrip3, mesh)
 		table.insert(self.InstancedTrip3, index, mesh)
 	else
-		error("Scene3:attachMesh(mesh) requires argument 'mesh' to be either a mesh3, spritemesh3, ripplemesh3, foliage3 or mesh3group")
+		error("Scene3:attachMesh(mesh) requires argument 'mesh' to be either a mesh3, mesh3group, spritemesh3, ripplemesh3, plant3, foliage3 or mesh3group")
 	end
 	mesh.Scene = self
 
@@ -1264,6 +1313,9 @@ function Scene3:detachMesh(mesh) -- basic mesh or sprite mesh
 	elseif foliage3.isFoliage3(mesh) then
 		slot = findObjectInOrderedArray(mesh, self.Foliage)
 		Item = table.remove(self.Foliage, slot)
+	elseif plant3.isPlant3(mesh) then
+		slot = findObjectInOrderedArray(mesh, self.Plants)
+		Item = table.remove(self.Plants, slot)
 	elseif trip3.isTrip3(mesh) then
 		slot = findObjectInOrderedArray(mesh, self.BasicTrip3)
 		Item = table.remove(self.BasicTrip3, slot)
@@ -1271,7 +1323,7 @@ function Scene3:detachMesh(mesh) -- basic mesh or sprite mesh
 		slot = findObjectInOrderedArray(mesh, self.InstancedTrip3)
 		Item = table.remove(self.InstancedTrip3, slot)
 	else
-		error("Scene3:detachMesh(mesh) requires argument 'mesh' to be either a mesh3, mesh3group, spritemesh3, ripplemesh3, trip3 or trip3group.")
+		error("Scene3:detachMesh(mesh) requires argument 'mesh' to be either a mesh3, mesh3group, spritemesh3, ripplemesh3, plant3, trip3 or trip3group.")
 	end
 	
 	if Item ~= nil then
@@ -1302,6 +1354,7 @@ function Scene3:attachLight(light)
 	self.Shader:send("lightCount", lightCount)
 	self.TriplanarShader:send("lightCount", lightCount)
 	self.FoliageShader:send("lightCount", lightCount)
+	self.PlantShader:send("lightCount", lightCount)
 	self.ParticlesShader:send("lightCount", lightCount)
 
 	if #self.Lights > lightCount then
@@ -1332,6 +1385,7 @@ function Scene3:detachLight(lightOrSlot)
 		self.Shader:send("lightCount", lightCount)
 		self.TriplanarShader:send("lightCount", lightCount)
 		self.FoliageShader:send("lightCount", lightCount)
+		self.PlantShader:send("lightCount", lightCount)
 		self.ParticlesShader:send("lightCount", lightCount)
 
 		if self.Events.LightDetached then
@@ -1362,6 +1416,7 @@ function Scene3:attachBlob(blob)
 	self.Shader:send("blobShadowCount", blobCount)
 	self.TriplanarShader:send("blobShadowCount", blobCount)
 	self.FoliageShader:send("blobShadowCount", blobCount)
+	self.PlantShader:send("blobShadowCount", blobCount)
 
 	if #self.Lights > blobCount then
 		print("Scene3:attachBlob(blob) added a blob3 that will not display as there are already 16 or more blobs in the scene.")
@@ -1391,6 +1446,7 @@ function Scene3:detachBlob(blobOrSlot)
 		self.Shader:send("blobShadowCount", blobCount)
 		self.TriplanarShader:send("blobShadowCount", blobCount)
 		self.FoliageShader:send("blobShadowCount", blobCount)
+		self.PlantShader:send("blobShadowCount", blobCount)
 
 		if self.Events.BlobDetached then
 			connection.doEvents(self.Events.BlobDetached, Item)
@@ -1518,6 +1574,7 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 		["Shader"] = love.graphics.newShader(SHADER_VERTEX_PATH, SHADER_FRAGMENT_PATH); -- SHADER_PATH
 		["RippleShader"] = love.graphics.newShader(SHADER_VERTEX_PATH, SHADER_RIPPLE_PATH); -- same vertex shader, but special fragment shader
 		["FoliageShader"] = love.graphics.newShader(SHADER_FOLIVERT_PATH, SHADER_FOLIFRAG_PATH);
+		["PlantShader"] = love.graphics.newShader(SHADER_PLANTVERT_PATH, SHADER_PLANTFRAG_PATH);
 		["TriplanarShader"] = love.graphics.newShader(SHADER_TRIVERT_PATH, SHADER_TRIFRAG_PATH);
 		["ParticlesShader"] = love.graphics.newShader(SHADER_PARTICLES_VERT, SHADER_PARTICLES_FRAG);
 		["VFXMixShader"] = vfxMixShader;
@@ -1571,7 +1628,8 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 		["BasicTrip3"] = {}; -- trip3 array
 		["SpriteMeshes"] = {}; -- spritemesh3 array
 		["RippleMeshes"] = {}; -- ripplemesh3 array
-		["Foliage"] = {}; -- foliage3 array
+		["Foliage"] = {}; -- foliage3 array (i.e. leaves)
+		["Plants"] = {}; -- plant3 array (grass, ivy, shrubs, etc.)
 		["Trails"] = {}; -- trail3 array
 		["Particles"] = {}; -- array of particle emitter instances. Particle emitters are always instanced for performance reasons
 		["Lights"] = {}; -- array with lights that have a Position, Color, Range and Strength
@@ -1613,7 +1671,11 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 	Object.FoliageShader:send("diffuseStrength", 1)
 	Object.FoliageShader:send("windVelocity", {0, 0, 0})
 	Object.FoliageShader:send("windStrength", 0)
-	--Object.FoliageShader:send("isInstanced", true) -- send true since it uses a shared vertex shader!
+
+	Object.PlantShader:send("fieldOfView", Object.Camera3.FieldOfView)
+	Object.PlantShader:send("diffuseStrength", 1)
+	Object.PlantShader:send("windVelocity", {0, 0, 0})
+	Object.PlantShader:send("windStrength", 0)
 	
 	Object.ParticlesShader:send("fieldOfView", Object.Camera3.FieldOfView)
 	Object.ParticlesShader:send("lightCount", 0)

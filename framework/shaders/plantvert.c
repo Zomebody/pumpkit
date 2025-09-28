@@ -35,11 +35,11 @@ varying vec3 instColorShadow;
 //uniform bool isInstanced;
 
 varying vec3 fragWorldPosition; // output automatically interpolated fragment world position
-varying vec3 fragViewNormal; // used for normal map for SSAO (in screen space)
+//varying vec3 fragViewNormal; // used for normal map for SSAO (in screen space)
 varying vec3 fragWorldNormal; // normal vector, but in world space this time
 varying vec3 fragWorldSurfaceNormal; // specifically required to solve shadow acne
 varying vec4 fragPosLightSpace; // position of the fragment in light space so it can sample from the shadow map
-varying mat3 TBN; // tangent bitangent normal matrix to be used for normal maps
+//varying mat3 TBN; // tangent bitangent normal matrix to be used for normal maps
 
 
 
@@ -127,14 +127,26 @@ mat4 getPerspectiveMatrix(float fieldOfView, float aspect) {
 
 
 // worldPos is only needed to calculate where in the sine's phase the vertex is
-// this transformation function rotates around the center of the mesh, which is slightly different from the plant3 version!
-vec3 windTransform(vec3 vertexOffset, vec3 worldPos) {
-	// if either of these are zero it causes undefined behavior, so exit
-	if (length(vertexOffset) < 0.000001 || length(windVelocity) < 0.000001) {
+// unlike foliage, plants don't rotate around their center but rather around z=0
+vec3 windTransform(vec3 vertexOffset, mat4 rotationMatrix, vec3 worldPos) {
+	// at center of mesh so cannot move anyway
+	if (length(windVelocity) < 0.000001) {
 		return vertexOffset;
 	}
 
-	vec3 relNorm  = normalize(vertexOffset);
+	vec3 localZ = normalize((rotationMatrix * vec4(0.0, 0.0, 1.0, 0.0)).xyz); // rotate local-space up-vector to world-space
+	float factor = dot(localZ, vertexOffset);
+	vec3 pivot = vertexOffset - localZ * factor;
+
+	//vec3 pivot = vec3(vertexOffset.x, vertexOffset.y, 0.0);
+	vec3 relVector = vertexOffset - pivot;
+
+	// if == 0 this would cause undefined behavior, so exit early
+	if (length(relVector) < 0.000001) {
+		return vertexOffset;
+	}
+
+	vec3 relNorm  = normalize(relVector);
 	vec3 windNorm = normalize(windVelocity);
 
 	// calculate an axis that is perpendicular to the plane formed by relNorm and windNorm
@@ -180,7 +192,7 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 	// construct the model's world matrix, i.e. where in the world is each vertex of this mesh located
 	mat4 relativePosMatrix = rotationMatrix * scaleMatrix; // where the vertex is located relative to the center of the mesh
 	vec4 relativeVertexPos = relativePosMatrix * vertex_position;
-	vec3 vertexAfterWind = windTransform(relativeVertexPos.xyz, (translationMatrix * relativeVertexPos).xyz);
+	vec3 vertexAfterWind = windTransform(relativeVertexPos.xyz, rotationMatrix, (translationMatrix * relativeVertexPos).xyz);
 	fragWorldPosition = (translationMatrix * vec4(vertexAfterWind, 1.0)).xyz;
 
 	mat4 modelWorldMatrix = translationMatrix * relativePosMatrix;
@@ -201,25 +213,8 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 
 
 
-
-
-	// construct TBN for normal maps
-	// unaffected by any deformation due to wind
 	mat3 normalMatrixModel = transpose(inverse(mat3(modelWorldMatrix))); // needed to calculate normals properly for non-uniform scaling
 	fragWorldNormal = normalize(normalMatrixModel * VertexNormal);
-	fragWorldSurfaceNormal = normalize(normalMatrixModel * SurfaceNormal);
-	fragViewNormal = normalize(mat3(viewMatrix) * fragWorldNormal);
-
-	vec3 fragWorldTangent = normalize((rotationMatrix * vec4(VertexTangent, 0.0)).xyz);
-	vec3 fragWorldBitangent = normalize((rotationMatrix * vec4(VertexBitangent, 0.0)).xyz);
-
-	// TBN needs to be in world-space
-	TBN = mat3(
-		fragWorldTangent,
-		fragWorldBitangent,
-		fragWorldNormal
-	);
-
 	
 	// init variables for shadow map
 	mat4 sunViewMatrix = inverse(sunWorldMatrix);
