@@ -69,7 +69,7 @@ function Trail3:draw(shaderRef)
 	-- fragment stuff
 	shaderRef:send("meshTexture", self.Texture)
 	shaderRef:send("meshBrightness", self.Brightness)
-	shaderRef:send("meshColor", {self.Color.r, self.Color.g, self.Color.b})
+	shaderRef:send("meshColor", {self.Color.r, self.Color.g, self.Color.b, self.Color.a})
 
 	love.graphics.draw(self.Mesh)
 

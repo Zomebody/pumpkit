@@ -6,7 +6,7 @@
 // coloring
 uniform vec3 ambientColor;
 uniform float meshBrightness;
-uniform vec3 meshColor;
+uniform vec4 meshColor;
 
 // textures
 uniform Image meshTexture;
@@ -24,7 +24,7 @@ uniform float blendDistance = 1.0; // how many world units two vfx fragments nee
 void effect() {
 
 	vec4 color = VaryingColor;
-	color = vec4(color.x * meshColor.x, color.y * meshColor.y, color.z * meshColor.z, color.w);
+	color = vec4(color.x * meshColor.x, color.y * meshColor.y, color.z * meshColor.z, color.w * meshColor.w);
 	
 	
 	if (love_PixelCoord.x < 0 || love_PixelCoord.x > love_ScreenSize.x || love_PixelCoord.y < 0 || love_PixelCoord.y > love_ScreenSize.y) {
