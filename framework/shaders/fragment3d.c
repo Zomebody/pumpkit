@@ -219,7 +219,7 @@ void effect() {
 	resultingColor = resultingColor * resultingLighting;
 
 
-	if (resultingColor.a < 0.95 * (1.0 - meshTransparency)) {
+	if (resultingColor.a < 0.01) {
 		discard;  // discard pixels with less transparency than the transparency property
 	}
 
