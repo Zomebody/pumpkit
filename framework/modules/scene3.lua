@@ -951,7 +951,7 @@ function Scene3:rescaleCanvas(width, height, msaa)
 		height * msaa,
 		{
 			["type"] = "2d";
-			["format"] = "depth24";
+			["format"] = "depth32f"; -- should probably be replaced with depth24 later on, but if you do so, also change the far-plane to be closer!
 			["readable"] = true;
 		}
 	)
