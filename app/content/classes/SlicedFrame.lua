@@ -66,9 +66,9 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Property";
-	["ValueType"] = "number";
+	["ValueType"] = "number / range";
 	["Name"] = "MaskThreshold";
-	["Description"] = "A number between 0 and 1. If a MaskImage is set, it is overlayed over the ImageFrame and any text if added. Any pixels in the MaskImage with a value in the red-channel lower than MaskThreshold will make the pixels in the ImageFrame's image transparent.";
+	["Description"] = "A number (or range) between 0 and 1. If a MaskImage is set, it is overlayed over the ImageFrame and any text if added. Any pixels in the MaskImage with a value in the red-channel lower than MaskThreshold will make the pixels in the ImageFrame's image transparent. In case of a range, the threshold acts as a buffer that smoothens the opacity.";
 	["ReadOnly"] = false;
 })
 

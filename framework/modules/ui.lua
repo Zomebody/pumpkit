@@ -23,17 +23,18 @@ local resizedElementsCache = {} -- cache with resized elements in case an elemen
 local maskShader = love.graphics.newShader([[
 
 uniform Image maskImage;
-uniform float maskThreshold;
-uniform vec4 screenRect = vec4(0.0, 0.0, 1.0, 1.0); // a rectangle describing the section of the screen the image is being drawn to
+uniform float thresholdMin; // min and max are the same if you assign a number to MaskThreshold in the element. If using range, then they're different
+uniform float thresholdMax;
+uniform vec4 screenRect = vec4(0.0, 0.0, 1.0, 1.0); // rect describing the section of the screen the image is being drawn to (needed to support image fit)
 
 vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
 	vec4 imgColor = Texel(tex, texture_coords) * color;
 
 	vec2 maskCoords = (screen_coords - screenRect.xy) / (screenRect.zw - screenRect.xy);
 	float value = Texel(maskImage, maskCoords).r; // let's just use the red channel for the mask for now
-	float multiplier = step(value, maskThreshold); // 1.0 if maskValue <= threshold, else 0.0
+	float multiplier = smoothstep(thresholdMin, thresholdMax, value); // 1.0 if maskValue <= threshold, else 0.0
 
-	return vec4(imgColor.rgb, imgColor.a * multiplier);
+	return vec4(imgColor.rgb, imgColor.a * (1.0 - multiplier));
 }
 ]])
 
@@ -1960,7 +1961,13 @@ function ImageFrame:draw()
 
 		if self.MaskImage ~= nil then
 			maskShader:send("maskImage", self.MaskImage)
-			maskShader:send("maskThreshold", self.MaskThreshold)
+			if type(self.MaskThreshold) == "number" then
+				maskShader:send("thresholdMin", self.MaskThreshold)
+				maskShader:send("thresholdMax", self.MaskThreshold)
+			else
+				maskShader:send("thresholdMin", self.MaskThreshold.min)
+				maskShader:send("thresholdMax", self.MaskThreshold.max)
+			end
 			maskShader:send("screenRect", {self.AbsolutePosition.x, self.AbsolutePosition.y, self.AbsolutePosition.x + self.AbsoluteSize.x, self.AbsolutePosition.y + self.AbsoluteSize.y})
 			love.graphics.setShader(maskShader)
 		end
@@ -2156,7 +2163,13 @@ function SlicedFrame:draw()
 
 		if self.MaskImage ~= nil then
 			maskShader:send("maskImage", self.MaskImage)
-			maskShader:send("maskThreshold", self.MaskThreshold)
+			if type(self.MaskThreshold) == "number" then
+				maskShader:send("thresholdMin", self.MaskThreshold)
+				maskShader:send("thresholdMax", self.MaskThreshold)
+			else
+				maskShader:send("thresholdMin", self.MaskThreshold.min)
+				maskShader:send("thresholdMax", self.MaskThreshold.max)
+			end
 			maskShader:send("screenRect", {self.AbsolutePosition.x, self.AbsolutePosition.y, self.AbsolutePosition.x + absSize.x, self.AbsolutePosition.y + absSize.y})
 			love.graphics.setShader(maskShader)
 		end
