@@ -60,6 +60,7 @@ function load()
 	entity = require(filepath("../framework/modules/entity", "."))
 	particles3 = require(filepath("../framework/modules/particles3", "."))
 	trail3 = require(filepath("../framework/modules/trail3", "."))
+	billboard = require(filepath("../framework/modules/billboard", "."))
 	network = require(filepath("../framework/modules/network", "."))
 
 	-- profiling

@@ -49,6 +49,7 @@ local SHADER_TRIVERT_PATH = "framework/shaders/trivert3d.c"
 local SHADER_TRIFRAG_PATH = "framework/shaders/trifrag.c"
 local SHADER_TRAIL_VERT = "framework/shaders/trailvert.c"
 local SHADER_TRAIL_FRAG = "framework/shaders/trailfrag.c"
+local SHADER_BILLBOARD_PATH = "framework/shaders/billboard.c"
 
 
 
@@ -857,6 +858,29 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 		profiler:popLabel()
 	end
 
+
+	-- I guess this is where billboards should get rendered?
+	if #self.Billboards > 0 then
+		profiler:pushLabel("billboard")
+		love.graphics.setCanvas({self.RenderCanvas, ["depthstencil"] = self.DepthCanvas})
+		love.graphics.setShader(self.BillboardShader)
+		local Object = nil
+		for i = 1, #self.Billboards do
+			Object = self.Billboards[i]
+			self.BillboardShader:send("rotation", Object.Rotation)
+			self.BillboardShader:send("worldPosition", Object.Position:array())
+			self.BillboardShader:send("center", Object.Center:array())
+			self.BillboardShader:send("worldSize", Object.WorldSize:array())
+			self.BillboardShader:send("pixelSize", Object.PixelSize:array())
+
+			love.graphics.draw(Object.Mesh)
+		end
+		-- no need to reset shader
+		profiler:popLabel()
+	end
+
+
+
 	-- disable culling for particles & trails so they can be seen from both sides
 	love.graphics.setMeshCullMode("none")
 
@@ -1013,6 +1037,7 @@ function Scene3:rescaleCanvas(width, height, msaa)
 	self.PlantShader:send("aspectRatio", aspectRatio)
 	self.ParticlesShader:send("aspectRatio", aspectRatio)
 	self.TrailShader:send("aspectRatio", aspectRatio)
+	self.BillboardShader:send("aspectRatio", aspectRatio)
 
 	-- calculate perspective matrix for the SSAO shader
 	if self.Camera3 ~= nil then
@@ -1340,6 +1365,45 @@ end
 
 
 
+function Scene3:attachBillboard(bb)
+	assert(billboard.isBillboard(bb), "Scene3:attachBillboard(bb) expects argument 'bb' to be of type billboard")
+
+	if bb.Scene ~= nil then
+		bb:detach()
+	end
+
+	local index = findOrderedInsertLocation(self.Billboards, bb)
+	table.insert(self.Billboards, index, bb)
+	bb.Scene = self
+
+	if self.Events.BillboardAttached then
+		connection.doEvents(self.Events.BillboardAttached, bb)
+	end
+	return bb
+end
+
+
+
+function Scene3:detachBillboard(billOrSlot)
+	if type(billOrSlot) ~= "number" then -- object was passed
+		assert(billboard.isBillboard(billOrSlot), "Scene3:detachBillboard(billOrSlot) requires argument 'billOrSlot' to be either a billboard or an integer")
+		billOrSlot = findObjectInOrderedArray(billOrSlot, self.Billboards)
+	end
+	local Item = table.remove(self.Billboards, billOrSlot)
+	if Item ~= nil then
+		Item.Scene = nil
+
+		if self.Events.BillboardDetached then
+			connection.doEvents(self.Events.BillboardDetached, Item)
+		end
+
+		return true
+	end
+	return false
+end
+
+
+
 function Scene3:attachLight(light)
 	assert(light3.isLight3(light), "Scene3:attachLight(light) requires argument 'light' to be a light3.")
 	if light.Scene ~= nil then
@@ -1584,6 +1648,7 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 		["AOBlurShader"] = love.graphics.newShader(SHADER_AOBLUR_PATH);
 		["BloomBlurShader"] = love.graphics.newShader(SHADER_BLOOMBLUR_PATH);
 		["ShadowMapShader"] = love.graphics.newShader(SHADER_SHADOWMAP_PATH);
+		["BillboardShader"] = love.graphics.newShader(SHADER_BILLBOARD_PATH);
 
 		["LastDrawSize"] = vector2(gWidth, gHeight); -- when you suddenly start drawing the scene at a different size, some shader variables need to be updated!
 		["LightsDirty"] = true; -- if true, update lights data in the shaders and set this to false (until a light gets attached/detached)
@@ -1629,9 +1694,10 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 		["SpriteMeshes"] = {}; -- spritemesh3 array
 		["RippleMeshes"] = {}; -- ripplemesh3 array
 		["Foliage"] = {}; -- foliage3 array (i.e. leaves)
-		["Plants"] = {}; -- plant3 array (grass, ivy, shrubs, etc.)
+		["Plants"] = {}; -- plant3 array (grass, ivy, shrubs, etc.) things with no SSAO or shadows, but still affected by foliage shadows
 		["Trails"] = {}; -- trail3 array
 		["Particles"] = {}; -- array of particle emitter instances. Particle emitters are always instanced for performance reasons
+		["Billboards"] = {}; -- billboard array
 		["Lights"] = {}; -- array with lights that have a Position, Color, Range and Strength
 		["Blobs"] = {}; -- array with blob instances that have a Position and Range (they are blob shadows you should place below spritemeshes)
 
@@ -1683,6 +1749,8 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 
 	Object.TrailShader:send("fieldOfView", Object.Camera3.FieldOfView)
 	Object.TrailShader:send("ambientColor", {1, 1, 1, 1})
+
+	Object.BillboardShader:send("fieldOfView", Object.Camera3.FieldOfView)
 
 	Object.SSAOShader:send("aoStrength", 0.5)
 	Object.SSAOShader:send("kernelScalar", 0.85) -- how 'large' ambient occlusion is
