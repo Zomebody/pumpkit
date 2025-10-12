@@ -64,6 +64,7 @@ local function new(texture, position)
 		["Center"] = vector2(0.5, 0.5); -- 0,0 = bottom left, 1,1 = top right
 		["WorldSize"] = vector2(1, 1); -- world units
 		["PixelSize"] = vector2(0, 0); -- screen pixels
+		["InFront"] = true; -- if true, does not hide behind geometry; gets drawn in front always (and writes no depth)
 
 		["Scene"] = nil;
 	}

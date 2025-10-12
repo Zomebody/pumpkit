@@ -858,8 +858,15 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 		profiler:popLabel()
 	end
 
+	-- disable culling for particles & trails so they can be seen from both sides
+	love.graphics.setMeshCullMode("none")
 
-	-- I guess this is where billboards should get rendered?
+
+	-- particles & trails together in one function call because they'll be sharing a canvas for blending them together
+	self:drawVFX()
+
+
+	-- draw billboards all the way at the end because that way it's easier to support billboards that are always drawn in front
 	if #self.Billboards > 0 then
 		profiler:pushLabel("billboard")
 		love.graphics.setCanvas({self.RenderCanvas, ["depthstencil"] = self.DepthCanvas})
@@ -867,6 +874,7 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 		local Object = nil
 		for i = 1, #self.Billboards do
 			Object = self.Billboards[i]
+			love.graphics.setDepthMode(Object.InFront and "always" or "less", not Object.InFront)
 			self.BillboardShader:send("rotation", Object.Rotation)
 			self.BillboardShader:send("worldPosition", Object.Position:array())
 			self.BillboardShader:send("center", Object.Center:array())
@@ -878,15 +886,7 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 		-- no need to reset shader
 		profiler:popLabel()
 	end
-
-
-
-	-- disable culling for particles & trails so they can be seen from both sides
-	love.graphics.setMeshCullMode("none")
-
-
-	-- particles & trails together in one function call because they'll be sharing a canvas for blending them together
-	self:drawVFX()
+	
 	
 
 	-- setShader() can be called here since if self.Foreground ~= nil then setting setShader() in there makes no sense since the shader will be set to nil anyway right after when drawing the canvas to the screen
