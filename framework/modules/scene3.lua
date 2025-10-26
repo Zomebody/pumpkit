@@ -914,7 +914,7 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 		-- a pretty important caveat here: if you are drawing to a render target it's VERY RECOMMENDED that the render target has the same dimensions as the screen
 		-- if your render target is smaller however, e.g. when using split-screen, you should 100% call Scene3:rescaleCanvas() with your target width and height.
 		-- because if you are drawing to a smaller render canvas but the scene has a fullscreen render canvas, you're tanking your FPS for no reason (better anti-aliasing though I guess)
-		love.graphics.draw(self.RenderCanvas, x, renderTarget:getHeight() * scaleY + y, 0, scaleX, -scaleY)
+		love.graphics.draw(self.RenderCanvas, x, self.RenderCanvas:getHeight() * scaleY + y, 0, scaleX, -scaleY)
 	else
 		-- if no render target is set, the scene is drawn to the screen, so use the screen's dimensions
 		--local scaleX = love.graphics.getWidth() / self.RenderCanvas:getWidth()
