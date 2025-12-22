@@ -35,7 +35,6 @@ end
 
 function module:update()
 	local dt = love.timer.getDelta()
-	--local i = 0
 	local curTime = love.timer.getTime()
 	local Copied = {} -- copy tasks over into a temporary array to preserve their spots when executing their functions!
 	for i = 1, #self.Running do
@@ -43,11 +42,17 @@ function module:update()
 	end
 	for i = 1, #Copied do
 		if curTime >= Copied[i].NextRun and Copied[i].Active then -- if curTime >= Copied[i].LastRun + Copied[i].Interval and Copied[i].Active then
-			--Copied[i].Function(dt, curTime - Copied[i].ActivatedAt)
 			local resumed, msg = coroutine.resume(Copied[i].Routine, dt, curTime - Copied[i].ActivatedAt)
+			--[[
 			if type(msg) == "string" then
 				error("task errored: " .. msg)
 			end
+			]]
+			if not resumed then
+				local trace = debug.traceback(Copied[i].Routine, msg)
+				error("Task errored:\n" .. trace)
+			end
+
 
 			-- there are two outcomes here. Either the task ran to its completion, or it ran until it encountered a yield, meaning we need to come back after a delay
 			if type(msg) == "number" then -- a number means a yield was encountered (through task:wait(secs))
@@ -70,16 +75,6 @@ function module:update()
 					Copied[i].Routine = coroutine.create(Copied[i].Function)
 				end
 			end
-
-			--Copied[i].LastRun = Copied[i].LastRun + Copied[i].Interval
-			--[[
-			Copied[i].NextRun = Copied[i].NextRun + Copied[i].Interval
-
-			Copied[i].TimesRan = Copied[i].TimesRan + 1
-			if Copied[i].TimesRan >= Copied[i].Runs then
-				Copied[i]:stop()
-			end
-			]]
 		end
 	end
 end
