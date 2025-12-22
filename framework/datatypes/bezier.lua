@@ -51,7 +51,9 @@ function bezier:getVelocityAt(x, t)
 
 	local n = #self.Points - 1
 	if n == 0 then
-		if self.Dimensions == 2 then
+		if self.Dimensions == 1 then
+			return 0
+		elseif self.Dimensions == 2 then
 			return vector2(0, 0)
 		elseif self.Dimensions == 3 then
 			return vector3(0, 0, 0)
@@ -69,10 +71,14 @@ function bezier:getVelocityAt(x, t)
 	-- evaluate at given point
 	local tangent = self:deCasteljau(derivatives, x)
 	if t == nil then
-		if tangent:getMag() > 0 then
-			return tangent:norm()
+		if self.Dimensions > 1 then
+			if tangent:getMag() > 0 then
+				return tangent:norm()
+			else
+				return vector3(0, 0, 1) -- just return anything that isn't NaN. In an ideal world we throw an error but error handling is annoying
+			end
 		else
-			return vector3(0, 0, 1) -- just return anything that isn't NaN. In an ideal world we throw an error but error handling is annoying
+			return tangent >= 0 and 1 or -1 -- can't use vector math when using single dimensions (numbers)
 		end
 	else
 		return tangent / t
@@ -102,7 +108,16 @@ local new = function(...)
 		["Points"] = {};
 	}
 
-	if vector2.isVector2(vecs[1]) then
+	if type(vecs[1]) == "number" then
+		for i = 1, #vecs do
+			if type(vecs[i]) == "number" then
+				Obj.Points[i] = vecs[i]
+			else
+				error("bezier.new(...) failed because not all indices are a number.")
+			end
+		end
+		Obj.Dimensions = 1
+	elseif vector2.isVector2(vecs[1]) then
 		for i = 1, #vecs do
 			if vector2.isVector2(vecs[i]) then
 				Obj.Points[i] = vector2(vecs[i].x, vecs[i].y)
@@ -142,11 +157,11 @@ end
 -- meta function to add a vector to a bezier to offset the bezier
 function bezier.__add(a, b)
 	--assert(isBezier(a) and vector2.isVector2(b), "add: wrong argument types: (expected <bezier> and <vector2>)")
-	assert(isBezier(a) and (
-		(vector2.isVector2(b) and a.Dimensions == 2)
-		or (vector3.isVector3(b) and a.Dimensions == 3)
-		or (vector3.isVector4(b) and a.Dimensions == 4)
-		), "add: wrong argument types: (expected <bezier> and <vector2/3/4>)")
+	assert(
+		(isBezier(a) and ((vector2.isVector2(b) and a.Dimensions == 2) or (vector3.isVector3(b) and a.Dimensions == 3) or (vector3.isVector4(b) and a.Dimensions == 4)))
+		or (type(a) == "number" and type(b) == "number"),
+		"add: wrong argument types: (expected <bezier> and <vector2/3/4> or <number> and <number>)"
+	)
 	local points = {}
 	for i = 1, #a.Points do
 		points[i] = a.Points[i] + b
