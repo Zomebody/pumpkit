@@ -39,6 +39,7 @@ function Camera3:updateCameraMatrices()
 		self.Scene3.ParticlesShader:send("camMatrix", arr)
 		self.Scene3.TrailShader:send("camMatrix", arr)
 		self.Scene3.BillboardShader:send("camMatrix", arr)
+		self.Scene3.MaskShader:send("camMatrix", arr)
 	end
 end
 
@@ -171,6 +172,7 @@ function Camera3:setFOV(fov)
 		self.Scene3.ParticlesShader:send("fieldOfView", fov)
 		self.Scene3.TrailShader:send("fieldOfView", fov)
 		self.Scene3.BillboardShader:send("fieldOfView", fov)
+		self.Scene3.MaskShader:send("fieldOfView", fov)
 
 		self:updateCameraMatrices()
 

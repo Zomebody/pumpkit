@@ -50,6 +50,7 @@ local SHADER_TRIFRAG_PATH = "framework/shaders/trifrag.c"
 local SHADER_TRAIL_VERT = "framework/shaders/trailvert.c"
 local SHADER_TRAIL_FRAG = "framework/shaders/trailfrag.c"
 local SHADER_BILLBOARD_PATH = "framework/shaders/billboard.c"
+local SHADER_MASK_PATH = "framework/shaders/dither3d.c"
 
 
 
@@ -537,6 +538,31 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 		profiler:popLabel()
 	end
 
+
+	local blendMode = love.graphics.getBlendMode()
+
+
+	-- draw masks using 'lighten' blend mode because it stores the highest value for each channel
+	-- masks are drawn here because it just kinda works out well with minimizing canvas switches and masks need to be drawn very very early on
+	if #self.Masks > 0 then
+		love.graphics.setShader(self.MaskShader)
+		love.graphics.setDepthMode("greater", true)
+		love.graphics.setCanvas({["depthstencil"] = self.MaskCanvas}) -- draw depth only
+		love.graphics.clear(0, 0, 0, 0, 0, 0) -- depth canvas gets cleared to '1' by default, supply '0' here since we are using 'greater' in the depth test
+		love.graphics.setBlendMode("lighten", "premultiplied") -- lighten only works with premultiplied
+		-- TODO: there might be a way to make masks instanced?
+		love.graphics.setMeshCullMode("none")
+		for i = 1, #self.Masks do
+			self.MaskShader:send("worldPosition", self.Masks[i].Position:array())
+			self.MaskShader:send("innerRadius", self.Masks[i].InnerRadius)
+			self.MaskShader:send("outerRadius", self.Masks[i].OuterRadius)
+			love.graphics.draw(self.Masks[i].Mesh)
+		end
+		love.graphics.setMeshCullMode("back")
+		love.graphics.setBlendMode(blendMode)
+	end
+
+
 	-- prep render settings
 	love.graphics.setCanvas({self.RenderCanvas, self.NormalCanvas, self.BloomCanvas, ["depthstencil"] = self.DepthCanvas}) -- set the main canvas with proper maps for geometry being drawn
 	love.graphics.setDepthMode("less", true)
@@ -546,7 +572,6 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 	-- and coincidentally this just kind of works because foliage has an all-or-nothing either draw opaque pixels, or discard them!!
 	-- to give more context: we *have* to draw foliage3 early because it has to go before the whole shadowmap is initialized, meaning we cannot postpone it until after AO to prevent self-shadows
 	-- that's why we need this blend mode trick to mask it from AO being applied during the ambient occlusion step. This does not apply to other vegetation types
-	local blendMode = love.graphics.getBlendMode()
 	love.graphics.setBlendMode("replace", "premultiplied")
 
 	-- foliage is drawn first thing after the first shadowmap pass to prevent foliage from having self-shadows
@@ -579,11 +604,6 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 
 
 	love.graphics.setShader(self.Shader)
-
-	
-
-	
-	
 
 	self.Shader:send("currentTime", love.timer.getTime())
 
@@ -1009,6 +1029,16 @@ function Scene3:rescaleCanvas(width, height, msaa)
 	local reuseCanvas5 = love.graphics.newCanvas(width * 0.25, height * 0.25)
 	local reuseCanvas6 = love.graphics.newCanvas(width * 0.25, height * 0.25)
 
+	local maskCanvas = love.graphics.newCanvas(
+		width * 0.25,
+		height * 0.25,
+		{
+			["type"] = "2d";
+			["format"] = "depth32f";
+			["readable"] = true;
+		}
+	)
+
 	-- update ambient occlusion canvas references
 	self.AOBlurShader:send("depthTexture", depthCanvas)
 	self.SSAOShader:send("normalTexture", normalCanvas)
@@ -1021,6 +1051,7 @@ function Scene3:rescaleCanvas(width, height, msaa)
 	self.BloomCanvas = bloomCanvas
 	self.VFXCanvas1 = vfxCanvas1
 	self.VFXCanvas2 = vfxCanvas2
+	self.MaskCanvas = maskCanvas
 	self.ReuseCanvas1 = reuseCanvas1
 	self.ReuseCanvas2 = reuseCanvas2
 	self.ReuseCanvas3 = reuseCanvas3
@@ -1038,6 +1069,7 @@ function Scene3:rescaleCanvas(width, height, msaa)
 	self.ParticlesShader:send("aspectRatio", aspectRatio)
 	self.TrailShader:send("aspectRatio", aspectRatio)
 	self.BillboardShader:send("aspectRatio", aspectRatio)
+	self.MaskShader:send("aspectRatio", aspectRatio)
 
 	-- calculate perspective matrix for the SSAO shader
 	if self.Camera3 ~= nil then
@@ -1049,6 +1081,7 @@ function Scene3:rescaleCanvas(width, height, msaa)
 	-- misc
 	self.VFXMixShader:send("countCanvas", vfxCanvas2)
 	self.SSAOBlendShader:send("normalsTexture", normalCanvas) -- needed to sample alpha channel to check if ambient occlusion should be applied
+	-- TODO: send mask depth to mesh shaders to sample depth and compare for dithering
 end
 
 
@@ -1404,6 +1437,37 @@ end
 
 
 
+function Scene3:attachMask(msk)
+	assert(mask.isMask(msk), "Scene3:attachMask(msk) expects argument 'msk' to be of type mask")
+
+	if msk.Scene ~= nil then
+		msk:detach()
+	end
+
+	local index = findOrderedInsertLocation(self.Masks, msk)
+	table.insert(self.Masks, index, msk)
+	msk.Scene = self
+
+	return msk
+end
+
+
+
+function Scene3:detachMask(maskOrSlot)
+	if type(maskOrSlot) ~= "number" then -- object was passed
+		assert(mask.isMask(maskOrSlot), "Scene3:detachMask(maskOrSlot) requires argument 'maskOrSlot' to be either a mask or an integer")
+		maskOrSlot = findObjectInOrderedArray(maskOrSlot, self.Masks)
+	end
+	local Item = table.remove(self.Masks, maskOrSlot)
+	if Item ~= nil then
+		Item.Scene = nil
+		return true
+	end
+	return false
+end
+
+
+
 function Scene3:attachLight(light)
 	assert(light3.isLight3(light), "Scene3:attachLight(light) requires argument 'light' to be a light3.")
 	if light.Scene ~= nil then
@@ -1649,6 +1713,7 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 		["BloomBlurShader"] = love.graphics.newShader(SHADER_BLOOMBLUR_PATH);
 		["ShadowMapShader"] = love.graphics.newShader(SHADER_SHADOWMAP_PATH);
 		["BillboardShader"] = love.graphics.newShader(SHADER_BILLBOARD_PATH);
+		["MaskShader"] = love.graphics.newShader(SHADER_MASK_PATH);
 
 		["LastDrawSize"] = vector2(gWidth, gHeight); -- when you suddenly start drawing the scene at a different size, some shader variables need to be updated!
 		["LightsDirty"] = true; -- if true, update lights data in the shaders and set this to false (until a light gets attached/detached)
@@ -1664,6 +1729,7 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 		["VFXCanvas2"] = nil;--particleCanvas2; -- stores in the 'r' channel the sum of fragments on that pixel and the 'g' channel is the alpha summed
 		["ShadowCanvas"] = nil; -- either nil, or a canvas when shadow map is enabled
 		["ShadowDepthCanvas"] = nil;  -- either nil, or a canvas when shadow map is enabled
+		["MaskCanvas"] = nil; -- IS A DEPTH CANVAS, 0.25x scale canvas used to draw mask depths to. Used in mesh shaders to cull objects if there's a mask at a higher depth
 
 		-- when applying SSAO, bloom, etc. you need multiple render passes. For that purpose 'reuse' canvases are created to play ping-pong with each pass
 		-- Considering that SSAO, bloom etc. might want to be downscaled for better FPS, there are canvases for full, half and quarter size
@@ -1698,6 +1764,7 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 		["Trails"] = {}; -- trail3 array
 		["Particles"] = {}; -- array of particle emitter instances. Particle emitters are always instanced for performance reasons
 		["Billboards"] = {}; -- billboard array
+		["Masks"] = {}; -- masks array, which are circular billboard-like meshes that cull geometry with Object.Dithering = true
 		["Lights"] = {}; -- array with lights that have a Position, Color, Range and Strength
 		["Blobs"] = {}; -- array with blob instances that have a Position and Range (they are blob shadows you should place below spritemeshes)
 
@@ -1751,6 +1818,8 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 	Object.TrailShader:send("ambientColor", {1, 1, 1, 1})
 
 	Object.BillboardShader:send("fieldOfView", Object.Camera3.FieldOfView)
+
+	Object.MaskShader:send("fieldOfView", Object.Camera3.FieldOfView)
 
 	Object.SSAOShader:send("aoStrength", 0.5)
 	Object.SSAOShader:send("kernelScalar", 0.85) -- how 'large' ambient occlusion is

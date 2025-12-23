@@ -61,6 +61,8 @@ function load()
 	particles3 = require(filepath("../framework/modules/particles3", "."))
 	trail3 = require(filepath("../framework/modules/trail3", "."))
 	billboard = require(filepath("../framework/modules/billboard", "."))
+	mask = require(filepath("../framework/modules/mask", "."))
+
 	network = require(filepath("../framework/modules/network", "."))
 
 	-- profiling
