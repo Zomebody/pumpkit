@@ -76,8 +76,6 @@ vec2 pixelsSizeToWorldSize(mat4 viewMatrix) {
 
 
 
-// NOT TESTED YET
-
 vec4 position(mat4 transform_projection, vec4 vertex_position) {
 	mat4 viewMatrix = inverse(camMatrix);
 
@@ -107,16 +105,6 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 	// transform to clip space
 	mat4 perspectiveMatrix = getPerspectiveMatrix(fieldOfView, aspectRatio);
 	vec4 result = perspectiveMatrix * viewMatrix * vec4(worldPos, 1.0);
-
-	// find out the x-axis and y-axis of the screen space after rotation.
-	//vec2 rotUp = rotMatrix * vec2(0.0, 1.0);
-	//vec2 rotRight = rotMatrix * vec2(1.0, 0.0);
-
-	// apply pixel size. First offset on the rotation compensated x-axis then on the rotation compensated y-axis
-	//vec2 newXY = result.xy + rotRight * fracOffset.x * (2.0 / love_ScreenSize.x * pixelSize.x) + rotUp * fracOffset.y * (2.0 / love_ScreenSize.y * pixelSize.y);
-
-	// plug new x and y back into the result
-	//result = vec4(newXY.x, newXY.y, result.z, result.w);
 
 	return result;
 }
