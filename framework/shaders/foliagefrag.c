@@ -3,10 +3,10 @@
 
 varying vec3 fragWorldPosition; // output automatically interpolated fragment world position
 varying vec3 fragViewNormal; // used for ambient occlusion
-//varying vec3 fragWorldNormal;
 varying vec3 fragWorldSurfaceNormal;
 varying vec4 fragPosLightSpace;
 varying mat3 TBN; // tangent bitangent normal matrix, calculated in the vertex shder because it's more efficient
+varying float fragDepth;
 
 uniform float diffuseStrength;
 
@@ -45,7 +45,8 @@ uniform Image MainTex; // used to be the 'tex' argument, but is now passed separ
 uniform Image meshTexture; // replaces MainTex. Instead of using mesh:setTexture(), they are now passed separately so that a mesh can be reused with different textures on them
 uniform Image normalMap;
 uniform sampler2DShadow shadowCanvas; // use Image when doing 'basic' sampling. Use sampler2DShadow when you want automatic bilinear filtering (but more prone to shadow acne :<)
-
+uniform Image maskTexture; // r16
+uniform Image maskDepth; // depth texture
 
 // fragment shader
 
@@ -98,6 +99,14 @@ float calculateShadow(vec4 fragPosLightSpace, vec3 surfaceNormal) {
 
 
 void effect() {
+	
+	// I don't know why, but fragDepth > 0.0 is kinda necessary here to prevent weird clipping artefacts around the near-plane
+	vec2 screen_fraction = vec2(love_PixelCoord.x / love_ScreenSize.x, love_PixelCoord.y / love_ScreenSize.y);
+	if ((fragDepth > 0.0 && fragDepth <= Texel(maskDepth, screen_fraction).r)) {
+		if (Texel(maskTexture, screen_fraction).r > 0.0) {
+			discard;
+		}
+	}
 
 	vec4 color = VaryingColor; // argument 'color' doesn't exist when using multiple canvases, so use built-in VaryingColor
 	vec4 shadowColor = VaryingColor;
@@ -132,7 +141,7 @@ void effect() {
 
 	// if no shadows, keep the mesh color, otherwise tween towards shadow color depending on how much the object is in a shadow
 	if (shadowsEnabled) {
-		float shadow = calculateShadow(fragPosLightSpace, fragWorldSurfaceNormal); // fragWorldNormal // fragWorldSurfaceNormal
+		float shadow = calculateShadow(fragPosLightSpace, fragWorldSurfaceNormal);
 		float sunFactor = max(dot(-normalMapNormalWorld, sunDirection), 0.0); // please don't ask me why * vec3(1.0, 1.0, -1.0) works... I'm super confused
 		//float mixFactor = 1.0 - shadow * shadowStrength * pow(sunFactor, 0.5);
 		float mixFactor = (1.0 - shadow * shadowStrength) * (pow(sunFactor, 0.5));
@@ -186,8 +195,9 @@ void effect() {
 	if (resultingColor.a < 0.95) {
 		discard;  // discard pixels with at least some transparency
 	}
+	
 
-	love_Canvases[0] = resultingColor;// * 0.0001 + 0.9999 * vec4(fragWorldNormal * 0.5 + 0.5, 1.0);
+	love_Canvases[0] = resultingColor;
 
 	love_Canvases[1] = vec4(fragViewNormal.x / 2 + 0.5, fragViewNormal.y / 2 + 0.5, fragViewNormal.z / 2 + 0.5, 0.0); // pack normals into an RGBA format; alpha = draw no ambient occlusion
 

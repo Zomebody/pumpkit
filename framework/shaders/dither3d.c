@@ -22,7 +22,8 @@ uniform float outerRadius;
 
 attribute float VertexIsInner;
 
-varying float depth;
+//varying float depth;
+varying float threshold;
 
 /*
 mesh format:
@@ -88,9 +89,11 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 	mat4 perspectiveMatrix = getPerspectiveMatrix(fieldOfView, aspectRatio);
 	vec4 result = perspectiveMatrix * viewMatrix * vec4(worldPos, 1.0);
 
-	float ndcDepth = result.z / result.w; // range -1, 1
-	depth = ndcDepth * 0.5 + 0.5;
+	//float ndcDepth = result.z / result.w; // range -1, 1
+	//depth = ndcDepth * 0.5 + 0.5;
 	//depth = result.z;
+
+	threshold = VertexIsInner; // interpolates from 0 to 1 as you go from inner radius to outer radius
 
 	return result;
 }
@@ -102,16 +105,22 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 // fragment Shader
 #ifdef PIXEL
 
-varying float depth;
+varying float threshold;
 
-vec2 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
+vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
 
 	// TODO: write depth as a color to the canvas
 	// r = 0 if no mask, 1 if mask
 	// g = depth
 
 	//return Texel(tex, texture_coords) * color;
-	return vec2(1.0, depth);
+	//return vec2(1.0, depth);
+	vec2 screen_fraction = vec2(screen_coords.x / 16.0, screen_coords.y / 16.0);
+	float value = 1.0;
+	if (Texel(tex, screen_fraction).r > threshold) {
+		value = 0.0;
+	}
+	return vec4(value);
 }
 
 #endif

@@ -544,11 +544,39 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 
 	-- draw masks using 'lighten' blend mode because it stores the highest value for each channel
 	-- masks are drawn here because it just kinda works out well with minimizing canvas switches and masks need to be drawn very very early on
+	
 	if #self.Masks > 0 then
+		profiler:pushLabel("masks")
+		love.graphics.setMeshCullMode("back")
 		love.graphics.setShader(self.MaskShader)
+
+		-- draw all masks' depths. Store the deepest values
+		love.graphics.setCanvas({["depthstencil"] = self.MaskDepthCanvas})
+		love.graphics.clear(0, 0, 0, 0, 0, 0) -- by default depth is cleared to 1, but we want to clear it to 0!
 		love.graphics.setDepthMode("greater", true)
-		love.graphics.setCanvas({["depthstencil"] = self.MaskCanvas}) -- draw depth only
-		love.graphics.clear(0, 0, 0, 0, 0, 0) -- depth canvas gets cleared to '1' by default, supply '0' here since we are using 'greater' in the depth test
+		love.graphics.setBlendMode("alpha") -- default blending I guess? Probably doesn't matter much?
+		for i = 1, #self.Masks do
+			self.MaskShader:send("worldPosition", self.Masks[i].Position:array())
+			self.MaskShader:send("innerRadius", self.Masks[i].InnerRadius)
+			self.MaskShader:send("outerRadius", self.Masks[i].OuterRadius)
+			love.graphics.draw(self.Masks[i].Mesh)
+		end
+
+		-- now draw the colors. No need to do any depth testing here
+		love.graphics.setCanvas(self.MaskCanvas)
+		love.graphics.clear() -- clears to 0's
+		love.graphics.setBlendMode("lighten", "premultiplied") -- lighten only works with premultiplied
+		for i = 1, #self.Masks do
+			self.MaskShader:send("worldPosition", self.Masks[i].Position:array())
+			self.MaskShader:send("innerRadius", self.Masks[i].InnerRadius)
+			self.MaskShader:send("outerRadius", self.Masks[i].OuterRadius)
+			love.graphics.draw(self.Masks[i].Mesh)
+		end
+
+		--[[
+		--love.graphics.setCanvas({["depthstencil"] = self.MaskCanvas}) -- draw depth only
+		--love.graphics.clear(0, 0, 0, 0, false, 0) -- depth canvas gets cleared to '1' by default, supply '0' here since we are using 'greater' in the depth test
+		love.graphics.clear()
 		love.graphics.setBlendMode("lighten", "premultiplied") -- lighten only works with premultiplied
 		-- TODO: there might be a way to make masks instanced?
 		love.graphics.setMeshCullMode("none")
@@ -558,9 +586,13 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 			self.MaskShader:send("outerRadius", self.Masks[i].OuterRadius)
 			love.graphics.draw(self.Masks[i].Mesh)
 		end
-		love.graphics.setMeshCullMode("back")
-		love.graphics.setBlendMode(blendMode)
+		]]
+		--love.graphics.setMeshCullMode("back")
+		--love.graphics.setBlendMode(blendMode)
+
+		profiler:popLabel()
 	end
+	
 
 
 	-- prep render settings
@@ -1030,8 +1062,17 @@ function Scene3:rescaleCanvas(width, height, msaa)
 	local reuseCanvas6 = love.graphics.newCanvas(width * 0.25, height * 0.25)
 
 	local maskCanvas = love.graphics.newCanvas(
-		width * 0.25,
-		height * 0.25,
+		width * 0.5,
+		height * 0.5,
+		{
+			["type"] = "2d";
+			["format"] = "r16";
+			["readable"] = true;
+		}
+	)
+	local maskDepthCanvas = love.graphics.newCanvas(
+		width * 0.5,
+		height * 0.5,
 		{
 			["type"] = "2d";
 			["format"] = "depth32f";
@@ -1052,6 +1093,7 @@ function Scene3:rescaleCanvas(width, height, msaa)
 	self.VFXCanvas1 = vfxCanvas1
 	self.VFXCanvas2 = vfxCanvas2
 	self.MaskCanvas = maskCanvas
+	self.MaskDepthCanvas = maskDepthCanvas
 	self.ReuseCanvas1 = reuseCanvas1
 	self.ReuseCanvas2 = reuseCanvas2
 	self.ReuseCanvas3 = reuseCanvas3
@@ -1081,7 +1123,10 @@ function Scene3:rescaleCanvas(width, height, msaa)
 	-- misc
 	self.VFXMixShader:send("countCanvas", vfxCanvas2)
 	self.SSAOBlendShader:send("normalsTexture", normalCanvas) -- needed to sample alpha channel to check if ambient occlusion should be applied
+
 	-- TODO: send mask depth to mesh shaders to sample depth and compare for dithering
+	self.FoliageShader:send("maskTexture", maskCanvas)
+	self.FoliageShader:send("maskDepth", maskDepthCanvas)
 end
 
 
@@ -1729,7 +1774,8 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 		["VFXCanvas2"] = nil;--particleCanvas2; -- stores in the 'r' channel the sum of fragments on that pixel and the 'g' channel is the alpha summed
 		["ShadowCanvas"] = nil; -- either nil, or a canvas when shadow map is enabled
 		["ShadowDepthCanvas"] = nil;  -- either nil, or a canvas when shadow map is enabled
-		["MaskCanvas"] = nil; -- IS A DEPTH CANVAS, 0.25x scale canvas used to draw mask depths to. Used in mesh shaders to cull objects if there's a mask at a higher depth
+		["MaskCanvas"] = nil; -- single-channel, r16, range [0,1]. Stores a value that determines dithering thickness at the given pixel
+		["MaskDepthCanvas"] = nil; -- 0.25x scale canvas used to draw mask depths to. Used in mesh shaders to cull objects if there's a mask at a higher depth
 
 		-- when applying SSAO, bloom, etc. you need multiple render passes. For that purpose 'reuse' canvases are created to play ping-pong with each pass
 		-- Considering that SSAO, bloom etc. might want to be downscaled for better FPS, there are canvases for full, half and quarter size
