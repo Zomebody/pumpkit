@@ -40,7 +40,6 @@ varying vec3 fragWorldNormal; // normal vector, but in world space this time
 varying vec3 fragWorldSurfaceNormal; // specifically required to solve shadow acne
 varying vec4 fragPosLightSpace; // position of the fragment in light space so it can sample from the shadow map
 varying mat3 TBN; // tangent bitangent normal matrix to be used for normal maps
-varying float fragDepth;
 
 
 
@@ -199,9 +198,6 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 
 	// apply the view-projection transformation
 	vec4 result = projectionMatrix * viewPos;
-	fragDepth = (result.z / result.w) * 0.5 + 0.5;
-
-
 
 
 

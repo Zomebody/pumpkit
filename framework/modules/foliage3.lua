@@ -105,6 +105,7 @@ local function new(mesh, positions, rotations, scales, cols, shadowcols)
 		["Texture"] = nil;
 		["Instances"] = instanceMesh;
 		["Brightness"] = 0;
+		["Masked"] = false;
 		["CastShadow"] = false;
 		["NormalMap"] = nil;
 		["Count"] = #positions;

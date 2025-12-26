@@ -110,6 +110,7 @@ local function new(mesh, positions, rotations, scales, cols, shadowcols)
 		["FresnelColor"] = color(1, 1, 1);
 		["FresnelStrength"] = 0;
 		["FresnelPower"] = 1;
+		["Masked"] = false;
 		["CastShadow"] = false;
 		["TextureScale"] = 1;
 		["NormalMap"] = nil;

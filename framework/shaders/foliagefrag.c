@@ -7,7 +7,6 @@ varying vec3 fragWorldSurfaceNormal;
 varying vec4 fragPosLightSpace;
 varying mat3 TBN; // tangent bitangent normal matrix, calculated in the vertex shder because it's more efficient
 varying float fragDepth;
-
 uniform float diffuseStrength;
 
 // lights
@@ -39,14 +38,15 @@ uniform float meshBrightness; // if 1, mesh is not affected by diffuse shading a
 varying vec3 instColor;
 varying vec3 instColorShadow;
 
+// masking
+uniform float masked;
+uniform Image maskCanvas; // r16
 
 // textures
 uniform Image MainTex; // used to be the 'tex' argument, but is now passed separately in this specific variable name because we switched to multi-canvas shading which has no arguments
 uniform Image meshTexture; // replaces MainTex. Instead of using mesh:setTexture(), they are now passed separately so that a mesh can be reused with different textures on them
 uniform Image normalMap;
 uniform sampler2DShadow shadowCanvas; // use Image when doing 'basic' sampling. Use sampler2DShadow when you want automatic bilinear filtering (but more prone to shadow acne :<)
-uniform Image maskTexture; // r16
-uniform Image maskDepth; // depth texture
 
 // fragment shader
 
@@ -99,13 +99,10 @@ float calculateShadow(vec4 fragPosLightSpace, vec3 surfaceNormal) {
 
 
 void effect() {
-	
-	// I don't know why, but fragDepth > 0.0 is kinda necessary here to prevent weird clipping artefacts around the near-plane
+	// apply masking
 	vec2 screen_fraction = vec2(love_PixelCoord.x / love_ScreenSize.x, love_PixelCoord.y / love_ScreenSize.y);
-	if ((fragDepth > 0.0 && fragDepth <= Texel(maskDepth, screen_fraction).r)) {
-		if (Texel(maskTexture, screen_fraction).r > 0.0) {
-			discard;
-		}
+	if (Texel(maskCanvas, screen_fraction).r > 1.0 - masked) {
+		discard;
 	}
 
 	vec4 color = VaryingColor; // argument 'color' doesn't exist when using multiple canvases, so use built-in VaryingColor

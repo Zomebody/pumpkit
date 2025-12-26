@@ -108,6 +108,7 @@ local function new(meshRef, position, rotation, scale, col, scol)
 		["FresnelColor"] = color(1, 1, 1);
 		["FresnelStrength"] = 0;
 		["FresnelPower"] = 1;
+		["Masked"] = false;
 		["Transparency"] = 0;
 		["CastShadow"] = false;
 		["TextureScale"] = 1;

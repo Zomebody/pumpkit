@@ -115,7 +115,7 @@ vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
 
 	//return Texel(tex, texture_coords) * color;
 	//return vec2(1.0, depth);
-	vec2 screen_fraction = vec2(screen_coords.x / 16.0, screen_coords.y / 16.0);
+	vec2 screen_fraction = vec2(screen_coords.x / 16.0, screen_coords.y / 16.0); // divivde by 16 because that's the resolution of the dithering pattern
 	float value = 1.0;
 	if (Texel(tex, screen_fraction).r > threshold) {
 		value = 0.0;

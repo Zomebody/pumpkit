@@ -48,11 +48,13 @@ uniform vec3 meshFresnelColor; // vec3 since fresnel won't be supporting transpa
 varying vec3 instColor;
 varying vec3 instColorShadow;
 
+// masking
+uniform float masked;
+uniform Image maskCanvas; // r16
+
 
 uniform bool isInstanced;
 
-// triplanar texture projection variables
-//uniform float triplanarScale;
 
 // textures
 uniform Image meshTexture; // replaces MainTex. Instead of using mesh:setTexture(), they are now passed separately so that a mesh can be reused with different textures on them
@@ -117,6 +119,11 @@ float calculateShadow(vec4 fragPosLightSpace, vec3 surfaceNormalWorld) {
 
 
 void effect() {
+	// apply masking
+	vec2 screen_fraction = vec2(love_PixelCoord.x / love_ScreenSize.x, love_PixelCoord.y / love_ScreenSize.y);
+	if (Texel(maskCanvas, screen_fraction).r > 1.0 - masked) {
+		discard;
+	}
 
 	vec4 color = VaryingColor; // argument 'color' doesn't exist when using multiple canvases, so use built-in VaryingColor
 	vec4 shadowColor = VaryingColor;
