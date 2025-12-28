@@ -322,7 +322,7 @@ local function new(img, maxParticles, properties)
 
 	local gradient = properties.Gradient or gradient(0, color(1, 1, 1), 1, color(1, 1, 1))
 	local source = properties.Source or vector3(0, 0, 0)
-	local direction = properties.Direction or vector3(0, 1, 0)
+	local direction = properties.Direction or vector3(0, 0, 1)
 	local directionDeviation = properties.DirectionDeviation or math.pi / 8
 	local spawnRadius = properties.SpawnRadius or range(0, 0)
 	local gravity = properties.Gravity or vector3(0, 0, 0)
@@ -401,6 +401,14 @@ end
 
 
 
+-- if you try to set 'Image' specifically, it calls mesh:setTexture() instead
+function Particles3:__newindex(key, value)
+	if key == "Image" then
+		self.Mesh:setTexture(value)
+	else
+		rawset(self, key, value)
+	end
+end
 
 
 
