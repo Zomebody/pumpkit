@@ -105,8 +105,8 @@ local function spawn(f, d, r, w)
 	if d == nil then d = 0 end
 	w = w or 0
 	local t = new(f, r, w)
-	t.NextRun = love.timer.getTime() + d
-	t:run()
+	--t.NextRun = love.timer.getTime() + d
+	t:run(d)
 	return t
 end
 
@@ -114,8 +114,10 @@ end
 
 ----------------------------------------------------[[ == TASK METHODS == ]]----------------------------------------------------
 
-function task:run()
+function task:run(d)
+	d = (d == nil and 0 or d)
 	if not self.Active then
+		self.NextRun = love.timer.getTime() + d
 		self.Active = true
 		self.TimesRan = 0
 		self.Routine = coroutine.create(self.Function)
