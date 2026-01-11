@@ -1097,12 +1097,18 @@ function UIBase:remove()
 	end
 
 	if self.Parent ~= nil then
+		-- remove reference to this from parent's children
 		local Par = self.Parent
 		for i = 1, #Par.Children do
 			if Par.Children[i] == self then
 				table.remove(Par.Children, i)
 				break
 			end
+		end
+
+		-- if layout is set, update the position of other children
+		if self.Parent.Layout ~= nil then
+			updateAbsolutePosition(self.Parent)
 		end
 	end
 
