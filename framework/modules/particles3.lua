@@ -263,6 +263,11 @@ end
 
 -- create a new particle emitter which uses the given image and can emit at most maxParticles at once
 local function new(img, maxParticles, properties)
+	if isParticles3(img) then
+		properties = img
+		img = img.Mesh:getTexture()
+		maxParticles = maxParticles == nil and properties.MaxParticles or maxParticles
+	end
 	if properties == nil then properties = {} end
 
 	-- create quad mesh with the texture on top of it, to be used when rendering the particle in 3d
