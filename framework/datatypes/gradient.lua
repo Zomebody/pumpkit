@@ -76,6 +76,10 @@ function gradient:getColor(x)
 end
 
 
+function gradient:__tostring()
+	return "(gradient)"
+end
+
 
 -- pack up and return module
 module.new = new
