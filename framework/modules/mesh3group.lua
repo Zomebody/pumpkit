@@ -9,6 +9,14 @@ local Mesh3Group = {}
 Mesh3Group.__index = Mesh3Group
 Mesh3Group.__tostring = function(tab) return "{Mesh3Group: " .. tostring(tab.Id) .. "}" end
 
+local attributeIndex = {
+	["Position"] = 1;
+	["Rotation"] = 2;
+	["Scale"] = 3;
+	["Color"] = 4;
+	["ColorShadow"] = 5;
+}
+
 
 
 ----------------------------------------------------[[ == METHODS == ]]----------------------------------------------------
@@ -30,6 +38,10 @@ function Mesh3Group:detach()
 	self.Scene:detachMesh(self)
 end
 
+
+function Mesh3Group:changeInstance(index, property, newValue)
+	self.Instances:setVertexAttribute(index, attributeIndex[property], newValue:components())
+end
 
 
 
