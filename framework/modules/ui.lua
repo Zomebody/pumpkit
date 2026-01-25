@@ -1668,6 +1668,10 @@ function UIBase:setOrder(order)
 		table.insert(Children, index, self)
 	end
 	self.Order = order
+	-- if a layout is set, update the layout
+	if self.Parent ~= nil and self.Parent.Layout ~= nil then
+		updateAbsolutePosition(self.Parent)
+	end
 end
 
 
