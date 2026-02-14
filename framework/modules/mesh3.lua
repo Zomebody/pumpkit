@@ -109,6 +109,7 @@ local function new(meshRef, position, rotation, scale, col, scol)
 		["FresnelStrength"] = 0;
 		["FresnelPower"] = 1;
 		["Masked"] = false;
+		["Silhouette"] = false;
 		["Transparency"] = 0;
 		["UVVelocity"] = vector2(0, 0);
 		["CastShadow"] = false;

@@ -103,6 +103,7 @@ local function new(meshRef, sheetSize, position, rotation, scale, col, scol)
 		["ColorShadow"] = col ~= nil and color(col) or color(1, 1, 1);
 		["Brightness"] = 0;
 		["Bloom"] = 0;
+		["Silhouette"] = false;
 		["Transparency"] = 0;
 		["SheetSize"] = vector2(sheetSize) or vector2(1, 1);
 		["SpritePosition"] = vector2(1, 1);

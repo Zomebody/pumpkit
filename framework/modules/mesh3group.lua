@@ -123,6 +123,7 @@ local function new(mesh, positions, rotations, scales, cols, shadowcols)
 		["FresnelStrength"] = 0;
 		["FresnelPower"] = 1;
 		["Masked"] = false;
+		["Silhouette"] = false;
 		["CastShadow"] = false;
 		["NormalMap"] = nil;
 		["Count"] = #positions;

@@ -51,6 +51,7 @@ local SHADER_TRAIL_VERT = "framework/shaders/trailvert.c"
 local SHADER_TRAIL_FRAG = "framework/shaders/trailfrag.c"
 local SHADER_BILLBOARD_PATH = "framework/shaders/billboard.c"
 local SHADER_MASK_PATH = "framework/shaders/dither3d.c"
+local SHADER_SILHOUETTE_PATH = "framework/shaders/silhouette.c"
 
 
 
@@ -453,6 +454,7 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 	end
 
 	local TransMeshes = {} -- create new array to put all basic meshes in that have a Transparency > 0. Their rendering is postponed. They will be sorted later
+	local Silhouettes = {} -- array where any meshes that have silhouettes are stored. They get evaluated later on and drawn on top if the mesh is occluded
 
 	-- blur shaders do sampling in 'pixel' coordinates while shaders work with normalized device coordinates
 	-- that means that if you resize your screen, blurs will need to be adjusted as well to compensate for the different canvas size
@@ -629,6 +631,9 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 			self.Shader:send("masked", Mesh.Masked and 1 or 0)
 			--self.Shader:send("triplanarScale", Mesh.IsTriplanar and Mesh.TextureScale or 0)
 			love.graphics.drawInstanced(Mesh.Mesh, Mesh.Count)
+			if Mesh.Silhouette then
+				table.insert(Silhouettes, Mesh)
+			end
 		end
 		profiler:popLabel()
 	end
@@ -659,6 +664,9 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 				love.graphics.draw(Mesh.Mesh)
 			elseif Mesh.Transparency < 1 or Mesh.FresnelStrength > 0 then -- ignore meshes with transparency == 1 (unless they have fresnel)
 				table.insert(TransMeshes, Mesh)
+			end
+			if Mesh.Silhouette then
+				table.insert(Silhouettes, Mesh)
 			end
 		end
 		profiler:popLabel()
@@ -808,10 +816,14 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 			elseif Mesh.Transparency < 1 then -- ignore meshes with transparency == 1
 				table.insert(TransMeshes, Mesh)
 			end
+			if Mesh.Silhouette then
+				table.insert(Silhouettes, Mesh)
+			end
 		end
 		self.Shader:send("isSpriteSheet", false)
 		profiler:popLabel()
 	end
+
 
 
 
@@ -847,8 +859,8 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 				else
 					Shader:send("isSpriteSheet", true)
 					Shader:send("uvVelocity", {0, 0})
-					Shader:send("spritePosition", Mesh.SpritePosition)
-					Shader:send("spriteSheetSize", Mesh.SheetSize)
+					Shader:send("spritePosition", {Mesh.SpritePosition.x - 1, Mesh.SpritePosition.y - 1})
+					Shader:send("spriteSheetSize", Mesh.SheetSize:array())
 				end
 
 			elseif (trip3.isTrip3(Mesh)) and Shader ~= self.TriplanarShader then
@@ -877,6 +889,44 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 		profiler:popLabel()
 	end
 	
+
+	-- draw silhouettes (if any)
+	if #Silhouettes > 0 then
+
+		profiler:pushLabel("silhouette")
+		love.graphics.setCanvas({self.RenderCanvas, ["depthstencil"] = self.DepthCanvas})
+		love.graphics.setShader(self.SilhouetteShader)
+
+		love.graphics.setDepthMode("greater", false)
+
+		-- TODO: eventually split off spritesheets and meshes into two separate shaders
+		-- then, they'll naturally be evaluated
+		for i = 1, #Silhouettes do
+			local Mesh = Silhouettes[i]
+			if spritemesh3.isSpritemesh3(Mesh) then
+				self.SilhouetteShader:send("isSpriteSheet", true)
+				self.SilhouetteShader:send("spritePosition", {Mesh.SpritePosition.x - 1, Mesh.SpritePosition.y - 1})
+				self.SilhouetteShader:send("spriteSheetSize", Mesh.SheetSize:array())
+			else
+				self.SilhouetteShader:send("isSpriteSheet", false)
+				if mesh3group.isMesh3Group(Mesh) then
+					self.SilhouetteShader:send("isInstanced", true)
+				else
+					self.SilhouetteShader:send("isInstanced", false)
+					self.SilhouetteShader:send("meshPosition", Mesh.Position:array())
+					self.SilhouetteShader:send("meshRotation", Mesh.Rotation:array())
+					self.SilhouetteShader:send("meshScale", Mesh.Scale:array())
+				end
+			end
+			love.graphics.draw(Mesh.Mesh)
+		end
+
+		love.graphics.setDepthMode("less", true)
+
+		profiler:popLabel()
+
+	end
+
 
 	
 
@@ -1080,6 +1130,7 @@ function Scene3:rescaleCanvas(width, height, msaa)
 	self.TrailShader:send("aspectRatio", aspectRatio)
 	self.BillboardShader:send("aspectRatio", aspectRatio)
 	self.MaskShader:send("aspectRatio", aspectRatio)
+	self.SilhouetteShader:send("aspectRatio", aspectRatio)
 
 	-- calculate perspective matrix for the SSAO shader
 	if self.Camera3 ~= nil then
@@ -1126,7 +1177,7 @@ end
 
 
 
-function Scene3:setAmbient(col, occlusionColor)
+function Scene3:setAmbient(col, occlusionColor, silhouetteColor)
 	local arr = {col.r, col.g, col.b}
 	self.Shader:send("ambientColor", arr)
 	self.TriplanarShader:send("ambientColor", arr)
@@ -1137,6 +1188,9 @@ function Scene3:setAmbient(col, occlusionColor)
 	self.TrailShader:send("ambientColor", arr)
 	if occlusionColor ~= nil then
 		self.SSAOBlendShader:send("occlusionColor", {occlusionColor.r, occlusionColor.g, occlusionColor.b})
+	end
+	if silhouetteColor ~= nil then
+		self.SilhouetteShader:send("silhouetteColor", {silhouetteColor.r, silhouetteColor.g, silhouetteColor.b})
 	end
 end
 
@@ -1728,6 +1782,7 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 		["ShadowMapShader"] = love.graphics.newShader(SHADER_SHADOWMAP_PATH);
 		["BillboardShader"] = love.graphics.newShader(SHADER_BILLBOARD_PATH);
 		["MaskShader"] = love.graphics.newShader(SHADER_MASK_PATH);
+		["SilhouetteShader"] = love.graphics.newShader(SHADER_SILHOUETTE_PATH); 
 
 		["LastDrawSize"] = vector2(gWidth, gHeight); -- when you suddenly start drawing the scene at a different size, some shader variables need to be updated!
 		["LightsDirty"] = true; -- if true, update lights data in the shaders and set this to false (until a light gets attached/detached)
@@ -1834,6 +1889,8 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 	Object.BillboardShader:send("fieldOfView", Object.Camera3.FieldOfView)
 
 	Object.MaskShader:send("fieldOfView", Object.Camera3.FieldOfView)
+
+	Object.SilhouetteShader:send("fieldOfView", Object.Camera3.FieldOfView)
 
 	Object.SSAOShader:send("aoStrength", 0.5)
 	Object.SSAOShader:send("kernelScalar", 0.85) -- how 'large' ambient occlusion is
