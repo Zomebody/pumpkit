@@ -150,7 +150,7 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 // fragment Shader
 #ifdef PIXEL
 
-uniform vec3 silhouetteColor;
+uniform vec4 silhouetteColor;
 
 // sprites
 uniform vec2 spritePosition;
@@ -170,7 +170,7 @@ vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
 	if (texColor.a < 0.01) {
 		discard;
 	}
-	return vec4(silhouetteColor, 1.0);
+	return vec4(silhouetteColor);
 }
 
 

@@ -1190,7 +1190,7 @@ function Scene3:setAmbient(col, occlusionColor, silhouetteColor)
 		self.SSAOBlendShader:send("occlusionColor", {occlusionColor.r, occlusionColor.g, occlusionColor.b})
 	end
 	if silhouetteColor ~= nil then
-		self.SilhouetteShader:send("silhouetteColor", {silhouetteColor.r, silhouetteColor.g, silhouetteColor.b})
+		self.SilhouetteShader:send("silhouetteColor", {silhouetteColor.r, silhouetteColor.g, silhouetteColor.b, silhouetteColor.a})
 	end
 end
 
