@@ -893,14 +893,18 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 	-- draw silhouettes (if any)
 	if #Silhouettes > 0 then
 
-		profiler:pushLabel("silhouette")
-		love.graphics.setCanvas({self.RenderCanvas, ["depthstencil"] = self.DepthCanvas})
-		love.graphics.setShader(self.SilhouetteShader)
-
-		love.graphics.setDepthMode("greater", false)
-
 		-- TODO: eventually split off spritesheets and meshes into two separate shaders
 		-- then, they'll naturally be evaluated
+
+		profiler:pushLabel("silhouette")
+		love.graphics.setCanvas({self.RenderCanvas, ["depthstencil"] = self.DepthCanvas}) -- depth 32 stencil 8
+		love.graphics.setShader(self.SilhouetteShader)
+
+		-- enable stencil to ensure you don't overwrite silhouettes a second time
+		love.graphics.setDepthMode("greater", false)
+		love.graphics.setStencilTest("less", 1)
+
+		-- draw all of this inside a stencil function
 		for i = 1, #Silhouettes do
 			local Mesh = Silhouettes[i]
 			if spritemesh3.isSpritemesh3(Mesh) then
@@ -918,9 +922,16 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 					self.SilhouetteShader:send("meshScale", Mesh.Scale:array())
 				end
 			end
-			love.graphics.draw(Mesh.Mesh)
+			love.graphics.draw(Mesh.Mesh) -- draw mesh
+			love.graphics.stencil(
+				function()
+					love.graphics.draw(Mesh.Mesh) -- draw mesh again, but now to the stencil specifically
+				end, "replace", 1, false -- stencil already gets cleared earlier on in the frame
+			)
 		end
 
+		-- reset testing
+		love.graphics.setStencilTest()
 		love.graphics.setDepthMode("less", true)
 
 		profiler:popLabel()
@@ -1055,7 +1066,7 @@ function Scene3:rescaleCanvas(width, height, msaa)
 		height * msaa,
 		{
 			["type"] = "2d";
-			["format"] = "depth32f"; -- should probably be replaced with depth24 later on, but if you do so, also change the far-plane to be closer!
+			["format"] = "depth32fstencil8"; -- should probably be replaced with depth24 later on, but if you do so, also change the far-plane to be closer!
 			["readable"] = true;
 		}
 	)
