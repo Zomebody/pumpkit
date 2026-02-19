@@ -157,7 +157,7 @@ function Scene3:applyAmbientOcclusion()
 	-- set ambient occlusion canvas as render target, and draw ambient occlusion data to the AO canvas
 	love.graphics.setCanvas(pingCanvas)
 	love.graphics.setShader(self.SSAOShader)
-	love.graphics.draw(self.DepthCanvas, 0, 0, 0, 1 / self.MSAA, 1 / self.MSAA) -- set the ambient occlusion shader in motion
+	love.graphics.draw(self.DepthCanvas, 0, 0, 0, 1 / self.SSAA, 1 / self.SSAA) -- set the ambient occlusion shader in motion
 
 
 	
@@ -219,7 +219,7 @@ function Scene3:applyBloom()
 	love.graphics.setShader(self.BloomBlurShader)
 	-- re-use the blur-shader that was made for ambient occlusion. We can ignore the depth texture by disabling depth tolerance
 	self.BloomBlurShader:send("blurDirection", {1, 0})
-	love.graphics.draw(self.BloomCanvas, 0, 0, 0, 1 / self.MSAA * self.BloomQuality, 1 / self.MSAA * self.BloomQuality)
+	love.graphics.draw(self.BloomCanvas, 0, 0, 0, 1 / self.SSAA * self.BloomQuality, 1 / self.SSAA * self.BloomQuality)
 	love.graphics.setCanvas(pongCanvas)
 	self.BloomBlurShader:send("blurDirection", {0, 1})
 	-- draw to second reuse canvas for second blurring pass
@@ -232,7 +232,7 @@ function Scene3:applyBloom()
 	local blendMode = love.graphics.getBlendMode()
 	love.graphics.setBlendMode("add")
 	love.graphics.setCanvas(self.RenderCanvas)
-	love.graphics.draw(pongCanvas, 0, 0, 0, self.MSAA / self.BloomQuality, self.MSAA / self.BloomQuality)
+	love.graphics.draw(pongCanvas, 0, 0, 0, self.SSAA / self.BloomQuality, self.SSAA / self.BloomQuality)
 	love.graphics.setBlendMode(blendMode)
 	--love.graphics.setShader() -- not needed since whatever comes after this will set the correct shader
 end
@@ -1000,8 +1000,8 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 		-- if a render target is set, adjust the scaling so that it fits inside the render target
 		local scaleX = renderTarget:getWidth() / self.RenderCanvas:getWidth()
 		local scaleY = renderTarget:getHeight() / self.RenderCanvas:getHeight()
-		local scaleX = 1 / self.MSAA
-		local scaleY = 1 / self.MSAA
+		local scaleX = 1 / self.SSAA
+		local scaleY = 1 / self.SSAA
 		-- a pretty important caveat here: if you are drawing to a render target it's VERY RECOMMENDED that the render target has the same dimensions as the screen
 		-- if your render target is smaller however, e.g. when using split-screen, you should 100% call Scene3:rescaleCanvas() with your target width and height.
 		-- because if you are drawing to a smaller render canvas but the scene has a fullscreen render canvas, you're tanking your FPS for no reason (better anti-aliasing though I guess)
@@ -1010,8 +1010,8 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 		-- if no render target is set, the scene is drawn to the screen, so use the screen's dimensions
 		--local scaleX = love.graphics.getWidth() / self.RenderCanvas:getWidth()
 		--local scaleY = love.graphics.getHeight() / self.RenderCanvas:getHeight()
-		local scaleX = 1 / self.MSAA
-		local scaleY = 1 / self.MSAA
+		local scaleX = 1 / self.SSAA
+		local scaleY = 1 / self.SSAA
 		love.graphics.draw(self.RenderCanvas, x, self.RenderCanvas:getHeight() * scaleY + y, 0, scaleX, -scaleY)
 	end
 	profiler:popLabel()
@@ -1043,11 +1043,11 @@ end
 
 
 -- updates the aspect ratio, render canvas and depth canvas
-function Scene3:rescaleCanvas(width, height, msaa)
-	if msaa == nil then
-		msaa = self.MSAA
+function Scene3:rescaleCanvas(width, height, ssaa)
+	if ssaa == nil then
+		ssaa = self.SSAA
 	end
-	self.MSAA = msaa
+	self.SSAA = ssaa
 
 	if width == nil or height == nil then
 		width, height = love.graphics.getDimensions()
@@ -1060,10 +1060,10 @@ function Scene3:rescaleCanvas(width, height, msaa)
 	width = math.ceil(width / 4) * 4
 	height = math.ceil(height / 4) * 4
 
-	local renderCanvas = love.graphics.newCanvas(width * msaa, height * msaa, {["format"] = "srgba8"})
+	local renderCanvas = love.graphics.newCanvas(width * ssaa, height * ssaa, {["format"] = "srgba8"})
 	local depthCanvas = love.graphics.newCanvas(
-		width * msaa,
-		height * msaa,
+		width * ssaa,
+		height * ssaa,
 		{
 			["type"] = "2d";
 			["format"] = "depth32fstencil8"; -- should probably be replaced with depth24 later on, but if you do so, also change the far-plane to be closer!
@@ -1071,22 +1071,22 @@ function Scene3:rescaleCanvas(width, height, msaa)
 		}
 	)
 	depthCanvas:setFilter("nearest")
-	local normalCanvas = love.graphics.newCanvas(width * msaa, height * msaa)
-	local prepareCanvas = love.graphics.newCanvas(width * msaa, height * msaa, {["format"] = "srgba8"})
+	local normalCanvas = love.graphics.newCanvas(width * ssaa, height * ssaa)
+	local prepareCanvas = love.graphics.newCanvas(width * ssaa, height * ssaa, {["format"] = "srgba8"})
 	prepareCanvas:setFilter("nearest")
-	local bloomCanvas = love.graphics.newCanvas(width * msaa, height * msaa)
+	local bloomCanvas = love.graphics.newCanvas(width * ssaa, height * ssaa)
 	bloomCanvas:setFilter("nearest")
 	local vfxCanvas1 = love.graphics.newCanvas( -- sums up colors and alpha
-		width * msaa,
-		height * msaa,
+		width * ssaa,
+		height * ssaa,
 		{
 			["format"] = "rgba32f";
 			["readable"] = true;
 		}
 	)
 	local vfxCanvas2 = love.graphics.newCanvas( -- keeps track of particle count per pixel
-		width * msaa,
-		height * msaa,
+		width * ssaa,
+		height * ssaa,
 		{
 			["format"] = "rgba32f"; -- red stores particle count, green stores sum alpha
 			["readable"] = true;
@@ -1763,9 +1763,9 @@ end
 ----------------------------------------------------[[ == OBJECT CREATION == ]]----------------------------------------------------
 
 -- creates a new Scene3 object with the base properties of a Scene3
-local function newScene3(sceneCamera, bgImage, fgImage, msaa)
-	if msaa == nil then
-		msaa = 2
+local function newScene3(sceneCamera, bgImage, fgImage, ssaa)
+	if ssaa == nil then
+		ssaa = 2
 	end
 
 	--assert(camera.isCamera(sceneCamera) or sceneCamera == nil, "scene3.newScene3(image, sceneCamera) only accepts a camera instance or nil for 'sceneCamera'")
@@ -1820,7 +1820,7 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 		["ReuseCanvas5"] = nil;--reuseCanvas5; -- quarter quality 1
 		["ReuseCanvas6"] = nil;--reuseCanvas6; -- quarter quality 2
 
-		["MSAA"] = msaa;
+		["SSAA"] = ssaa;
 		["AOEnabled"] = false;
 		["DiffuseStrength"] = 1;
 		["BloomStrength"] = 0;
@@ -1857,7 +1857,7 @@ local function newScene3(sceneCamera, bgImage, fgImage, msaa)
 	Object.Camera3:attach(Object)
 	Object.Camera3:updateCameraMatrices()
 
-	Object:rescaleCanvas(nil, nil, msaa) -- call to initialize canvas variables
+	Object:rescaleCanvas(nil, nil, ssaa) -- call to initialize canvas variables
 
 
 
