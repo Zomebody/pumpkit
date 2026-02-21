@@ -837,6 +837,57 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 		end
 	)
 
+
+	-- draw silhouettes (if any)
+	if #Silhouettes > 0 then
+
+		-- TODO: eventually split off spritesheets and meshes into two separate shaders
+		-- then, they'll naturally be evaluated
+
+		profiler:pushLabel("silhouette")
+		love.graphics.setCanvas({self.RenderCanvas, ["depthstencil"] = self.DepthCanvas}) -- depth 32 stencil 8
+		love.graphics.setShader(self.SilhouetteShader)
+
+		-- enable stencil to ensure you don't overwrite silhouettes a second time
+		love.graphics.setDepthMode("greater", false)
+		love.graphics.setStencilTest("less", 1)
+
+		-- draw all of this inside a stencil function
+		for i = 1, #Silhouettes do
+			local Mesh = Silhouettes[i]
+			if spritemesh3.isSpritemesh3(Mesh) then
+				self.SilhouetteShader:send("isSpriteSheet", true)
+				self.SilhouetteShader:send("spritePosition", {Mesh.SpritePosition.x - 1, Mesh.SpritePosition.y - 1})
+				self.SilhouetteShader:send("spriteSheetSize", Mesh.SheetSize:array())
+			else
+				self.SilhouetteShader:send("isSpriteSheet", false)
+				if mesh3group.isMesh3Group(Mesh) then
+					self.SilhouetteShader:send("isInstanced", true)
+				else
+					self.SilhouetteShader:send("isInstanced", false)
+					self.SilhouetteShader:send("meshPosition", Mesh.Position:array())
+					self.SilhouetteShader:send("meshRotation", Mesh.Rotation:array())
+					self.SilhouetteShader:send("meshScale", Mesh.Scale:array())
+				end
+			end
+			love.graphics.draw(Mesh.Mesh) -- draw mesh
+			love.graphics.stencil(
+				function()
+					love.graphics.draw(Mesh.Mesh) -- draw mesh again, but now to the stencil specifically
+				end, "replace", 1, false -- stencil already gets cleared earlier on in the frame
+			)
+		end
+
+		-- reset testing
+		love.graphics.setStencilTest()
+		love.graphics.setDepthMode("less", true)
+
+		profiler:popLabel()
+
+	end
+
+
+
 	-- since both basic meshes and sprite meshes need to be drawn in the right order, this loop gets a bit complicated
 	if #TransMeshes > 0 then
 		profiler:pushLabel("trans")
@@ -887,55 +938,6 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 			love.graphics.draw(Mesh.Mesh)
 		end
 		profiler:popLabel()
-	end
-	
-
-	-- draw silhouettes (if any)
-	if #Silhouettes > 0 then
-
-		-- TODO: eventually split off spritesheets and meshes into two separate shaders
-		-- then, they'll naturally be evaluated
-
-		profiler:pushLabel("silhouette")
-		love.graphics.setCanvas({self.RenderCanvas, ["depthstencil"] = self.DepthCanvas}) -- depth 32 stencil 8
-		love.graphics.setShader(self.SilhouetteShader)
-
-		-- enable stencil to ensure you don't overwrite silhouettes a second time
-		love.graphics.setDepthMode("greater", false)
-		love.graphics.setStencilTest("less", 1)
-
-		-- draw all of this inside a stencil function
-		for i = 1, #Silhouettes do
-			local Mesh = Silhouettes[i]
-			if spritemesh3.isSpritemesh3(Mesh) then
-				self.SilhouetteShader:send("isSpriteSheet", true)
-				self.SilhouetteShader:send("spritePosition", {Mesh.SpritePosition.x - 1, Mesh.SpritePosition.y - 1})
-				self.SilhouetteShader:send("spriteSheetSize", Mesh.SheetSize:array())
-			else
-				self.SilhouetteShader:send("isSpriteSheet", false)
-				if mesh3group.isMesh3Group(Mesh) then
-					self.SilhouetteShader:send("isInstanced", true)
-				else
-					self.SilhouetteShader:send("isInstanced", false)
-					self.SilhouetteShader:send("meshPosition", Mesh.Position:array())
-					self.SilhouetteShader:send("meshRotation", Mesh.Rotation:array())
-					self.SilhouetteShader:send("meshScale", Mesh.Scale:array())
-				end
-			end
-			love.graphics.draw(Mesh.Mesh) -- draw mesh
-			love.graphics.stencil(
-				function()
-					love.graphics.draw(Mesh.Mesh) -- draw mesh again, but now to the stencil specifically
-				end, "replace", 1, false -- stencil already gets cleared earlier on in the frame
-			)
-		end
-
-		-- reset testing
-		love.graphics.setStencilTest()
-		love.graphics.setDepthMode("less", true)
-
-		profiler:popLabel()
-
 	end
 
 
