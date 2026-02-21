@@ -52,6 +52,7 @@ local SHADER_TRAIL_FRAG = "framework/shaders/trailfrag.c"
 local SHADER_BILLBOARD_PATH = "framework/shaders/billboard.c"
 local SHADER_MASK_PATH = "framework/shaders/dither3d.c"
 local SHADER_SILHOUETTE_PATH = "framework/shaders/silhouette.c"
+local SHADER_FXAA_PATH = "framework/shaders/fxaa.c"
 
 
 
@@ -959,10 +960,22 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 	self:drawVFX()
 
 
+	-- if FXAA is enabled, now is the time to apply it
+	-- FXAA needs to draw the scene to a different texture, so we also kinda have to set a new pointer that tells us where the 'result' is stored
+	local presentCanvas = self.RenderCanvas
+	if self.FXAA == true then
+		presentCanvas = self.PrepareCanvas
+		love.graphics.setShader(self.FXAAShader)
+		love.graphics.setCanvas(self.PrepareCanvas)
+		self.FXAAShader:send("inverseScreenSize", {1 / self.PrepareCanvas:getWidth(), 1 / self.PrepareCanvas:getHeight()}) -- TODO: don't send every frame!
+		love.graphics.draw(self.RenderCanvas)
+	end
+
+
 	-- draw billboards all the way at the end because that way it's easier to support billboards that are always drawn in front
 	if #self.Billboards > 0 then
 		profiler:pushLabel("billboard")
-		love.graphics.setCanvas({self.RenderCanvas, ["depthstencil"] = self.DepthCanvas})
+		love.graphics.setCanvas({presentCanvas, ["depthstencil"] = self.DepthCanvas})
 		love.graphics.setShader(self.BillboardShader)
 		local Object = nil
 		for i = 1, #self.Billboards do
@@ -1000,21 +1013,19 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 	if renderTarget ~= nil then
 		love.graphics.clear()
 		-- if a render target is set, adjust the scaling so that it fits inside the render target
-		local scaleX = renderTarget:getWidth() / self.RenderCanvas:getWidth()
-		local scaleY = renderTarget:getHeight() / self.RenderCanvas:getHeight()
+		local scaleX = renderTarget:getWidth() / presentCanvas:getWidth()
+		local scaleY = renderTarget:getHeight() / presentCanvas:getHeight()
 		local scaleX = 1 / self.SSAA
 		local scaleY = 1 / self.SSAA
 		-- a pretty important caveat here: if you are drawing to a render target it's VERY RECOMMENDED that the render target has the same dimensions as the screen
 		-- if your render target is smaller however, e.g. when using split-screen, you should 100% call Scene3:rescaleCanvas() with your target width and height.
 		-- because if you are drawing to a smaller render canvas but the scene has a fullscreen render canvas, you're tanking your FPS for no reason (better anti-aliasing though I guess)
-		love.graphics.draw(self.RenderCanvas, x, self.RenderCanvas:getHeight() * scaleY + y, 0, scaleX, -scaleY)
+		love.graphics.draw(presentCanvas, x, presentCanvas:getHeight() * scaleY + y, 0, scaleX, -scaleY)
 	else
 		-- if no render target is set, the scene is drawn to the screen, so use the screen's dimensions
-		--local scaleX = love.graphics.getWidth() / self.RenderCanvas:getWidth()
-		--local scaleY = love.graphics.getHeight() / self.RenderCanvas:getHeight()
 		local scaleX = 1 / self.SSAA
 		local scaleY = 1 / self.SSAA
-		love.graphics.draw(self.RenderCanvas, x, self.RenderCanvas:getHeight() * scaleY + y, 0, scaleX, -scaleY)
+		love.graphics.draw(presentCanvas, x, presentCanvas:getHeight() * scaleY + y, 0, scaleX, -scaleY)
 	end
 	profiler:popLabel()
 	
@@ -1075,7 +1086,7 @@ function Scene3:rescaleCanvas(width, height, ssaa)
 	depthCanvas:setFilter("nearest")
 	local normalCanvas = love.graphics.newCanvas(width * ssaa, height * ssaa)
 	local prepareCanvas = love.graphics.newCanvas(width * ssaa, height * ssaa, {["format"] = "srgba8"})
-	prepareCanvas:setFilter("nearest")
+	--prepareCanvas:setFilter("nearest") -- TODO: check if this is still necessary
 	local bloomCanvas = love.graphics.newCanvas(width * ssaa, height * ssaa)
 	bloomCanvas:setFilter("nearest")
 	local vfxCanvas1 = love.graphics.newCanvas( -- sums up colors and alpha
@@ -1795,7 +1806,8 @@ local function newScene3(sceneCamera, bgImage, fgImage, ssaa)
 		["ShadowMapShader"] = love.graphics.newShader(SHADER_SHADOWMAP_PATH);
 		["BillboardShader"] = love.graphics.newShader(SHADER_BILLBOARD_PATH);
 		["MaskShader"] = love.graphics.newShader(SHADER_MASK_PATH);
-		["SilhouetteShader"] = love.graphics.newShader(SHADER_SILHOUETTE_PATH); 
+		["SilhouetteShader"] = love.graphics.newShader(SHADER_SILHOUETTE_PATH);
+		["FXAAShader"] = love.graphics.newShader(SHADER_FXAA_PATH);
 
 		["LastDrawSize"] = vector2(gWidth, gHeight); -- when you suddenly start drawing the scene at a different size, some shader variables need to be updated!
 		["LightsDirty"] = true; -- if true, update lights data in the shaders and set this to false (until a light gets attached/detached)
@@ -1823,6 +1835,7 @@ local function newScene3(sceneCamera, bgImage, fgImage, ssaa)
 		["ReuseCanvas6"] = nil;--reuseCanvas6; -- quarter quality 2
 
 		["SSAA"] = ssaa;
+		["FXAA"] = true; -- TODO: add method to enable this
 		["AOEnabled"] = false;
 		["DiffuseStrength"] = 1;
 		["BloomStrength"] = 0;
