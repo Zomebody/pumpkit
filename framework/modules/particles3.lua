@@ -8,7 +8,7 @@ local module = {
 
 
 local Particles3 = {}
-Particles3.__index = Particles3
+--Particles3.__index = Particles3
 Particles3.__tostring = function(tab) return "{Particles3 (" .. tostring(tab.MaxParticles) .. ")}" end
 
 
@@ -261,6 +261,31 @@ end
 
 
 
+-- TODO: make it so when you change gradient, size, size deviation etc. it only updates part of the image
+-- this'll require you to use a canvas and then generate a smaller image data and then draw that image data to the canvas in a second step or something
+local function newDataTexture(gra, size, sizeDeviation)
+	local c, s1, s2, high1, low1, high2, low2
+	local data = love.image.newImageData(64, 2)
+	data:mapPixel(
+		function(x, y, r, g, b, a)
+			if y == 0 then
+				c = gra:getColor(x / 64)
+				return c:components()
+			else
+				s1 = size:getNumber(x / 64) / 10
+				s2 = sizeDeviation:getNumber(x / 64) / 10
+				high1 = math.floor(s1 * 256) / 256
+				low1 = s1 * 256 % 1
+				high2 = math.floor(s2 * 256) / 256
+				low2 = s2 * 256 % 1
+				return high1, low1, high2, low2
+			end
+		end
+	)
+	return love.graphics.newImage(data)
+end
+
+
 -- create a new particle emitter which uses the given image and can emit at most maxParticles at once
 local function new(img, maxParticles, properties)
 	if isParticles3(img) then
@@ -325,7 +350,7 @@ local function new(img, maxParticles, properties)
 	mesh:attachAttribute("instScaleOffset", instanceMesh, "perinstance") -- seventh vertex attribute
 	mesh:attachAttribute("instFacingMode", instanceMesh, "perinstance") -- eight vertex attribute
 
-	local gradient = properties.Gradient or gradient(0, color(1, 1, 1), 1, color(1, 1, 1))
+	local gra = properties.Gradient or gradient(0, color(1, 1, 1), 1, color(1, 1, 1))
 	local source = properties.Source or vector3(0, 0, 0)
 	local direction = properties.Direction or vector3(0, 0, 1)
 	local directionDeviation = properties.DirectionDeviation or math.pi / 8
@@ -345,13 +370,16 @@ local function new(img, maxParticles, properties)
 	local blends = properties.Blends or false
 	local fbSize = properties.FlipbookSize or 1
 	local fbFrames = properties.FlipbookFrames or 1
+
+	local dataTexture = newDataTexture(gra, size, sizeDeviation)
 	
+	--[[
 	local c, s1, s2, high1, low1, high2, low2
 	local data = love.image.newImageData(64, 2)
 	data:mapPixel(
 		function(x, y, r, g, b, a)
 			if y == 0 then
-				c = gradient:getColor(x / 64)
+				c = gra:getColor(x / 64)
 				return c:components()
 			else
 				s1 = size:getNumber(x / 64) / 10
@@ -365,12 +393,13 @@ local function new(img, maxParticles, properties)
 		end
 	)
 	local dataTexture = love.graphics.newImage(data)
+	]]
 
 	module.TotalCreated = module.TotalCreated + 1
 
 	local Obj = {
 		["Id"] = module.TotalCreated;
-		["Gradient"] = gradient; -- the color the particle has at a given moment in time
+		["_Gradient"] = gra; -- the color the particle has at a given moment in time
 		["Source"] = source; -- location from which particles are emitted
 		["Blends"] = blends; -- if false, particle is directly drawn to screen w/ depth registered (prone to sorting issues). If true, blends with other particles order-independently
 		["ZOffset"] = zOffset;
@@ -381,8 +410,8 @@ local function new(img, maxParticles, properties)
 		["Speed"] = speed; -- minimum and maximum speed at which the particle is emitted
 		["Rotation"] = rotation; -- minimum and maximum rotation at which the particle is emitted
 		["RotationSpeed"] = rotationSpeed; -- the minimum and maximum speed with which the particle rotates around its center (in radians per second)
-		["Size"] = size; -- the size of the particle over time
-		["SizeDeviation"] = sizeDeviation; -- the size of a particle can deviate by at most this much
+		["_Size"] = size; -- the size of the particle over time
+		["_SizeDeviation"] = sizeDeviation; -- the size of a particle can deviate by at most this much
 		["Lifetime"] = lifetime; -- for how long the particle lives at minimum & maximum
 		["FacesCamera"] = facesCamera; -- if true, billboard behavior is enabled
 		["FacesVelocity"] = facesVelocity; -- if true and facesCamera is false, particle aligns with velocity. If true and facesCamera is true, billboard behavior with rotation based on screen space velocity
@@ -410,8 +439,33 @@ end
 function Particles3:__newindex(key, value)
 	if key == "Image" then
 		self.Mesh:setTexture(value)
+	elseif key == "Gradient" then
+		rawset(self, "_Gradient", value)
+		rawset(self, "DataTexture", newDataTexture(self._Gradient, self._Size, self._SizeDeviation))
+	elseif key == "Size" then
+		rawset(self, "_Size", value)
+		rawset(self, "DataTexture", newDataTexture(self._Gradient, self._Size, self._SizeDeviation))
+	elseif key == "SizeDeviation" then
+		rawset(self, "_SizeDeviation", value)
+		rawset(self, "DataTexture", newDataTexture(self._Gradient, self._Size, self._SizeDeviation))
 	else
 		rawset(self, key, value)
+	end
+end
+
+
+function Particles3:__index(key)
+	-- TODO index method for 'Image' property
+	if key == "Image" then
+		return self.Mesh:getTexture()
+	elseif key == "Gradient" then
+		return self._Gradient
+	elseif key == "Size" then
+		return self._Size
+	elseif key == "SizeDeviation" then
+		return self._SizeDeviation
+	else
+		return rawget(Particles3, key) -- needed to look-up class methods
 	end
 end
 
