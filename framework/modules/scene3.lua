@@ -535,6 +535,7 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 
 	-- depth pre-pass on mesh3, mesh3group, trip3, trip3group since they're kinda expensive? maybe?
 	profiler:pushLabel("depth pre-pass")
+	love.graphics.setMeshCullMode("back")
 	love.graphics.setDepthMode("lequal", true)
 	love.graphics.setCanvas({["depthstencil"] = self.DepthCanvas})
 
