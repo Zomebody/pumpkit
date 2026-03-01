@@ -337,6 +337,14 @@ local vfxMixShader = love.graphics.newShader(
 )
 
 
+local DEPTH_PASS_FRAG = [[
+	#pragma language glsl3
+	void effect() {
+		
+	}
+]]
+
+
 
 
 
@@ -511,13 +519,6 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 	profiler:popLabel()
 
 
-	-- if a shadow canvas is set, it means shadow mapping is turned on
-	if self.ShadowCanvas ~= nil then
-		profiler:pushLabel("shadow")
-		self:updateShadowMap(true)
-		profiler:popLabel()
-	end
-
 
 	-- set render canvas as target and clear it so a normal image can be drawn to it
 	--love.graphics.setCanvas({self.RenderCanvas, self.NormalCanvas, ["depthstencil"] = self.DepthCanvas}) -- set the main canvas so it can be cleared
@@ -529,12 +530,65 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 	love.graphics.setCanvas(self.RenderCanvas) -- set the canvas to only be the render canvas so the background doesn't accidentally initialize anything in the normal canvas
 	profiler:popLabel()
 
+
+
+
+	-- depth pre-pass on mesh3, mesh3group, trip3, trip3group since they're kinda expensive? maybe?
+	profiler:pushLabel("depth pre-pass")
+	love.graphics.setDepthMode("lequal", true)
+	love.graphics.setCanvas({["depthstencil"] = self.DepthCanvas})
+
+	love.graphics.setShader(self.DepthShader)
+	self.DepthShader:send("isInstanced", true)
+	for i = 1, #self.InstancedMeshes do
+		love.graphics.drawInstanced(self.InstancedMeshes[i].Mesh, self.InstancedMeshes[i].Count)
+	end
+	self.DepthShader:send("isInstanced", false)
+	for i = 1, #self.BasicMeshes do
+		if self.BasicMeshes[i].Transparency == 0 then
+			self.DepthShader:send("meshPosition", self.BasicMeshes[i].Position:array())
+			self.DepthShader:send("meshRotation", self.BasicMeshes[i].Rotation:array())
+			self.DepthShader:send("meshScale", self.BasicMeshes[i].Scale:array())
+			love.graphics.draw(self.BasicMeshes[i].Mesh)
+		end
+	end
+
+	love.graphics.setShader(self.TriplanarDepthShader)
+	self.TriplanarDepthShader:send("isInstanced", true)
+	for i = 1, #self.InstancedTrip3 do
+		love.graphics.drawInstanced(self.InstancedTrip3[i].Mesh, self.InstancedTrip3[i].Count)
+	end
+	self.TriplanarDepthShader:send("isInstanced", false)
+	for i = 1, #self.BasicTrip3 do
+		if self.BasicTrip3[i].Transparency == 0 then
+			self.TriplanarDepthShader:send("meshPosition", self.BasicTrip3[i].Position:array())
+			self.TriplanarDepthShader:send("meshRotation", self.BasicTrip3[i].Rotation:array())
+			self.TriplanarDepthShader:send("meshScale", self.BasicTrip3[i].Scale:array())
+			love.graphics.draw(self.BasicTrip3[i].Mesh)
+		end
+	end
+
+	profiler:popLabel()
+
+
+
+
+	-- if a shadow canvas is set, it means shadow mapping is turned on
+	if self.ShadowCanvas ~= nil then
+		profiler:pushLabel("shadow")
+		self:updateShadowMap(true)
+		profiler:popLabel()
+	end
+
+	
+
 	local renderWidth, renderHeight = self.RenderCanvas:getDimensions()
 
 	-- draw the background
 	if self.Background then
 		profiler:pushLabel("bg")
 		love.graphics.setShader() -- needs to be reset because shadow map might be enabled
+		love.graphics.setCanvas({self.RenderCanvas})
 		love.graphics.setDepthMode("always", false)
 		local imgWidth, imgHeight = self.Background:getDimensions()
 		love.graphics.draw(self.Background, 0, 0, 0, renderWidth / imgWidth, renderHeight / imgHeight)
@@ -571,7 +625,7 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 
 	-- prep render settings
 	love.graphics.setCanvas({self.RenderCanvas, self.NormalCanvas, self.BloomCanvas, ["depthstencil"] = self.DepthCanvas}) -- set the main canvas with proper maps for geometry being drawn
-	love.graphics.setDepthMode("less", true)
+	love.graphics.setDepthMode("lequal", true)
 	love.graphics.setMeshCullMode("back")
 
 	-- using 'replace' w/ premultiplied so we can set the normals to some rgb even though we also write alpha=0. Otherwise, rgb would get multiplied by alpha!
@@ -765,7 +819,7 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 		profiler:pushLabel("ao")
 		love.graphics.setDepthMode("always", false)
 		self:applyAmbientOcclusion()
-		love.graphics.setDepthMode("less", true)
+		love.graphics.setDepthMode("lequal", true)
 		profiler:popLabel()
 	end
 
@@ -881,7 +935,7 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 
 		-- reset testing
 		love.graphics.setStencilTest()
-		love.graphics.setDepthMode("less", true)
+		love.graphics.setDepthMode("lequal", true)
 
 		profiler:popLabel()
 
@@ -948,7 +1002,7 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 		profiler:pushLabel("bloom")
 		love.graphics.setDepthMode("always", false)
 		self:applyBloom()
-		love.graphics.setDepthMode("less", true)
+		love.graphics.setDepthMode("lequal", true)
 		profiler:popLabel()
 	end
 
@@ -1055,6 +1109,16 @@ end
 
 
 
+function Scene3:setFXAA(state)
+	if state == true then
+		self.FXAA = true
+	else
+		self.FXAA = false
+	end
+end
+
+
+
 -- updates the aspect ratio, render canvas and depth canvas
 function Scene3:rescaleCanvas(width, height, ssaa)
 	if ssaa == nil then
@@ -1146,7 +1210,9 @@ function Scene3:rescaleCanvas(width, height, ssaa)
 	-- update aspect ratio of the scene
 	local aspectRatio = width / height
 	self.Shader:send("aspectRatio", aspectRatio)
+	self.DepthShader:send("aspectRatio", aspectRatio)
 	self.TriplanarShader:send("aspectRatio", aspectRatio)
+	self.TriplanarDepthShader:send("aspectRatio", aspectRatio)
 	self.RippleShader:send("aspectRatio", aspectRatio)
 	self.FoliageShader:send("aspectRatio", aspectRatio)
 	self.PlantShader:send("aspectRatio", aspectRatio)
@@ -1778,7 +1844,7 @@ end
 -- creates a new Scene3 object with the base properties of a Scene3
 local function newScene3(sceneCamera, bgImage, fgImage, ssaa)
 	if ssaa == nil then
-		ssaa = 2
+		ssaa = 1
 	end
 
 	--assert(camera.isCamera(sceneCamera) or sceneCamera == nil, "scene3.newScene3(image, sceneCamera) only accepts a camera instance or nil for 'sceneCamera'")
@@ -1808,6 +1874,10 @@ local function newScene3(sceneCamera, bgImage, fgImage, ssaa)
 		["MaskShader"] = love.graphics.newShader(SHADER_MASK_PATH);
 		["SilhouetteShader"] = love.graphics.newShader(SHADER_SILHOUETTE_PATH);
 		["FXAAShader"] = love.graphics.newShader(SHADER_FXAA_PATH);
+
+		-- depth pre-pass shaders
+		["DepthShader"] = love.graphics.newShader(SHADER_VERTEX_PATH, DEPTH_PASS_FRAG); -- depth pre-pass for mesh3 and mesh3group
+		["TriplanarDepthShader"] = love.graphics.newShader(SHADER_TRIVERT_PATH, DEPTH_PASS_FRAG); -- depth pre-pass for trip3 and trip3group
 
 		["LastDrawSize"] = vector2(gWidth, gHeight); -- when you suddenly start drawing the scene at a different size, some shader variables need to be updated!
 		["LightsDirty"] = true; -- if true, update lights data in the shaders and set this to false (until a light gets attached/detached)
@@ -1885,6 +1955,8 @@ local function newScene3(sceneCamera, bgImage, fgImage, ssaa)
 	Object.Shader:send("blobShadowStrength", 0.5)
 	Object.Shader:send("ambientColor", {1, 1, 1, 1})
 
+	Object.DepthShader:send("fieldOfView", Object.Camera3.FieldOfView)
+
 	Object.TriplanarShader:send("fieldOfView", Object.Camera3.FieldOfView)
 	Object.TriplanarShader:send("diffuseStrength", 1)
 	Object.TriplanarShader:send("lightCount", 0)
@@ -1892,6 +1964,8 @@ local function newScene3(sceneCamera, bgImage, fgImage, ssaa)
 	Object.TriplanarShader:send("blobShadowColor", {0, 0, 0})
 	Object.TriplanarShader:send("blobShadowStrength", 0.5)
 	Object.TriplanarShader:send("ambientColor", {1, 1, 1, 1})
+
+	Object.TriplanarDepthShader:send("fieldOfView", Object.Camera3.FieldOfView)
 
 	Object.RippleShader:send("fieldOfView", Object.Camera3.FieldOfView)
 
