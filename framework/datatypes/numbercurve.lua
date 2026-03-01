@@ -77,6 +77,18 @@ function numbercurve:getNumber(x)
 end
 
 
+-- returns the lowest and highest number in the curve
+function numbercurve:getRange()
+	local lowest = math.huge
+	local highest = -math.huge
+	for i = 1, #self.nodes do
+		lowest = math.min(lowest, self.nodes[i][2])
+		highest = math.max(highest, self.nodes[i][2])
+	end
+	return range(lowest, highest)
+end
+
+
 
 -- pack up and return module
 module.new = new
