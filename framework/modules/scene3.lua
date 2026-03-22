@@ -31,6 +31,7 @@ local connection = require("framework.connection")
 
 local MAX_LIGHTS_PER_SCENE = 16
 --local SHADER_PATH = "framework/shaders/shader3d.c"
+local SHADER_VERTEX_DEPTH_PATH = "framework/shaders/vertexdepth.c"
 local SHADER_VERTEX_PATH = "framework/shaders/vertex3d.c"
 local SHADER_FRAGMENT_PATH = "framework/shaders/fragment3d.c"
 local SHADER_RIPPLE_PATH = "framework/shaders/ripplefrag.c"
@@ -1902,8 +1903,8 @@ local function newScene3(sceneCamera, bgImage, fgImage, ssaa)
 		["FXAAShader"] = love.graphics.newShader(SHADER_FXAA_PATH);
 
 		-- depth pre-pass shaders
-		["DepthShader"] = love.graphics.newShader(SHADER_VERTEX_PATH, DEPTH_PASS_FRAG); -- depth pre-pass for mesh3 and mesh3group
-		["TriplanarDepthShader"] = love.graphics.newShader(SHADER_TRIVERT_PATH, DEPTH_PASS_FRAG); -- depth pre-pass for trip3 and trip3group
+		["DepthShader"] = love.graphics.newShader(SHADER_VERTEX_DEPTH_PATH, DEPTH_PASS_FRAG); -- depth pre-pass for mesh3 and mesh3group
+		["TriplanarDepthShader"] = love.graphics.newShader(SHADER_VERTEX_DEPTH_PATH, DEPTH_PASS_FRAG); -- depth pre-pass for trip3 and trip3group
 
 		["LastDrawSize"] = vector2(gWidth, gHeight); -- when you suddenly start drawing the scene at a different size, some shader variables need to be updated!
 		["LightsDirty"] = true; -- if true, update lights data in the shaders and set this to false (until a light gets attached/detached)
