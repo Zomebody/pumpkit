@@ -26,6 +26,13 @@ table.insert(content, {
 
 table.insert(content, {
 	["Type"] = "Constructor";
+	["Name"] = "fromPosition";
+	["Arguments"] = {"x", "y", "z"};
+	["Description"] = "Constructs a matrix4 at a given x, y, z position. Alternative, you may pass a vector3 instead of 3 numbers.";
+})
+
+table.insert(content, {
+	["Type"] = "Constructor";
 	["Name"] = "fromQuaternion";
 	["Arguments"] = {"vec4"};
 	["Description"] = "Constructs and returns a 4x4 identity matrix using the input vector4 as a quaternion.";

@@ -8,7 +8,7 @@ local module = {
 local Mesh3Group = {}
 Mesh3Group.__index = Mesh3Group
 Mesh3Group.__tostring = function(tab) return "{Mesh3Group: " .. tostring(tab.Id) .. "}" end
-
+--[[
 local attributeIndex = {
 	["Position"] = 1;
 	["Rotation"] = 2;
@@ -16,7 +16,7 @@ local attributeIndex = {
 	["Color"] = 4;
 	["ColorShadow"] = 5;
 }
-
+]]
 
 
 ----------------------------------------------------[[ == METHODS == ]]----------------------------------------------------
@@ -38,11 +38,11 @@ function Mesh3Group:detach()
 	self.Scene:detachMesh(self)
 end
 
-
+--[[
 function Mesh3Group:changeInstance(index, property, newValue)
 	self.Instances:setVertexAttribute(index, attributeIndex[property], newValue:components())
 end
-
+]]
 
 
 
@@ -81,21 +81,32 @@ local function new(mesh, positions, rotations, scales, cols, shadowcols)
 
 	local instancesData = {}
 	for i = 1, #positions do
+		local meshMatrix = matrix4.fromTransforms(positions[i], rotations[i], scales[i])
 		table.insert(
 			instancesData,
 			{
-				positions[i].x, positions[i].y, positions[i].z, rotations[i].x, rotations[i].y, rotations[i].z, scales[i].x, scales[i].y, scales[i].z,
-				cols[i].r, cols[i].g, cols[i].b, shadowcols[i].r, shadowcols[i].g, shadowcols[i].b
+				--positions[i].x, positions[i].y, positions[i].z, rotations[i].x, rotations[i].y, rotations[i].z, scales[i].x, scales[i].y, scales[i].z,
+				meshMatrix[1], meshMatrix[2], meshMatrix[3], meshMatrix[4],
+				meshMatrix[5], meshMatrix[6], meshMatrix[7], meshMatrix[8],
+				meshMatrix[9], meshMatrix[10], meshMatrix[11], meshMatrix[12],
+				meshMatrix[13], meshMatrix[14], meshMatrix[15], meshMatrix[16],
+				cols[i].r, cols[i].g, cols[i].b,
+				shadowcols[i].r, shadowcols[i].g, shadowcols[i].b
 			}
 		)
 	end
 
-
+	-- TODO: replacve position, rotation, scale with 4 attributes corresponding to the 4 rows (or columns? probs columns) of the model matrix
 	local instanceMesh = love.graphics.newMesh(
 		{
-			{"instancePosition", "float", 3},
-			{"instanceRotation", "float", 3},
-			{"instanceScale", "float", 3},
+			{"instMatColumn1", "float", 4},
+			{"instMatColumn2", "float", 4},
+			{"instMatColumn3", "float", 4},
+			{"instMatColumn4", "float", 4},
+			--{"instancePosition", "float", 3}, -- column 1
+			--{"instanceRotation", "float", 3}, -- column 2
+			--{"instanceScale", "float", 3}, -- column 3
+			-- column 4
 			{"instanceColor", "float", 3},
 			{"instanceColorShadow", "float", 3}
 		},
@@ -104,10 +115,14 @@ local function new(mesh, positions, rotations, scales, cols, shadowcols)
 		"static"
 	)
 
-	mesh:attachAttribute("instancePosition", instanceMesh, "perinstance") -- first vertex attribute
-	mesh:attachAttribute("instanceRotation", instanceMesh, "perinstance") -- second vertex attribute
-	mesh:attachAttribute("instanceScale", instanceMesh, "perinstance") -- third vertex attribute
-	mesh:attachAttribute("instanceColor", instanceMesh, "perinstance") -- fourth vertex attribute
+	--mesh:attachAttribute("instancePosition", instanceMesh, "perinstance") -- first vertex attribute
+	--mesh:attachAttribute("instanceRotation", instanceMesh, "perinstance") -- second vertex attribute
+	--mesh:attachAttribute("instanceScale", instanceMesh, "perinstance") -- third vertex attribute
+	mesh:attachAttribute("instMatColumn1", instanceMesh, "perinstance")
+	mesh:attachAttribute("instMatColumn2", instanceMesh, "perinstance")
+	mesh:attachAttribute("instMatColumn3", instanceMesh, "perinstance")
+	mesh:attachAttribute("instMatColumn4", instanceMesh, "perinstance")
+	mesh:attachAttribute("instanceColor", instanceMesh, "perinstance")
 	mesh:attachAttribute("instanceColorShadow", instanceMesh, "perinstance")
 
 	module.TotalCreated = module.TotalCreated + 1

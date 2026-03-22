@@ -278,10 +278,12 @@ function Scene3:updateShadowMap(firstPass)
 			Mesh = self.BasicMeshes[i]
 			if Mesh.CastShadow then
 				-- TODO meshes need their own matrix instead of sending over and computing them every time in the shaders
-				self.ShadowMapShader:send("meshTexture", Mesh.Texture or blankImage)
-				self.ShadowMapShader:send("meshPosition", Mesh.Position:array())
-				self.ShadowMapShader:send("meshRotation", Mesh.Rotation:array())
-				self.ShadowMapShader:send("meshScale", Mesh.Scale:array())
+				--self.ShadowMapShader:send("meshTexture", Mesh.Texture or blankImage)
+				--self.ShadowMapShader:send("meshPosition", Mesh.Position:array())
+				--self.ShadowMapShader:send("meshRotation", Mesh.Rotation:array())
+				local c1, c2, c3, c4 = Mesh.Matrix:columns()
+				self.ShadowMapShader:send("meshMatrix", {c1, c2, c3, c4})
+				--self.ShadowMapShader:send("meshScale", Mesh.Scale:array())
 				love.graphics.draw(Mesh.Mesh)
 			end
 		end
@@ -291,9 +293,11 @@ function Scene3:updateShadowMap(firstPass)
 			if Mesh.CastShadow then
 				-- TODO meshes need their own matrix instead of sending over and computing them every time in the shaders
 				self.ShadowMapShader:send("meshTexture", Mesh.Texture or blankImage)
-				self.ShadowMapShader:send("meshPosition", Mesh.Position:array())
-				self.ShadowMapShader:send("meshRotation", Mesh.Rotation:array())
-				self.ShadowMapShader:send("meshScale", Mesh.Scale:array())
+				--self.ShadowMapShader:send("meshPosition", Mesh.Position:array())
+				--self.ShadowMapShader:send("meshRotation", Mesh.Rotation:array())
+				--self.ShadowMapShader:send("meshScale", Mesh.Scale:array())
+				local c1, c2, c3, c4 = Mesh.Matrix:columns()
+				self.ShadowMapShader:send("meshMatrix", {c1, c2, c3, c4})
 				love.graphics.draw(Mesh.Mesh)
 			end
 		end
@@ -547,9 +551,11 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 	self.DepthShader:send("isInstanced", false)
 	for i = 1, #self.BasicMeshes do
 		if self.BasicMeshes[i].Transparency == 0 then
-			self.DepthShader:send("meshPosition", self.BasicMeshes[i].Position:array())
-			self.DepthShader:send("meshRotation", self.BasicMeshes[i].Rotation:array())
-			self.DepthShader:send("meshScale", self.BasicMeshes[i].Scale:array())
+			--self.DepthShader:send("meshPosition", self.BasicMeshes[i].Position:array())
+			--self.DepthShader:send("meshRotation", self.BasicMeshes[i].Rotation:array())
+			--self.DepthShader:send("meshScale", self.BasicMeshes[i].Scale:array())
+			local c1, c2, c3, c4 = self.BasicMeshes[i].Matrix:columns()
+			self.DepthShader:send("meshMatrix", {c1, c2, c3, c4})
 			love.graphics.draw(self.BasicMeshes[i].Mesh)
 		end
 	end
@@ -562,9 +568,11 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 	self.TriplanarDepthShader:send("isInstanced", false)
 	for i = 1, #self.BasicTrip3 do
 		if self.BasicTrip3[i].Transparency == 0 then
-			self.TriplanarDepthShader:send("meshPosition", self.BasicTrip3[i].Position:array())
-			self.TriplanarDepthShader:send("meshRotation", self.BasicTrip3[i].Rotation:array())
-			self.TriplanarDepthShader:send("meshScale", self.BasicTrip3[i].Scale:array())
+			--self.TriplanarDepthShader:send("meshPosition", self.BasicTrip3[i].Position:array())
+			--self.TriplanarDepthShader:send("meshRotation", self.BasicTrip3[i].Rotation:array())
+			--self.TriplanarDepthShader:send("meshScale", self.BasicTrip3[i].Scale:array())
+			local c1, c2, c3, c4 = self.BasicTrip3[i].Matrix:columns()
+			self.TriplanarDepthShader:send("meshMatrix", {c1, c2, c3, c4})
 			love.graphics.draw(self.BasicTrip3[i].Mesh)
 		end
 	end
@@ -706,9 +714,12 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 				self.Shader:send("normalMap", Mesh.NormalMap or normalImage)
 				self.Shader:send("uvVelocity", Mesh.UVVelocity:array())
 				self.Shader:send("meshTexture", Mesh.Texture or blankImage)
-				self.Shader:send("meshPosition", Mesh.Position:array())
-				self.Shader:send("meshRotation", Mesh.Rotation:array())
-				self.Shader:send("meshScale", Mesh.Scale:array())
+				--self.Shader:send("meshPosition", Mesh.Position:array())
+				--self.Shader:send("meshRotation", Mesh.Rotation:array())
+				--self.Shader:send("meshScale", Mesh.Scale:array())
+				local c1, c2, c3, c4 = Mesh.Matrix:columns()
+				self.Shader:send("meshMatrix", {c1, c2, c3, c4})
+
 				self.Shader:send("meshColor", Mesh.Color:array())
 				self.Shader:send("meshColorShadow", Mesh.ColorShadow:array())
 				self.Shader:send("meshBrightness", Mesh.Brightness)
@@ -765,9 +776,12 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 			if Mesh.Transparency == 0 then
 				self.TriplanarShader:send("normalMap", Mesh.NormalMap or normalImage)
 				self.TriplanarShader:send("meshTexture", Mesh.Texture or blankImage)
-				self.TriplanarShader:send("meshPosition", Mesh.Position:array())
-				self.TriplanarShader:send("meshRotation", Mesh.Rotation:array())
-				self.TriplanarShader:send("meshScale", Mesh.Scale:array())
+				--self.TriplanarShader:send("meshPosition", Mesh.Position:array())
+				--self.TriplanarShader:send("meshRotation", Mesh.Rotation:array())
+				--self.TriplanarShader:send("meshScale", Mesh.Scale:array())
+				local c1, c2, c3, c4 = Mesh.Matrix:columns()
+				self.TriplanarShader:send("meshMatrix", {c1, c2, c3, c4})
+
 				self.TriplanarShader:send("meshColor", Mesh.Color:array())
 				self.TriplanarShader:send("meshColorShadow", Mesh.ColorShadow:array())
 				self.TriplanarShader:send("meshBrightness", Mesh.Brightness)
@@ -793,9 +807,12 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 		for i = 1, #self.RippleMeshes do
 			local RMesh = self.RippleMeshes[i]
 			self.RippleShader:send("meshTexture", RMesh.Texture or blankImage)
-			self.RippleShader:send("meshPosition", RMesh.Position:array())
-			self.RippleShader:send("meshRotation", RMesh.Rotation:array())
-			self.RippleShader:send("meshScale", RMesh.Scale:array())
+			--self.RippleShader:send("meshPosition", RMesh.Position:array())
+			--self.RippleShader:send("meshRotation", RMesh.Rotation:array())
+			--self.RippleShader:send("meshScale", RMesh.Scale:array())
+			local c1, c2, c3, c4 = RMesh.Matrix:columns()
+			self.RippleShader:send("meshMatrix", {c1, c2, c3, c4})
+
 			self.RippleShader:send("meshColor", {RMesh.Color.r, RMesh.Color.g, RMesh.Color.b})
 			self.RippleShader:send("meshColorShadow", {RMesh.ColorShadow.r, RMesh.ColorShadow.g, RMesh.ColorShadow.b})
 			self.RippleShader:send("meshBrightness", RMesh.Brightness)
@@ -859,9 +876,12 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 			Mesh = self.SpriteMeshes[i]
 			if Mesh.Transparency == 0 then
 				self.Shader:send("meshTexture", Mesh.Texture or blankImage)
-				self.Shader:send("meshPosition", Mesh.Position:array())
-				self.Shader:send("meshRotation", Mesh.Rotation:array())
-				self.Shader:send("meshScale", Mesh.Scale:array())
+				--self.Shader:send("meshPosition", Mesh.Position:array())
+				--self.Shader:send("meshRotation", Mesh.Rotation:array())
+				--self.Shader:send("meshScale", Mesh.Scale:array())
+				local c1, c2, c3, c4 = Mesh.Matrix:columns()
+				self.Shader:send("meshMatrix", {c1, c2, c3, c4})
+
 				self.Shader:send("meshColor", Mesh.Color:array())
 				self.Shader:send("meshColorShadow", Mesh.ColorShadow:array())
 				self.Shader:send("meshBrightness", Mesh.Brightness)
@@ -921,9 +941,11 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 					self.SilhouetteShader:send("isInstanced", true)
 				else
 					self.SilhouetteShader:send("isInstanced", false)
-					self.SilhouetteShader:send("meshPosition", Mesh.Position:array())
-					self.SilhouetteShader:send("meshRotation", Mesh.Rotation:array())
-					self.SilhouetteShader:send("meshScale", Mesh.Scale:array())
+					--self.SilhouetteShader:send("meshPosition", Mesh.Position:array())
+					--self.SilhouetteShader:send("meshRotation", Mesh.Rotation:array())
+					--self.SilhouetteShader:send("meshScale", Mesh.Scale:array())
+					local c1, c2, c3, c4 = Mesh.Matrix:columns()
+					self.SilhouetteShader:send("meshMatrix", {c1, c2, c3, c4})
 				end
 			end
 			love.graphics.draw(Mesh.Mesh) -- draw mesh
@@ -979,9 +1001,12 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 			end
 
 			Shader:send("meshTexture", Mesh.Texture or blankImage)
-			Shader:send("meshPosition", Mesh.Position:array())
-			Shader:send("meshRotation", Mesh.Rotation:array())
-			Shader:send("meshScale", Mesh.Scale:array())
+			--Shader:send("meshPosition", Mesh.Position:array())
+			--Shader:send("meshRotation", Mesh.Rotation:array())
+			--Shader:send("meshScale", Mesh.Scale:array())
+			local c1, c2, c3, c4 = Mesh.Matrix:columns()
+			Shader:send("meshMatrix", {c1, c2, c3, c4})
+
 			Shader:send("meshColor", Mesh.Color:array())
 			Shader:send("meshColorShadow", Mesh.ColorShadow:array())
 			Shader:send("meshBrightness", Mesh.Brightness)

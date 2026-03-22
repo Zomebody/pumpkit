@@ -40,7 +40,7 @@ function Trip3:rotate(rotation)
 end
 
 
-
+-- this is probably very inefficient. Probably better to edit the matrix and then rawset the rotation
 function Trip3:rotateLocal(rotation)
 	assert(vector3.isVector3(rotation), "Trip3:rotateLocal(rotation) requires argument 'rotation' to be of type vector3.")
 	local applyMatrix = matrix4():rotateX(rotation.x):rotateY(rotation.y):rotateZ(rotation.z)
@@ -94,13 +94,14 @@ local function new(meshRef, position, rotation, scale, col, scol)
 
 	module.TotalCreated = module.TotalCreated + 1
 
+	position = (position ~= nil) and vector3(position) or vector3(0, 0, 0)
+	rotation = (rotation ~= nil) and vector3(rotation) or vector3(0, 0, 0)
+	scale = (scale ~= nil) and vector3(scale) or vector3(1, 1, 1)
+
 	local Obj = {
 		["Id"] = module.TotalCreated;
 		["Mesh"] = meshRef;
 		["Texture"] = nil;
-		["Position"] = position ~= nil and vector3(position) or vector3(0, 0, 0);
-		["Rotation"] = rotation ~= nil and vector3(rotation) or vector3(0, 0, 0);
-		["Scale"] = scale ~= nil and vector3(scale) or vector3(1, 1, 1);
 		["Color"] = col ~= nil and color(col) or color(1, 1, 1);
 		["ColorShadow"] = scol ~= nil and color(scol) or color(0.5, 0.5, 0.5);
 		["Brightness"] = 0;
@@ -114,11 +115,49 @@ local function new(meshRef, position, rotation, scale, col, scol)
 		["TextureScale"] = 1;
 		["NormalMap"] = nil;
 		["Scene"] = nil;
+
+		["Matrix"] = matrix4.fromTransforms(position, rotation, scale);
+		["_Position"] = position;
+		["_Rotation"] = rotation;
+		["_Scale"] = scale;
 	}
 
 	setmetatable(Obj, Trip3)
 	
 	return Obj
+end
+
+
+
+----------------------------------------------------[[ == METATABLE STUFF == ]]----------------------------------------------------
+
+function Trip3:__newindex(key, value)
+	if key == "Position" then
+		rawset(self, "_Position", value)
+		rawset(self, "Matrix", matrix4.fromTransforms(value, self._Rotation, self._Scale))
+	elseif key == "Rotation" then
+		rawset(self, "_Rotation", value)
+		rawset(self, "Matrix", matrix4.fromTransforms(self._Position, value, self._Scale))
+	elseif key == "Scale" then
+		rawset(self, "_Scale", value)
+		rawset(self, "Matrix", matrix4.fromTransforms(self._Position, self._Rotation, value))
+	else
+		rawset(self, key, value)
+	end
+end
+
+
+
+function Trip3:__index(key)
+	if key == "Position" then
+		return self._Position
+	elseif key == "Rotation" then
+		return self._Rotation
+	elseif key == "Scale" then
+		return self._Scale
+	else
+		return rawget(Trip3, key) -- needed to look-up class methods
+	end
 end
 
 

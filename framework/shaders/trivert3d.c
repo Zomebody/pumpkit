@@ -19,12 +19,18 @@ const float zNear = 0.1;
 const float zFar = 1000.0;
 
 // mesh variables
-uniform vec3 meshPosition; // TODO: replace with a meshMatrix
-uniform vec3 meshRotation; // TODO: replace with a meshMatrix
-uniform vec3 meshScale; // TODO: replace with a meshMatrix
-attribute vec3 instancePosition; // TODO: replace with a meshMatrix
-attribute vec3 instanceRotation; // TODO: replace with a meshMatrix
-attribute vec3 instanceScale; // TODO: replace with a meshMatrix
+//uniform vec3 meshPosition; // TODO: replace with a meshMatrix
+//uniform vec3 meshRotation; // TODO: replace with a meshMatrix
+//uniform vec3 meshScale; // TODO: replace with a meshMatrix
+uniform mat4 meshMatrix;
+//attribute vec3 instancePosition; // TODO: replace with a meshMatrix
+//attribute vec3 instanceRotation; // TODO: replace with a meshMatrix
+//attribute vec3 instanceScale; // TODO: replace with a meshMatrix
+attribute vec4 instMatColumn1;
+attribute vec4 instMatColumn2;
+attribute vec4 instMatColumn3;
+attribute vec4 instMatColumn4;
+
 attribute vec3 instanceColor;
 attribute vec3 instanceColorShadow;
 varying vec3 instColor;
@@ -48,6 +54,7 @@ varying mat3 TBN; // tangent bitangent normal matrix to be used for normal maps
 
 // I DON'T KNOW WHY, BUT THE FUNCTIONS GETROTATIONMATRIX AND GETSCALEMATRIX AND GETTRANSLATIONMATRIX ARE ALL TRANSPOSED AND IT JUST KIND OF WORKS (probably because of row/column major order?)
 
+/*
 // rotate around X-axis
 mat4 getRotationMatrixX(float angle) {
 	float c = cos(angle);
@@ -108,7 +115,7 @@ mat4 getTranslationMatrix(vec3 translation) {
 		translation.x, translation.y, translation.z, 1.0
 	);
 }
-
+*/
 
 
 // vertical field-of-view is used
@@ -130,28 +137,37 @@ mat4 getPerspectiveMatrix(float fieldOfView, float aspect) {
 vec4 position(mat4 transform_projection, vec4 vertex_position) {
 	// model transformations
 	// get the scale matrix
-	mat4 scaleMatrix;
-	mat4 rotationMatrix;
-	mat4 translationMatrix;
+
+	//mat4 scaleMatrix;
+	//mat4 rotationMatrix;
+	//mat4 translationMatrix;
+	mat4 modelWorldMatrix;
 
 	// get the scale matrix, then the rotation matrix in XYZ order, then the translation matrix
 	if (isInstanced) {
 		// for instanced meshes, use the instance position/rotation/scale uniforms
+		/*
 		scaleMatrix = getScaleMatrix(instanceScale);
 		rotationMatrix = getRotationMatrixZ(instanceRotation.z) * getRotationMatrixY(instanceRotation.y) * getRotationMatrixX(instanceRotation.x);
 		translationMatrix = getTranslationMatrix(instancePosition);
+		*/
 		instColor = instanceColor; // pass color attribute from vertex shader to the fragment shader since the fragment shader doesn't support attributes for some reason?
 		instColorShadow = instanceColorShadow;
+
+		modelWorldMatrix = mat4(instMatColumn1, instMatColumn2, instMatColumn3, instMatColumn4);
 	} else {
 		// for regular meshes, use the mesh position/rotation/scale variables
+		/*
 		scaleMatrix = getScaleMatrix(meshScale);
 		rotationMatrix = getRotationMatrixZ(meshRotation.z) * getRotationMatrixY(meshRotation.y) * getRotationMatrixX(meshRotation.x);
 		translationMatrix = getTranslationMatrix(meshPosition);
+		*/
+		modelWorldMatrix = meshMatrix;
 	}
 
 
 	// construct the model's world matrix, i.e. where in the world is each vertex of this mesh located
-	mat4 modelWorldMatrix = translationMatrix * rotationMatrix * scaleMatrix;
+	//mat4 modelWorldMatrix = translationMatrix * rotationMatrix * scaleMatrix;
 
 	mat4 cameraWorldMatrix = camMatrix;
 	mat4 viewMatrix = inverse(cameraWorldMatrix);

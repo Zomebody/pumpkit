@@ -26,7 +26,7 @@ end
 
 
 function Camera3:updateCameraMatrices()
-	local camMatrix = matrix4():translate(0, 0, self.Offset):rotateX(self.Rotation.x):rotateY(self.Rotation.y):rotateZ(self.Rotation.z):translate(self.Position.x, self.Position.y, self.Position.z)
+	local camMatrix = matrix4.fromPosition(0, 0, self.Offset):rotateX(self.Rotation.x):rotateY(self.Rotation.y):rotateZ(self.Rotation.z):translate(self.Position.x, self.Position.y, self.Position.z)
 	self.Matrix = camMatrix
 	if self.Scene3 ~= nil then
 		local c1, c2, c3, c4 = camMatrix:columns()

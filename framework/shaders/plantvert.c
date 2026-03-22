@@ -25,9 +25,14 @@ const float zNear = 0.1;
 const float zFar = 1000.0;
 
 // mesh variables
-attribute vec3 instancePosition; // TODO: replace with a meshMatrix
-attribute vec3 instanceRotation; // TODO: replace with a meshMatrix
-attribute vec3 instanceScale; // TODO: replace with a meshMatrix
+//attribute vec3 instancePosition; // TODO: replace with a meshMatrix
+//attribute vec3 instanceRotation; // TODO: replace with a meshMatrix
+//attribute vec3 instanceScale; // TODO: replace with a meshMatrix
+attribute vec4 instMatColumn1;
+attribute vec4 instMatColumn2;
+attribute vec4 instMatColumn3;
+attribute vec4 instMatColumn4;
+
 attribute vec3 instanceColor;
 attribute vec3 instanceColorShadow;
 varying vec3 instColor;
@@ -46,6 +51,7 @@ varying vec4 fragPosLightSpace; // position of the fragment in light space so it
 // I DON'T KNOW WHY, BUT THE FUNCTIONS GETROTATIONMATRIX AND GETSCALEMATRIX AND GETTRANSLATIONMATRIX ARE ALL TRANSPOSED AND IT JUST KIND OF WORKS (probably because of row/column major order?)
 
 // rotate around X-axis
+/*
 mat4 getRotationMatrixX(float angle) {
 	float c = cos(angle);
 	float s = sin(angle);
@@ -105,7 +111,7 @@ mat4 getTranslationMatrix(vec3 translation) {
 		translation.x, translation.y, translation.z, 1.0
 	);
 }
-
+*/
 
 
 // vertical field-of-view is used
@@ -182,20 +188,33 @@ vec3 windTransform(vec3 vertexOffset, mat4 rotationMatrix, vec3 worldPos) {
 
 vec4 position(mat4 transform_projection, vec4 vertex_position) {
 	// model transformations
-	mat4 scaleMatrix = getScaleMatrix(instanceScale);
-	mat4 rotationMatrix = getRotationMatrixZ(instanceRotation.z) * getRotationMatrixY(instanceRotation.y) * getRotationMatrixX(instanceRotation.x);
-	mat4 translationMatrix = getTranslationMatrix(instancePosition);
+	//mat4 scaleMatrix = getScaleMatrix(instanceScale);
+	//mat4 rotationMatrix = getRotationMatrixZ(instanceRotation.z) * getRotationMatrixY(instanceRotation.y) * getRotationMatrixX(instanceRotation.x);
+	//mat4 translationMatrix = getTranslationMatrix(instancePosition);
+	mat4 modelWorldMatrix = mat4(instMatColumn1, instMatColumn2, instMatColumn3, instMatColumn4);
+
 	instColor = instanceColor; // pass color attribute from vertex shader to the fragment shader since the fragment shader doesn't support attributes for some reason?
 	instColorShadow = instanceColorShadow;
 
 
 	// construct the model's world matrix, i.e. where in the world is each vertex of this mesh located
-	mat4 relativePosMatrix = rotationMatrix * scaleMatrix; // where the vertex is located relative to the center of the mesh
-	vec4 relativeVertexPos = relativePosMatrix * vertex_position;
-	vec3 vertexAfterWind = windTransform(relativeVertexPos.xyz, rotationMatrix, (translationMatrix * relativeVertexPos).xyz);
-	fragWorldPosition = (translationMatrix * vec4(vertexAfterWind, 1.0)).xyz;
+	//mat4 relativePosMatrix = rotationMatrix * scaleMatrix; // where the vertex is located relative to the center of the mesh
+	//vec4 relativeVertexPos = relativePosMatrix * vertex_position;
+	//vec3 vertexAfterWind = windTransform(relativeVertexPos.xyz, rotationMatrix, (translationMatrix * relativeVertexPos).xyz);
+	//fragWorldPosition = (translationMatrix * vec4(vertexAfterWind, 1.0)).xyz;
+	vec3 worldTranslation = modelWorldMatrix[3].xyz;
+	mat3 rotationScaleMat = mat3(modelWorldMatrix);
+	mat3 rotationMatrix = mat3(
+		normalize(rotationScaleMat[0]),
+		normalize(rotationScaleMat[1]),
+		normalize(rotationScaleMat[2])
+	);
+	vec3 relativeVertexPos = rotationScaleMat * vertex_position.xyz;
+	vec3 worldPos = relativeVertexPos + worldTranslation;
+	vec3 vertexAfterWind = windTransform(relativeVertexPos, mat4(rotationMatrix), worldPos);
+	fragWorldPosition = vertexAfterWind + worldTranslation;
 
-	mat4 modelWorldMatrix = translationMatrix * relativePosMatrix;
+	//mat4 modelWorldMatrix = translationMatrix * relativePosMatrix;
 	
 	mat4 cameraWorldMatrix = camMatrix;
 	mat4 viewMatrix = inverse(cameraWorldMatrix);

@@ -4,16 +4,23 @@
 uniform mat4 sunWorldMatrix;
 uniform mat4 orthoMatrix;
 
-uniform vec3 meshPosition; // TODO: replace with a meshMatrix
-uniform vec3 meshRotation; // TODO: replace with a meshMatrix
-uniform vec3 meshScale; // TODO: replace with a meshMatrix
-attribute vec3 instancePosition; // TODO: replace with a meshMatrix
-attribute vec3 instanceRotation; // TODO: replace with a meshMatrix
-attribute vec3 instanceScale; // TODO: replace with a meshMatrix
+//uniform vec3 meshPosition; // TODO: replace with a meshMatrix
+//uniform vec3 meshRotation; // TODO: replace with a meshMatrix
+//uniform vec3 meshScale; // TODO: replace with a meshMatrix
+uniform mat4 meshMatrix;
+//attribute vec3 instancePosition; // TODO: replace with a meshMatrix
+//attribute vec3 instanceRotation; // TODO: replace with a meshMatrix
+//attribute vec3 instanceScale; // TODO: replace with a meshMatrix
+attribute vec4 instMatColumn1;
+attribute vec4 instMatColumn2;
+attribute vec4 instMatColumn3;
+attribute vec4 instMatColumn4;
+
 uniform bool isInstanced;
 
 
 // rotate around X-axis
+/*
 mat4 getRotationMatrixX(float angle) {
 	float c = cos(angle);
 	float s = sin(angle);
@@ -71,30 +78,33 @@ mat4 getTranslationMatrix(vec3 translation) {
 		translation.x, translation.y, translation.z, 1.0
 	);
 }
-
+*/
 
 
 
 
 vec4 position(mat4 transform_projection, vec4 vertex_position) {
-	mat4 scaleMatrix;
-	mat4 rotationMatrix;
-	mat4 translationMatrix;
+	//mat4 scaleMatrix;
+	//mat4 rotationMatrix;
+	//mat4 translationMatrix;
+	mat4 modelWorldMatrix;
 
 	// get the scale matrix, then the rotation matrix in XYZ order, then the translation matrix
 	if (isInstanced) {
 		// for instanced meshes, use the instance position/rotation/scale uniforms
-		scaleMatrix = getScaleMatrix(instanceScale);
-		rotationMatrix = getRotationMatrixZ(instanceRotation.z) * getRotationMatrixY(instanceRotation.y) * getRotationMatrixX(instanceRotation.x);
-		translationMatrix = getTranslationMatrix(instancePosition);
+		//scaleMatrix = getScaleMatrix(instanceScale);
+		//rotationMatrix = getRotationMatrixZ(instanceRotation.z) * getRotationMatrixY(instanceRotation.y) * getRotationMatrixX(instanceRotation.x);
+		//translationMatrix = getTranslationMatrix(instancePosition);
+		modelWorldMatrix = mat4(instMatColumn1, instMatColumn2, instMatColumn3, instMatColumn4);
 	} else {
 		// for regular meshes, use the mesh position/rotation/scale variables
-		scaleMatrix = getScaleMatrix(meshScale);
-		rotationMatrix = getRotationMatrixZ(meshRotation.z) * getRotationMatrixY(meshRotation.y) * getRotationMatrixX(meshRotation.x);
-		translationMatrix = getTranslationMatrix(meshPosition);
+		//scaleMatrix = getScaleMatrix(meshScale);
+		//rotationMatrix = getRotationMatrixZ(meshRotation.z) * getRotationMatrixY(meshRotation.y) * getRotationMatrixX(meshRotation.x);
+		//translationMatrix = getTranslationMatrix(meshPosition);
+		modelWorldMatrix = meshMatrix;
 	}
 
-	mat4 modelWorldMatrix = translationMatrix * rotationMatrix * scaleMatrix;
+	//mat4 modelWorldMatrix = translationMatrix * rotationMatrix * scaleMatrix;
 	mat4 viewMatrix = inverse(sunWorldMatrix);
 	mat4 sunSpaceMatrix = viewMatrix *  modelWorldMatrix;
 	vec4 result = orthoMatrix * sunSpaceMatrix * vertex_position;

@@ -101,6 +101,35 @@ local function fromQuaternion(q) -- vector4s are also allowed
 end
 
 
+
+local function fromPosition(x, y, z)
+	if vector3.isVector3(x) then
+		z = x.z
+		y = x.y
+		x = x.x
+	elseif type(x) ~= "number" then
+		error("matrix4.fromPosition(x, y, z) only accepts 3 position coordinates, or a position vector3.")
+	end
+	local Obj = {
+		1, 0, 0, 0,
+		0, 1, 0, 0,
+		0, 0, 1, 0,
+		x, y, z, 1
+	}
+	return setmetatable(Obj, matrix4)
+end
+
+
+local function fromTransforms(position, rotation, scale)
+	return new(
+		scale.x, 0, 0, 0,
+		0, scale.y, 0, 0,
+		0, 0, scale.z, 0,
+		0, 0, 0, 1
+	):rotateX(rotation.x):rotateY(rotation.y):rotateZ(rotation.z):translate(position.x, position.y, position.z)
+end
+
+
 -- helper function for interpolate
 local function lerp(a, b, t)
 	return a + (b - a) * t
@@ -667,6 +696,8 @@ module.lookAtWorld = lookAtWorld
 module.translation = translation
 module.fromEuler = fromEuler
 module.fromQuaternion = fromQuaternion
+module.fromPosition = fromPosition
+module.fromTransforms = fromTransforms
 module.interpolate = interpolate
 module.isMatrix4 = isMatrix4
 return setmetatable(module, {__call = function(_, ...) return new(...) end})
