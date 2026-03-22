@@ -549,18 +549,26 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 	for i = 1, #self.InstancedMeshes do
 		love.graphics.drawInstanced(self.InstancedMeshes[i].Mesh, self.InstancedMeshes[i].Count)
 	end
+	for i = 1, #self.InstancedTrip3 do
+		love.graphics.drawInstanced(self.InstancedTrip3[i].Mesh, self.InstancedTrip3[i].Count)
+	end
 	self.DepthShader:send("isInstanced", false)
 	for i = 1, #self.BasicMeshes do
 		if self.BasicMeshes[i].Transparency == 0 then
-			--self.DepthShader:send("meshPosition", self.BasicMeshes[i].Position:array())
-			--self.DepthShader:send("meshRotation", self.BasicMeshes[i].Rotation:array())
-			--self.DepthShader:send("meshScale", self.BasicMeshes[i].Scale:array())
 			local c1, c2, c3, c4 = self.BasicMeshes[i].Matrix:columns()
 			self.DepthShader:send("meshMatrix", {c1, c2, c3, c4})
 			love.graphics.draw(self.BasicMeshes[i].Mesh)
 		end
 	end
+	for i = 1, #self.BasicTrip3 do
+		if self.BasicTrip3[i].Transparency == 0 then
+			local c1, c2, c3, c4 = self.BasicTrip3[i].Matrix:columns()
+			self.DepthShader:send("meshMatrix", {c1, c2, c3, c4})
+			love.graphics.draw(self.BasicTrip3[i].Mesh)
+		end
+	end
 
+	--[[
 	love.graphics.setShader(self.TriplanarDepthShader)
 	self.TriplanarDepthShader:send("isInstanced", true)
 	for i = 1, #self.InstancedTrip3 do
@@ -577,6 +585,7 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 			love.graphics.draw(self.BasicTrip3[i].Mesh)
 		end
 	end
+	]]
 
 	profiler:popLabel()
 
@@ -1239,7 +1248,7 @@ function Scene3:rescaleCanvas(width, height, ssaa)
 	self.Shader:send("aspectRatio", aspectRatio)
 	self.DepthShader:send("aspectRatio", aspectRatio)
 	self.TriplanarShader:send("aspectRatio", aspectRatio)
-	self.TriplanarDepthShader:send("aspectRatio", aspectRatio)
+	--self.TriplanarDepthShader:send("aspectRatio", aspectRatio)
 	self.RippleShader:send("aspectRatio", aspectRatio)
 	self.FoliageShader:send("aspectRatio", aspectRatio)
 	self.PlantShader:send("aspectRatio", aspectRatio)
@@ -1904,7 +1913,7 @@ local function newScene3(sceneCamera, bgImage, fgImage, ssaa)
 
 		-- depth pre-pass shaders
 		["DepthShader"] = love.graphics.newShader(SHADER_VERTEX_DEPTH_PATH, DEPTH_PASS_FRAG); -- depth pre-pass for mesh3 and mesh3group
-		["TriplanarDepthShader"] = love.graphics.newShader(SHADER_VERTEX_DEPTH_PATH, DEPTH_PASS_FRAG); -- depth pre-pass for trip3 and trip3group
+		--["TriplanarDepthShader"] = love.graphics.newShader(SHADER_VERTEX_DEPTH_PATH, DEPTH_PASS_FRAG); -- depth pre-pass for trip3 and trip3group
 
 		["LastDrawSize"] = vector2(gWidth, gHeight); -- when you suddenly start drawing the scene at a different size, some shader variables need to be updated!
 		["LightsDirty"] = true; -- if true, update lights data in the shaders and set this to false (until a light gets attached/detached)
@@ -1992,7 +2001,7 @@ local function newScene3(sceneCamera, bgImage, fgImage, ssaa)
 	Object.TriplanarShader:send("blobShadowStrength", 0.5)
 	Object.TriplanarShader:send("ambientColor", {1, 1, 1, 1})
 
-	Object.TriplanarDepthShader:send("fieldOfView", Object.Camera3.FieldOfView)
+	--Object.TriplanarDepthShader:send("fieldOfView", Object.Camera3.FieldOfView)
 
 	Object.RippleShader:send("fieldOfView", Object.Camera3.FieldOfView)
 
