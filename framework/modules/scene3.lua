@@ -6,31 +6,15 @@ local connection = require("framework.connection")
 --[[
 
 3d graphics features wishlist:
-- 3d models with:
-	- textures
-	- vertex coloring
-	- blended by multiplying texture color w/ vertex color
-- up to 8 lights in a scene, with:
-	- color
-	- strength
-	- range
-- unlimited number of meshes with:
-	- position
-	- rotation (ZXY?)
-	- scale
+- frustum culling
+- deferred point lights
 - colored fog: starting distance, color and thickness & ending distance, color and thickness
-- 3d camera with field-of-view, position, rotation (along Z), tilt (along X) & offset backwards from its position
-
-
-
 ]]
 
 
 
 ----------------------------------------------------[[ == VARIABLES == ]]----------------------------------------------------
 
-local MAX_LIGHTS_PER_SCENE = 16
---local SHADER_PATH = "framework/shaders/shader3d.c"
 local SHADER_VERTEX_DEPTH_PATH = "framework/shaders/vertexdepth.c"
 local SHADER_VERTEX_PATH = "framework/shaders/vertex3d.c"
 local SHADER_FRAGMENT_PATH = "framework/shaders/fragment3d.c"

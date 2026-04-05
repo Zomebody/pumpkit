@@ -96,7 +96,7 @@ local function new(mesh, positions, rotations, scales, cols, shadowcols)
 		)
 	end
 
-	-- TODO: replacve position, rotation, scale with 4 attributes corresponding to the 4 rows (or columns? probs columns) of the model matrix
+	-- TODO: replace position, rotation, scale with 4 attributes corresponding to the 4 rows (or columns? probs columns) of the model matrix
 	local instanceMesh = love.graphics.newMesh(
 		{
 			{"instMatColumn1", "float", 4},
