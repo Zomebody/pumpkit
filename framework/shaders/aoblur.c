@@ -24,12 +24,13 @@ vec4 effect(vec4 color, Image texture, vec2 texture_coords, vec2 screen_coords) 
 		float sampleDepth = Texel(depthTexture, sampleCoords).r;
 		float depthDifference = abs(sampleDepth - curDepth);
 
-		// Skip samples too far in depth
-		if (depthDifference > depthTolerance) continue;
+		// skip samples too far in depth
+		//if (depthDifference > depthTolerance) continue;
 
 		float spatialWeight = exp(-0.5 * (i / radius) * (i / radius));
 		float depthWeight = exp(-0.5 * (depthDifference / depthTolerance) * (depthDifference / depthTolerance));
-		float weight = spatialWeight * depthWeight;
+		float skip = step(depthDifference, depthTolerance);
+		float weight = spatialWeight * depthWeight * skip;
 
 		sum += Texel(texture, sampleCoords) * weight;
 		totalWeight += weight;

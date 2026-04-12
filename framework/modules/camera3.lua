@@ -186,7 +186,9 @@ function Camera3:setFOV(fov)
 		local persp = matrix4.perspective(aspectRatio, fov, 1000, 0.1)
 		local c1, c2, c3, c4 = persp:columns()
 		self.Scene3.SSAOShader:send("perspectiveMatrix", {c1, c2, c3, c4})
-
+		local invPersp = persp:inverse()
+		local c1, c2, c3, c4 = invPersp:columns()
+		self.Scene3.SSAOShader:send("invPerspectiveMatrix", {c1, c2, c3, c4})
 	end
 end
 
