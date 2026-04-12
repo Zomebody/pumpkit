@@ -1,4 +1,69 @@
 
+-- TODO: figure out a better way of invorporating the OpenGL labels utility into the profiler
+-- OpenGL utility from: https://www.love2d.org/forums/viewtopic.php?t=92481
+
+----------------------------------------------------[[ == OPENGL LABELS == ]]----------------------------------------------------
+
+local ffi = require("ffi")
+local OpenGL = {}
+OpenGL.GL = {}
+OpenGL.SDL = ffi.os == "Windows" and ffi.load("SDL2") or ffi.C
+
+
+function OpenGL.init()
+	local definitions = [[
+		//---------------------
+		// OpenGL
+		//---------------------
+		typedef char GLchar;
+		typedef int GLsizei;
+		typedef unsigned int GLuint;
+		typedef unsigned int GLenum;
+
+		// void glPushDebugGroup( GLenum source, GLuint id, GLsizei length, const GLchar *message );
+		typedef void (APIENTRYP PFNGLPUSHDEBUGGROUPPROC) (GLenum source, GLuint id, GLsizei length, const GLchar *message);
+
+		// void glPopDebugGroup( void );
+		typedef void (APIENTRYP PFNGLPOPDEBUGGROUPPROC) (void);
+
+		//---------------------
+		// SDL
+		//---------------------
+		typedef bool SDL_bool;
+		SDL_bool SDL_GL_ExtensionSupported( const char *extension );
+		void* SDL_GL_GetProcAddress( const char *proc );
+	]]
+
+	if ffi.os == "Windows" then
+		definitions = definitions:gsub("APIENTRYP", "__stdcall *")
+	else
+		definitions = definitions:gsub("APIENTRYP", "*")
+	end
+
+	ffi.cdef(definitions)
+
+	-- https://registry.khronos.org/OpenGL/api/GL/glext.h
+	local names = {
+		{"glPushDebugGroup", "PFNGLPUSHDEBUGGROUPPROC"},
+		{"glPopDebugGroup", "PFNGLPOPDEBUGGROUPPROC"}
+	}
+	local procName = ""
+	local GLName = ""
+
+	for i = 1, #names do
+		GLName = names[i][1]
+		procName = names[i][2]
+		local Function = ffi.cast(procName, OpenGL.SDL.SDL_GL_GetProcAddress(GLName))
+		rawset(OpenGL.GL, GLName, Function)
+	end
+end
+
+
+OpenGL.init()
+
+
+
+----------------------------------------------------[[ == PROFILER == ]]----------------------------------------------------
 
 local profiler = {
 	["CurFrame"] = 0;
@@ -14,6 +79,7 @@ end
 
 
 function profiler:pushLabel(name)
+	OpenGL.GL.glPushDebugGroup(0, 0, string.len(name), name)
 	if self.Enabled then
 		table.insert(self.History[self.CurFrame], {love.timer.getTime(), name})
 	end
@@ -22,6 +88,7 @@ end
 
 
 function profiler:popLabel()
+	OpenGL.GL.glPopDebugGroup()
 	if self.Enabled then
 		table.insert(self.History[self.CurFrame], {love.timer.getTime()}) -- no second variable means 'pop'
 	end

@@ -148,6 +148,7 @@ function Scene3:applyAmbientOcclusion()
 
 	
 	-- apply horizontal and vertical gaussian blur in two passes, using the reuse canvas to draw to that, and then back to the ambient occlusion canvas
+	profiler:pushLabel("blur")
 	love.graphics.setCanvas(pongCanvas)
 	love.graphics.setShader(self.AOBlurShader)
 	--self.AOBlurShader:send("depthTexture", self.DepthCanvas)
@@ -156,16 +157,18 @@ function Scene3:applyAmbientOcclusion()
 	love.graphics.setCanvas(pingCanvas)
 	self.AOBlurShader:send("blurDirection", {0, 1})
 	love.graphics.draw(pongCanvas)
+	profiler:popLabel()
 	
 
 
 	-- now blend the ambient occlusion result with whatever has been drawn already
 	love.graphics.setCanvas(self.PrepareCanvas)
+	profiler:pushLabel("clear")
 	love.graphics.clear()
+	profiler:popLabel()
 	love.graphics.setShader(self.SSAOBlendShader) -- set the blend shader so we can apply ambient occlusion to the render canvas
 	
 	love.graphics.draw(self.RenderCanvas)
-
 
 	-- copy result to render canvas
 	love.graphics.setShader()
@@ -237,65 +240,81 @@ function Scene3:updateShadowMap(firstPass)
 	
 	if firstPass then -- first pass, which excludes foliage
 
+		profiler:pushLabel("clear")
 		love.graphics.clear() -- we should clear since if you remove an object, the shadow in that area won't get overwritten
+		profiler:popLabel()
+
 		-- render all meshes and instanced meshes that have shadows enabled to the shadow canvas
 		local Mesh
 		-- isInstanced should still be true from the second pass
 		--self.ShadowMapShader:send("isInstanced", true)
 		self.ShadowMapShader:send("meshTexture", blankImage) -- for instanced meshes, assume texture is opaque (otherwise you'd use foliage3)
 
-		for i = 1, #self.InstancedMeshes do
-			Mesh = self.InstancedMeshes[i]
-			if Mesh.CastShadow then
-				love.graphics.drawInstanced(Mesh.Mesh, Mesh.Count)
+		if #self.InstancedMeshes > 0 then
+			profiler:pushLabel("inst meshes")
+			for i = 1, #self.InstancedMeshes do
+				Mesh = self.InstancedMeshes[i]
+				if Mesh.CastShadow then
+					love.graphics.drawInstanced(Mesh.Mesh, Mesh.Count)
+				end
 			end
+			profiler:popLabel()
 		end
 
-		for i = 1, #self.InstancedTrip3 do
-			Mesh = self.InstancedTrip3[i]
-			if Mesh.CastShadow then
-				love.graphics.drawInstanced(Mesh.Mesh, Mesh.Count)
+		if #self.InstancedTrip3 > 0 then
+			profiler:pushLabel("inst trip3")
+			for i = 1, #self.InstancedTrip3 do
+				Mesh = self.InstancedTrip3[i]
+				if Mesh.CastShadow then
+					love.graphics.drawInstanced(Mesh.Mesh, Mesh.Count)
+				end
 			end
+			profiler:popLabel()
 		end
 		
 		self.ShadowMapShader:send("isInstanced", false)
-		for i = 1, #self.BasicMeshes do
-			Mesh = self.BasicMeshes[i]
-			if Mesh.CastShadow then
-				-- TODO meshes need their own matrix instead of sending over and computing them every time in the shaders
-				--self.ShadowMapShader:send("meshTexture", Mesh.Texture or blankImage)
-				--self.ShadowMapShader:send("meshPosition", Mesh.Position:array())
-				--self.ShadowMapShader:send("meshRotation", Mesh.Rotation:array())
-				local c1, c2, c3, c4 = Mesh.Matrix:columns()
-				self.ShadowMapShader:send("meshMatrix", {c1, c2, c3, c4})
-				--self.ShadowMapShader:send("meshScale", Mesh.Scale:array())
-				love.graphics.draw(Mesh.Mesh)
+
+		if #self.BasicMeshes > 0 then
+			profiler:pushLabel("basic meshes")
+			for i = 1, #self.BasicMeshes do
+				Mesh = self.BasicMeshes[i]
+				if Mesh.CastShadow then
+					local c1, c2, c3, c4 = Mesh.Matrix:columns()
+					self.ShadowMapShader:send("meshMatrix", {c1, c2, c3, c4})
+					love.graphics.draw(Mesh.Mesh)
+				end
 			end
+			profiler:popLabel()
 		end
 
-		for i = 1, #self.BasicTrip3 do
-			Mesh = self.BasicTrip3[i]
-			if Mesh.CastShadow then
-				-- TODO meshes need their own matrix instead of sending over and computing them every time in the shaders
-				self.ShadowMapShader:send("meshTexture", Mesh.Texture or blankImage)
-				--self.ShadowMapShader:send("meshPosition", Mesh.Position:array())
-				--self.ShadowMapShader:send("meshRotation", Mesh.Rotation:array())
-				--self.ShadowMapShader:send("meshScale", Mesh.Scale:array())
-				local c1, c2, c3, c4 = Mesh.Matrix:columns()
-				self.ShadowMapShader:send("meshMatrix", {c1, c2, c3, c4})
-				love.graphics.draw(Mesh.Mesh)
+		if #self.BasicTrip3 > 0 then
+			profiler:pushLabel("basic trip3")
+			for i = 1, #self.BasicTrip3 do
+				Mesh = self.BasicTrip3[i]
+				if Mesh.CastShadow then
+					self.ShadowMapShader:send("meshTexture", Mesh.Texture or blankImage)
+					local c1, c2, c3, c4 = Mesh.Matrix:columns()
+					self.ShadowMapShader:send("meshMatrix", {c1, c2, c3, c4})
+					love.graphics.draw(Mesh.Mesh)
+				end
 			end
+			profiler:popLabel()
 		end
 
 	else -- second pass, which includes foliage
 
-		self.ShadowMapShader:send("isInstanced", true)
-		for i = 1, #self.Foliage do -- foliage is always instanced
-			Mesh = self.Foliage[i]
-			if Mesh.CastShadow then
-				self.ShadowMapShader:send("meshTexture", Mesh.Texture or blankImage) -- foliage will have alpha clipping, so sending over image is important
-				love.graphics.drawInstanced(Mesh.Mesh, Mesh.Count)
+		self.ShadowMapShader:send("isInstanced", true) -- very important that this is outside the if-statement!
+
+		if #self.Foliage > 0 then
+			profiler:pushLabel("foliage")
+			for i = 1, #self.Foliage do -- foliage is always instanced
+				Mesh = self.Foliage[i]
+				if Mesh.CastShadow then
+					self.ShadowMapShader:send("meshTexture", Mesh.Texture or blankImage) -- foliage will have alpha clipping, so sending over image is important
+					love.graphics.drawInstanced(Mesh.Mesh, Mesh.Count)
+				end
 			end
+			profiler:popLabel()
 		end
 
 	end
@@ -352,7 +371,7 @@ function Scene3:drawVFX()
 	-- draw any particles that have no blending whatsoever directly to the render canvas. Typically these are particles without semi-transparency
 	
 	if #self.Particles > 0 then
-		profiler:pushLabel("parts")
+		profiler:pushLabel("particles")
 		love.graphics.setShader(self.ParticlesShader)
 		self.ParticlesShader:send("blends", false)
 		for i = 1, #self.Particles do
@@ -383,9 +402,10 @@ function Scene3:drawVFX()
 		profiler:pushLabel("vfx blend")
 		-- now do particles and trails that are set to blend
 		-- initialize canvases & operations
-		love.graphics.setCanvas({self.VFXCanvas1, self.VFXCanvas2})
-		love.graphics.clear(0, 0, 0, 1)
+		--love.graphics.setCanvas({self.VFXCanvas1, self.VFXCanvas2})
+		--love.graphics.clear(0, 0, 0, 1)
 		love.graphics.setCanvas({self.VFXCanvas1, self.VFXCanvas2, ["depthstencil"] = self.DepthCanvas})
+		love.graphics.clear(0, 0, 0, 1, false, false) -- don't clear depth or stencil
 		love.graphics.setDepthMode("less", false)
 		love.graphics.setBlendMode("add")
 
@@ -470,7 +490,7 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 	end
 
 
-	profiler:pushLabel("upd-light")
+	profiler:pushLabel("upd light")
 
 	-- update lights
 	local lightsInfo = {}
@@ -512,11 +532,12 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 	-- set render canvas as target and clear it so a normal image can be drawn to it
 	--love.graphics.setCanvas({self.RenderCanvas, self.NormalCanvas, ["depthstencil"] = self.DepthCanvas}) -- set the main canvas so it can be cleared
 	profiler:pushLabel("clear")
-	love.graphics.setCanvas({self.RenderCanvas, ["depthstencil"] = self.DepthCanvas})
+	love.graphics.setCanvas({self.RenderCanvas, self.BloomCanvas, ["depthstencil"] = self.DepthCanvas})
 	love.graphics.clear()
-	love.graphics.setCanvas(self.BloomCanvas)
-	love.graphics.clear(0, 0, 0)
-	love.graphics.setCanvas(self.RenderCanvas) -- set the canvas to only be the render canvas so the background doesn't accidentally initialize anything in the normal canvas
+	--love.graphics.clear()
+	--love.graphics.setCanvas(self.BloomCanvas)
+	--love.graphics.clear(0, 0, 0)
+	--love.graphics.setCanvas(self.RenderCanvas) -- set the canvas to only be the render canvas so the background doesn't accidentally initialize anything in the normal canvas
 	profiler:popLabel()
 
 
@@ -578,7 +599,7 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 
 	-- if a shadow canvas is set, it means shadow mapping is turned on
 	if self.ShadowCanvas ~= nil then
-		profiler:pushLabel("shadow")
+		profiler:pushLabel("shadow 1")
 		self:updateShadowMap(true)
 		profiler:popLabel()
 	end
@@ -589,7 +610,7 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 
 	-- draw the background
 	if self.Background then
-		profiler:pushLabel("bg")
+		profiler:pushLabel("background")
 		love.graphics.setShader() -- needs to be reset because shadow map might be enabled
 		love.graphics.setCanvas({self.RenderCanvas})
 		love.graphics.setDepthMode("always", false)
@@ -660,7 +681,7 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 
 	-- second shadowmap pass, this time it draws the foliage to the shadow canvas
 	if self.ShadowCanvas ~= nil then
-		profiler:pushLabel("shadow")
+		profiler:pushLabel("shadow 2")
 		self:updateShadowMap(false)
 		love.graphics.setCanvas({self.RenderCanvas, self.NormalCanvas, self.BloomCanvas, ["depthstencil"] = self.DepthCanvas}) -- call setcanvas as updateShadowMap changes it
 		profiler:popLabel()
@@ -736,7 +757,7 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 
 	-- draw triplanar meshes here (and postpone trip3 meshes that are semi-transparent, or fully transparent with fresnel)
 	if #self.InstancedTrip3 > 0 then
-		profiler:pushLabel("inst-trip")
+		profiler:pushLabel("inst trip3")
 		love.graphics.setShader(self.TriplanarShader)
 		local Mesh = nil
 		--self.TriplanarShader:send("currentTime", love.timer.getTime())
@@ -761,7 +782,7 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 
 	-- then draw all *opaque* triplanar meshes
 	if #self.BasicTrip3 > 0 then
-		profiler:pushLabel("mesh-trip")
+		profiler:pushLabel("basic trip3")
 		local Mesh = nil
 		self.TriplanarShader:send("meshTransparency", 0) -- >0 transparency meshes are postponed until later
 		self.TriplanarShader:send("isInstanced", false) -- tell the shader to use the meshPosition, meshRotation, meshScale and meshColor uniforms to calculate the model matrices
@@ -795,7 +816,7 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 	
 	
 	if #self.RippleMeshes > 0 then
-		profiler:pushLabel("ripple")
+		profiler:pushLabel("ripple meshes")
 		love.graphics.setShader(self.RippleShader)
 		self.RippleShader:send("currentTime", love.timer.getTime())
 		for i = 1, #self.RippleMeshes do
@@ -828,7 +849,7 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 
 	-- apply ambient occlusion to geometry so far (which excludes semi-transparent meshes, sprite meshes & foliage)
 	if self.AOEnabled then
-		profiler:pushLabel("ao")
+		profiler:pushLabel("ambient occlusion")
 		love.graphics.setDepthMode("always", false)
 		self:applyAmbientOcclusion()
 		love.graphics.setDepthMode("lequal", true)
@@ -860,7 +881,7 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 
 	-- repeat the mesh drawing process, but for *opaque* spritemeshes
 	if #self.SpriteMeshes > 0 then
-		profiler:pushLabel("spr-mesh")
+		profiler:pushLabel("sprite meshes")
 		local Mesh = nil
 		self.Shader:send("uvVelocity", {0, 0}) -- sprite meshes have no uv scrolling
 		self.Shader:send("meshFresnel", {0, 1}) -- no need to update fresnelColor since fresnel strength == 0 disables it already
@@ -914,7 +935,7 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 		-- TODO: eventually split off spritesheets and meshes into two separate shaders
 		-- then, they'll naturally be evaluated
 
-		profiler:pushLabel("silhouette")
+		profiler:pushLabel("silhouettes")
 		love.graphics.setCanvas({self.RenderCanvas, ["depthstencil"] = self.DepthCanvas}) -- depth 32 stencil 8
 		love.graphics.setShader(self.SilhouetteShader)
 
@@ -962,7 +983,7 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 
 	-- since both basic meshes and sprite meshes need to be drawn in the right order, this loop gets a bit complicated
 	if #TransMeshes > 0 then
-		profiler:pushLabel("trans")
+		profiler:pushLabel("transparency")
 		local Mesh = nil
 		local Shader = nil
 		for i = 1, #TransMeshes do
@@ -1247,6 +1268,9 @@ function Scene3:rescaleCanvas(width, height, ssaa)
 		local persp = matrix4.perspective(aspectRatio, self.Camera3.FieldOfView, 1000, 0.1)
 		local c1, c2, c3, c4 = persp:columns()
 		self.SSAOShader:send("perspectiveMatrix", {c1, c2, c3, c4})
+		local invPersp = persp:inverse()
+		local c1, c2, c3, c4 = invPersp:columns()
+		self.SSAOShader:send("invPerspectiveMatrix", {c1, c2, c3, c4})
 	end
 
 	-- misc
