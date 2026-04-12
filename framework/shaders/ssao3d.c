@@ -124,7 +124,7 @@ mat4 inverse(mat4 m) {
 	);
 }
 
-
+/*
 vec3 rotateKernelVector(vec3 vector, float angle) {
 	float cosAngle = cos(angle);
 	float sinAngle = sin(angle);
@@ -138,6 +138,7 @@ vec3 rotateKernelVector(vec3 vector, float angle) {
 	// Rodrigues' rotation formula
 	//return vector * cosAngle + cross(axis, vector) * sinAngle + axis * dot(axis, vector) * (1.0 - cosAngle);
 }
+*/
 
 
 
@@ -153,15 +154,24 @@ float calculateOcclusion(vec3 fragmentPos, vec3 normal, vec2 texCoord, Image dep
 		float(love_PixelCoord.x) / 8.0,
 		float(love_PixelCoord.y) / 8.0
 	);
-	float sampledRotation = Texel(noiseTexture, noiseSamplePosition).r * 6.283; // sample a rotation for this pixel from the noise texture
 
+	float sampledRotation = Texel(noiseTexture, noiseSamplePosition).r * 6.283; // sample a rotation for this pixel from the noise texture
+	float cosAngle = cos(sampledRotation);
+	float sinAngle = sin(sampledRotation);
 
 	float occlusion = 0.0;
 
 
 	for (int i = 0; i < samples; i++) { // loop through each item in samplingKernel
 		// grab the vec3 from the kernel and rotate it around the surface normal by some factor sampled from the noise texture
-		vec3 kernelVector = rotateKernelVector(samplingKernel[i], sampledRotation);
+
+
+		//vec3 kernelVector = rotateKernelVector(samplingKernel[i], sampledRotation);
+		vec3 kernelVector = vec3(
+			samplingKernel[i].x * cosAngle - samplingKernel[i].y * sinAngle,
+			samplingKernel[i].x * sinAngle + samplingKernel[i].y * cosAngle,
+			samplingKernel[i].z
+		);
 
 		vec3 worldSampleDir = TBN * kernelVector * kernelScalar; // for the current index in the kernel, calculate where it's pointing in world-space when placed on the mesh's surface
 		vec3 sampleWorldPos = fragmentPos + worldSampleDir; // offset sample in world space
