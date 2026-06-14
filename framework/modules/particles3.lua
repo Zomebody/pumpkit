@@ -287,35 +287,48 @@ end
 
 
 -- create a new particle emitter which uses the given image and can emit at most maxParticles at once
+-- TODO: add new first argument 'path'. If provided, loads that mesh from disk and uses it instead of the 2d plane (maybe supply just the mesh if you can read its data?)
 local function new(img, maxParticles, properties)
-	if isParticles3(img) then
+	local arg1 = img
+	if isParticles3(arg1) then
 		properties = img
 		img = img.Mesh:getTexture()
 		maxParticles = maxParticles == nil and properties.MaxParticles or maxParticles
+	elseif arg1:type() == "Mesh" then -- 3d particles!
+		img = img:getTexture()
 	end
 	if properties == nil then properties = {} end
 
 	-- create quad mesh with the texture on top of it, to be used when rendering the particle in 3d
-	local mesh = love.graphics.newMesh(
-		{
-			{"VertexPosition", "float", 3},
-			{"VertexTexCoord", "float", 2},
-			{"VertexNormal", "float", 3}
-		},
-		{
-			{0.5, 0.5, 0, 0, 0, 0, 0, 1},
-			{-0.5, 0.5, 0, 1, 0, 0, 0, 1},
-			{0.5, -0.5, 0, 0, 1, 0, 0, 1},
-			{0.5, -0.5, 0, 0, 1, 0, 0, 1},
-			{-0.5, 0.5, 0, 1, 0, 0, 0, 1},
-			{-0.5, -0.5, 0, 1, 1, 0, 0, 1}
-		},
-		"triangles",
-		"static"
-	)
+	local mesh = nil
+	if arg1:type() ~= "Mesh" then
+		-- create a simple mesh as the mesh
+		mesh = love.graphics.newMesh(
+			{
+				{"VertexPosition", "float", 3},
+				{"VertexTexCoord", "float", 2},
+				--{"VertexNormal", "float", 3}
+				{"VertexColor", "byte", 4},
+				{"VertexNormal", "float", 3}
+			},
+			{
+				{0.5, 0.5, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1},
+				{-0.5, 0.5, 0, 1, 0, 1, 1, 1, 1, 0, 0, 1},
+				{0.5, -0.5, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1},
+				{0.5, -0.5, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1},
+				{-0.5, 0.5, 0, 1, 0, 1, 1, 1, 1, 0, 0, 1},
+				{-0.5, -0.5, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1}
+			},
+			"triangles",
+			"static"
+		)
+		mesh:setTexture(img)
+	else
+		-- use the provided mesh for the particle instead of a plane
+		mesh = arg1
+	end
 
-	mesh:setTexture(img)
-
+	
 	-- dummy data, will be updated automatically when :emit() is called
 	local instancesData = {}
 	local matricesData = {}
@@ -357,8 +370,8 @@ local function new(img, maxParticles, properties)
 	local spawnRadius = properties.SpawnRadius or range(0, 0)
 	local gravity = properties.Gravity or vector3(0, 0, 0)
 	local speed = properties.Speed or range(1, 1)
-	local rotation = properties.Rotation or range(0, math.pi * 2)
-	local rotationSpeed = properties.RotationSpeed or range(-1, 1)
+	local rotation = properties.Rotation or range(0, math.pi * 2) -- TODO: replace this with something that works for 3d meshes
+	local rotationSpeed = properties.RotationSpeed or range(-1, 1) -- TODO: replace this with something that works for 3d meshes
 	local size = properties.Size or numbercurve(0, 1, 1, 1)
 	local sizeDeviation = properties.SizeDeviation or numbercurve(0, 0, 1, 0)
 	local lifetime = properties.Lifetime or range(1.5, 2)

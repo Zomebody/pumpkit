@@ -95,6 +95,8 @@ void effect() {
 		discard;
 	}
 
+	vec4 color = VaryingColor;
+
 	// sample the gradient color from the top row of the data texture
 	float gradientU = clamp(ageFraction, 0.0, 1.0); // Ensure it stays within the range [0, 1]
 	vec2 gradientUV = vec2(gradientU, 0.25); // Top row (assume 2-pixel tall texture, so Y = 0.25 for the top row)
@@ -108,7 +110,7 @@ void effect() {
 	float frameY = mod(floor(curFrame / flipbookSize), flipbookSize);
 	vec2 cellSize = vec2(1.0 / flipbookSize);
 	vec2 sampleUV = VaryingTexCoord.xy * cellSize + vec2(frameX, frameY) * cellSize;
-	vec4 texColor = Texel(MainTex, sampleUV);
+	vec4 texColor = Texel(MainTex, sampleUV) * color;
 
 	// check if the alpha of the texture color is below a threshold
 	if (texColor.a < 0.01) {
