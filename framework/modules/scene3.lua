@@ -108,6 +108,9 @@ local blankImage = love.graphics.newImage(whitePixel)
 blankImage:setWrap("repeat")
 blankImage:setFilter("nearest")
 
+-- default skybox
+local whiteCubeMap = love.graphics.newCubeImage({whitePixel, whitePixel, whitePixel, whitePixel, whitePixel, whitePixel})
+
 -- specifically for ripplemeshes, no distortion, no noise/foam
 local dataMap = love.image.newImageData(1, 1)
 dataMap:mapPixel(function() return 0, 0, 1, 0 end)
@@ -664,6 +667,8 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 
 	-- draw masks using 'lighten' blend mode because it stores the highest value for each channel
 	-- masks are drawn here because it just kinda works out well with minimizing canvas switches and masks need to be drawn very very early on
+
+	-- TODO: replace this with stencils? Should be a lot faster and give the same result right?
 	
 	if #self.Masks > 0 then
 		profiler:pushLabel("masks")
@@ -743,6 +748,7 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 			self.Shader:send("meshTexture", Mesh.Texture or blankImage)
 			self.Shader:send("normalMap", Mesh.NormalMap or normalImage)
 			self.Shader:send("meshBrightness", Mesh.Brightness)
+			self.Shader:send("meshReflectance", Mesh.Reflectance)
 			self.Shader:send("meshBloom", Mesh.Bloom)
 			self.Shader:send("meshFresnel", {Mesh.FresnelStrength, Mesh.FresnelPower})
 			self.Shader:send("meshFresnelColor", {Mesh.FresnelColor.r, Mesh.FresnelColor.g, Mesh.FresnelColor.b})
@@ -777,6 +783,7 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 				self.Shader:send("meshColor", Mesh.Color:array())
 				self.Shader:send("meshColorShadow", Mesh.ColorShadow:array())
 				self.Shader:send("meshBrightness", Mesh.Brightness)
+				self.Shader:send("meshReflectance", Mesh.Reflectance)
 				self.Shader:send("meshBloom", Mesh.Bloom)
 				self.Shader:send("meshFresnel", {Mesh.FresnelStrength, Mesh.FresnelPower})
 				self.Shader:send("meshFresnelColor", {Mesh.FresnelColor.r, Mesh.FresnelColor.g, Mesh.FresnelColor.b})
@@ -808,6 +815,7 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 			self.TriplanarShader:send("meshTexture", Mesh.Texture or blankImage)
 			self.TriplanarShader:send("normalMap", Mesh.NormalMap or normalImage)
 			self.TriplanarShader:send("meshBrightness", Mesh.Brightness)
+			self.TriplanarShader:send("meshReflectance", Mesh.Reflectance)
 			self.TriplanarShader:send("meshBloom", Mesh.Bloom)
 			self.TriplanarShader:send("meshFresnel", {Mesh.FresnelStrength, Mesh.FresnelPower})
 			self.TriplanarShader:send("meshFresnelColor", {Mesh.FresnelColor.r, Mesh.FresnelColor.g, Mesh.FresnelColor.b})
@@ -839,6 +847,7 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 				self.TriplanarShader:send("meshColor", Mesh.Color:array())
 				self.TriplanarShader:send("meshColorShadow", Mesh.ColorShadow:array())
 				self.TriplanarShader:send("meshBrightness", Mesh.Brightness)
+				self.TriplanarShader:send("meshReflectance", Mesh.Reflectance)
 				self.TriplanarShader:send("meshBloom", Mesh.Bloom)
 				self.TriplanarShader:send("meshFresnel", {Mesh.FresnelStrength, Mesh.FresnelPower})
 				self.TriplanarShader:send("meshFresnelColor", {Mesh.FresnelColor.r, Mesh.FresnelColor.g, Mesh.FresnelColor.b})
@@ -915,7 +924,7 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 
 
 
-
+	-- TODO: perhaps isolate spritemeshes into a different shader?
 	love.graphics.setShader(self.Shader)
 
 	-- repeat the mesh drawing process, but for *opaque* spritemeshes
@@ -1064,6 +1073,7 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 			Shader:send("meshColor", Mesh.Color:array())
 			Shader:send("meshColorShadow", Mesh.ColorShadow:array())
 			Shader:send("meshBrightness", Mesh.Brightness)
+			Shader:send("meshReflectance", Mesh.Reflectance)
 			Shader:send("meshBloom", Mesh.Bloom)
 			Shader:send("meshFresnel", {Mesh.FresnelStrength, Mesh.FresnelPower})
 			Shader:send("meshFresnelColor", {Mesh.FresnelColor.r, Mesh.FresnelColor.g, Mesh.FresnelColor.b})
@@ -1194,6 +1204,19 @@ function Scene3:setFXAA(state)
 		self.FXAA = true
 	else
 		self.FXAA = false
+	end
+end
+
+
+function Scene3:setBackground(bgImage)
+	if bgImage == nil then bgImage = whiteCubeMap end
+	self.Background = bgImage
+	if self.Background:getTextureType() == "2d" then -- regular image
+		self.Shader:send("skyboxImage", whiteCubeMap)
+		self.TriplanarShader:send("skyboxImage", whiteCubeMap)
+	else -- cube map
+		self.Shader:send("skyboxImage", bgImage)
+		self.TriplanarShader:send("skyboxImage", bgImage)
 	end
 end
 
@@ -1926,7 +1949,7 @@ end
 ----------------------------------------------------[[ == OBJECT CREATION == ]]----------------------------------------------------
 
 -- creates a new Scene3 object with the base properties of a Scene3
-local function newScene3(sceneCamera, bgImage, fgImage, ssaa)
+local function newScene3(sceneCamera, bgImage, fgImage, ssaa) -- TODO: delete fgImage
 	if ssaa == nil then
 		ssaa = 1
 	end
@@ -1998,7 +2021,7 @@ local function newScene3(sceneCamera, bgImage, fgImage, ssaa)
 		["BloomQuality"] = 1; -- 1 = full quality, 0.5 = half quality, 0.25 = quarter quality
 
 		-- render variables
-		["Background"] = bgImage; -- image, drawn first (so they appear in the back)
+		["Background"] = nil; -- set separately --bgImage; -- image, drawn first (so they appear in the back)
 		["Foreground"] = fgImage;
 
 		-- scene elements
@@ -2028,6 +2051,7 @@ local function newScene3(sceneCamera, bgImage, fgImage, ssaa)
 	Object.Camera3:updateCameraMatrices()
 
 	Object:rescaleCanvas(nil, nil, ssaa) -- call to initialize canvas variables
+	Object:setBackground(bgImage)
 
 
 

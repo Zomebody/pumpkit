@@ -42,6 +42,7 @@ uniform vec2 shadowCanvasSize;
 uniform vec3 meshColor;
 uniform vec3 meshColorShadow;
 uniform float meshBrightness; // if 1, mesh is not affected by diffuse shading at all
+uniform float meshReflectance;
 uniform float meshTransparency; // how transparent the mesh is
 uniform float meshBloom;
 uniform vec2 meshFresnel; // x = strength, y = power
@@ -63,6 +64,7 @@ uniform Image MainTex; // used to be the 'tex' argument, but is now passed separ
 uniform Image meshTexture; // replaces MainTex. Instead of using mesh:setTexture(), they are now passed separately so that a mesh can be reused with different textures on them
 uniform Image normalMap;
 uniform sampler2DShadow shadowCanvas; // use Image when doing 'basic' sampling. Use sampler2DShadow when you want automatic bilinear filtering (but more prone to shadow acne :<)
+uniform CubeImage skyboxImage;
 varying vec2 texture_coords;
 
 
@@ -152,7 +154,13 @@ void effect() {
 	sampledNormal = normalize(mix(vec3(0.0, 0.0, 1.0), sampledNormal, normalStrength));
 	vec3 normalMapNormalWorld = normalize(TBN * sampledNormal);
 	
-	
+		// get skybox color using normal map direction if surface has reflectance
+	vec4 skyboxColor = vec4(1.0, 1.0, 1.0, 1.0);
+	if (meshReflectance > 0.0) {
+		vec3 reflectedVector = reflect(cameraWorldRay, normalMapNormalWorld);
+		skyboxColor = Texel(skyboxImage, reflectedVector);
+		skyboxColor = vec4(skyboxColor.rgb, texColor.a);
+	}
 	
 	// check if the alpha of the texture color is below a threshold
 	if (texColor.a < 0.01 && meshFresnel.x <= 0.0) {
@@ -217,7 +225,7 @@ void effect() {
 	}
 	
 	//set the color on the main canvas. Apply mesh brightness here as well. Higher brightness means less affected by ambient color
-	vec4 resultingColor = mix(texColor * objectColor, vec4(meshFresnelColor, 1.0), fresnel); // mix color towards fresnel color
+	vec4 resultingColor = mix(mix(texColor, skyboxColor, meshReflectance) * objectColor, vec4(meshFresnelColor, 1.0), fresnel); // mix color towards fresnel color
 	vec4 resultingLighting = mix(vec4(lighting.xyz, 1.0), vec4(1.0, 1.0, 1.0, 1.0), meshBrightness); // mix lighting based on mesh brightness
 	resultingColor = resultingColor * resultingLighting;
 

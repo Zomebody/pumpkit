@@ -105,6 +105,7 @@ local function new(meshRef, position, rotation, scale, col, scol)
 		["Color"] = col ~= nil and color(col) or color(1, 1, 1);
 		["ColorShadow"] = scol ~= nil and color(scol) or color(0.5, 0.5, 0.5);
 		["Brightness"] = 0;
+		["Reflectance"] = 0;
 		["Bloom"] = 0;
 		["FresnelColor"] = color(1, 1, 1);
 		["FresnelStrength"] = 0;

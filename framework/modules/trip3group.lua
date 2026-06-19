@@ -119,6 +119,7 @@ local function new(mesh, positions, rotations, scales, cols, shadowcols)
 		["Texture"] = nil;
 		["Instances"] = instanceMesh;
 		["Brightness"] = 0;
+		["Reflectance"] = 0;
 		["Bloom"] = 0;
 		["FresnelColor"] = color(1, 1, 1);
 		["FresnelStrength"] = 0;
