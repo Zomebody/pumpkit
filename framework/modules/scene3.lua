@@ -38,6 +38,7 @@ local SHADER_BILLBOARD_PATH = "framework/shaders/billboard.c"
 local SHADER_MASK_PATH = "framework/shaders/dither3d.c"
 local SHADER_SILHOUETTE_PATH = "framework/shaders/silhouette.c"
 local SHADER_FXAA_PATH = "framework/shaders/fxaa.c"
+local SHADER_SKYBOX_PATH = "framework/shaders/skybox.c"
 
 
 
@@ -54,8 +55,34 @@ Scene3.__tostring = function(tab) return "{Scene3: " .. tostring(tab.Id) .. "}" 
 
 
 
-----------------------------------------------------[[ == IMAGES == ]]----------------------------------------------------
+----------------------------------------------------[[ == DEFAULT DATA == ]]----------------------------------------------------
 
+-- cube mesh for cubemap skyboxes
+local v1 = { 0.5,  0.5,  0.5}
+local v2 = { 0.5,  0.5, -0.5}
+local v3 = { 0.5, -0.5,  0.5}
+local v4 = { 0.5, -0.5, -0.5}
+local v5 = {-0.5,  0.5,  0.5}
+local v6 = {-0.5,  0.5, -0.5}
+local v7 = {-0.5, -0.5,  0.5}
+local v8 = {-0.5, -0.5, -0.5}
+local cubeMesh = love.graphics.newMesh(
+	{
+		{"VertexPosition", "float", 3}
+	},
+	{ -- inverted cube
+		v3, v1, v2, v2, v4, v3, -- pos x
+		v5, v7, v6, v8, v6, v7, -- neg x
+		v1, v5, v2, v6, v2, v5, -- pos y
+		v7, v3, v4, v4, v8, v7, -- neg y
+		v5, v1, v3, v3, v7, v5, -- pos z
+		v2, v6, v4, v8, v4, v6  -- neg z
+	},
+	"triangles",
+	"static"
+)
+
+-- noise for ambient occlusion
 local noiseData = love.image.newImageData(8, 8) --16, 16
 local seed = love.math.getRandomSeed()
 local state = love.math.getRandomState()
@@ -67,24 +94,57 @@ local noiseImage = love.graphics.newImage(noiseData)
 noiseImage:setWrap("repeat")
 noiseImage:setFilter("nearest")
 
-
+-- default normal map
 local normalData = love.image.newImageData(1, 1)
 normalData:mapPixel(function() return 0.5, 0.5, 1 end)
 local normalImage = love.graphics.newImage(normalData)
 normalImage:setWrap("repeat")
 normalImage:setFilter("nearest")
 
+-- default texture
 local whitePixel = love.image.newImageData(1, 1)
 whitePixel:setPixel(0, 0, 1, 1, 1, 1)
 local blankImage = love.graphics.newImage(whitePixel)
 blankImage:setWrap("repeat")
 blankImage:setFilter("nearest")
 
-local dataMap = love.image.newImageData(1, 1) -- specifically for ripplemeshes. No distortion, no noise/foam
+-- specifically for ripplemeshes, no distortion, no noise/foam
+local dataMap = love.image.newImageData(1, 1)
 dataMap:mapPixel(function() return 0, 0, 1, 0 end)
 local dataImage = love.graphics.newImage(dataMap)
 dataImage:setWrap("repeat")
 dataImage:setFilter("nearest")
+
+
+
+----------------------------------------------------[[ == GLOBAL SHADERS == ]]----------------------------------------------------
+
+local vfxMixShader = love.graphics.newShader(
+	[[
+		uniform Image countCanvas;
+
+		vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
+			vec4 data = Texel(countCanvas, texture_coords);
+			float pixelsOnFrag = data.r;
+			float sumAlpha = data.g; // alphas were squared, so we gotta compensate down below
+			float avgAlpha = sumAlpha / max(1.0, pixelsOnFrag);
+			float newAlpha = 1.0 - pow(1.0 - pow(avgAlpha, 0.5), pixelsOnFrag); // use sqrt to compensate for squaring when adding to the colorCanvas
+
+			vec4 canvColor = Texel(tex, texture_coords);
+			vec3 fragColor = canvColor.rgb / data.b; // prevent divide by zero
+
+			return vec4(fragColor.rgb, newAlpha);
+		}
+	]]
+)
+
+
+local DEPTH_PASS_FRAG = [[
+	#pragma language glsl3
+	void effect() {
+		
+	}
+]]
 
 
 
@@ -323,34 +383,6 @@ function Scene3:updateShadowMap(firstPass)
 	love.graphics.setMeshCullMode("back")
 end
 
-
-
-local vfxMixShader = love.graphics.newShader(
-	[[
-		uniform Image countCanvas;
-
-		vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
-			vec4 data = Texel(countCanvas, texture_coords);
-			float pixelsOnFrag = data.r;
-			float sumAlpha = data.g; // alphas were squared, so we gotta compensate down below
-			float avgAlpha = sumAlpha / max(1.0, pixelsOnFrag);
-			float newAlpha = 1.0 - pow(1.0 - pow(avgAlpha, 0.5), pixelsOnFrag); // use sqrt to compensate for squaring when adding to the colorCanvas
-
-			vec4 canvColor = Texel(tex, texture_coords);
-			vec3 fragColor = canvColor.rgb / data.b; // prevent divide by zero
-
-			return vec4(fragColor.rgb, newAlpha);
-		}
-	]]
-)
-
-
-local DEPTH_PASS_FRAG = [[
-	#pragma language glsl3
-	void effect() {
-		
-	}
-]]
 
 
 
@@ -609,13 +641,20 @@ function Scene3:draw(renderTarget, x, y) -- nil or a canvas
 	local renderWidth, renderHeight = self.RenderCanvas:getDimensions()
 
 	-- draw the background
+	-- TODO: move this to after geometry is drawn and do depth == 0 test so that you draw fewer pixels
 	if self.Background then
 		profiler:pushLabel("background")
-		love.graphics.setShader() -- needs to be reset because shadow map might be enabled
 		love.graphics.setCanvas({self.RenderCanvas})
 		love.graphics.setDepthMode("always", false)
-		local imgWidth, imgHeight = self.Background:getDimensions()
-		love.graphics.draw(self.Background, 0, 0, 0, renderWidth / imgWidth, renderHeight / imgHeight)
+		if self.Background:getTextureType() == "2d" then -- regular image
+			love.graphics.setShader() -- needs to be reset because shadow map might be enabled
+			local imgWidth, imgHeight = self.Background:getDimensions()
+			love.graphics.draw(self.Background, 0, 0, 0, renderWidth / imgWidth, renderHeight / imgHeight)
+		else -- cubemap image (render a skybox!)
+			love.graphics.setShader(self.SkyboxShader)
+			self.SkyboxShader:send("skyboxImage", self.Background)-- TODO: eliminate this uniform being sent every frame
+			love.graphics.draw(cubeMesh)
+		end
 		profiler:popLabel()
 	end
 
@@ -1262,6 +1301,7 @@ function Scene3:rescaleCanvas(width, height, ssaa)
 	self.BillboardShader:send("aspectRatio", aspectRatio)
 	self.MaskShader:send("aspectRatio", aspectRatio)
 	self.SilhouetteShader:send("aspectRatio", aspectRatio)
+	self.SkyboxShader:send("aspectRatio", aspectRatio)
 
 	-- calculate perspective matrix for the SSAO shader
 	if self.Camera3 ~= nil then
@@ -1918,6 +1958,7 @@ local function newScene3(sceneCamera, bgImage, fgImage, ssaa)
 		["MaskShader"] = love.graphics.newShader(SHADER_MASK_PATH);
 		["SilhouetteShader"] = love.graphics.newShader(SHADER_SILHOUETTE_PATH);
 		["FXAAShader"] = love.graphics.newShader(SHADER_FXAA_PATH);
+		["SkyboxShader"] = love.graphics.newShader(SHADER_SKYBOX_PATH);
 
 		-- depth pre-pass shaders
 		["DepthShader"] = love.graphics.newShader(SHADER_VERTEX_DEPTH_PATH, DEPTH_PASS_FRAG); -- depth pre-pass for mesh3 and mesh3group
@@ -2035,6 +2076,8 @@ local function newScene3(sceneCamera, bgImage, fgImage, ssaa)
 	Object.MaskShader:send("fieldOfView", Object.Camera3.FieldOfView)
 
 	Object.SilhouetteShader:send("fieldOfView", Object.Camera3.FieldOfView)
+
+	Object.SkyboxShader:send("fieldOfView", Object.Camera3.FieldOfView)
 
 	Object.SSAOShader:send("aoStrength", 0.5)
 	Object.SSAOShader:send("kernelScalar", 0.85) -- how 'large' ambient occlusion is
