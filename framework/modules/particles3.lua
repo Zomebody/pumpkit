@@ -320,7 +320,7 @@ local function new(img, maxParticles, properties)
 				{-0.5, -0.5, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1}
 			},
 			"triangles",
-			"static"
+			"static" -- TODO: maybe change this to dynamic? Not sure have attribute changes work
 		)
 		mesh:setTexture(img)
 	else
