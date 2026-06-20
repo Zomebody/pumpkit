@@ -184,7 +184,11 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 	mat3 normalMatrixModel = transpose(inverse(mat3(modelWorldMatrix))); // needed to calculate normals properly for non-uniform scaling
 	fragWorldNormal = normalize(normalMatrixModel * VertexNormal);
 	fragWorldSurfaceNormal = normalize(normalMatrixModel * SurfaceNormal);
-	fragViewNormal = normalize(mat3(viewMatrix) * fragWorldNormal);
+
+	mat3 viewMat3 = mat3(viewMatrix);
+	//fragViewNormal = normalize(viewMat3 * fragWorldNormal);
+	fragViewNormal = normalize(viewMat3 * normalize(normalMatrixModel * SurfaceNormal)); // small change here to use SurfaceNormal instead to make ambient occlusion rely on actual geometry shape!
+
 	cameraWorldRay = normalize(fragWorldPosition - camMatrix[3].xyz);
 
 	//vec3 fragWorldTangent = normalize((rotationMatrix * vec4(VertexTangent, 0.0)).xyz);
