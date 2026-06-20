@@ -1338,7 +1338,7 @@ function Scene3:rescaleCanvas(width, height, ssaa)
 
 	-- misc
 	self.VFXMixShader:send("countCanvas", vfxCanvas2)
-	self.SSAOBlendShader:send("normalsTexture", normalCanvas) -- needed to sample alpha channel to check if ambient occlusion should be applied
+	self.SSAOBlendShader:send("normalTexture", normalCanvas) -- needed to sample alpha channel to check if ambient occlusion should be applied
 
 	-- send mask to mesh shaders
 	self.Shader:send("maskCanvas", maskCanvas)
